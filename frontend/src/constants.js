@@ -1,0 +1,21 @@
+export const WIRE_COLUMNS = [
+  ['wire_number', '线号'],
+  ['attribute', '属性'],
+  ['model', '型号'],
+  ['spec', '规格'],
+  ['length', '长度'],
+  ['core_number', '芯'],
+  ['color', '色标'],
+  ['line_number', '原理号'],
+  ['terminal_strip', '端子排'],
+  ['start_location', '起点部位'],
+  ['start_device', '起点元件'],
+  ['start_name', '起点名称'],
+  ['start_terminal', '起点端子'],
+  ['end_location', '终点部位'],
+  ['end_device', '终点元件'],
+  ['end_name', '终点名称'],
+  ['end_terminal', '终点端子'],
+  ['remark', '备注'],
+]
+

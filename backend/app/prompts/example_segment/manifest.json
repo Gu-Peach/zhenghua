@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "description": "Multimodal few-shot source drawings for LangGraph V1 segmentation.",
+  "cases": [
+    {
+      "id": "006m01_006c01",
+      "title": "006M01 与 006C01 属于同一提取段",
+      "expected": "expected.json",
+      "images": [
+        {
+          "path": "page_006m01.png",
+          "role": "page_a",
+          "note": "前页，图框 Project.NR=1002001708，图号前缀=DQ1002001708"
+        },
+        {
+          "path": "page_006c01.png",
+          "role": "page_b",
+          "note": "后页，图框 Project.NR=1002001708，图号前缀=DQ1002001708"
+        }
+      ]
+    }
+  ]
+}
