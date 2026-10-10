@@ -556,3 +556,31 @@ th {
     grid-template-columns: 1fr;
   }
 }
+.diagnostic-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.diagnostic-strip > div,
+.diagnostic-strip a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.diagnostic-strip strong {
+  color: var(--text);
+}
+
+.diagnostic-strip a {
+  color: var(--accent);
+  text-decoration: none;
+}

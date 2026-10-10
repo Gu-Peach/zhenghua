@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -15,10 +17,12 @@ from .excel_writer import records_to_xlsx_bytes
 from .library_store import (
     create_job_dir,
     make_manifest,
+    read_manifest,
     write_group_error,
     write_group_outputs,
     write_manifest,
     write_source_file,
+    write_group_import_xls,
     manifest_to_job,
 )
 from .prompt_loader import load_prompt
@@ -103,6 +107,70 @@ async def process_pdf_upload(
     return ProcessUploadResponse(job=manifest_to_job(job_dir.name, final_manifest))
 
 
+async def resume_pdf_extraction_job(
+    *,
+    job_id: str,
+    background_tasks: Any | None = None,
+    force: bool = False,
+) -> ProcessUploadResponse:
+    """Resume a completed/partial job using its per-batch extraction checkpoint."""
+    try:
+        settings = load_settings()
+        extract_prompt = load_prompt(settings.prompt_path)
+        segment_prompt_path = settings.segment_prompt_path or settings.grouping_prompt_path
+        segment_prompt = load_prompt(segment_prompt_path) if segment_prompt_path else ""
+    except (ConfigError, OSError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    library_root = (settings.library_root or Path("frontend/public/library")).resolve()
+    job_dir = (library_root / job_id).resolve()
+    if library_root not in job_dir.parents or not job_dir.is_dir():
+        raise HTTPException(status_code=404, detail="Job not found")
+    try:
+        manifest = read_manifest(job_dir)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise HTTPException(status_code=404, detail="Job manifest not found") from exc
+
+    status = str(manifest.get("status") or "")
+    if status == "processing" and not force:
+        raise HTTPException(status_code=409, detail="Job is already processing")
+    source_dir = job_dir / "source"
+    source_files = sorted(path for path in source_dir.iterdir() if path.is_file()) if source_dir.is_dir() else []
+    if not source_files:
+        raise HTTPException(status_code=404, detail="Job source PDF not found")
+
+    source_filename = str(manifest.get("source_filename") or source_files[0].name)
+    source_url = str(manifest.get("source_url") or f"/library/{job_id}/source/{source_files[0].name}")
+    pages = [PageAsset.model_validate(page) for page in manifest.get("pages", [])]
+    processing_manifest = dict(manifest)
+    processing_manifest.update(
+        {
+            "status": "processing",
+            "groups": [],
+            "status_message": "Force-resuming from checkpoints." if force else "Resuming from checkpoints.",
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+    )
+    write_manifest(job_dir, processing_manifest)
+
+    task_args = (
+        settings,
+        extract_prompt,
+        segment_prompt,
+        job_dir,
+        source_filename,
+        source_url,
+        None,
+        pages,
+    )
+    if background_tasks is not None:
+        background_tasks.add_task(run_pdf_extraction_job_agent, *task_args)
+        return ProcessUploadResponse(job=manifest_to_job(job_id, processing_manifest))
+
+    final_manifest = await run_pdf_extraction_job_agent(*task_args)
+    return ProcessUploadResponse(job=manifest_to_job(job_id, final_manifest))
+
+
 async def run_pdf_extraction_job_agent(
     settings: Any,
     extract_prompt: str,
@@ -117,9 +185,19 @@ async def run_pdf_extraction_job_agent(
     name = Path(source_filename).stem
     current_groups: list[WireTableGroup] = []
     current_pages = list(pages or [])
+    current_table_headers: list[str] = []
+    current_table_rows: list[list[Any]] = []
 
     def progress(message: str) -> None:
         # Keep the frontend pollable while the graph is waiting on a remote VLM.
+        progress_path = job_dir / "agent" / "progress.jsonl"
+        progress_path.parent.mkdir(parents=True, exist_ok=True)
+        with progress_path.open("a", encoding="utf-8") as stream:
+            stream.write(json.dumps({
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "message": message,
+            }, ensure_ascii=False) + "\n")
+        live_pages = current_pages or _page_assets_from_directory(job_dir)
         write_manifest(
             job_dir,
             make_manifest(
@@ -127,8 +205,11 @@ async def run_pdf_extraction_job_agent(
                 source_filename=source_filename,
                 source_url=source_url,
                 status="processing",
-                pages=current_pages,
+                pages=live_pages,
                 groups=current_groups,
+                table_headers=current_table_headers,
+                table_rows=current_table_rows,
+                grouping_raw=_live_agent_diagnostics(job_dir),
                 status_message=message,
             ),
         )
@@ -163,33 +244,96 @@ async def run_pdf_extraction_job_agent(
     state = result.state
     output_pages = current_pages or _page_assets_from_state(job_dir, state)
     records_by_segment = state["wiring_records"]
-    current_groups.extend(
-        WireTableGroup(
-            group_id=f"wire-table-{index:03d}",
-            title=f"线表 {index}",
-            pages=page_numbers,
-            reason=_segment_reason(state["merge_decisions"], page_numbers),
-            status="failed" if f"wire-table-{index:03d}" in result.extraction_errors else "success",
-            record_count=len(records_by_segment.get(f"wire-table-{index:03d}", [])),
-            records=records_by_segment.get(f"wire-table-{index:03d}", []),
+    segment_errors: dict[int, str] = {}
+    new_page_agent_mode = bool(state.get("wire_units") or state.get("page_scan_results"))
+    if new_page_agent_mode:
+        # New flow: groups represent logical wire units, not page batches.
+        for unit_id, raw_unit in state.get("wire_units", {}).items():
+            unit_pages = sorted({int(page) for page in raw_unit.get("source_pages", [])})
+            records = records_by_segment.get(unit_id, [])
+            error_messages = [
+                message
+                for error_id, message in result.extraction_errors.items()
+                if any(error_id == f"page-{page:04d}" for page in unit_pages)
+            ]
+            unresolved = any(record.status not in {"complete", "resolved"} for record in records)
+            status = "failed" if error_messages and not records else "partial" if error_messages or unresolved else "success"
+            wire_number = raw_unit.get("wire_number")
+            title = f"线表 {wire_number}" if wire_number else f"线表 {unit_id}"
+            current_groups.append(
+                WireTableGroup(
+                    group_id=unit_id,
+                    title=title[:120],
+                    pages=unit_pages,
+                    reason="按 wire_number 聚合；每条 connection 独立输出",
+                    status=status,
+                    record_count=len(records),
+                    records=records,
+                    table_headers=list(state.get("table_headers") or []),
+                    table_rows=list((state.get("table_rows_by_unit") or {}).get(unit_id, [])),
+                    error="；".join(error_messages) if error_messages else None,
+                )
+            )
+    else:
+        # Compatibility for old custom clients that only implement extract_images.
+        segment_errors = {
+            index: ", ".join(
+                message for batch_id, message in result.extraction_errors.items()
+                if (next((item for item in state.get("extraction_batches", []) if item.get("batch_id") == batch_id), {}) or {}).get("source_page") in page_numbers
+            )
+            for index, page_numbers in enumerate(state["segments"], start=1)
+        }
+        current_groups.extend(
+            WireTableGroup(
+                group_id=f"wire-table-{index:03d}",
+                title=f"线表 {index}",
+                pages=page_numbers,
+                reason=_segment_reason(state["merge_decisions"], page_numbers),
+                status=("partial" if segment_errors.get(index) and records_by_segment.get(f"wire-table-{index:03d}")
+                        else "failed" if segment_errors.get(index) else "success"),
+                record_count=len(records_by_segment.get(f"wire-table-{index:03d}", [])),
+                records=records_by_segment.get(f"wire-table-{index:03d}", []),
+            )
+            for index, page_numbers in enumerate(state["segments"], start=1)
         )
-        for index, page_numbers in enumerate(state["segments"], start=1)
-    )
 
-    for group in current_groups:
+    current_table_headers = list(state.get("table_headers") or [])
+    current_table_rows = [
+        row
+        for group in current_groups
+        for row in group.table_rows
+    ]
+    for group_index, group in enumerate(current_groups, start=1):
         segment_id = group.group_id
         group.json_url = f"/library/{job_dir.name}/groups/{segment_id}/records.json"
-        group.xlsx_url = f"/library/{job_dir.name}/groups/{segment_id}/wiring-table.xlsx"
-        if segment_id in result.extraction_errors:
-            group.error = result.extraction_errors[segment_id]
+        import_xls = job_dir / "groups" / segment_id / "wiring-table-import.xls"
+        import_xlsx = job_dir / "groups" / segment_id / "wiring-table-import.xlsx"
+        if import_xlsx.is_file():
+            group.import_xlsx_url = f"/library/{job_dir.name}/groups/{segment_id}/wiring-table-import.xlsx"
+        if import_xls.is_file():
+            group.import_xls_url = f"/library/{job_dir.name}/groups/{segment_id}/wiring-table-import.xls"
+        if group.error:
+            write_group_error(job_dir, group)
+        elif segment_errors.get(group_index):
+            group.error = segment_errors[group_index]
             write_group_error(job_dir, group)
 
     status = _status_from_groups(current_groups)
+    if not current_groups and result.extraction_errors:
+        status = "failed"
     diagnostics = {
         "merge_decisions": state["merge_decisions"],
         "segments": state["segments"],
         "extraction_errors": result.extraction_errors,
         "validation_warnings": result.validation_warnings,
+        "drawing_index": state.get("drawing_index", {}),
+        "extraction_batches": state.get("extraction_batches", []),
+        "page_scan_results": state.get("page_scan_results", {}),
+        "wire_units": state.get("wire_units", {}),
+        "processed_pages": state.get("processed_pages", []),
+        "connection_records": state.get("connection_records", []),
+        "cross_page_tasks": state.get("cross_page_tasks", []),
+        "cross_page_results": state.get("cross_page_results", {}),
     }
     manifest = make_manifest(
         name=name,
@@ -198,6 +342,8 @@ async def run_pdf_extraction_job_agent(
         status=status,
         pages=output_pages,
         groups=current_groups,
+        table_headers=current_table_headers,
+        table_rows=current_table_rows,
         grouping_raw=diagnostics,
         status_message=_final_status_message(status, current_groups),
     )
@@ -228,15 +374,77 @@ def _page_assets_from_state(job_dir: Path, state: dict[str, Any]) -> list[PageAs
     for page in state.get("pages", []):
         filename = Path(page["image_path"]).name
         page_number = int(page["page_number"])
+        image_path = Path(page["image_path"])
+        try:
+            relative_path = image_path.resolve().relative_to(job_dir.resolve()).as_posix()
+            url = f"/library/{job_dir.name}/{relative_path}"
+        except ValueError:
+            url = f"/library/{job_dir.name}/pages/{filename}"
         assets.append(
             PageAsset(
                 page_id=f"page-{page_number}",
                 page_number=page_number,
                 filename=filename,
-                url=f"/library/{job_dir.name}/pages/{filename}",
+                url=url,
+                drawing_function=page.get("function"),
+                drawing_page_number=page.get("internal_page"),
+                drawing_object_location=page.get("object_loc"),
+                blank=bool(page.get("blank")),
             )
         )
     return assets
+
+
+def _page_assets_from_directory(job_dir: Path) -> list[PageAsset]:
+    page_dir = job_dir / "pages"
+    if not page_dir.is_dir():
+        return []
+    assets: list[PageAsset] = []
+    for path in sorted(page_dir.rglob("*.png")):
+        match = re.search(r"(?:page_|^)(\d+)(?:__pdf_\d+)?\.png$", path.name, flags=re.IGNORECASE)
+        if not match:
+            continue
+        page_number = int(match.group(1))
+        assets.append(
+            PageAsset(
+                page_id=f"page-{page_number}",
+                page_number=page_number,
+                filename=path.name,
+                url=f"/library/{job_dir.name}/{path.relative_to(job_dir).as_posix()}",
+            )
+        )
+    return assets
+
+
+def _live_agent_diagnostics(job_dir: Path) -> dict[str, Any]:
+    agent_dir = job_dir / "agent"
+
+    def read_json(name: str, fallback: Any) -> Any:
+        path = agent_dir / name
+        if not path.is_file():
+            return fallback
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, TypeError, ValueError):
+            return fallback
+
+    page_checkpoint = read_json("page-scan-checkpoint.json", {})
+    unit_checkpoint = read_json("wire-units-checkpoint.json", {})
+    return {
+        "processed_pages": page_checkpoint.get("processed_pages", []),
+        "page_scan_results": page_checkpoint.get("page_scan_results", {}),
+        "wire_units": unit_checkpoint.get("wire_units", {}),
+        "page_classifications": read_json("page-classifications.json", {}),
+        "plant_function_groups": read_json("plant-function-groups.json", {}),
+        "cross_page_tasks": read_json("cross-page-tasks.json", []),
+        "cross_page_results": read_json("cross-page-results.json", {}),
+        "stage2_table": read_json("stage2-table.json", {}),
+        "extraction_errors": read_json("errors.json", {}),
+        "validation_warnings": read_json("validation-warnings.json", []),
+        "merge_decisions": [],
+        "segments": [],
+        "extraction_batches": [],
+    }
 
 
 # Kept only for compatibility with callers that imported the pre-Agent helper.
@@ -551,7 +759,7 @@ def _status_from_groups(groups: list[WireTableGroup]) -> str:
         return "empty"
     if all(group.status == "success" for group in groups):
         return "success"
-    if any(group.status == "success" for group in groups):
+    if any(group.status in {"success", "partial"} for group in groups):
         return "partial"
     return "failed"
 
@@ -563,4 +771,6 @@ def _final_status_message(status: str, groups: list[WireTableGroup]) -> str:
         return f"处理完成，共 {success_count} 个线表批次。"
     if status == "partial":
         return f"部分完成，成功 {success_count} 个，失败 {failed_count} 个。"
+    if not groups:
+        return "处理失败，页面扫描或跨页解析未完成，请查看 agent 诊断文件。"
     return f"处理失败，失败 {failed_count} 个线表批次。"

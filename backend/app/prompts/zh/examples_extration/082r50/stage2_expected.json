@@ -1,0 +1,30 @@
+{
+  "pdf_page_number": null,
+  "drawing_function": "082.R",
+  "drawing_page_number": 50,
+  "drawing_object_location": "+10F01",
+  "blank": false,
+  "needs_review": false,
+  "units": [
+    {
+      "local_unit_index": 1,
+      "wire_number": "4111",
+      "attribute": "D",
+      "model": "CJV/DA",
+      "spec": "7X1.5",
+      "length": 10,
+      "current": null,
+      "connections": [
+        {"local_connection_id":"r50-c1","core_number":1,"line_number":"082G3211","current":null,"start":{"location":"+10F01","device":"-XD3","terminal":"XD3:251"},"end":{"location":"CAB-WP1","device":"-MA51","terminal":"2-RED"},"intermediate_points":[],"references":[],"status":"complete","confidence":0.95},
+        {"local_connection_id":"r50-c2","core_number":2,"line_number":"082R5001","current":null,"start":{"location":"+10F01","device":"-XD3","terminal":"XD3:260"},"end":{"location":"CAB-WP1","device":"-MA51","terminal":"1-GN"},"intermediate_points":[],"references":[],"status":"complete","confidence":0.95},
+        {"local_connection_id":"r50-c3","core_number":3,"line_number":"082R5002","current":null,"start":{"location":"+10F01","device":"-XD3","terminal":"XD3:261"},"end":{"location":"CAB-WP1","device":"-MA51","terminal":"3-YE"},"intermediate_points":[],"references":[],"status":"complete","confidence":0.95},
+        {"local_connection_id":"r50-c4","core_number":4,"line_number":"082R5003","current":null,"start":{"location":"+10F01","device":"-XD3","terminal":"XD3:262"},"end":{"location":"CAB-WP1","device":"-MA51","terminal":"4-BU"},"intermediate_points":[],"references":[],"status":"complete","confidence":0.95},
+        {"local_connection_id":"r50-c5","core_number":5,"line_number":"082G3200","current":null,"start":{"location":"+10F01","device":"-XD3","terminal":"XD3:254"},"end":{"location":"CAB-WP1","device":"-MA51","terminal":"5-BK"},"intermediate_points":[],"references":[],"status":"complete","confidence":0.95},
+        {"local_connection_id":"r50-c6","core_number":6,"line_number":"SPARE","current":null,"start":{"location":"+10F01","device":"-XD3","terminal":"*"},"end":{"location":"CAB-WP1","device":"-MA51","terminal":"*"},"intermediate_points":[],"references":[],"status":"complete","confidence":0.9},
+        {"local_connection_id":"r50-c7","core_number":7,"line_number":"PE","current":null,"start":{"location":"+10F01","device":"-XD3","terminal":"PE"},"end":{"location":"CAB-WP1","device":"-MA51","terminal":"PE"},"intermediate_points":[],"references":[],"status":"complete","confidence":0.9}
+      ],
+      "source_pages": []
+    }
+  ],
+  "page_references": []
+}

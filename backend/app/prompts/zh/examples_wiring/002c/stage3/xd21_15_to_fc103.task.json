@@ -1,0 +1,39 @@
+{
+  "task_id": "002c21-xd21-15-to-003c20-fc103",
+  "unit_id": "002c21-ground-protection",
+  "connection_id": "c21-xd21-15",
+  "source_pdf_page": 54,
+  "target_pdf_pages": [
+    73
+  ],
+  "references": [
+    {
+      "raw": "=003.C+01F11.3-FC103_L / =003.C+01F11.3/20.3",
+      "target_function": "003.C",
+      "target_drawing_page": 20,
+      "target_internal_page": null,
+      "target_pdf_page": 73,
+      "target_column": 3,
+      "target_object": "+01F11.3-FC103_L",
+      "external": false,
+      "reason": null
+    }
+  ],
+  "wire_number": null,
+  "line_number": "003C2021",
+  "core_number": null,
+  "source_record": {
+    "drawing_function": "002.C",
+    "drawing_page_number": 21,
+    "line_number": "003C2021",
+    "start_location": "+01F10",
+    "start_device": "-XD21",
+    "start_terminal": "XD21:15",
+    "end_terminal": null,
+    "current": null,
+    "current_basis": null,
+    "current_source_text": null,
+    "start_name": "GROUND PROTECTION TERMINAL"
+  },
+  "needs_review": false
+}

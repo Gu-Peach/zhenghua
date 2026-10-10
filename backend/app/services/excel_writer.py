@@ -8,6 +8,10 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
+from ..core.terminal_strips import (
+    normalize_terminal_strip,
+    terminal_strip_for_device,
+)
 from ..schemas.wire import WireRecord
 
 
@@ -39,6 +43,15 @@ WIRE_TABLE_HEADERS.extend([
     "PDF source pages",
     "source type",
     "external source required",
+    "unit_id",
+    "connection_id",
+    "drawing source pages",
+    "status",
+    "起点端子排",
+    "终点端子排",
+    "中间端点",
+    "跨页引用",
+    "unit identity confidence",
 ])
 
 RAW_HEADERS = [
@@ -48,6 +61,9 @@ RAW_HEADERS = [
     "model",
     "spec",
     "length",
+    "current",
+    "current_basis",
+    "current_source_text",
     "line_number",
     "core_number",
     "color",
@@ -68,6 +84,15 @@ RAW_HEADERS = [
     "source_pages",
     "source_type",
     "external_source_required",
+    "unit_id",
+    "connection_id",
+    "drawing_source_pages",
+    "status",
+    "start_terminal_strip",
+    "end_terminal_strip",
+    "intermediate_points",
+    "references",
+    "unit_identity_confidence",
     "raw_json",
 ]
 
@@ -85,6 +110,29 @@ def records_to_xlsx_bytes(
 
     raw_sheet = workbook.create_sheet("原始提取")
     _write_raw_table(raw_sheet, records)
+
+    stream = BytesIO()
+    workbook.save(stream)
+    return stream.getvalue()
+
+
+def table_to_xlsx_bytes(
+    headers: Sequence[Any],
+    rows: Sequence[Sequence[Any]],
+    sheet_title: str = "放线表",
+) -> bytes:
+    """Write the frontend table contract to a single-sheet XLSX workbook."""
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = _safe_sheet_title(sheet_title or "放线表")
+    sheet.append([_table_cell(value) for value in headers])
+    column_count = len(headers)
+    for row in rows:
+        values = list(row[:column_count])
+        if len(values) < column_count:
+            values.extend([None] * (column_count - len(values)))
+        sheet.append([_table_cell(value) for value in values])
+    _style_table(sheet, column_count, freeze="A2")
 
     stream = BytesIO()
     workbook.save(stream)
@@ -125,6 +173,15 @@ def _write_wire_table(
             _format_source_pages(data.get("source_pages")),
             data.get("source_type"),
             data.get("external_source_required"),
+            data.get("unit_id"),
+            data.get("connection_id"),
+            _format_string_list(data.get("drawing_source_pages")),
+            data.get("status"),
+            data.get("start_terminal_strip"),
+            data.get("end_terminal_strip"),
+            _format_json_cell(data.get("intermediate_points")),
+            _format_json_cell(data.get("references")),
+            data.get("unit_identity_confidence"),
         ]
         sheet.append([_clean_cell(value) for value in row])
     _style_table(sheet, len(WIRE_TABLE_HEADERS), freeze="A2")
@@ -137,6 +194,8 @@ def _write_raw_table(sheet: Any, records: Sequence[WireRecord]) -> None:
         sheet.append([
             json.dumps(data, ensure_ascii=False) if header == "raw_json"
             else _format_source_pages(data.get(header)) if header == "source_pages"
+            else _format_string_list(data.get(header)) if header == "drawing_source_pages"
+            else _format_json_cell(data.get(header)) if header in {"intermediate_points", "references"}
             else _clean_cell(data.get(header))
             for header in RAW_HEADERS
         ])
@@ -196,6 +255,14 @@ def _clean_cell(value: Any) -> Any:
     return value
 
 
+def _table_cell(value: Any) -> Any:
+    if value == "":
+        return None
+    if isinstance(value, (dict, list, tuple, set)):
+        return json.dumps(value, ensure_ascii=False, default=str)
+    return value
+
+
 def _format_source_pages(value: Any) -> str | None:
     if not value:
         return None
@@ -203,6 +270,21 @@ def _format_source_pages(value: Any) -> str | None:
         pages = sorted({int(page) for page in value if str(page).strip().isdigit()})
         return ",".join(str(page) for page in pages) or None
     return str(value)
+
+
+def _format_string_list(value: Any) -> str | None:
+    if not value:
+        return None
+    if isinstance(value, (list, tuple, set)):
+        values = [str(item) for item in value if item not in (None, "")]
+        return ",".join(dict.fromkeys(values)) or None
+    return str(value)
+
+
+def _format_json_cell(value: Any) -> str | None:
+    if value in (None, "", [], {}):
+        return None
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
 
 
 def _compose_terminal(device: Any, terminal: Any) -> str | None:
@@ -222,33 +304,15 @@ def _compose_terminal(device: Any, terminal: Any) -> str | None:
 
 
 def _terminal_strip_from_device(device: Any) -> str | None:
-    device_text = _to_text(device)
-    if not device_text:
-        return None
-    code = device_text.lstrip("-").upper()
-    if code == "XA" or code in {"XD10", "XD11", "XD12"}:
-        return "X1"
-    if code in {"XD21", "XD23"}:
-        return "X21/X23"
-    if code in {"XD22", "XD24"}:
-        return "X22/X24"
-    if code in {"XD3", "XD5"}:
-        return "X3"
-    if code == "XD4":
-        return "X4"
-    if code == "XH":
-        return "X5"
-    return None
+    return terminal_strip_for_device(device)
 
 
 def _terminal_strip_value(data: dict[str, Any], mapping: Mapping[str, str] | None) -> str | None:
     device = _to_text(data.get("start_device"))
-    if device and mapping:
-        normalized = {str(key).lstrip("-").upper(): str(value) for key, value in mapping.items()}
-        mapped = normalized.get(device.lstrip("-").upper())
-        if mapped:
-            return mapped
-    return data.get("terminal_strip") or _terminal_strip_from_device(device)
+    return (
+        terminal_strip_for_device(device, mapping)
+        or normalize_terminal_strip(data.get("terminal_strip"), mapping)
+    )
 
 
 def records_by_segment_to_xlsx_bytes(
@@ -260,11 +324,12 @@ def records_by_segment_to_xlsx_bytes(
     workbook = Workbook()
     default_sheet = workbook.active
     workbook.remove(default_sheet)
+    used_titles: set[str] = set()
     for segment_id, records in records_by_segment.items():
-        title = _safe_sheet_title(str(segment_id) or "wiring-table")
+        title = _unique_sheet_title(str(segment_id) or "wiring-table", used_titles)
         table_sheet = workbook.create_sheet(title)
         _write_wire_table(table_sheet, records, terminal_strip_mapping=terminal_strip_mapping)
-        raw_sheet = workbook.create_sheet(_safe_sheet_title(f"{title}-raw"))
+        raw_sheet = workbook.create_sheet(_unique_sheet_title(f"{title}-raw", used_titles))
         _write_raw_table(raw_sheet, records)
 
     if not workbook.worksheets:
@@ -287,3 +352,15 @@ def _safe_sheet_title(title: str) -> str:
     invalid = set('[]:*?/\\')
     cleaned = "".join("_" if char in invalid else char for char in title).strip() or "放线表"
     return cleaned[:31]
+
+
+def _unique_sheet_title(title: str, used_titles: set[str]) -> str:
+    base = _safe_sheet_title(title)
+    candidate = base
+    suffix = 1
+    while candidate in used_titles:
+        marker = str(suffix)
+        candidate = f"{base[:31 - len(marker)]}{marker}"
+        suffix += 1
+    used_titles.add(candidate)
+    return candidate

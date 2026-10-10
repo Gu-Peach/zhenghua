@@ -1,0 +1,24 @@
+{
+  "manifest_version": 1,
+  "key": "zh",
+  "version": "1.0.0",
+  "display_name": "振华电气图纸",
+  "description": "Native ZH drawing extraction profile executed by the agent service.",
+  "status": "active",
+  "adapter": "zh_native",
+  "resource_mode": "legacy_reference",
+  "resources": {
+    "classification_prompt": "../../prompts/zh/page_classification.md",
+    "page_scan_prompt": "../../prompts/zh/page_scan_index.md",
+    "cross_page_prompt": "../../prompts/zh/page_cross_page_completion.md",
+    "classification_examples": "../../prompts/zh/examples_page_classification",
+    "wiring_examples": "../../prompts/zh/examples_wiring/002c",
+    "routing_rules": "rules.json"
+  },
+  "capabilities": [
+    "page_classification",
+    "page_scan",
+    "cross_page_completion",
+    "full_document_extraction"
+  ]
+}

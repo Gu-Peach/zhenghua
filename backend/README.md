@@ -47,15 +47,19 @@ VLM_API_KEY=your-api-key
 
 `VLM_BASE_URL` 写服务根地址即可，例如 `http://3stooges.chat:4088`。后端会自动调用 `http://3stooges.chat:4088/v1/chat/completions`。如果你的服务不是这个路径，可以配置 `VLM_CHAT_COMPLETIONS_URL` 写完整地址。
 
-`backend/app/prompts/wire_extraction_few_shot.md` 会作为默认系统 prompt。也可以在接口表单字段 `prompt` 中临时覆盖。`VLM_FEW_SHOT_IMAGES=true` 时，两个案例的真实图纸和标准 JSON 会作为多模态 few-shot 对话附加到提取请求，默认开启。
+默认系统 Prompt 为 `backend/app/prompts/zh/page_scan_index.md`。页面分类和跨页补全分别使用同目录下的 `page_classification.md` 与 `page_cross_page_completion.md`；可通过对应环境变量临时覆盖。
 
-放线表提取的两个 few-shot 案例对应的图纸已存放在 `backend/app/prompts/examples_extration/`；相邻页分段案例存放在 `backend/app/prompts/example_segment/`。两类目录都通过 `manifest.json` 记录图片和标准答案。若远程 VLM 对大请求体处理较慢，可分别通过 `VLM_FEW_SHOT_IMAGES=false` 或 `VLM_SEGMENT_FEW_SHOT_IMAGES=false` 临时关闭。
+中文 Prompt 与 Few-shot 资源统一存放在 `backend/app/prompts/zh/`。当前 Stage 2 和 Stage 3 共享 `backend/app/prompts/zh/examples_wiring/002c/manifest.json`；页面分类样本位于 `backend/app/prompts/zh/examples_page_classification/`。各目录通过 `manifest.json` 记录图片、结构化输入和标准答案。
 
 可选配置：
 
 ```powershell
 VLM_TIMEOUT_SECONDS=300
-VLM_MAX_PDF_PAGES=50
+VLM_RETRY_COUNT=2
+VLM_RETRY_BACKOFF_SECONDS=2
+VLM_RETRY_MAX_BACKOFF_SECONDS=30
+VLM_MAX_PDF_PAGES=0
+VLM_REFERENCE_TARGET_LIMIT=4
 VLM_CONCURRENCY=1
 VLM_IMAGE_BATCH_SIZE=4
 VLM_GROUPING_IMAGE_BATCH_SIZE=8
@@ -81,6 +85,7 @@ VLM_SEGMENT_RETRY_COUNT=1
 VLM_MAX_SEGMENT_PAGES=20
 VLM_KEEP_TEMP_IMAGES=false
 VLM_OUTPUT_MODE=library
+# VLM_IMPORT_XLS_TEMPLATE_PATH=test_case/放线表导入格式(1).xls
 # VLM_TERMINAL_STRIP_MAP={"XD3":"X3","XD4":"X4"}
 ```
 
@@ -250,3 +255,74 @@ supabase db reset
 ```powershell
 python -m backend.cli --test-case-dir backend/test_case --case-output-name vlm_result
 ```
+# Agent pipeline notes
+
+The PDF workflow is `pdf_to_images -> drawing_index/segment -> extraction batches -> assemble_xlsx`.
+For EPLAN PDFs the text layer builds `agent/drawing_index.json` and resolves
+cross-page references before the VLM call. Each extraction batch contains one
+source page and at most `VLM_REFERENCE_TARGET_LIMIT` target pages. Unresolved
+or `FOR DETAIL SEE ...` references are retained as external/needs-review
+evidence; the model must not invent an endpoint.
+
+Set `VLM_MAX_PDF_PAGES=0` for full-document processing (the default). Use
+`VLM_KEEP_TEMP_IMAGES=true` when inspecting rendered pages. Each library job
+stores `agent/merge_decisions.json`, `segments.json`, `extraction_batches.json`,
+`drawing_index.json`, `errors.json`, and `validation-warnings.json`.
+
+The downstream import workbook is a legacy `.xls` layout. Install the backend
+requirements including `xlwt` to generate `wiring-table-import.xls`; the
+ordinary `.xlsx` output remains available for preview. The import columns are
+the template's first twelve columns: page, line number, voltage/terminal strip,
+start code/description/terminal, end code/description/terminal, current,
+remark, and color.
+
+For a direct CLI run use `python -m backend.cli --agent-pdf <input.pdf> -o
+outputs/wiring-table.xlsx`. This produces the preview workbook and
+`outputs/wiring-table-import.xls`; the web upload uses the same writer inside
+each `frontend/public/library/<job>/groups/<group>/` folder.
+
+To test the real HTTP backend flow and collect step artifacts, start uvicorn
+and run:
+
+```powershell
+python scripts/test_backend_pipeline.py case/input.pdf `
+  --output-dir test_case/backend-result
+```
+
+The script uploads the PDF, polls the job, prints status changes, and downloads
+`agent/progress.jsonl`, `drawing_index.json`, `extraction_batches.json`,
+`segments.json`, `merge_decisions.json`, errors/warnings, group results, and
+the final `wiring-table-import.xlsx` plus native `wiring-table-import.xls`.
+
+Each extraction batch is checkpointed in `agent/extraction-checkpoint.json`.
+After a provider outage, resume the same job instead of uploading the PDF again:
+
+```powershell
+python scripts/test_backend_pipeline.py --resume-job-id <job_id> `
+  --output-dir test_case/backend-result-resumed
+```
+
+The backend resume endpoint is `POST /api/v1/library/{job_id}/resume`.
+Already completed batches are reused; failed or unfinished batches are retried.
+The client downloader also retries temporary connection failures.
+
+To test provider concurrency with a small image request:
+
+```powershell
+python scripts/probe_vlm_concurrency.py --levels 1 2 4
+```
+
+## Processing order
+
+The graph has three Agent stages after page classification. `page_scan_loop`
+receives only one source page at a time and writes same-page table values;
+cross-page rows keep their references and an empty endpoint. The deterministic
+`build_cross_page_tasks` node then resolves each row's
+`Plant Function + Page Number + Column` reference and writes one task per row.
+`resolve_cross_page` sends that row's source page and resolved target pages to
+the third Agent, which fills the endpoint or returns `needs_review`.
+
+The stage-two table and third-stage task/checkpoint artifacts are written under
+`agent/stage2-table.json`, `agent/cross-page-tasks.json`, and
+`agent/cross-page-checkpoint.json`. `VLM_REFERENCE_TARGET_LIMIT` limits the
+number of target pages attached to one row-level task.

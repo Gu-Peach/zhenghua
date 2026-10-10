@@ -1,0 +1,39 @@
+{
+  "task_id": "002c11-xa1-to-002c06-ta2-u2",
+  "unit_id": "002c11-xa-breakers",
+  "connection_id": "c11-xa1-cross",
+  "source_pdf_page": 53,
+  "target_pdf_pages": [
+    52
+  ],
+  "references": [
+    {
+      "raw": "+00/6.1 / +00-TA2_U2",
+      "target_function": "002.C",
+      "target_drawing_page": 6,
+      "target_internal_page": null,
+      "target_pdf_page": 52,
+      "target_column": 1,
+      "target_object": "+00-TA2",
+      "external": false,
+      "reason": null
+    }
+  ],
+  "wire_number": null,
+  "line_number": "002C0601",
+  "core_number": null,
+  "source_record": {
+    "drawing_function": "002.C",
+    "drawing_page_number": 11,
+    "line_number": "002C0601",
+    "start_location": "+01F10",
+    "start_device": "-XA",
+    "start_terminal": "XA:1",
+    "end_terminal": null,
+    "current": "400A",
+    "current_basis": "Ir",
+    "current_source_text": "Ir=400A",
+    "start_name": "AUXILIARY TRANSFORMER MAIN/SHORE INCOMING TERMINAL"
+  },
+  "needs_review": false
+}

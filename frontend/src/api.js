@@ -124,6 +124,8 @@ function buildSupabaseJob(firstRow, rows) {
     records: row.records || [],
     json_url: storageUrl(row.records_path),
     xlsx_url: storageUrl(row.xlsx_path),
+    import_xls_url: storageUrl(row.import_xls_path),
+    import_xlsx_url: storageUrl(row.import_xlsx_path),
     error: row.error,
   }))
   const sourceUrl = storageUrl(firstRow.source_pdf_path)

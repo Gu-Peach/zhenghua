@@ -1,0 +1,21 @@
+{
+  "manifest_version": 1,
+  "key": "abb",
+  "version": "0.1.0",
+  "display_name": "ABB 电气图纸",
+  "description": "Experimental asset registration. Production extraction remains disabled until M16 regression acceptance.",
+  "status": "experimental",
+  "adapter": "native_pending",
+  "resource_mode": "legacy_reference",
+  "resources": {
+    "classification_prompt": "../../../../backend/app/prompts/abb/page_classification.md",
+    "page_scan_prompt": "../../../../backend/app/prompts/abb/page_scan_index.md",
+    "cross_page_prompt": "../../../../backend/app/prompts/abb/page_cross_page_completion.md",
+    "classification_examples": "../../../../backend/app/prompts/abb/examples_page_classification",
+    "wiring_examples": "../../../../backend/app/prompts/abb/examples_wiring/002c",
+    "routing_rules": "rules.json"
+  },
+  "capabilities": [
+    "asset_validation_only"
+  ]
+}

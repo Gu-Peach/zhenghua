@@ -1,0 +1,21 @@
+{
+  "task_id": "006m01_c1",
+  "end": {
+    "part": null,
+    "location": "+01F26",
+    "device": "-AIM1",
+    "terminal_board": null,
+    "terminal_code": null,
+    "name": "整流进线柜1",
+    "terminal_strip": null,
+    "terminal": "X3:3"
+  },
+  "intermediate_points": [],
+  "current": null,
+  "current_basis": null,
+  "current_source_text": null,
+  "status": "resolved",
+  "needs_review": false,
+  "confidence": 0.95,
+  "source_note": "根据来源页引用和目标页 X3:3 的实际导线连接确认终点"
+}

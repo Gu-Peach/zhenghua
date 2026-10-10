@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "profile_key": "abb",
+  "display_name": "ABB 电气图纸",
+  "detection": {
+    "summary": "ABB 标准或由 ABB 出具的电气原理图。",
+    "strong_signals": [
+      "首页标题栏出现 ABB 官方 Logo 或 ABB 公司名称",
+      "首页版权、工程单位或出图单位明确为 ABB"
+    ],
+    "supporting_signals": [
+      "标题栏包含 ABB 风格文档号、Sheet/Cont 页号和责任部门字段",
+      "电路图使用圆圈放线标志；该特征只作辅助，不能单独确认 ABB"
+    ],
+    "exclusion_signals": [
+      "图中仅有 ABB 元器件型号或设备名称，不代表整份图纸属于 ABB",
+      "首页标题栏明确标注 ZPMC/上海振华重工时不能判定为 ABB"
+    ],
+    "guidance": "必须依据首页的出图单位、标题栏或 Logo 判断，不得仅凭某个 ABB 元件判定。"
+  },
+  "extraction": {
+    "workflow": [
+      "page_classification",
+      "page_scan",
+      "build_cross_page_tasks",
+      "cross_page_completion",
+      "deterministic_validation"
+    ],
+    "dynamic_resources": {
+      "page_classification": ["classification_prompt", "classification_examples"],
+      "page_scan": ["page_scan_prompt", "wiring_examples"],
+      "cross_page_completion": ["cross_page_prompt", "wiring_examples"]
+    },
+    "business_rules": [
+      "放线标志为圆圈时按 ABB Profile 解析连接方向和引用",
+      "ABB 的端子规则、引用格式和 Few-shot 不得复用 ZH 规则",
+      "无法由可见证据确认的终点必须置空并标记 needs_review"
+    ],
+    "output_contract": "wiring_connection_v1"
+  }
+}
+

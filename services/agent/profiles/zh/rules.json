@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "profile_key": "zh",
+  "display_name": "振华电气图纸",
+  "detection": {
+    "summary": "上海振华重工/ZPMC 体系的电气原理图与项目图册。",
+    "strong_signals": [
+      "首页出现 ZPMC 标志或文字",
+      "首页出现 上海振华重工 或 SHANGHAI ZPMC ELECTRIC COMPANY LIMITED",
+      "标题栏责任部门或客户字段明确出现 ZPMC"
+    ],
+    "supporting_signals": [
+      "标题栏包含 Project.NR、Plant Function、Page Number",
+      "图号常包含 DQ 加项目号前缀",
+      "封面使用 DIAGRAMS AND CHARTS、PLANT CIRCUIT DIAGRAM 等描述"
+    ],
+    "exclusion_signals": [
+      "只有通用 IEC/EPLAN 图框但没有任何 ZPMC 或振华标识，不能据此判定为 ZH",
+      "标题栏明确标注其他制造商时不能判定为 ZH"
+    ],
+    "guidance": "优先依据首页可见的公司名称和 Logo；项目号、Plant Function 只作为辅助信号。"
+  },
+  "extraction": {
+    "workflow": [
+      "page_classification",
+      "page_scan",
+      "build_cross_page_tasks",
+      "cross_page_completion",
+      "deterministic_validation"
+    ],
+    "dynamic_resources": {
+      "page_classification": ["classification_prompt", "classification_examples"],
+      "page_scan": ["page_scan_prompt", "wiring_examples"],
+      "cross_page_completion": ["cross_page_prompt", "wiring_examples"]
+    },
+    "business_rules": [
+      "使用 Plant Function + Page Number 建立图纸业务索引",
+      "端子、方向、电流和跨页引用由 ZH Profile 的确定性规则校验",
+      "Stage 3 只能补全任务指定连接，不能修改已确认起点"
+    ],
+    "output_contract": "wiring_connection_v1"
+  }
+}
+

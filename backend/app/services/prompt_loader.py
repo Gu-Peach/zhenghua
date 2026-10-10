@@ -26,6 +26,7 @@ class FewShotExample:
     id: str
     title: str
     images: list[FewShotImage] = field(default_factory=list)
+    input_json: str | None = None
     expected_json: str = "[]"
 
 
@@ -35,6 +36,14 @@ def load_few_shot_examples(examples_dir: Path | None) -> list[FewShotExample]:
     Layout: <examples_dir>/manifest.json lists cases; each case folder holds the
     drawing images and an expected.json with the standard answer.
     """
+    return _load_few_shot_examples(examples_dir, section="cases")
+
+
+def _load_few_shot_examples(
+    examples_dir: Path | None,
+    *,
+    section: str,
+) -> list[FewShotExample]:
     if examples_dir is None:
         return []
     manifest_path = examples_dir / "manifest.json"
@@ -43,7 +52,10 @@ def load_few_shot_examples(examples_dir: Path | None) -> list[FewShotExample]:
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     examples: list[FewShotExample] = []
-    for case in manifest.get("cases", []):
+    cases = manifest.get(section)
+    if cases is None and section != "cases":
+        cases = manifest.get("cases", [])
+    for case in cases or []:
         case_id = str(case.get("id") or "").strip()
         if not case_id:
             continue
@@ -55,6 +67,15 @@ def load_few_shot_examples(examples_dir: Path | None) -> list[FewShotExample]:
             json.loads(expected_path.read_text(encoding="utf-8")),
             ensure_ascii=False,
         )
+        input_json: str | None = None
+        input_path_value = case.get("input")
+        if input_path_value:
+            input_path = examples_dir / input_path_value
+            if input_path.is_file():
+                input_json = json.dumps(
+                    json.loads(input_path.read_text(encoding="utf-8")),
+                    ensure_ascii=False,
+                )
 
         images: list[FewShotImage] = []
         for item in case.get("images", []):
@@ -78,6 +99,7 @@ def load_few_shot_examples(examples_dir: Path | None) -> list[FewShotExample]:
                 id=case_id,
                 title=str(case.get("title") or case_id),
                 images=images,
+                input_json=input_json,
                 expected_json=expected_json,
             )
         )
@@ -87,3 +109,18 @@ def load_few_shot_examples(examples_dir: Path | None) -> list[FewShotExample]:
 def load_segment_few_shot_examples(examples_dir: Path | None) -> list[FewShotExample]:
     """Load segmentation image pairs and their merge-decision JSON answers."""
     return load_few_shot_examples(examples_dir)
+
+
+def load_page_scan_few_shot_examples(examples_dir: Path | None) -> list[FewShotExample]:
+    """Load image-backed examples for the single-page scanner."""
+    return _load_few_shot_examples(examples_dir, section="stage2_cases")
+
+
+def load_page_classification_few_shot_examples(examples_dir: Path | None) -> list[FewShotExample]:
+    """Load image-backed examples for Plant Function/Page Number classification."""
+    return load_few_shot_examples(examples_dir)
+
+
+def load_cross_page_few_shot_examples(examples_dir: Path | None) -> list[FewShotExample]:
+    """Load image-backed examples for single-row cross-page completion."""
+    return _load_few_shot_examples(examples_dir, section="stage3_cases")

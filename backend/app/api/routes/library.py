@@ -8,7 +8,7 @@ from fastapi.responses import FileResponse
 from ...core.config import ConfigError, load_settings
 from ...schemas.library import JobDetail, JobSummary, ProcessUploadResponse
 from ...services.library_store import list_jobs, load_job, remove_job
-from ...services.pdf_pipeline import process_pdf_upload
+from ...services.pdf_pipeline import process_pdf_upload, resume_pdf_extraction_job
 
 
 router = APIRouter(prefix="/api/v1", tags=["library"])
@@ -38,6 +38,19 @@ async def process_pdf(
     )
 
 
+@router.post("/library/{job_id}/resume", response_model=ProcessUploadResponse)
+async def resume_job(
+    job_id: str,
+    background_tasks: BackgroundTasks,
+    force: bool = False,
+) -> ProcessUploadResponse:
+    return await resume_pdf_extraction_job(
+        job_id=job_id,
+        background_tasks=background_tasks,
+        force=force,
+    )
+
+
 @router.get("/library", response_model=list[JobSummary])
 async def get_library() -> list[JobSummary]:
     return list_jobs(_library_root())
@@ -62,9 +75,14 @@ async def delete_job(job_id: str) -> dict[str, bool]:
 
 @router.get("/library/{job_id}/{section}/{filename}")
 async def get_job_file(job_id: str, section: str, filename: str) -> FileResponse:
-    if section not in {"source", "pages"}:
+    if section not in {"source", "pages", "agent"}:
         raise HTTPException(status_code=404, detail="File not found")
     return _file_response(_library_root() / job_id / section / filename)
+
+
+@router.get("/library/{job_id}/groups/{group_id}/import-xls")
+async def get_group_import_xls(job_id: str, group_id: str) -> FileResponse:
+    return _file_response(_library_root() / job_id / "groups" / group_id / "wiring-table-import.xls")
 
 
 @router.get("/library/{job_id}/groups/{group_id}/{filename}")

@@ -52,7 +52,7 @@ def pdf_bytes_to_images(content: bytes, name: str, *, max_pdf_pages: int, render
             raise InputFileError("PDF input requires PyMuPDF. Install backend requirements or upload PNG/JPG images.") from exc
 
     document = fitz.open(stream=content, filetype="pdf")
-    page_count = min(document.page_count, max_pdf_pages)
+    page_count = document.page_count if max_pdf_pages <= 0 else min(document.page_count, max_pdf_pages)
     images: list[ImagePayload] = []
     matrix = fitz.Matrix(render_scale, render_scale)
     for index in range(page_count):

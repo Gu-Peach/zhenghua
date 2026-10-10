@@ -300,7 +300,22 @@ function JobDetail({ job }) {
       <section className="group-grid">
         {groups.map((group) => <GroupCard key={group.group_id} group={group} />)}
       </section>
+      <AgentDiagnostics job={job} />
     </div>
+  )
+}
+
+function AgentDiagnostics({ job }) {
+  const diagnostics = job.manifest?.grouping_raw || {}
+  const batches = diagnostics.extraction_batches || []
+  const warnings = diagnostics.validation_warnings || []
+  const indexPages = diagnostics.drawing_index?.pages?.length || 0
+  if (!batches.length && !indexPages && !warnings.length) return null
+  return (
+    <section className="diagnostic-strip">
+      <div><strong>Agent 诊断</strong><span>索引页 {indexPages}</span><span>提取批次 {batches.length}</span><span>复核提示 {warnings.length}</span></div>
+      <a href={`/library/${job.job_id}/agent/drawing_index.json`} target="_blank" rel="noreferrer"><FileJson size={15} />索引 JSON</a>
+    </section>
   )
 }
 
@@ -319,6 +334,8 @@ function GroupCard({ group }) {
         <div className="group-actions">
           {group.json_url ? <a href={publicAssetUrl(group.json_url)} target="_blank" rel="noreferrer"><FileJson size={16} />JSON</a> : null}
           {group.xlsx_url ? <a href={publicAssetUrl(group.xlsx_url)} target="_blank" rel="noreferrer"><FileSpreadsheet size={16} />XLSX</a> : null}
+          {group.import_xlsx_url ? <a href={publicAssetUrl(group.import_xlsx_url)} target="_blank" rel="noreferrer"><FileSpreadsheet size={16} />导入 XLSX</a> : null}
+          {group.import_xls_url ? <a href={publicAssetUrl(group.import_xls_url)} target="_blank" rel="noreferrer"><FileSpreadsheet size={16} />导入 XLS</a> : null}
         </div>
       </div>
       {group.reason ? <p className="reason">{group.reason}</p> : null}

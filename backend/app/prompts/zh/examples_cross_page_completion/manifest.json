@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "description": "Image-backed few-shot examples for stage-three cross-page completion.",
+  "cases": [
+    {
+      "id": "006m01_c1",
+      "title": "006.M01 第1芯跨页补全到 006.C01 X3:3",
+      "expected": "006m01_c1/expected.json",
+      "images": [
+        {
+          "path": "../examples_extration/006m01_006c01/page_006m01.png",
+          "role": "source_page"
+        },
+        {
+          "path": "../examples_extration/006m01_006c01/page_006c01.png",
+          "role": "target_page"
+        }
+      ]
+    },
+    {
+      "id": "006m01_c2",
+      "title": "006.M01 第2芯跨页补全到 006.C01 X3:6",
+      "expected": "006m01_c2/expected.json",
+      "images": [
+        {
+          "path": "../examples_extration/006m01_006c01/page_006m01.png",
+          "role": "source_page"
+        },
+        {
+          "path": "../examples_extration/006m01_006c01/page_006c01.png",
+          "role": "target_page"
+        }
+      ]
+    }
+  ]
+}

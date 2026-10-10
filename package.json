@@ -1,0 +1,11 @@
+{
+  "name": "wiring-intelligence-monorepo",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "scripts": {
+    "dev:web": "corepack pnpm --filter @wiring/web dev",
+    "build:web": "corepack pnpm --filter @wiring/web build",
+    "lint:web": "corepack pnpm --filter @wiring/web lint",
+    "typecheck:web": "corepack pnpm --filter @wiring/web typecheck"
+  }
+}

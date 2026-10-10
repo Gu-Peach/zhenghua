@@ -2,23 +2,24 @@ from __future__ import annotations
 
 import json
 from io import BytesIO
+from pathlib import Path
 
 from openpyxl import load_workbook
 
-from backend.app.core.config import Settings, default_few_shot_examples_dir, default_prompt_path
+from backend.app.core.config import Settings, default_page_scan_few_shot_examples_dir, default_prompt_path
 from backend.app.services.library_store import list_jobs, make_manifest, manifest_to_job, write_manifest
 from backend.app.schemas.library import PageAsset, WireTableGroup
 from backend.app.core.env import load_env_files, parse_env_file
 from backend.app.schemas.wire import WireRecord
-from backend.app.services.excel_writer import records_to_xlsx_bytes
+from backend.app.services.excel_writer import records_to_xlsx_bytes, table_to_xlsx_bytes
 from backend.app.services.pdf_pipeline import _merge_cross_page_groups, _normalize_groups, PageGroup
-from backend.app.services.prompt_loader import load_few_shot_examples, load_segment_few_shot_examples
+from backend.app.services.prompt_loader import load_page_scan_few_shot_examples, load_segment_few_shot_examples
 from backend.app.services.test_case_runner import discover_case_dirs, discover_case_sources, run_test_cases
 from backend.app.services.vlm_client import (
     ImagePayload,
     VLMError,
     attach_source_metadata,
-    build_few_shot_messages,
+    build_page_scan_few_shot_messages,
     build_segment_few_shot_messages,
     parse_vlm_records,
 )
@@ -26,6 +27,24 @@ from backend.app.services.vlm_client import (
 
 def test_default_prompt_path_exists() -> None:
     assert default_prompt_path().is_file()
+
+
+def test_frontend_table_can_be_exported_to_xlsx() -> None:
+    content = table_to_xlsx_bytes(
+        ["页码", "原理号", "起点端子"],
+        [["002C01", "002C0101", "XD3:1"], ["002C02", None, "XD3:2"]],
+    )
+    workbook = load_workbook(BytesIO(content))
+    sheet = workbook.active
+
+    assert sheet.title == "放线表"
+    assert sheet.freeze_panes == "A2"
+    assert sheet.auto_filter.ref == "A1:C3"
+    assert list(sheet.values) == [
+        ("页码", "原理号", "起点端子"),
+        ("002C01", "002C0101", "XD3:1"),
+        ("002C02", None, "XD3:2"),
+    ]
 
 
 def test_default_grouping_prompt_path_exists() -> None:
@@ -69,25 +88,65 @@ def test_chat_completions_url_allows_exact_endpoint_override() -> None:
 
 
 def test_few_shot_example_assets_exist() -> None:
-    examples_dir = default_few_shot_examples_dir()
+    examples_dir = default_page_scan_few_shot_examples_dir()
     manifest = json.loads((examples_dir / "manifest.json").read_text(encoding="utf-8"))
 
-    assert len(manifest["cases"]) == 2
-    for case in manifest["cases"]:
-        assert case["expected_record_count"] > 0
+    assert len(manifest["stage2_cases"]) == 4
+    assert len(manifest["stage3_cases"]) == 3
+    for case in [*manifest["stage2_cases"], *manifest["stage3_cases"]]:
         for image in case["images"]:
             assert (examples_dir / image["path"]).is_file()
-        assert (examples_dir / case["id"] / "expected.json").is_file()
+        assert (examples_dir / case["expected"]).is_file()
+        if case.get("input"):
+            assert (examples_dir / case["input"]).is_file()
 
 
 def test_multimodal_few_shot_messages_include_images_and_expected_answers() -> None:
-    examples = load_few_shot_examples(default_few_shot_examples_dir())
-    messages = build_few_shot_messages(examples)
+    examples = load_page_scan_few_shot_examples(default_page_scan_few_shot_examples_dir())
+    messages = build_page_scan_few_shot_messages(examples)
 
-    assert [message["role"] for message in messages] == ["user", "assistant", "user", "assistant"]
+    assert [message["role"] for message in messages] == [
+        "user", "assistant", "user", "assistant",
+        "user", "assistant", "user", "assistant"
+    ]
     assert all(part["type"] == "image_url" for part in messages[0]["content"][1:])
-    assert '"start_terminal": "XD3:3"' in messages[1]["content"]
-    assert '"end_terminal": "2-RED"' in messages[3]["content"]
+    assert '"terminal": "XD21:7"' in messages[1]["content"]
+    assert '"units": []' in messages[3]["content"]
+    assert '"current": "400A"' in messages[5]["content"]
+    assert '"target_function": "003.C"' in messages[7]["content"]
+    assert "放线标记" in messages[0]["content"][0]["text"]
+    assert "放线标记" in messages[2]["content"][0]["text"]
+
+
+def test_page_scan_few_shot_expected_results_match_verified_core_counts() -> None:
+    examples = load_page_scan_few_shot_examples(default_page_scan_few_shot_examples_dir())
+    by_id = {example.id: json.loads(example.expected_json) for example in examples}
+
+    same_page = by_id["002c03_same_page_allowed_terminals"]["units"][0]["connections"]
+    assert len(same_page) == 15
+    assert same_page[0]["start"]["terminal"] == "XD21:7"
+    assert same_page[-2]["start"]["terminal"] == "XD3:60"
+    assert all(connection["status"] == "complete" for connection in same_page)
+    assert by_id["002c06_no_allowed_start"]["units"] == []
+
+    breaker = by_id["002c11_xa_breaker_current"]["units"][0]["connections"]
+    assert len(breaker) == 10
+    assert [item["current"] for item in breaker if item["start"]["terminal"] in {"XA:1", "XA:2", "XA:3"}]
+    assert any(item["current"] == "125A" for item in breaker)
+
+    cross_function = by_id["002c21_cross_function_refs"]["units"][0]["connections"]
+    assert len(cross_function) == 2
+    assert cross_function[0]["references"][0]["target_function"] == "003.C"
+    assert all(connection["start"]["name"] for connection in same_page)
+
+
+def test_page_scan_prompt_requires_line_marker_tracing() -> None:
+    prompt = default_prompt_path().read_text(encoding="utf-8")
+
+    assert "放线标记驱动的连接追踪" in prompt
+    assert "沿图中实际导线追踪" in prompt
+    assert "不能只根据端子位置、设备名称或空间相邻关系配对" in prompt
+    assert "相同放线标记不代表可以自动合并" in prompt
 
 
 def test_segment_few_shot_examples_include_two_drawing_images_and_merge_answer() -> None:
@@ -121,7 +180,7 @@ def test_env_file_parser_and_loader(tmp_path, monkeypatch) -> None:
 
 
 def test_backend_test_case_directories_are_discoverable() -> None:
-    case_root = default_prompt_path().parents[2] / "test_case"
+    case_root = Path(__file__).resolve().parents[1] / "test_case"
     case_dirs = discover_case_dirs(case_root)
 
     assert [case.name for case in case_dirs] == ["1", "2"]
@@ -342,6 +401,7 @@ def test_process_pdf_upload_writes_library_outputs(tmp_path, monkeypatch) -> Non
     monkeypatch.setenv("VLM_MODEL", "vlm")
     monkeypatch.setenv("VLM_API_KEY", "key")
     monkeypatch.setenv("VLM_LIBRARY_ROOT", str(tmp_path))
+    monkeypatch.setenv("SUPABASE_ENABLED", "false")
     monkeypatch.setattr("backend.app.services.pdf_pipeline.VLMClient", FakeClient)
     monkeypatch.setattr("backend.app.agents.wiring_graph.path_to_image_payloads", lambda path, max_pdf_pages, pdf_render_scale=2.0: fake_pdf_bytes_to_images(b"pdf", path.name, max_pdf_pages=max_pdf_pages, render_scale=pdf_render_scale))
 

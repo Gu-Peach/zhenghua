@@ -5,7 +5,6 @@ backend/.env
 .agents/
 _pylibs/
 draft_*/
-docs/
 case/
 test_case/
 *.pdf
@@ -40,4 +39,32 @@ frontend/node_modules/
 frontend/dist/
 frontend/public/library/*
 !frontend/public/library/.gitkeep
+node_modules/
+apps/*/node_modules/
+apps/web/dist/
+!apps/web/public/**/*.png
 .npm-cache/
+tmp/ui-runner/
+tmp/*.png
+tmp/*-server.log
+tmp/*-server.err
+tmp/*-version.txt
+tmp/start-test.txt
+services/agent/agent_test/**/runs/
+
+# Local tooling and extraction outputs
+.mypy_cache/
+.ruff_cache/
+.runtime/
+services/agent/runtime/
+backend/cases/
+docs/test/
+*.tsbuildinfo
+.env.*
+!.env.example
+
+# Versioned profile few-shot image assets
+!services/agent/prompts/**/*.png
+!services/agent/prompts/**/*.jpg
+!services/agent/prompts/**/*.jpeg
+!services/agent/prompts/**/*.webp

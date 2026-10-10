@@ -60,6 +60,13 @@ def write_group_outputs(job_dir: Path, group: WireTableGroup, xlsx_content: byte
         group.xlsx_url = f"{PUBLIC_LIBRARY_URL_PREFIX}/{job_dir.name}/groups/{group.group_id}/wiring-table.xlsx"
 
 
+def write_group_import_xls(job_dir: Path, group: WireTableGroup, content: bytes) -> None:
+    group_dir = job_dir / "groups" / group.group_id
+    group_dir.mkdir(parents=True, exist_ok=True)
+    (group_dir / "wiring-table-import.xls").write_bytes(content)
+    group.import_xls_url = f"{PUBLIC_LIBRARY_URL_PREFIX}/{job_dir.name}/groups/{group.group_id}/wiring-table-import.xls"
+
+
 def write_group_error(job_dir: Path, group: WireTableGroup) -> None:
     group_dir = job_dir / "groups" / group.group_id
     group_dir.mkdir(parents=True, exist_ok=True)
@@ -135,6 +142,8 @@ def manifest_to_job(job_id: str, manifest: dict[str, Any]) -> JobDetail:
         status_message=manifest.get("status_message"),
         pages=pages,
         groups=groups,
+        table_headers=list(manifest.get("table_headers") or []),
+        table_rows=list(manifest.get("table_rows") or []),
         manifest=manifest,
     )
 
@@ -147,6 +156,8 @@ def make_manifest(
     status: str,
     pages: list[PageAsset],
     groups: list[WireTableGroup],
+    table_headers: list[str] | None = None,
+    table_rows: list[list[Any]] | None = None,
     grouping_raw: Any | None = None,
     status_message: str | None = None,
 ) -> dict[str, Any]:
@@ -158,6 +169,8 @@ def make_manifest(
         "created_at": datetime.now(timezone.utc).isoformat(),
         "pages": [page.model_dump(mode="json") for page in pages],
         "groups": [group.model_dump(mode="json") for group in groups],
+        "table_headers": table_headers or [],
+        "table_rows": table_rows or [],
         "grouping_raw": grouping_raw,
         "status_message": status_message,
         "updated_at": datetime.now(timezone.utc).isoformat(),

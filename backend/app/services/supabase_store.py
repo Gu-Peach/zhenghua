@@ -109,10 +109,15 @@ def _build_rows(manifest: dict[str, Any], job_dir: Path, job_id: str) -> list[di
     source_filename = _source_filename(job_dir)
     diagnostics_path = f"{job_id}/agent/merge_decisions.json"
     all_page_paths = [
-        f"{job_id}/pages/{path.name}"
-        for path in sorted((job_dir / "pages").glob("page_*.png"))
+        f"{job_id}/{path.relative_to(job_dir).as_posix()}"
+        for path in sorted((job_dir / "pages").rglob("*.png"))
         if path.is_file()
     ]
+    manifest_pages = {
+        int(page.get("page_number")): str(page.get("url") or "")
+        for page in manifest.get("pages", [])
+        if page.get("page_number") is not None
+    }
     rows: list[dict[str, Any]] = []
     for group in manifest.get("groups", []):
         group_id = str(group.get("group_id") or "").strip()
@@ -121,11 +126,17 @@ def _build_rows(manifest: dict[str, Any], job_dir: Path, job_id: str) -> list[di
         group_dir = job_dir / "groups" / group_id
         records = group.get("records") or _read_json(group_dir / "records.json", default=[])
         page_numbers = [int(page) for page in group.get("pages", [])]
-        page_paths = [
-            f"{job_id}/groups/{group_id}/pages/page_{page:03d}.png"
-            for page in page_numbers
-            if (group_dir / "pages" / f"page_{page:03d}.png").is_file()
-        ]
+        page_paths = []
+        for page in page_numbers:
+            page_url = manifest_pages.get(page, "")
+            if page_url.startswith("/library/"):
+                page_paths.append(page_url.split("/library/", 1)[1])
+            else:
+                legacy_path = group_dir / "pages" / f"page_{page:03d}.png"
+                if legacy_path.is_file():
+                    page_paths.append(
+                        f"{job_id}/{legacy_path.relative_to(job_dir).as_posix()}"
+                    )
         rows.append(
             {
                 "job_id": job_id,
@@ -141,7 +152,15 @@ def _build_rows(manifest: dict[str, Any], job_dir: Path, job_id: str) -> list[di
                 "page_paths": page_paths,
                 "all_page_paths": all_page_paths,
                 "records_path": f"{job_id}/groups/{group_id}/records.json",
-                "xlsx_path": f"{job_id}/groups/{group_id}/wiring-table.xlsx",
+                "xlsx_path": (
+                    f"{job_id}/groups/{group_id}/wiring-table.xlsx"
+                    if (group_dir / "wiring-table.xlsx").is_file()
+                    else None
+                ),
+                "import_xlsx_path": f"{job_id}/groups/{group_id}/wiring-table-import.xlsx"
+                if (group_dir / "wiring-table-import.xlsx").is_file() else None,
+                "import_xls_path": f"{job_id}/groups/{group_id}/wiring-table-import.xls"
+                if (group_dir / "wiring-table-import.xls").is_file() else None,
                 "diagnostics_path": diagnostics_path,
                 "error": group.get("error"),
                 "metadata": {

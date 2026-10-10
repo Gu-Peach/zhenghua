@@ -1,4 +1,21 @@
-from .wire import ExportRequest, ExtractionResponse, WireRecord
+from .wire import (
+    Endpoint,
+    ExportRequest,
+    ExtractionResponse,
+    PageScanResult,
+    ReferenceEvidence,
+    WireConnection,
+    WireRecord,
+    WireUnit,
+)
 
-__all__ = ["ExportRequest", "ExtractionResponse", "WireRecord"]
-
+__all__ = [
+    "Endpoint",
+    "ExportRequest",
+    "ExtractionResponse",
+    "PageScanResult",
+    "ReferenceEvidence",
+    "WireConnection",
+    "WireRecord",
+    "WireUnit",
+]

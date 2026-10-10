@@ -1,0 +1,10 @@
+{
+  "merge": true,
+  "project_no_a": "1002001708",
+  "project_no_b": "1002001708",
+  "drawing_prefix_a": "DQ1002001708",
+  "drawing_prefix_b": "DQ1002001708",
+  "reason": "两页项目号与图号前缀均一致，应归为同一段",
+  "confidence": 0.98,
+  "needs_review": false
+}

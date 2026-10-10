@@ -42,11 +42,9 @@ async def _run(args: argparse.Namespace) -> None:
         if not pdf_path.is_file():
             raise FileNotFoundError(pdf_path)
         segment_prompt_path = settings.segment_prompt_path or settings.grouping_prompt_path
-        if segment_prompt_path is None:
-            raise ConfigError("Missing VLM segment prompt path.")
-        segment_prompt = load_prompt(segment_prompt_path)
+        segment_prompt = load_prompt(segment_prompt_path) if segment_prompt_path else ""
         _progress(
-            f"Running LangGraph agent for {pdf_path}; segment_concurrency={settings.segment_concurrency}, "
+            f"Running LangGraph agent for {pdf_path}; reference_concurrency={settings.concurrency}, "
             f"render_dpi={settings.pdf_render_dpi}"
         )
         result = await run_wiring_agent(
@@ -60,10 +58,16 @@ async def _run(args: argparse.Namespace) -> None:
         )
         state = result.state
         record_count = sum(len(records) for records in state["wiring_records"].values())
-        print(
-            f"LangGraph completed: {len(state['pages'])} page(s), "
-            f"{len(state['segments'])} segment(s), {record_count} record(s); output={args.output}"
-        )
+        if state.get("wire_units"):
+            print(
+                f"LangGraph completed: {len(state['pages'])} page(s), "
+                f"{len(state['wire_units'])} wire unit(s), {record_count} connection(s); output={args.output}"
+            )
+        else:
+            print(
+                f"LangGraph completed: {len(state['pages'])} page(s), "
+                f"{len(state['segments'])} segment(s), {record_count} record(s); output={args.output}"
+            )
         if result.extraction_errors:
             raise SystemExit(1)
         return

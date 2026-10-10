@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "description": "Shared image-backed wiring extraction case. Stage 2 and Stage 3 use the same canonical images with stage-specific inputs and expected outputs.",
+  "images": {
+    "002c03": "images/002c03.png",
+    "002c06": "images/002c06.png",
+    "002c11": "images/002c11.png",
+    "002c21": "images/002c21.png",
+    "003c20": "images/003c20.png"
+  },
+  "stage2_cases": [
+    {
+      "id": "002c03_same_page_allowed_terminals",
+      "title": "002.C/3：允许起点端子与当前页可见终点",
+      "expected": "stage2/002c03.expected.json",
+      "images": [
+        {
+          "path": "images/002c03.png",
+          "role": "source_page",
+          "note": "XD21 与 XD3 是允许起点；K2/K3 旁的 /2.1、/2.2 是设备位置参考，不是导线跨页引用。"
+        }
+      ]
+    },
+    {
+      "id": "002c06_no_allowed_start",
+      "title": "002.C/6：作为跨页目标时没有允许起点端子",
+      "expected": "stage2/002c06.expected.json",
+      "images": [
+        {
+          "path": "images/002c06.png",
+          "role": "source_page",
+          "note": "本页作为 Stage 2 来源页时没有 XD0、XA、XD10-12、XD21-24、XD3、XD5、XD4 或 XH 起点，必须输出 units=[]；不得根据 Few-shot 或跨页文字臆造 XD3。"
+        }
+      ]
+    },
+    {
+      "id": "002c11_xa_breaker_current",
+      "title": "002.C/11：XA 全量扫描、同页断路器与 Ir 电流",
+      "expected": "stage2/002c11.expected.json",
+      "images": [
+        {
+          "path": "images/002c11.png",
+          "role": "source_page",
+          "note": "识别 XA:1-7；FC1 三相 Ir=400A，FC2 三相 Ir=125A；N/PE 不填电流。"
+        }
+      ]
+    },
+    {
+      "id": "002c21_cross_function_refs",
+      "title": "002.C/21：跨 Plant Function 引用",
+      "expected": "stage2/002c21.expected.json",
+      "images": [
+        {
+          "path": "images/002c21.png",
+          "role": "source_page",
+          "note": "XD21:15 与 XD21:1 分别引用 003.C/20 第3、4列，Stage 2 只保留引用且 end=null。"
+        }
+      ]
+    }
+  ],
+  "stage3_cases": [
+    {
+      "id": "002c11_xa1_to_002c06_ta2_u2",
+      "title": "002.C/11 XA:1 跨页补全到 002.C/6 TA2:U2",
+      "input": "stage3/xa1_to_ta2_u2.task.json",
+      "expected": "stage3/xa1_to_ta2_u2.expected.json",
+      "images": [
+        {
+          "path": "images/002c11.png",
+          "role": "source_page"
+        },
+        {
+          "path": "images/002c06.png",
+          "role": "target_page"
+        }
+      ]
+    },
+    {
+      "id": "002c21_xd21_15_to_003c20_fc103",
+      "title": "002.C/21 XD21:15 跨功能补全到 003.C/20 FC103:2",
+      "input": "stage3/xd21_15_to_fc103.task.json",
+      "expected": "stage3/xd21_15_to_fc103.expected.json",
+      "images": [
+        {
+          "path": "images/002c21.png",
+          "role": "source_page"
+        },
+        {
+          "path": "images/003c20.png",
+          "role": "target_page"
+        }
+      ]
+    },
+    {
+      "id": "002c21_xd21_1_to_003c20_fc103_n",
+      "title": "002.C/21 XD21:1 跨功能补全到 003.C/20 FC103:N",
+      "input": "stage3/xd21_1_to_fc103_n.task.json",
+      "expected": "stage3/xd21_1_to_fc103_n.expected.json",
+      "images": [
+        {
+          "path": "images/002c21.png",
+          "role": "source_page"
+        },
+        {
+          "path": "images/003c20.png",
+          "role": "target_page"
+        }
+      ]
+    }
+  ]
+}

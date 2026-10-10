@@ -6,26 +6,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .env import load_env_files
+from .terminal_strips import (
+    ALLOWED_TERMINAL_STRIPS,
+    DEFAULT_TERMINAL_STRIP_MAPPING,
+    validate_terminal_strip_mapping,
+)
 
 
 class ConfigError(RuntimeError):
     """Raised when required VLM configuration is missing."""
-
-
-DEFAULT_TERMINAL_STRIP_MAPPING = {
-    "XA": "X1",
-    "XD10": "X1",
-    "XD11": "X1",
-    "XD12": "X1",
-    "XD21": "X21/X23",
-    "XD23": "X21/X23",
-    "XD22": "X22/X24",
-    "XD24": "X22/X24",
-    "XD3": "X3",
-    "XD5": "X3",
-    "XD4": "X4",
-    "XH": "X5",
-}
 
 
 @dataclass(frozen=True)
@@ -40,6 +29,9 @@ class Settings:
     image_batch_size: int
     use_response_format: bool
     prompt_path: Path
+    retry_count: int = 2
+    retry_backoff_seconds: float = 2.0
+    retry_max_backoff_seconds: float = 30.0
     # None means "do not send"; True/False is forwarded as chat_template_kwargs.enable_thinking
     # (vLLM / SGLang style, e.g. Qwen3 reasoning models).
     enable_thinking: bool | None = None
@@ -61,6 +53,8 @@ class Settings:
     keep_temp_images: bool = False
     output_mode: str = "library"
     terminal_strip_mapping: dict[str, str] = field(default_factory=lambda: dict(DEFAULT_TERMINAL_STRIP_MAPPING))
+    reference_target_limit: int = 4
+    import_template_path: Path | None = None
     segment_few_shot_images: bool = True
     segment_few_shot_examples_dir: Path | None = None
     supabase_enabled: bool = False
@@ -68,6 +62,16 @@ class Settings:
     supabase_anon_key: str | None = None
     supabase_service_role_key: str | None = None
     supabase_storage_bucket: str = "images"
+    # Three-stage page-agent configuration.
+    page_scan_prompt_path: Path | None = None
+    page_scan_few_shot_images: bool = True
+    page_scan_few_shot_examples_dir: Path | None = None
+    classification_prompt_path: Path | None = None
+    classification_few_shot_images: bool = True
+    classification_few_shot_examples_dir: Path | None = None
+    cross_page_prompt_path: Path | None = None
+    cross_page_few_shot_images: bool = True
+    cross_page_few_shot_examples_dir: Path | None = None
 
     @property
     def chat_completions_url(self) -> str:
@@ -137,31 +141,59 @@ def _terminal_strip_mapping(value: str | None) -> dict[str, str]:
     if not isinstance(raw, dict):
         raise ConfigError("VLM_TERMINAL_STRIP_MAP must be a JSON object.")
     mapping = dict(DEFAULT_TERMINAL_STRIP_MAPPING)
-    for key, mapped in raw.items():
-        if not isinstance(key, str) or not isinstance(mapped, str) or not key.strip() or not mapped.strip():
-            raise ConfigError("VLM_TERMINAL_STRIP_MAP keys and values must be non-empty strings.")
-        mapping[key.lstrip("-").upper()] = mapped.strip()
+    try:
+        mapping.update(validate_terminal_strip_mapping(raw))
+    except ValueError as exc:
+        raise ConfigError("VLM_TERMINAL_STRIP_MAP contains an unsupported terminal strip.") from exc
     return mapping
 
 
 def default_prompt_path() -> Path:
-    return Path(__file__).resolve().parents[1] / "prompts" / "wire_extraction_few_shot.md"
+    return default_page_scan_prompt_path()
 
 
 def default_grouping_prompt_path() -> Path:
-    return Path(__file__).resolve().parents[1] / "prompts" / "wire_grouping_few_shot.md"
+    return default_page_classification_prompt_path()
 
 
 def default_segment_prompt_path() -> Path:
-    return Path(__file__).resolve().parents[1] / "prompts" / "segment_decision.md"
+    return default_page_classification_prompt_path()
+
+
+def default_prompts_root() -> Path:
+    return Path(__file__).resolve().parents[1] / "prompts" / "zh"
 
 
 def default_segment_few_shot_examples_dir() -> Path:
-    return Path(__file__).resolve().parents[1] / "prompts" / "example_segment"
+    return default_prompts_root() / "example_segment"
 
 
 def default_few_shot_examples_dir() -> Path:
-    return Path(__file__).resolve().parents[1] / "prompts" / "examples_extration"
+    return default_page_scan_few_shot_examples_dir()
+
+
+def default_page_scan_prompt_path() -> Path:
+    return default_prompts_root() / "page_scan_index.md"
+
+
+def default_page_scan_few_shot_examples_dir() -> Path:
+    return default_prompts_root() / "examples_wiring" / "002c"
+
+
+def default_page_classification_prompt_path() -> Path:
+    return default_prompts_root() / "page_classification.md"
+
+
+def default_page_classification_few_shot_examples_dir() -> Path:
+    return default_prompts_root() / "examples_page_classification"
+
+
+def default_cross_page_prompt_path() -> Path:
+    return default_prompts_root() / "page_cross_page_completion.md"
+
+
+def default_cross_page_few_shot_examples_dir() -> Path:
+    return default_prompts_root() / "examples_wiring" / "002c"
 
 
 def default_library_root() -> Path:
@@ -181,9 +213,16 @@ def load_settings(
     if not resolved_model:
         raise ConfigError("Missing VLM model. Set VLM_MODEL or pass model in the request.")
 
-    prompt_path = Path(os.getenv("VLM_PROMPT_PATH", default_prompt_path()))
-    grouping_prompt_path = Path(os.getenv("VLM_GROUPING_PROMPT_PATH", default_grouping_prompt_path()))
-    segment_prompt_path = Path(os.getenv("VLM_SEGMENT_PROMPT_PATH", default_segment_prompt_path()))
+    prompt_path = Path(os.getenv("VLM_PAGE_SCAN_PROMPT_PATH", default_page_scan_prompt_path()))
+    grouping_prompt_path = None
+    segment_prompt_path = None
+    page_scan_prompt_path = Path(os.getenv("VLM_PAGE_SCAN_PROMPT_PATH", default_page_scan_prompt_path()))
+    classification_prompt_path = Path(
+        os.getenv("VLM_PAGE_CLASSIFICATION_PROMPT_PATH", default_page_classification_prompt_path())
+    )
+    cross_page_prompt_path = Path(
+        os.getenv("VLM_CROSS_PAGE_PROMPT_PATH", default_cross_page_prompt_path())
+    )
     library_root = Path(os.getenv("VLM_LIBRARY_ROOT", default_library_root()))
     resolved_base_url = base_url or _env_first("VLM_BASE_URL", "OPENAI_BASE_URL") or "https://api.openai.com/v1"
     chat_completions_endpoint = _env_first("VLM_CHAT_COMPLETIONS_URL", "OPENAI_CHAT_COMPLETIONS_URL")
@@ -194,7 +233,16 @@ def load_settings(
         chat_completions_endpoint=chat_completions_endpoint,
         model=resolved_model,
         timeout_seconds=_as_float(os.getenv("VLM_TIMEOUT_SECONDS"), 300.0),
-        max_pdf_pages=max_pdf_pages if max_pdf_pages is not None else _as_int(os.getenv("VLM_MAX_PDF_PAGES"), 50),
+        retry_count=max(0, _as_int(os.getenv("VLM_RETRY_COUNT"), 2)),
+        retry_backoff_seconds=max(0.0, _as_float(os.getenv("VLM_RETRY_BACKOFF_SECONDS"), 2.0)),
+        retry_max_backoff_seconds=max(
+            0.0,
+            _as_float(os.getenv("VLM_RETRY_MAX_BACKOFF_SECONDS"), 30.0),
+        ),
+        max_pdf_pages=max_pdf_pages if max_pdf_pages is not None else _as_int(os.getenv("VLM_MAX_PDF_PAGES"), 0),
+        reference_target_limit=max(1, _as_int(os.getenv("VLM_REFERENCE_TARGET_LIMIT"), 4)),
+        import_template_path=(Path(os.getenv("VLM_IMPORT_XLS_TEMPLATE_PATH"))
+                              if os.getenv("VLM_IMPORT_XLS_TEMPLATE_PATH") else None),
         concurrency=max(1, _as_int(os.getenv("VLM_CONCURRENCY"), 1)),
         image_batch_size=max(1, _as_int(os.getenv("VLM_IMAGE_BATCH_SIZE"), 4)),
         use_response_format=_as_bool(os.getenv("VLM_USE_RESPONSE_FORMAT"), False),
@@ -212,8 +260,8 @@ def load_settings(
             ),
         ),
         pdf_render_dpi=max(300, _as_int(os.getenv("VLM_PDF_RENDER_DPI"), 300)),
-        few_shot_images=_as_bool(os.getenv("VLM_FEW_SHOT_IMAGES"), True),
-        few_shot_examples_dir=Path(os.getenv("VLM_FEW_SHOT_EXAMPLES_DIR", default_few_shot_examples_dir())),
+        few_shot_images=False,
+        few_shot_examples_dir=None,
         segment_prompt_path=segment_prompt_path,
         segment_concurrency=max(1, _as_int(os.getenv("VLM_SEGMENT_CONCURRENCY"), 4)),
         segment_retry_count=max(0, _as_int(os.getenv("VLM_SEGMENT_RETRY_COUNT"), 1)),
@@ -221,13 +269,32 @@ def load_settings(
         keep_temp_images=_as_bool(os.getenv("VLM_KEEP_TEMP_IMAGES"), False),
         output_mode=os.getenv("VLM_OUTPUT_MODE", "library").strip().lower() or "library",
         terminal_strip_mapping=_terminal_strip_mapping(os.getenv("VLM_TERMINAL_STRIP_MAP")),
-        segment_few_shot_images=_as_bool(os.getenv("VLM_SEGMENT_FEW_SHOT_IMAGES"), True),
-        segment_few_shot_examples_dir=Path(
-            os.getenv("VLM_SEGMENT_FEW_SHOT_EXAMPLES_DIR", default_segment_few_shot_examples_dir())
-        ),
+        segment_few_shot_images=False,
+        segment_few_shot_examples_dir=None,
         supabase_enabled=_as_bool(os.getenv("SUPABASE_ENABLED"), False),
         supabase_url=(os.getenv("SUPABASE_URL") or "").rstrip("/") or None,
         supabase_anon_key=os.getenv("SUPABASE_ANON_KEY") or None,
         supabase_service_role_key=os.getenv("SUPABASE_SERVICE_ROLE_KEY") or None,
         supabase_storage_bucket=os.getenv("SUPABASE_STORAGE_BUCKET", "images").strip() or "images",
+        page_scan_prompt_path=page_scan_prompt_path,
+        page_scan_few_shot_images=_as_bool(os.getenv("VLM_PAGE_SCAN_FEW_SHOT_IMAGES"), True),
+        page_scan_few_shot_examples_dir=Path(
+            os.getenv("VLM_PAGE_SCAN_FEW_SHOT_EXAMPLES_DIR", default_page_scan_few_shot_examples_dir())
+        ),
+        classification_prompt_path=classification_prompt_path,
+        classification_few_shot_images=_as_bool(os.getenv("VLM_PAGE_CLASSIFICATION_FEW_SHOT_IMAGES"), True),
+        classification_few_shot_examples_dir=Path(
+            os.getenv(
+                "VLM_PAGE_CLASSIFICATION_FEW_SHOT_EXAMPLES_DIR",
+                default_page_classification_few_shot_examples_dir(),
+            )
+        ),
+        cross_page_prompt_path=cross_page_prompt_path,
+        cross_page_few_shot_images=_as_bool(os.getenv("VLM_CROSS_PAGE_FEW_SHOT_IMAGES"), True),
+        cross_page_few_shot_examples_dir=Path(
+            os.getenv(
+                "VLM_CROSS_PAGE_FEW_SHOT_EXAMPLES_DIR",
+                default_cross_page_few_shot_examples_dir(),
+            )
+        ),
     )

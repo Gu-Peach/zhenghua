@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "description": "Few-shot index for stage-one Plant Function and Page Number classification.",
+  "cases": [
+    {
+      "id": "006m01_identity",
+      "title": "读取 006.M 第 1 页身份",
+      "images": [
+        {"path": "006m01_identity/page_006m01.png", "role": "drawing_page"}
+      ]
+    },
+    {
+      "id": "082r50_identity",
+      "title": "读取 082.R 第 50 页身份",
+      "images": [
+        {"path": "082r50_identity/page_082r50.png", "role": "drawing_page"}
+      ]
+    }
+  ]
+}

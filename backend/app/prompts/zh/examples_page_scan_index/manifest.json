@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "description": "Few-shot index for stage-two page scanning and reference normalization.",
+  "cases": [
+    {
+      "id": "006m01_page_scan",
+      "title": "当前页起点、跨页引用和多芯线号",
+      "expected": "../examples_extration/006m01_006c01/stage2_expected.json",
+      "images": [
+        {
+          "path": "../examples_extration/006m01_006c01/page_006m01.png",
+          "role": "source_page",
+          "note": "红框和批注用于指示起点、跨页终点和导线检查位置；实际字段必须读取原始图线和放线标记。"
+        }
+      ]
+    },
+    {
+      "id": "082r50_page_scan",
+      "title": "当前页直接读取终点、SPARE 和 PE",
+      "expected": "../examples_extration/082r50/stage2_expected.json",
+      "images": [
+        {
+          "path": "../examples_extration/082r50/page_082r50.png",
+          "role": "source_page",
+          "note": "红色箭头和椭圆标出导线上的放线标记；按实际导线读取标记并匹配终点，不把无关线路并入 4111。"
+        }
+      ]
+    },
+    {
+      "id": "002c02_no_allowed_start",
+      "title": "当前页没有允许起点端子时不输出连接",
+      "expected": "002c02_no_allowed_start/expected.json",
+      "images": [
+        {
+          "path": "002c02_no_allowed_start/page_002c02.png",
+          "role": "source_page",
+          "note": "本页只有 Q1、K2、K3 等设备端子，没有允许的起点端子，因此 units 必须为空。"
+        }
+      ]
+    }
+  ]
+}
