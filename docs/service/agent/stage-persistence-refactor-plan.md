@@ -317,30 +317,101 @@ stage 使用现有英文值规范化路径，如 `page-classification/page-scan/
 
 ## 6. 提交协议、事务和故障恢复
 
-### 单项提交
+### 6.1 单项提交
 
 1. repository 校验 run 所属项目、固定输入、租约、取消状态及 Schema。
 2. 如有必需图片/大对象，先上传不可变 Storage 对象并确认 checksum；Storage 与 PostgreSQL 不存在统一事务。
-3. 调用受控 `commit_extraction_stage_item` RPC：在一个数据库事务内登记不可变项/尝试、更新 item checkpoint、按需写 Stage 1 投影及 `ITEM_COMPLETED`/失败事件。
-4. 相同成功输入返回已保存 receipt；模型成功但数据库失败时重试提交缓存的结果，不立即再次调用模型。崩溃发生在落库前仍可能重算，不能声称模型调用 exactly-once。
+3. 调用受控 `commit_extraction_stage_item` RPC：在一个数据库事务内登记不可变项/尝试、更新 item checkpoint、保存 Stage 1 未发布投影及唯一 `ITEM_COMPLETED`/失败尝试事件。不得在此步骤修改共享项目树。
+4. 按 4.8 判断幂等/冲突并返回 receipt；模型成功但数据库失败时重试提交原结果，不立即再次调用模型。崩溃发生在落库前仍可能重算，不能声称模型调用 exactly-once。
 
-### 阶段封存
+### 6.2 权威预期集合与阶段封存
 
-1. 服务端从库加载各项，构建并校验 manifest；SQL 同时核对项存在、所属 run/stage、checksum、预期项和上游清单身份。
-2. `commit_extraction_stage_manifest` RPC 原子保存 manifest、更新 checkpoint head 和阶段状态、写唯一 `STAGE_COMPLETED` 事件。Stage 1 全部投影完成才封存。
-3. RPC 返回提交 receipt 后才进入下一节点；下一节点明确执行 `load_snapshot()`，不能直接传递刚计算的 Python result。
-4. 提交成功但客户端超时可幂等重试，返回原 snapshot/event seq，不重复发事件；SSE 只能展示数据库中已提交事件。
+| 阶段 | 预期集合唯一来源 | 完成规则 |
+| --- | --- | --- |
+| Render | 服务端打开已校验 checksum 的 PDF，冻结 `page_count` 和明确处理范围到 input manifest | 完整提取必须覆盖 `1..page_count`；测试范围需提前冻结，不能在封存时缩小 |
+| Stage 1 | 已封存 Render manifest 的全部 page item ID | 全部页都有分类或显式 skipped；不允许仅列模型实际调用过的页 |
+| Stage 2 | 已封存 Stage 1 manifest 的全部 page item ID | 每页提交扫描或 skipped 及跳过理由；空白/非线表页仍在集合中 |
+| Build tasks | 已封存扫描 aggregate 的全部 canonical connection ID | 每个连接都有确定性 planning decision（需补全/已完整/无目标需复核等），防止漏掉一个连接仍封存 |
+| Stage 3 | 已封存 task manifest 的全部 task item ID | 每个任务有补全或明确 skipped/needs_review 结果；目标无法解析不能偷偷删除任务 |
+| Validation | 已封存 Stage 2 aggregate 和 Stage 3 manifest 的连接覆盖集合 | 无重复连接、补全 task_id 一致、起点受保护，所有预期连接均进入归并/校验 |
 
-不要由三个普通 repository 调用拼成“近似事务”。新 RPC 与现有事件序号分配机制复用同一锁顺序；停止依赖日志字符串推进业务状态。进度日志仍可展示，但不是提交凭据。
+input manifest 在 Render 前由服务端创建，包含 PDF checksum、物理总页数、处理范围和冻结配置，不由终端/LLM填写。Build tasks 把每个连接的 planning decision 和完整派生任务列表持久化；封存时先核对 connection 覆盖，再从这些 decision 推导任务集合。确定性 planner 自身仍须固定案例验证，数据库集合核对不能替代算法正确性测试。
 
-### 恢复/取消/并发
+封存 RPC 实施要求：
 
-- 进程重启：从 run、阶段 manifest 和 item head 加载；已完成项跳过，仅重试未提交/失败项。清空本地缓存也必须可恢复。
-- Stage 2 中途失败：保留 Stage 1 和成功扫描页；Stage 3 不启动。数据库提交冲突、Schema/权限/配置错误不盲目重试。
-- Storage 成功、数据库失败：对象可能成为孤儿；不得发布完成事件。按 run 引用扫描、保留期和显式清理策略处理，不在异常路径随意删共享对象。
-- 取消：模型批次边界检查；提交 RPC 也检查 run 未取消，避免取消后迟到结果发布完成。
-- 现有租约默认 300 秒，长模型调用可能超过它。实施需补租约续期及 fencing 校验；item/manifest RPC 拒绝旧 lease owner/generation 提交，旧 Worker 也不能 acknowledge 新 Worker 租约。
-- 用户新提取/修订建立新 run，保留原 Profile 版本与旧快照；本方案不把聊天短期记忆变成长任务事实来源。
+1. 根据 run 固定的上游 manifest 指针读取权威集合，不接受任意上游指针替换；按页/连接 ID 去重、核对集合相等，不只比较长度。100 页漏第 100 页、重复某一页凑满计数、混入另一 run 页都必须拒绝。
+2. 服务端候选 `item_refs` 必须与权威集合一一对应；SQL 验证实际 Artifact 的身份、canonical head、输入/结果摘要、状态、上游 provenance。只读失败历史不计入当前 failed count；counts 从选中 head 推导。
+3. RPC 重算 expected/completed/skipped/failed/needs_review、ready_for_next_stage。调用方不能把 `ready=true` 或自行缩小 expected 列表当完成授权；输入 DTO 不开放这些输出字段。
+4. `commit_extraction_stage_manifest` 原子保存不可变 manifest、checkpoint head、阶段状态和唯一 `STAGE_COMPLETED`。Stage 1 还执行 6.4 的发布判断；若发布资格已失效，旧 run 可封存自己的快照，但不得改共享项目树。
+5. 事务 receipt 返回后下一节点才调用 `load_snapshot()`。提交成功但 HTTP 超时的重试返回原 snapshot/event seq，不重复事件。
+
+### 6.3 最终结果与 run 收尾协议
+
+保留既有 `commit_wiring_result` 的版本创建逻辑，但正式新 run 不能直接调用不带 fencing 的入口。追加受控 wrapper 验证 lease/run/input/固定 Proposal，调用现有结果逻辑并在同一事务中保存可查的 receipt；现有 `result_proposals.committed_result_version_id/committed_at`、`result_versions.source_proposal_id` 可作为 receipt 权威来源。
+
+拟新增 `RunFinalizationReceipt`：run/project/proposal 身份、validation snapshot ID/result_digest、result version ID/number、目标终态、提交时间。收尾 checkpoint key `<run>:extraction:finalization:receipt` 的 state 为 `result_committed/finalized`，不新增对外 RunStatus 枚举；result_committed 时 run 可暂处 RUNNING，但可查询 receipt 标识“数据已提交、正在收尾”。
+
+执行顺序：
+
+1. validation snapshot 封存后生成并固定唯一 Proposal（既有 `<run>:result-proposal`），提交前查询是否已有 matching receipt。
+2. 没有 receipt 时，当前 lease owner 调用 fenced result wrapper；相同 Proposal 重试返回同一版本，不再次分配线号。存在 receipt 则只核对输入/Proposal/版本并继续收尾，不能重新识别或生成新 Proposal。
+3. 调用 `finalize_extraction_run` RPC：验证 receipt 及 lease，在同一数据库事务内写 result-version Artifact、更新 finalization checkpoint 和 run 终态、写唯一完成事件。`SUCCEEDED` 对应 RUN_COMPLETED，`NEEDS_REVIEW` 对应现有 HUMAN_INPUT_REQUIRED；事件幂等键来自 run + finalization，不依赖每次随机 UUID。
+4. finalize 成功后使用带 owner/generation 的 acknowledge；如果此处崩溃，接管者检查 finalized receipt，仅条件清理队列，不重复完成事件。
+
+故障窗口处理：
+
+- result wrapper 事务成功但 HTTP 超时：查询已提交 Proposal/result receipt，再幂等收尾；本地不知道是否成功时先查库，不直接 `_fail()`。
+- 结果已提交，Artifact/终态/事件事务失败：保留 result_committed receipt，退避重试或租约过期接管，只修复收尾。不得将业务已成功提交的 run 标 FAILED，也不得改已有结果版本。
+- 查询数据库也失败：保留未知状态，让租约到期恢复，不能猜测“结果未提交”后覆盖 run。
+- 多次收尾基础设施失败：保留可恢复任务和告警，不伪造终态；运维修复后继续 finalize，不重跑模型。
+- 取消与结果提交竞争：二者使用相同数据库锁与校验。取消先提交则结果 wrapper 拒绝；结果先提交则取消接口返回“结果已提交，收尾中/已完成”，不把该 run 改为 CANCELLED，不删业务结果。
+- 所有失败/重试/取消状态 RPC 都先检查 receipt，禁止已提交结果的 run 被异常处理覆盖为失败。
+
+### 6.4 Stage 1 项目树：未发布投影与原子发布
+
+逐页分类结果包含候选树节点，但只存在 run-scoped Artifact。未封存清单不对项目树接口可见；首次提取只展示项目和原 PDF，重新提取期间继续展示上次已发布树。
+
+拟为项目追加 `classification_publish_epoch`、`published_classification_snapshot_id`；创建用户授权的完整提取 run 时在项目事务内分配递增 epoch，并在 run 冻结 `requested_classification_epoch` 和源文件身份。最新授权 run 拥有发布资格，旧 run 不因完成得晚而覆盖新树。
+
+Stage 1 封存事务锁项目，比较 run epoch 与项目当前授权 epoch，验证完整 snapshot 后一次性：写 `workspaces/drawings` 当前业务投影、更新项目 published snapshot 指针及发布事件。只有匹配 epoch 的 run 发布；不匹配者仍可持久化自己完整分类清单并继续使用自己的快照，但共享发布指针保持不变。若新 run 失败，保留上次已发布树；恢复旧 snapshot 需显式授权发布，不能静默倒退 epoch。
+
+项目树查询以 published 指针选中完整分类 snapshot，并校验业务投影的 snapshot provenance；不使用“所有 status=classified 行”作展示数据，也不拼接两个 run 节点。历史业务结果按各自版本和 snapshot 引用定位，不能被当前树反向重映射。
+
+Stage 1 完成事件区分 `snapshot_committed` 与 `tree_published`（事件 payload，不新增跨页字段）；只有 `tree_published=true` 才通知前端更新项目树。项目级指针/投影与事件在同一事务中提交，避免封存前可见或半更新树。
+
+### 6.5 Worker 接管、状态转换、退避与 fencing
+
+拟新增类型化 `RunLease`（run_id、唯一 worker instance ID、generation、expires_at、claim mode），取代只返回 run_id 的正式 dequeue。generation 保存在 run 级单调递增字段，不能因队列行删除/重建而重置；过期判断只使用数据库时钟，租约续期不改变 generation。
+
+原子 claim 同时锁定/核对 run 与 queue，分配新 generation 并决定执行模式：
+
+| 数据库状态 | claim/接管规则 | 接管后动作 |
+| --- | --- | --- |
+| QUEUED 且到 available_at | 取得 lease，同事务转换为 RUNNING | 从最后已提交清单开始；首次执行写唯一 RUN_STARTED |
+| RUNNING 且 lease 已失效 | 允许原子接管，不把 run 当无效任务 acknowledge | 增加 generation，保留 RUNNING，记录接管历史；先查 final receipt，再查阶段清单 |
+| RUNNING 且 lease 未失效 | 不可抢占 | 等待；不能删除队列行 |
+| SUCCEEDED/NEEDS_REVIEW 且 receipt 已 finalized | 只领取条件清理权限，不执行模型 | 核对终态/receipt 后清理残留队列 |
+| FAILED/CANCELLED/WAITING_INPUT | 不能隐式继续执行 | 条件清理；只有显式 resume/输入或已安排的可重试事务才可重排队 |
+
+异常分类与排队必须由持有当前 lease 的受控状态 RPC完成：
+
+- 暂时性模型/网络/Storage 错误：在无最终 receipt 条件下保存 attempt/error 历史；预算未耗尽则同事务 RUNNING→QUEUED、设置退避 available_at、释放当前 lease，保留阶段结果。
+- 退避次数/上限由固定 run 配置决定；耗尽则 FAILED，Schema/权限/配置错误不自动重试。业务缺信息转 WAITING_INPUT，已有成功项不清空。
+- 进程无异常退出记录直接崩溃：RUNNING lease 到期后走接管，不需要人工先把状态改回 QUEUED。
+- 提交失败是否属于可重试基础设施错误需单独判断；已有 result receipt 只能进入收尾恢复，不能走重新提取的失败路径。
+
+fencing 不仅覆盖 item/manifest：所有 Worker 侧 run save、阶段事件、Proposal 写入、最终结果、finalize、失败/重试/取消响应和 acknowledge 都验证 **owner + generation + 未过期**。旧 Worker 失去租约后停止后续模型批次/写入；已在途模型响应可丢弃或保存隔离诊断，不能推进共享状态。`finally` 不允许无条件按 run_id 删除队列。显式用户取消无需 Worker token，但由权限检查及同锁事务使旧 token 失效。
+
+新协议 run 的旧非 fenced mutation 入口必须拒绝该 run，不能仅要求新 Worker“自觉使用新 RPC”；旧协议兼容入口只能处理旧 run。涉及现有 `runs.save/append_event/Proposal submit/commit_wiring_result/queue acknowledge` 的生产调用需统一收口到新受控路径，避免旁路。
+
+全体新 RPC（包括 claim、取消与 result wrapper）统一锁顺序：project→run→queue→item/manifest checkpoint→event 序号锁。claim 候选初选不得持 queue 锁再倒序拿 project/run 锁；需重新设计候选锁定/再次验证，配合 SKIP LOCKED 和并发测试。租约续期同序，旧结果 RPC在 wrapper 已持项目锁后重入同锁；不得引入另一锁顺序的旁路事务。
+
+### 6.6 其他恢复约束
+
+- 从库恢复必须清空/忽略旧本地状态，已完成项跳过，仅重试未提交/失败项。Stage 2 未封存时 Stage 3 不启动。
+- Storage 成功、数据库失败可能留下孤儿；不能发布完成事件，按引用扫描及保留策略清理，不在异常路径随意删共享对象。
+- 用户新提取/修订建立新 run，保留原 Profile 版本与旧快照；本方案不把短期聊天记忆变成长任务事实来源。
+- 上述 RPC负责一致性，日志/进度队列只负责展示，不能充当提交/恢复凭据。
 
 ## 7. 数据库 migration 与权限
 
