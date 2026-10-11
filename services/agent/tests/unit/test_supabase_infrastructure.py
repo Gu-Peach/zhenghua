@@ -22,6 +22,19 @@ from agent_service.infrastructure.supabase_repositories import (
 )
 
 
+@pytest.mark.parametrize("status_code", [200, 204])
+def test_void_rpc_accepts_empty_success_response(status_code: int) -> None:
+    async def run() -> None:
+        client = SupabaseClient(
+            base_url="http://supabase.local",
+            service_role_key="secret-test-key",
+            transport=httpx.MockTransport(lambda _request: httpx.Response(status_code)),
+        )
+        assert await client.rpc("publish_profile_package", {"package_id": str(uuid4())}) is None
+
+    asyncio.run(run())
+
+
 def test_project_asset_paths_are_uuid_scoped_and_nested() -> None:
     project_id = str(uuid4())
     workspace_id = str(uuid4())

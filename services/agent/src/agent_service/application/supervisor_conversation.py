@@ -13,6 +13,7 @@ from ..domain.enums import ProfileDetectionStatus, RunType, ScopeType
 from ..domain.models.imports import ImportedDocument
 from ..domain.models.runs import CreateRunRequest, ProfileConfirmation, RunOptions, RunScope
 from ..domain.models.supervisor import ConversationTurn, SupervisorUserEvent, WorkflowCommand
+from ..domain.ports import ProposalSink
 from ..graphs.supervisor.graph import SupervisorGraphResult, run_supervisor_graph
 from ..infrastructure.business_imports import SupabaseBusinessImports
 from ..infrastructure.conversation_memory import (
@@ -47,6 +48,7 @@ class SupervisorConversationService:
         business_imports: SupabaseBusinessImports | None = None,
         documents: SourceDocumentProvider | None = None,
         run_control: RunControlService | None = None,
+        proposals: ProposalSink | None = None,
     ) -> None:
         self._agent = agent
         self._workflows = workflows
@@ -56,10 +58,17 @@ class SupervisorConversationService:
         self._attachment_root = attachment_root.resolve()
         self._model_name = model_name
         self._imports, self._documents, self._runs = business_imports, documents, run_control
+        self._proposals = proposals
 
     async def import_pdf(
-        self, *, conversation_id: str, user_id: str, key: str,
-        project_name: str, filename: str, content: bytes,
+        self,
+        *,
+        conversation_id: str,
+        user_id: str,
+        key: str,
+        project_name: str,
+        filename: str,
+        content: bytes,
     ) -> ImportedDocument:
         if self._imports is None or self._documents is None:
             raise ValueError("Business imports require Supabase persistence.")
@@ -69,13 +78,19 @@ class SupervisorConversationService:
                 raise ValueError("Use a new conversation for a new PDF, or reattach the same import.")
             page_count = await asyncio.to_thread(_validate_pdf, content)
             imported = await self._imports.import_pdf(
-                user_id=user_id, key=key, name=project_name, filename=Path(filename.replace("\\", "/")).name,
-                content=content, page_count=page_count,
+                user_id=user_id,
+                key=key,
+                name=project_name,
+                filename=Path(filename.replace("\\", "/")).name,
+                content=content,
+                page_count=page_count,
             )
             access = await self._documents.get(imported.source_document_id, imported.project_id)
             memory.attachments[imported.attachment_id] = ConversationAttachment(
-                attachment_id=imported.attachment_id, filename=imported.filename,
-                path=access.local_path, size=imported.size,
+                attachment_id=imported.attachment_id,
+                filename=imported.filename,
+                path=access.local_path,
+                size=imported.size,
             )
             memory.imports[imported.attachment_id] = imported
             if memory.import_key is None:
@@ -157,7 +172,8 @@ class SupervisorConversationService:
             hint = turn.target_hint.model_copy(deep=True)
             if not hint.agent_run_id:
                 hint.agent_run_id = (
-                    memory.pending_detection.run_id if memory.pending_detection
+                    memory.pending_detection.run_id
+                    if memory.pending_detection
                     else memory.agent_run_id or (memory.assignment.run_id if memory.assignment else None)
                 )
             enriched = turn.model_copy(
@@ -167,7 +183,31 @@ class SupervisorConversationService:
                     "project_id": turn.project_id or memory.project_id,
                 }
             )
-            summary = json.dumps(self.snapshot(turn.conversation_id, turn.user_id), ensure_ascii=False)
+            context = self.snapshot(turn.conversation_id, turn.user_id)
+            if memory.agent_run_id and self._runs is not None and not memory.pending_detection:
+                pending_run = await self._runs.get_required(memory.agent_run_id)
+                pending_artifacts = await self._runs.artifacts.list_for_run(memory.agent_run_id)
+                context["pending_task"] = {
+                    "run_id": pending_run.agent_run_id,
+                    "status": pending_run.status.value,
+                    "artifacts": [
+                        {
+                            "kind": item.get("kind"),
+                            "proposal_id": item.get("proposal_id"),
+                            "diagnoses": item.get("diagnoses"),
+                            "candidate_recommended": item.get("candidate_recommended"),
+                        }
+                        for item in pending_artifacts
+                        if item.get("kind") in {"result_proposal", "improvement_diagnosis"}
+                    ],
+                }
+                if self._proposals and pending_run.status.value == "NEEDS_REVIEW":
+                    for artifact in pending_artifacts:
+                        if artifact.get("kind") == "result_proposal":
+                            proposal = await self._proposals.get(str(artifact["proposal_id"]))
+                            if proposal:
+                                context["pending_task"]["result_proposal"] = proposal.model_dump(mode="json")
+            summary = json.dumps(context, ensure_ascii=False)
             contextual = _ConversationWorkflows(self, memory, self._workflows)
             result = await run_supervisor_graph(
                 agent=self._agent,
@@ -276,7 +316,9 @@ class SupervisorConversationService:
         )
 
     async def start_extraction(
-        self, command: WorkflowCommand, memory: ConversationMemory,
+        self,
+        command: WorkflowCommand,
+        memory: ConversationMemory,
     ) -> WorkflowDispatchReceipt:
         if self._runs is None or memory.assignment is None or self._imports is None:
             raise ValueError("Full extraction requires a business import and confirmed Profile.")
@@ -291,7 +333,8 @@ class SupervisorConversationService:
             raise ValueError("Profile confirmation belongs to a different PDF or project.")
         await self._imports.require_owner(imported.project_id, command.user_id)
         existing_id = await self._imports.existing_extraction(
-            imported.project_id, imported.source_document_id,
+            imported.project_id,
+            imported.source_document_id,
         )
         pending = memory.pending_detection
         detected = pending or memory.last_detection
@@ -301,29 +344,43 @@ class SupervisorConversationService:
                 raise ValueError("This import already has a differently confirmed task; create a new import.")
         else:
             confirmation = ProfileConfirmation(
-                profile=assignment.binding.profile, confirmed_by=command.user_id,
-                source_checksum=imported.checksum, detection_run_id=assignment.run_id,
+                profile=assignment.binding.profile,
+                confirmed_by=command.user_id,
+                source_checksum=imported.checksum,
+                detection_run_id=assignment.run_id,
                 detected_profile=assignment.detected_profile,
                 confidence=detected.confidence if detected else 0,
                 confirmed_at=assignment.assigned_at,
             )
-            run = await self._runs.create(CreateRunRequest(
-                run_type=RunType.FULL_EXTRACTION, project_id=imported.project_id,
-                source_document_id=imported.source_document_id, requested_by=command.user_id,
-                profile_hint=assignment.binding.profile.key, profile=assignment.binding.profile,
-                expected_result_version=0,
-                scope=RunScope(type=ScopeType.PROJECT, id=imported.project_id),
-                options=RunOptions(profile_confirmation=confirmation),
-            ), f"full-extraction:{imported.source_document_id}")
+            run = await self._runs.create(
+                CreateRunRequest(
+                    run_type=RunType.FULL_EXTRACTION,
+                    project_id=imported.project_id,
+                    source_document_id=imported.source_document_id,
+                    requested_by=command.user_id,
+                    profile_hint=assignment.binding.profile.key,
+                    profile=assignment.binding.profile,
+                    expected_result_version=0,
+                    scope=RunScope(type=ScopeType.PROJECT, id=imported.project_id),
+                    options=RunOptions(profile_confirmation=confirmation),
+                ),
+                f"full-extraction:{imported.source_document_id}",
+            )
         memory.agent_run_id = run.agent_run_id
         return WorkflowDispatchReceipt(
-            command_id=command.command_id, workflow=command.workflow,
-            status=run.status.value if run.status.value in {"QUEUED", "RUNNING", "WAITING_INPUT"}
+            command_id=command.command_id,
+            workflow=command.workflow,
+            status=run.status.value
+            if run.status.value in {"QUEUED", "RUNNING", "WAITING_INPUT"}
             else "COMPLETED",
-            agent_run_id=run.agent_run_id, message="类型已确认，三阶段提取任务已登记；进度以持久事件为准。",
-            payload={"profile_assignment": assignment.model_dump(mode="json"),
-                     "project_id": imported.project_id, "detection_only": False,
-                     "run_status": run.status.value},
+            agent_run_id=run.agent_run_id,
+            message="类型已确认，三阶段提取任务已登记；进度以持久事件为准。",
+            payload={
+                "profile_assignment": assignment.model_dump(mode="json"),
+                "project_id": imported.project_id,
+                "detection_only": False,
+                "run_status": run.status.value,
+            },
         )
 
 
@@ -363,13 +420,17 @@ class _ConversationWorkflows(WorkflowRegistry):
             if self._memory.full_extraction_requested:
                 return await self._service.start_extraction(command, self._memory)
             return WorkflowDispatchReceipt(
-                command_id=command.command_id, workflow=command.workflow, status="COMPLETED",
+                command_id=command.command_id,
+                workflow=command.workflow,
+                status="COMPLETED",
                 message="类型已经确认，本轮只检测任务已完成。",
                 payload={"profile_assignment": self._memory.assignment.model_dump(mode="json")},
             )
         attachments = command.payload.get("attachment_ids") or []
-        if command.action == "detect_profile_then_extract" and len(attachments) == 1 and (
-            str(attachments[0]) in self._memory.imports
+        if (
+            command.action == "detect_profile_then_extract"
+            and len(attachments) == 1
+            and (str(attachments[0]) in self._memory.imports)
         ):
             self._memory.full_extraction_requested = True
             if self._memory.assignment and self._memory.confirmed_attachment_ids == attachments:

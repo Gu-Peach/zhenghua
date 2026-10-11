@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
+from typing import Any
 
 from agent_service.application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
 from agent_service.domain.enums import CorrectionIssueKind, CrossPageState, ScopeType
@@ -17,6 +18,7 @@ from agent_service.domain.models.extraction_stages import (
     CrossPageCompletionRequest,
     DrawingEndpoint,
     DrawingPageInput,
+    DrawingReference,
     PageClassificationData,
     PageScanData,
     PageScanRequest,
@@ -179,5 +181,106 @@ def test_unknown_route_skips_stage3_when_stage2_confirms_same_page() -> None:
         records = await ScopedExtractionRunner(dispatcher).run(plan, bundle)
         assert records[0]["is_cross_page"] == "same_page"
         assert stages.stage3_calls == 0
+
+    asyncio.run(run())
+
+
+class ScopedCrossPageStages(Stage2ChangesToSamePage):
+    async def scan_page(self, request: Any) -> PageScanData:
+        return PageScanData(
+            units=[
+                ScannedWireUnit(
+                    unit_id="local-unit",
+                    connections=[
+                        ScannedConnection(
+                            local_connection_id="local-source",
+                            start=DrawingEndpoint(device="-XD3", location="+01F11.3", terminal="XD3:113"),
+                            is_cross_page=CrossPageState.CROSS_PAGE,
+                            references=[DrawingReference(target_function="006.C", target_drawing_page=1)],
+                        )
+                    ],
+                )
+            ]
+        )
+
+    async def resolve_cross_page(self, request: Any) -> CrossPageCompletionData:
+        self.stage3_calls += 1
+        assert request.target_page.pdf_page_number == 4
+        assert '"connection_id": "connection-1"' in request.task_context
+        return CrossPageCompletionData(
+            task_id=request.task_id,
+            end=DrawingEndpoint(terminal="X3:1"),
+            status="complete",
+        )
+
+
+def test_scoped_cross_page_matches_fresh_source_and_reaches_stage3() -> None:
+    async def run() -> None:
+        registry = ProfileRegistry(
+            profile_root=ROOT / "services/agent/profiles", workspace_root=ROOT, allow_legacy_references=True
+        )
+        registry.load_all()
+        binding = registry.bind("zh")
+        stages = ScopedCrossPageStages()
+        dispatcher = ProfileBoundStageDispatcher()
+        dispatcher.register(binding.adapter, stages)
+        original = {
+            "connection_id": "connection-1",
+            "start_code": "+01F11.3",
+            "start_device": "-XD3",
+            "start_location": "+01F11.3",
+            "start_terminal": "XD3:113",
+            "start": {"device": "+01F11.3", "terminal": "XD3:113"},
+            "end_terminal": "999",
+            "is_cross_page": "cross_page",
+        }
+        bundle = CorrectionEvidenceBundle(
+            facts=CorrectionFacts(
+                feedback_id="feedback-1",
+                issue_kind=CorrectionIssueKind.RECOGNITION_ERROR,
+                is_cross_page=CrossPageState.CROSS_PAGE,
+                target=FeedbackTarget(
+                    type=ScopeType.CONNECTION,
+                    id="connection-1",
+                    project_id="project",
+                    result_version_id="version",
+                ),
+            ),
+            context=CorrectionContext(
+                feedback_id="feedback-1",
+                observed_problem="重新识别跨页终点",
+                constraints=CorrectionConstraints(
+                    allowed_connection_ids=["connection-1"], allowed_fields=["end_terminal"]
+                ),
+            ),
+            profile=binding,
+            base_result_version=1,
+            current_records=[original],
+            evidence_ids=["evidence"],
+            page_scan_requests=[
+                PageScanRequest(
+                    run_id="run",
+                    project_id="project",
+                    profile=binding,
+                    page=DrawingPageInput(pdf_page_number=3, image_path=Path("source.png")),
+                )
+            ],
+            available_pages=[
+                DrawingPageInput(
+                    pdf_page_number=4,
+                    image_path=Path("target.png"),
+                    plant_function="006.C",
+                    drawing_page_number=1,
+                )
+            ],
+        )
+        records = await ScopedExtractionRunner(dispatcher).run(
+            CorrectionRoutePlanner().plan(bundle.facts), bundle
+        )
+        assert stages.stage3_calls == 1
+        assert records[0]["connection_id"] == "connection-1"
+        assert records[0]["end_terminal"] == "X3:1"
+        assert records[0]["start"] == original["start"]
+        assert original["end_terminal"] == "999"
 
     asyncio.run(run())

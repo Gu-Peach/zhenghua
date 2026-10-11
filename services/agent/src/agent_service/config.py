@@ -91,6 +91,7 @@ class AgentSettings:
     server_base_url: str = "http://127.0.0.1:8000"
     internal_token: str | None = None
     profile_root: Path = repository_root() / "services" / "agent" / "profiles"
+    profile_packages_enabled: bool = False
     persistence_backend: str = "memory"
     checkpoint_backend: str = "memory"
     supabase_url: str | None = None
@@ -171,6 +172,7 @@ class AgentSettings:
             server_base_url=os.getenv("AGENT_SERVER_BASE_URL", "http://127.0.0.1:8000").rstrip("/"),
             internal_token=os.getenv("AGENT_INTERNAL_TOKEN") or None,
             profile_root=profile_root.resolve(),
+            profile_packages_enabled=_as_bool(os.getenv("AGENT_PROFILE_PACKAGES_ENABLED"), False),
             persistence_backend=persistence_backend,
             checkpoint_backend=checkpoint_backend,
             supabase_url=(_first_env("AGENT_SUPABASE_URL", "SUPABASE_URL") or "").rstrip("/")

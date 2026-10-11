@@ -8,6 +8,7 @@ from pydantic import Field, model_validator
 
 from ..enums import SupervisorIntent, SupervisorTurnStatus, WorkflowKind
 from .common import FrozenModel, StrictModel, utc_now
+from .result_data import PrepareCorrectionRequest
 
 
 class SupervisorTargetHint(StrictModel):
@@ -21,6 +22,8 @@ class SupervisorTargetHint(StrictModel):
     workspace_name: str | None = None
     workspace_page: str | None = None
     terminal: str | None = None
+    start_terminal: str | None = None
+    end_terminal: str | None = None
     proposal_id: str | None = None
     candidate_id: str | None = None
     field: str | None = None
@@ -44,6 +47,7 @@ class SupervisorModelOutput(StrictModel):
     requires_input: bool = False
     question: str | None = None
     extracted_hints: dict[str, str] = Field(default_factory=dict)
+    correction_items: list[PrepareCorrectionRequest] = Field(default_factory=list, max_length=100)
 
     @model_validator(mode="after")
     def validate_question(self) -> SupervisorModelOutput:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import os
 from pathlib import Path
 from typing import Protocol
@@ -18,6 +19,8 @@ class CorrectionDataProvider(Protocol):
 
 
 class CorrectionDataRepository(CorrectionDataProvider, Protocol):
+    async def materialize_page(self, page: DrawingPageInput) -> DrawingPageInput: ...
+
     async def register(
         self,
         bundle: CorrectionEvidenceBundle,
@@ -50,6 +53,9 @@ class InMemoryCorrectionDataProvider:
             )
         return bundle.model_copy(deep=True)
 
+    async def materialize_page(self, page: DrawingPageInput) -> DrawingPageInput:
+        return page
+
 
 class SupabaseCorrectionDataRepository:
     """Durable correction context consumed by scoped correction workers."""
@@ -64,6 +70,19 @@ class SupabaseCorrectionDataRepository:
         requested_by: str | None = None,
     ) -> None:
         target = bundle.facts.target
+        existing = await self._client.select(
+            "feedback_items", params={"id": f"eq.{bundle.facts.feedback_id}"}
+        )
+        if existing:
+            previous = CorrectionEvidenceBundle.model_validate(existing[0]["correction_bundle"])
+            if (
+                previous.facts != bundle.facts
+                or previous.context.field != bundle.context.field
+                or previous.context.suggested_value != bundle.context.suggested_value
+                or previous.base_result_version != bundle.base_result_version
+            ):
+                raise ValueError("Feedback id already exists with different correction input.")
+            return  # Never reset accepted feedback to prepared on a network retry.
         await self._client.insert(
             "feedback_items",
             {
@@ -79,8 +98,6 @@ class SupabaseCorrectionDataRepository:
                 "base_result_version_id": target.result_version_id,
                 "correction_bundle": bundle.model_dump(mode="json"),
             },
-            on_conflict="id",
-            upsert=True,
         )
 
     async def get_bundle(self, feedback_id: str) -> CorrectionEvidenceBundle:
@@ -104,9 +121,7 @@ class SupabaseCorrectionDataRepository:
             for request in bundle.page_scan_requests
         ]
         bundle.cross_page_requests = [
-            request.model_copy(
-                update={"target_page": await self._materialize(bundle, request.target_page)}
-            )
+            request.model_copy(update={"target_page": await self._materialize(bundle, request.target_page)})
             for request in bundle.cross_page_requests
         ]
         return bundle
@@ -133,6 +148,18 @@ class SupabaseCorrectionDataRepository:
             )
             await asyncio.to_thread(_atomic_write, destination, content)
         return page.model_copy(update={"image_path": destination})
+
+    async def materialize_page(self, page: DrawingPageInput) -> DrawingPageInput:
+        if not page.storage_bucket or not page.storage_path:
+            if page.image_path.is_file():
+                return page
+            raise ValueError("No durable drawing reference.")
+        digest = hashlib.sha256(f"{page.storage_bucket}/{page.storage_path}".encode()).hexdigest()
+        path = self._cache_root / "targets" / f"{digest}.png"
+        if not path.is_file():
+            content = await self._client.download(bucket=page.storage_bucket, object_path=page.storage_path)
+            await asyncio.to_thread(_atomic_write, path, content)
+        return page.model_copy(update={"image_path": path})
 
 
 def _atomic_write(destination: Path, content: bytes) -> None:

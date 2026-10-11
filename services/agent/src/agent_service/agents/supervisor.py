@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from ..domain.enums import SupervisorIntent, SupervisorTurnStatus, WorkflowKind
@@ -18,6 +19,9 @@ class SupervisorAgent:
     def __init__(self, *, gateway: ModelGateway, prompt_path: Path) -> None:
         self._gateway = gateway
         self._prompt = prompt_path.read_text(encoding="utf-8")
+        self._prompt += "\n输出必须遵守以下 JSON Schema（字段名、类型和枚举均以此为准）：\n" + json.dumps(
+            SupervisorModelOutput.model_json_schema(), ensure_ascii=False
+        )
 
     async def decide(
         self,
@@ -45,6 +49,7 @@ class SupervisorAgent:
                 ],
                 metadata={
                     "conversation_id": turn.conversation_id,
+                    "user_id": turn.user_id,
                     "turn_id": turn.turn_id,
                     "project_id": turn.project_id,
                 },
@@ -59,7 +64,22 @@ class SupervisorAgent:
         turn: ConversationTurn,
         model_output: SupervisorModelOutput,
     ) -> SupervisorDecision:
+        # Model hints are search terms, never authority or a replacement for stable IDs.
+        target = turn.target_hint.model_copy(deep=True)
+        for key in type(target).model_fields:
+            if getattr(target, key) is None and model_output.extracted_hints.get(key):
+                setattr(target, key, model_output.extracted_hints[key])
+        turn = turn.model_copy(update={"target_hint": target})
         missing_fields = self._missing_fields(turn, model_output.intent)
+        if model_output.intent == SupervisorIntent.CORRECT_RESULT and model_output.correction_items:
+            missing_fields = [
+                field
+                for field in missing_fields
+                if field == "project_id"
+                and not all(
+                    item.query.project_id or item.query.project_name for item in model_output.correction_items
+                )
+            ]
         if (
             model_output.requires_input
             or model_output.confidence < 0.65
@@ -92,6 +112,7 @@ class SupervisorAgent:
                 "attachment_ids": list(turn.attachment_ids),
                 "extracted_hints": dict(model_output.extracted_hints),
                 "user_message": turn.message,
+                "correction_items": [item.model_dump(mode="json") for item in model_output.correction_items],
             },
         )
         return SupervisorDecision(
@@ -123,6 +144,8 @@ class SupervisorAgent:
                     turn.target_hint.workspace_id,
                     turn.target_hint.wire_number,
                     turn.target_hint.terminal,
+                    turn.target_hint.start_terminal,
+                    turn.target_hint.end_terminal,
                 )
             ):
                 missing.append("correction_target")

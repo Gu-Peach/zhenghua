@@ -6,6 +6,8 @@
 
 ## 1. 契约原则
 
+2026-10-11 用户调整局部修订语义，见 [ADR-0010](../../adr/0010-in-place-confirmed-corrections.md)。当前领域契约版本为 3，checksum 为 `sha256:0d8e56f256c6e1d5d8f0ed2c7e8d24a12c7d6986dcb805d1ec8aed1d4512e9be`。局部 correction 确认后原位更新稳定连接 ID；`base_result_version` 为提取代次，新增 `base_result_revision` 校验代次内修订。receipt 新增 `result_revision/update_mode/updated_connection_ids`，结果分页响应新增 `result_revision`。旧 snapshot receipt 保留兼容；未提交且没有 base revision 的旧 proposal 需重新生成。
+
 - Server 是业务身份、权限和生产结果的权威；
 - Agent 是执行、诊断和候选结果的权威；
 - 请求传 ID 和受控资源引用，不传任意本地路径；
@@ -126,6 +128,10 @@ Content-Type: application/json
 ```
 
 ## 4.1 Supervisor 对话契约
+
+终端只读观测新增 `GET /v1/runs/{run_id}/model-outputs?user_id=...` 和 `GET /v1/supervisor/conversations/{conversation_id}/turns/{turn_id}/model-output?user_id=...`，沿用内部 Bearer。run 输出校验 requested_by，Supervisor 输出按已记录 user/conversation 过滤。返回结构化 output、agent/model/stage/item/耗时/usage/安全 schema 错误；不返回私有推理、system Prompt、请求头、图片 base64 或未解析自由文本。此观测不推进工作流、不新增数据库结构。
+
+纠错检索 query/target_hint 新增可选 `start_terminal`、`end_terminal` 用于明确方向的精确匹配；原 `terminal` 继续匹配任一端。`workspace_page/wire_number` 的契约仍为字符串（保留前导零），输入边界也接受整数并无损转为字符串。权限和稳定连接 ID 的确认要求不变。当前领域 Schema checksum 为 `sha256:f13be2ce6ef98ac7b45db8de661d1f0e7de646fb3c1fb974dbe767e91b62fb12`。
 
 Web 不直接调用 Agent。业务 Server 保存会话并将结构化回合提交给 Supervisor：
 

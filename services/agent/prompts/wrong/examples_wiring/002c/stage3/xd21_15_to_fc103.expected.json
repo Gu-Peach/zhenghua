@@ -1,0 +1,22 @@
+{
+  "task_id": "002c21-xd21-15-to-003c20-fc103",
+  "end": {
+    "part": null,
+    "location": "+01F11.3",
+    "device": "-FC103",
+    "name": "EXTERNAL POWER SUPPLY CIRCUIT BREAKER",
+    "terminal_board": "FC103",
+    "terminal_code": null,
+    "terminal_strip": null,
+    "terminal": "2"
+  },
+  "intermediate_points": [],
+  "current": null,
+  "current_basis": null,
+  "current_source_text": null,
+  "status": "resolved",
+  "needs_review": false,
+  "confidence": 0.98,
+  "source_note": "根据 002.C/21 的 003.C/20.3 引用和线号 003C2021，在 003.C/20 第3列确认 -FC103 下端端子2",
+  "warnings": []
+}

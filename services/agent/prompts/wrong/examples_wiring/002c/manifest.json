@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "description": "Shared image-backed wiring extraction case. Stage 2 and Stage 3 use canonical images with stage-specific inputs and expected outputs. Stage 3 sends only the target-page image.",
+  "images": {
+    "002c03": "images/002c03.png",
+    "002c06": "images/002c06.png",
+    "002c11": "images/002c11.png",
+    "002c21": "images/002c21.png",
+    "003c20": "images/003c20.png"
+  },
+  "stage2_cases": [
+    {
+      "id": "002c11_xa_breaker_current",
+      "title": "002.C/11：XA 全量扫描、同页断路器与 Ir 电流",
+      "expected": "stage2/002c11.expected.json",
+      "images": [
+        {
+          "path": "images/002c11.png",
+          "role": "source_page",
+          "note": "识别 XA:1-7；FC1 三相 Ir=400A，FC2 三相 Ir=125A；N/PE 不填电流。"
+        }
+      ]
+    }
+  ],
+  "stage3_cases": [
+    {
+      "id": "002c11_xa1_to_002c06_ta2_u2",
+      "title": "002.C/11 XA:1 跨页补全到 002.C/6 TA2:U2",
+      "input": "stage3/xa1_to_ta2_u2.task.json",
+      "expected": "stage3/xa1_to_ta2_u2.expected.json",
+      "images": [
+        {
+          "path": "images/002c06.png",
+          "role": "target_page"
+        }
+      ]
+    }
+  ]
+}

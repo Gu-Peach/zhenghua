@@ -39,6 +39,7 @@ class RunOptions(StrictModel):
     keep_stage_artifacts: bool = True
     model_override: str | None = None
     profile_confirmation: ProfileConfirmation | None = None
+    correction_feedback_ids: list[str] = Field(default_factory=list, max_length=100)
 
 
 class ProfileConfirmation(StrictModel):

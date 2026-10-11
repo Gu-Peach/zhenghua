@@ -49,6 +49,7 @@ class ResultProposal(StrictModel):
     agent_run_id: str = Field(min_length=1)
     project_id: str = Field(min_length=1)
     base_result_version: int = Field(ge=0)
+    base_result_revision: int | None = Field(default=None, ge=1)
     profile: ProfileRef
     model: ModelRef
     scope: RunScope
@@ -56,6 +57,10 @@ class ResultProposal(StrictModel):
     unchanged_assertions: list[UnchangedAssertion] = Field(default_factory=list)
     validation: ProposalValidation
     status: Literal["READY_FOR_REVIEW", "NEEDS_REVIEW", "REJECTED"] = "READY_FOR_REVIEW"
+    feedback_ids: list[str] = Field(default_factory=list)
+    stage_artifact_ids: list[str] = Field(default_factory=list)
+    trace_ids: list[str] = Field(default_factory=list)
+    feedback_origin: str = "user"
 
 
 class ResultPatchProposal(ResultProposal):

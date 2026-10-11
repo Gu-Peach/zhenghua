@@ -73,6 +73,7 @@ from .infrastructure.supabase_improvement import (
     SupabaseCandidateRepository,
     SupabaseEvalRepository,
 )
+from .infrastructure.supabase_profile_packages import SupabaseProfilePackageRepository
 from .infrastructure.supabase_repositories import (
     SupabaseArtifactRepository,
     SupabaseCheckpointStore,
@@ -108,6 +109,8 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(_application: FastAPI) -> AsyncIterator[None]:
+        if profile_packages is not None:
+            await profile_packages.load_registry(registry)
         worker_task = (
             asyncio.create_task(worker.run_forever(), name="agent-inline-worker")
             if resolved_settings.inline_worker
@@ -141,6 +144,7 @@ def create_app(
     evals: EvalRepository
     traces: TraceStore
     supabase = None
+    profile_packages = None
     project_assets = None
     if resolved_settings.persistence_backend == "supabase":
         if not resolved_settings.supabase_configured:
@@ -152,6 +156,15 @@ def create_app(
             service_role_key=resolved_settings.supabase_service_role_key or "",
             timeout_seconds=resolved_settings.supabase_request_timeout_seconds,
         )
+        if resolved_settings.profile_packages_enabled:
+            profile_packages = SupabaseProfilePackageRepository(
+                supabase,
+                cache_root=resolved_settings.workspace_root
+                / "services"
+                / "agent"
+                / ".runtime"
+                / "profile-packages",
+            )
         runs = SupabaseRunRepository(supabase, durable_extraction=True)
         events = SupabaseEventRepository(supabase)
         artifacts = SupabaseArtifactRepository(supabase)
@@ -174,6 +187,7 @@ def create_app(
             / "agent"
             / ".runtime"
             / "drawings",
+            profile_packages=profile_packages,
         )
         correction_data = SupabaseCorrectionDataRepository(
             supabase,
@@ -207,10 +221,17 @@ def create_app(
     application.state.proposal_repository = proposals
     application.state.checkpoint_store = checkpoints
     application.state.supabase = supabase
+    application.state.trace_store = traces
+    application.state.profile_packages = profile_packages
     application.state.project_assets = project_assets
-    business_imports = SupabaseBusinessImports(
-        supabase, bucket=resolved_settings.supabase_storage_bucket,
-    ) if supabase else None
+    business_imports = (
+        SupabaseBusinessImports(
+            supabase,
+            bucket=resolved_settings.supabase_storage_bucket,
+        )
+        if supabase
+        else None
+    )
     application.state.business_imports = business_imports
     worker = AgentWorker(
         runs=runs,
@@ -224,6 +245,9 @@ def create_app(
     result_data_tool = ControlledResultDataTool(
         repository=result_data_repository,
         correction_data=correction_data,
+        authorize=result_data_repository.authorize_correction
+        if isinstance(result_data_repository, SupabaseResultDataRepository)
+        else None,
     )
     model_gateway = None
     profile_detection_tool: ProfileDetectionTool | None = None
@@ -259,17 +283,25 @@ def create_app(
             profile_detection=profile_detection_tool,
             project_assets=project_assets,
             durable_stages=durable_stages,
+            profile_packages=profile_packages,
         ),
     )
     correction_stages = (
-        build_extraction_stage_dispatcher(resolved_settings)
+        build_extraction_stage_dispatcher(resolved_settings, gateway=model_gateway)
         if resolved_settings.model_configured
         else ProfileBoundStageDispatcher()
     )
     correction_executor = CorrectionWorkflowExecutor(
         data=correction_data,
-        stages=ScopedExtractionRunner(correction_stages),
+        stages=ScopedExtractionRunner(
+            correction_stages,
+            artifacts=artifacts,
+            publisher=run_control.publisher,
+            materialize=correction_data.materialize_page,
+        ),
         model_name=resolved_settings.default_model or "unconfigured",
+        artifacts=artifacts,
+        publisher=run_control.publisher,
     )
     worker.register(RunType.SCOPED_CORRECTION, correction_executor)
     worker.register(RunType.SCOPED_REMEDIATION, correction_executor)
@@ -298,6 +330,7 @@ def create_app(
             ),
             sandbox=ProfileSandbox(default_sandbox_root(resolved_settings.workspace_root)),
             candidates=candidates,
+            profile_packages=profile_packages,
         )
         worker.register(
             RunType.IMPROVEMENT_CANDIDATE,
@@ -305,6 +338,7 @@ def create_app(
                 result_data=result_data_repository,
                 workflow=improvement_workflow,
                 artifacts=artifacts,
+                traces=traces,
             ),
         )
         workflows = WorkflowRegistry()
@@ -337,6 +371,7 @@ def create_app(
                 business_imports=business_imports,
                 documents=source_documents,
                 run_control=run_control,
+                proposals=proposals,
                 attachment_root=(
                     resolved_settings.workspace_root / "services" / "agent" / ".runtime" / "conversations"
                 ),

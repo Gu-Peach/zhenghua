@@ -32,6 +32,7 @@ class ProjectResultsResponse(StrictModel):
     project_id: str
     result_version_id: str | None = None
     result_version: int | None = None
+    result_revision: int | None = None
     offset: int
     limit: int
     items: list[dict[str, Any]]

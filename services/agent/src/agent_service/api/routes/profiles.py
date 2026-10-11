@@ -4,6 +4,8 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
+from ...domain.models.runs import ProfileRef
+from ...infrastructure.supabase_profile_packages import SupabaseProfilePackageRepository
 from ...profiles import ProfileRegistryError
 from ..dependencies import require_internal_service
 from ..schemas import ProfileRulesResponse
@@ -53,3 +55,13 @@ async def get_profile_rules(
         status=binding.status,
         rules=binding.rules,
     )
+
+
+@router.get("/{profile_key}/versions/{version}/package")
+async def get_profile_package(
+    profile_key: str, version: str, checksum: str, request: Request
+) -> dict[str, object]:
+    packages: SupabaseProfilePackageRepository | None = request.app.state.profile_packages
+    if packages is None:
+        raise HTTPException(status_code=503, detail="Profile package mode is not enabled.")
+    return await packages.display(ProfileRef(key=profile_key, version=version, checksum=checksum))

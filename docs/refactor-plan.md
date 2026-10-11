@@ -66,7 +66,7 @@ flowchart LR
 - 独立 Agent API 使用 `8100` 端口接收异步 run；Worker 负责耗时处理、checkpoint、阶段事件和结果 proposal。
 - Graph 只编排稳定阶段，不包含某家图纸的硬编码规则。
 - Profile 封装模板识别、Prompt、Few-shot、引用解析、字段策略和校验器。
-- PostgreSQL 保存结构化事实；Storage 保存 PDF、图片和阶段产物。完整提取可通过受控 RPC 创建 `draft/needs_review` 结果版本；局部修订不得覆盖原版本，只有用户明确确认后才能通过同一 RPC 创建新 `accepted` 版本。`apps/api` 接入后承担外部鉴权入口。
+- PostgreSQL 保存结构化事实；Storage 保存 PDF、图片和阶段产物。完整提取通过受控 RPC 创建结果代次；局部修订由用户确认后通过独立受控 RPC 原位更新当前记录并保存 before/after 审计，连接 ID/线号不变、revision 递增，旧代次不改。`apps/api` 接入后承担外部鉴权入口。详见 ADR-0010。
 
 ## 4. Monorepo 目录
 
@@ -282,6 +282,8 @@ class DrawingProfile(Protocol):
 当前文档提取已按 [ADR-0005](./adr/0005-retire-zh-workflow-runtime.md) 拆分：公共 `graphs/document_extraction` 调用注入的 `ExtractionPolicy`；ZH 的端子、方向、电流和引用策略位于 `agent_service.profiles.zh`。PDF/checkpoint/XLSX 位于 `infrastructure/document`，导出字段格式化通过 `ExportFields` 注入。`zh_workflow` 兼容目录已删除，所有 Python 调用直接使用新模块。
 
 ### 8.3 反馈闭环
+
+用户已明确调整局部纠错语义，见 [ADR-0010](./adr/0010-in-place-confirmed-corrections.md)：确认后的直接修订和 Stage 2/3 重识别原位更新当前结果中的既有连接，不再克隆整个结果集合；连接 ID/线号保持稳定，使用集合 revision 和 record_version 校验，反馈 before/after 保留审计。旧文档的“局部修订创建新 accepted 版本”不再适用于新提交路径；完整提取仍保留结果代次。
 
 ```text
 用户修订

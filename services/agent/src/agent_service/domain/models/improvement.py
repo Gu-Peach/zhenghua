@@ -34,6 +34,10 @@ class Diagnosis(StrictModel):
     recommended_action: str = Field(min_length=1)
     profile_candidate_required: bool = False
     needs_human_input: bool = False
+    profile_path: str | None = None
+    problem_excerpt: str | None = None
+    recommended_change: str | None = None
+    regression_cases: list[str] = Field(default_factory=list)
 
 
 class AcceptedFeedback(StrictModel):
@@ -48,9 +52,12 @@ class AcceptedFeedback(StrictModel):
     after: dict[str, Any]
     evidence_ids: list[str] = Field(min_length=1)
     stage_artifact_ids: list[str] = Field(min_length=1)
-    trace_ids: list[str] = Field(min_length=1)
+    trace_ids: list[str] = Field(default_factory=list)
     prompt_checksum: str = Field(min_length=1)
     severity: Literal["low", "medium", "high", "critical"] = "medium"
+    correction_run_id: str | None = None
+    feedback_origin: str = "user"
+    context: dict[str, Any] = Field(default_factory=dict)
 
 
 class FailureSignature(StrictModel):
@@ -119,6 +126,8 @@ class ProfileCandidate(StrictModel):
     sandbox_path: str
     checksum: str
     created_at: datetime = Field(default_factory=utc_now)
+    resource_package_id: str | None = None
+    resource_package_checksum: str | None = None
 
 
 class EvalCaseResult(StrictModel):

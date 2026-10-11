@@ -161,7 +161,22 @@ class OpenAICompatibleModelGateway:
                         last_error = error
                     else:
                         content, usage = self._read_response(response)
-                        parsed = self._parse_output(content, request.output_model)
+                        try:
+                            parsed = self._parse_output(content, request.output_model)
+                        except ModelGatewayError as exc:
+                            await self._trace(
+                                request,
+                                result=ModelResponse(
+                                    content=content,
+                                    parsed=None,
+                                    model=model,
+                                    duration_seconds=perf_counter() - start,
+                                    attempts=attempts,
+                                    usage=usage,
+                                ),
+                                error=exc,
+                            )
+                            raise
                         result = ModelResponse(
                             content=content,
                             parsed=parsed,
@@ -224,11 +239,19 @@ class OpenAICompatibleModelGateway:
         try:
             return output_model.model_validate(cls._load_json(content))
         except (ValueError, ValidationError) as exc:
+            fields = (
+                [
+                    {"location": list(item["loc"]), "type": item["type"]}
+                    for item in exc.errors(include_input=False, include_context=False, include_url=False)
+                ]
+                if isinstance(exc, ValidationError)
+                else [{"location": [], "type": "invalid_json"}]
+            )
             raise ModelGatewayError(
                 ErrorCode.MODEL_SCHEMA_INVALID,
                 "Model output failed structured schema validation.",
                 retryable=False,
-                details={"schema": output_model.__name__},
+                details={"schema": output_model.__name__, "validation_errors": fields},
             ) from exc
 
     @staticmethod
@@ -266,7 +289,11 @@ class OpenAICompatibleModelGateway:
                 "duration_seconds": result.duration_seconds if result else None,
                 "usage": result.usage if result else {},
                 "metadata": request.metadata,
+                "response_content": result.content if result else None,
                 "error_type": type(error).__name__ if error else None,
+                "schema_error": error.details
+                if isinstance(error, ModelGatewayError) and error.code == ErrorCode.MODEL_SCHEMA_INVALID
+                else None,
             },
         )
 

@@ -16,7 +16,7 @@
 -> 局部重提取
 -> 新旧结果 diff
 -> 人工确认
--> Server 创建新结果版本
+-> Server 原位更新当前连接，revision+1，记录 before/after
 ```
 
 它不修改生产 Profile，只在本项目生成结果补丁。
@@ -216,6 +216,8 @@ Agent ResultPatchProposal
 修订被接受后，Server 发送 `CORRECTION_ACCEPTED` 事件进入 Improvement Intake；Supervisor 不同步等待 Improvement 完成。
 
 ## 8. Improvement Harness
+
+Improvement 的可复现输入必须绑定当次 Profile 资源包版本。资源包由 Prompt、Few-shot、expected JSON、rules/schema 和 manifest 组成，生产形态存放在私有 Bucket，数据库保存版本、对象前缀和 checksum。纠错 Worker 与 Improvement Worker 按 frozen checksum 重新下载并校验，不能读取未绑定的本地 active 文件。完整字段、Bucket 路径、批次拆分和 test0 手工验收见[纠错 Agent 与 Profile 资源包改造方案](./correction-agent-refactor-plan.md)。
 
 ### 8.1 样本入口
 

@@ -86,6 +86,18 @@ class ProfileRegistry:
             key=lambda item: (item.manifest.key, item.manifest.semantic_version),
         )
 
+    def register_snapshot(self, snapshot: ProfileSnapshot) -> None:
+        """Install a verified remote snapshot without rereading mutable local assets."""
+        self.load_rules(snapshot)
+        for key, previous in list(self._snapshots.items()):
+            if key[0] == snapshot.manifest.key and key[1] != snapshot.manifest.version:
+                self._snapshots[key] = previous.model_copy(
+                    update={
+                        "manifest": previous.manifest.model_copy(update={"status": ProfileStatus.RETIRED})
+                    }
+                )
+        self._snapshots[(snapshot.manifest.key, snapshot.manifest.version)] = snapshot
+
     def resolve(
         self,
         key: str,

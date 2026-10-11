@@ -312,7 +312,12 @@ class SupervisorAgentChainTests(unittest.TestCase):
                     ),
                 )
                 improvement_run_id = commit_result.receipt.agent_run_id  # type: ignore[union-attr]
-                self.assertEqual(commit_result.receipt.payload["result_version"], 4)  # type: ignore[union-attr]
+                self.assertEqual(commit_result.receipt.payload["result_version"], 3)  # type: ignore[union-attr]
+                self.assertEqual(commit_result.receipt.payload["result_revision"], 2)  # type: ignore[union-attr]
+                self.assertEqual(commit_result.receipt.payload["update_mode"], "in_place")  # type: ignore[union-attr]
+                queued_improvement = await runs.get(improvement_run_id)  # type: ignore[arg-type]
+                self.assertEqual(queued_improvement.source_document_id, "document-1")  # type: ignore[union-attr]
+                self.assertNotEqual(queued_improvement.source_document_id, queued_improvement.feedback_id)  # type: ignore[union-attr]
                 self.assertTrue(await worker.run_once())
                 improvement_run = await runs.get(improvement_run_id)  # type: ignore[arg-type]
                 self.assertEqual(improvement_run.status, RunStatus.WAITING_INPUT)  # type: ignore[union-attr]

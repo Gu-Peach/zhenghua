@@ -18,9 +18,7 @@ def proposal_to_normalized_units(
 
     drawing_by_pdf = {int(row["pdf_page_number"]): row for row in drawings}
     workspace_by_id = {str(row["id"]): row for row in workspaces}
-    workspace_by_code = {
-        _normalized_code(row.get("code")): row for row in workspaces if row.get("code")
-    }
+    workspace_by_code = {_normalized_code(row.get("code")): row for row in workspaces if row.get("code")}
     grouped: dict[tuple[str, str], dict[str, Any]] = {}
 
     for index, operation in enumerate(proposal.operations, start=1):
@@ -71,9 +69,7 @@ def proposal_to_normalized_units(
                 "workspace_id": workspace_id,
                 "drawing_id": str(primary["id"]),
                 "voltage_level": _text(
-                    record.get("voltage_level")
-                    or record.get("attribute")
-                    or record.get("model")
+                    record.get("voltage_level") or record.get("attribute") or record.get("model")
                 ),
                 "terminal_strip": terminal_strip,
                 "status": "needs_review" if _needs_review(record) else "extracted",
@@ -124,6 +120,21 @@ def normalized_connection_from_record(
             evidence=list(current.get("evidence") or []),
         )
     )
+    # Explicit canonical values (including null) must not fall back to stale nested endpoints.
+    for field in (
+        "principle_number",
+        "start_code",
+        "start_description",
+        "start_terminal",
+        "end_code",
+        "end_description",
+        "end_terminal",
+        "current_value",
+        "remark",
+        "color_mark",
+    ):
+        if field in record:
+            value[field] = _text(record[field])
     return value
 
 

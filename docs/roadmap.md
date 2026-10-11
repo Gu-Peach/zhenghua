@@ -89,6 +89,14 @@
 - [ ] Gate B 真实模型人工验收：真实 PDF、人工字段 baseline、成本/耗时/差异报告；接口通过不等于准确率通过，Web/JWT 代理仍另行建设。
 - [x] 串联 Supervisor V2 离线闭环：Profile Detection 内部工具、受控结果工具、`is_cross_page` 三态 Stage 2/3 纠错，以及需用户授权的 Improvement/Profile 候选链路。
 - [x] 建立 Eval Harness、Profile 沙箱、确定性 Release Gate、人工审批、canary 与回滚状态机；候选、评测、门禁与审计已持久化，实际 Profile 文件部署执行器仍待接入。
+- [ ] 纠错改造：混合 `CorrectionBatch`、统一跨页 Stage 2→Stage 3、Profile 资源包适配器和归因上下文已实现；本地 `20261011010000` 迁移和 ZH bootstrap 已发布，待 API/Worker 开启远端包模式、test0 人工验收及纠错 RUNNING 接管。
+- [x] 修复案例 A 的 Supervisor Schema 边界：支持起点/终点精确查询、数字页码/线号归一化和完整 JSON Schema 提示；只读真实模型路由与唯一连接查询通过，实际 proposal/提交验收仍由用户继续。
+- [x] 案例 A 用户确认已创建 accepted 版本 2；修复提交后归因 source document 外键引用和成功结果报错边界。归因任务实际补启动及后续建议验收待用户重载服务后执行。
+- [x] 用户调整后的原位纠错代码和本地 migration 已完成：直接值/Stage 2/3 结果共用稳定连接 ID 更新，revision/审计/幂等保留；服务重载后的真实人工验收待执行，旧历史不删除。
+- [x] 第一个纯 HTTP 混合纠错终端验收及只读模型输出接口已实现：人工确认、规则无问题判定、意外候选只允许拒绝，离线回归通过；真实混合输入待用户执行，第二个规则问题脚本未开始。
+- [x] 按用户要求完成 test0 三条真实图纸核对和终点端子人工注错，保存混合消息/字段级预期/可恢复备份；实际混合 Agent 执行和规则判定未运行，不以数据准备代替验收。
+- [x] 修复用户混合验收暴露的纠错起点匹配：位置/设备/端子分开比较，缺失/歧义/重复不再静默漏修，Worker 安全日志定位异常；33 项相关离线测试和保存的 Stage 2 产物只读重放通过。真实 Stage 3/确认提交/归因链路仍待用户重载后以新会话验收。
+- [x] 混合验收后续记录已通过 Stage 2/3、原位提交和人工预期字段检查；修复随后暴露的 Improvement 输出 Schema 缺失，24 项相关离线回归通过。真实归因/规则判定待重载后单独恢复失败归因 run，不重复线表修订。
 
 退出条件：新增模板不改 Graph 拓扑；ZH 与 ABB 回归分别通过。
 
@@ -111,6 +119,7 @@
 - [ ] 实现线表、图纸、工作区三级反馈入口。
 - [x] Agent 侧区分数据修订和规则建议，并持久化 Correction bundle、accepted feedback 和审计；面向 Web 的反馈 API 尚待接入。
 - [x] Agent 侧已持久化候选、离线评测、人工门禁、canary 和回滚状态；生产 Profile 文件部署执行器仍待实现。
+- [x] 本地私有 Bucket 已部署并发布 ZH Prompt/Few-shot/expected/rules/schema 不可变 bootstrap 包；Improvement/候选适配器已实现。运行 API/Worker 开关、完整候选发布/回滚人工验收仍待执行。
 - [ ] 接入真实文档问答前，先完成权限、引用和防幻觉设计。
 
 退出条件：规则变更可审计、可评测、可回滚，不由单次对话直接上线。

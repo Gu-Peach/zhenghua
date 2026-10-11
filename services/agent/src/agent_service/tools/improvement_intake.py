@@ -10,8 +10,8 @@ class ImprovementIntake:
     def validate(self, feedback: AcceptedFeedback) -> None:
         if not feedback.accepted:
             raise ValueError("Only accepted feedback can enter improvement intake.")
-        if not feedback.evidence_ids or not feedback.stage_artifact_ids or not feedback.trace_ids:
-            raise ValueError("Improvement feedback requires evidence, stage artifacts, and traces.")
+        if not feedback.evidence_ids or not feedback.stage_artifact_ids:
+            raise ValueError("Improvement feedback requires evidence and stage artifacts.")
 
     def signature(self, feedback: AcceptedFeedback, diagnosis: Diagnosis) -> FailureSignature:
         self.validate(feedback)

@@ -25,8 +25,16 @@
 6. reason 写成简短的任务计划或选择理由，不编造已经执行的工具与结果。用户要求只检测时不得规划完整提取。
 7. 用户回答“不对”“暂不确认”且没有给出正确类型时，应 requires_input=true，询问正确类型；不能把否定或疑问解释为接受原候选。
 8. 用户要求完整提取时选择 PROCESS_DOCUMENT；服务端仍先检测并要求用户确认。context_summary.full_extraction_requested=true 且 pending_detection 非空时，“OK/确认”选择 CONFIRM_INPUT，由服务端登记任务；不要由模型猜测 base version 或 source document。类型已确认且没有待确认事项时，单独的“OK”仅为认可，选择 QUERY_CONTEXT，不恢复或新建任务。只检测任务结束后，用户明确要求开始提取则选择 PROCESS_DOCUMENT。
+9. context_summary.pending_task 中如果有 result_proposal，用户确认该 diff 时选 CONFIRM_RESULT_PATCH，提取其中 proposal_id；如果有 improvement_diagnosis 且等待候选授权，用户同意选 AUTHORIZE_PROFILE_CANDIDATE；拒绝选 CONFIRM_INPUT 并 extracted_hints.approve_profile_candidate="false"。结果提交确认与规则候选确认不能混淆。
 
-输出字段必须且只能包含 intent、confidence、reason、requires_input、question、extracted_hints。
+纠错输入：将用户明确列出的各个连接/字段拆成 correction_items 数组。每项包含 query（项目/工作区/线号/端子等检索条件）、field、observed_problem、suggested_value_present、suggested_value、issue_kind。直接给答案时 issue_kind=DIRECT_VALUE_CHANGE，suggested_value_present=true（空值也必须为 true）；重新识别时 issue_kind=RECOGNITION_ERROR，不提供答案。query 仅保存用户或上下文明确给出的检索条件，不编造 UUID；同一连接多个字段拆为多个项。requested_by 不需填写，由服务端强制注入；不确定目标才追问。多个明确目标不是歧义，不要强迫用户逐条输入。
+字段名映射：原理号=principle_number，电压等级=voltage_level，端子排=terminal_strip，起点代号=start_code，起点描述=start_description，起点端子=start_terminal，终点代号=end_code，终点描述=end_description，终点端子=end_terminal，电流=current_value，备注=remark，色标=color_mark。线号是 query.wire_number 检索条件，不是可修改字段。跨页路径由数据库 is_cross_page 与 Stage 2 结果决定，不能由用户声明直接跳过 Stage 2。
+query 中页码 workspace_page 和线号 wire_number 必须输出字符串（例如 "50"、"1000"），保留前导零；起点检索用 start_terminal，终点检索用 end_terminal，不指明方向时才用 terminal。query 不得输出 Schema 外的字段。
+
+直接给出答案示例（query 中不编造 connection_id）：
+{"intent":"CORRECT_RESULT","confidence":0.98,"reason":"定位用户给出的起点端子，生成终点端子修订。","requires_input":false,"question":null,"extracted_hints":{},"correction_items":[{"query":{"workspace_name":"082.R","workspace_page":"50","wire_number":"1000","start_terminal":"XD3:251"},"field":"end_terminal","observed_problem":"终点端子错误","suggested_value_present":true,"suggested_value":"2","issue_kind":"DIRECT_VALUE_CHANGE"}]}
+
+输出字段必须且只能包含 intent、confidence、reason、requires_input、question、extracted_hints、correction_items（非纠错可省略或空数组）。
 confidence 为 0 到 1 的数值，requires_input 为布尔值；question 为字符串或 null，extracted_hints 为字符串键值对象。
 
 只检测示例：

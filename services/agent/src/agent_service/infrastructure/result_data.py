@@ -96,6 +96,22 @@ class InMemoryResultDataRepository:
                         "The result version changed before confirmation.",
                         retryable=False,
                     )
+                if entry.match.result_revision != proposal.base_result_revision:
+                    raise AgentServiceError(ErrorCode.BASE_VERSION_CONFLICT, "Result revision changed.")
+                if operation.op != "replace" or operation.before is None or operation.after is None:
+                    raise AgentServiceError(
+                        ErrorCode.INVALID_REQUEST, "Only replace operations are accepted."
+                    )
+                old = next(
+                    (
+                        item
+                        for item in entry.bundle.current_records
+                        if _record_id(item) == operation.target_id
+                    ),
+                    None,
+                )
+                if old != operation.before:
+                    raise AgentServiceError(ErrorCode.BASE_VERSION_CONFLICT, "Before value changed.")
                 if (
                     operation.expected_version is not None
                     and operation.expected_version != entry.match.record_version
@@ -107,8 +123,11 @@ class InMemoryResultDataRepository:
                     )
                 affected_entries.append(entry)
 
-            new_version = proposal.base_result_version + 1
-            result_version_id = f"{proposal.project_id}:v{new_version}"
+            if not affected_entries:
+                raise AgentServiceError(ErrorCode.INVALID_REQUEST, "No correction operations.")
+            new_version = proposal.base_result_version
+            result_version_id = affected_entries[0].match.result_version_id
+            revision = affected_entries[0].match.result_revision + 1
             accepted: list[AcceptedFeedback] = []
             for operation, entry in zip(proposal.operations, affected_entries, strict=True):
                 if operation.op != "replace" or operation.before is None or operation.after is None:
@@ -143,20 +162,35 @@ class InMemoryResultDataRepository:
                 entry.match.result_version = new_version
                 entry.match.result_version_id = result_version_id
                 entry.match.record_version += 1
+                entry.bundle.record_versions[operation.target_id] = entry.match.record_version
+            for entry in self._entries.values():
+                if (
+                    entry.match.project_id == proposal.project_id
+                    and entry.match.result_version_id == result_version_id
+                ):
+                    entry.match.result_revision = revision
+                    entry.bundle.base_result_revision = revision
+            for key in proposal.feedback_ids or [getattr(proposal, "feedback_id", "")]:
                 feedback = AcceptedFeedback(
-                    feedback_id=entry.bundle.facts.feedback_id,
+                    feedback_id=key,
                     project_id=proposal.project_id,
                     accepted=True,
                     result_version_id=result_version_id,
                     profile=proposal.profile,
                     model_name=proposal.model.name,
-                    target=AffectedScope(type=ScopeType.CONNECTION, ids=[operation.target_id]),
-                    before=deepcopy(operation.before),
-                    after=deepcopy(operation.after),
-                    evidence_ids=list(operation.evidence_ids),
-                    stage_artifact_ids=[f"{proposal.agent_run_id}:correction"],
-                    trace_ids=[f"{proposal.agent_run_id}:trace"],
+                    target=AffectedScope(
+                        type=ScopeType.CONNECTION, ids=[op.target_id for op in proposal.operations]
+                    ),
+                    before={op.target_id: deepcopy(op.before) for op in proposal.operations},
+                    after={op.target_id: deepcopy(op.after) for op in proposal.operations},
+                    evidence_ids=sorted({key for op in proposal.operations for key in op.evidence_ids}),
+                    stage_artifact_ids=proposal.stage_artifact_ids
+                    or [f"{proposal.agent_run_id}:result-proposal"],
+                    trace_ids=proposal.trace_ids,
                     prompt_checksum=proposal.profile.checksum or "unversioned-profile",
+                    correction_run_id=proposal.agent_run_id,
+                    feedback_origin=proposal.feedback_origin,
+                    context={"result_revision": revision, "update_mode": "in_place"},
                 )
                 self._accepted_feedback[feedback.feedback_id] = feedback
                 accepted.append(feedback)
@@ -169,6 +203,9 @@ class InMemoryResultDataRepository:
                 result_version_id=result_version_id,
                 confirmed_by=confirmed_by,
                 accepted_feedback=accepted,
+                result_revision=revision,
+                update_mode="in_place",
+                updated_connection_ids=[op.target_id for op in proposal.operations],
             )
             self._commits[proposal.proposal_id] = result
             return result.model_copy(deep=True)
@@ -209,6 +246,8 @@ def _matches(match: ConnectionSearchResult, query: ConnectionSearchQuery) -> boo
         "result_version_id",
         "connection_id",
         "wire_number",
+        "start_terminal",
+        "end_terminal",
     )
     for field in exact_fields:
         expected = getattr(query, field)

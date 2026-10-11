@@ -133,5 +133,6 @@ class SupabaseBusinessImports:
         })
         return ProjectResultsResponse(
             project_id=project_id, result_version_id=selected["id"], result_version=selected["version"],
+            result_revision=int(selected.get("revision") or 1),
             offset=offset, limit=limit, items=items[:limit], has_more=len(items) > limit,
         )

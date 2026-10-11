@@ -4,9 +4,9 @@ from collections.abc import Mapping
 from typing import Any
 
 from ..domain.enums import RunStatus
-from ..domain.models.improvement import Diagnosis
+from ..domain.models.improvement import AcceptedFeedback, Diagnosis
 from ..domain.models.runs import AgentRun
-from ..domain.ports import ArtifactRepository, ResultDataRepository
+from ..domain.ports import ArtifactRepository, ResultDataRepository, TraceStore
 from ..harness.stores import CancellationToken
 from .improvement_workflow import ImprovementWorkflow
 from .worker import RunExecutionOutcome
@@ -21,16 +21,45 @@ class ImprovementRunExecutor:
         result_data: ResultDataRepository,
         workflow: ImprovementWorkflow,
         artifacts: ArtifactRepository,
+        traces: TraceStore | None = None,
     ) -> None:
         self._result_data = result_data
         self._workflow = workflow
         self._artifacts = artifacts
+        self._traces = traces
 
     async def execute(self, run: AgentRun, cancellation: CancellationToken) -> RunExecutionOutcome:
         cancellation.raise_if_cancelled()
         feedback_id = run.feedback_id or run.source_document_id
         feedback = await self._result_data.get_accepted_feedback(feedback_id)
+        feedback_items = [feedback] + [
+            await self._result_data.get_accepted_feedback(key)
+            for key in run.options.correction_feedback_ids
+            if key != feedback_id
+        ]
+        evidence = []
+        trace_keys = set(feedback.trace_ids)
+        for key in feedback.stage_artifact_ids:
+            value = await self._artifacts.get(key)
+            if value is not None:
+                evidence.append(dict(value))
+                source = value.get("bundle", {}).get("context", {}).get("evidence", {}).get("source_run_id")
+                if source:
+                    evidence.extend(dict(item) for item in await self._artifacts.list_for_run(str(source)))
+                    trace_keys.add(str(source))
+        if feedback.correction_run_id:
+            evidence.extend(
+                dict(item) for item in await self._artifacts.list_for_run(feedback.correction_run_id)
+            )
+        feedback.context["artifacts"] = evidence
+        feedback.context["traces"] = [
+            dict(trace)
+            for key in sorted(trace_keys)
+            for trace in (await self._traces.list(key) if self._traces else [])
+        ]
         artifacts = await self._artifacts.list_for_run(run.agent_run_id)
+        for item in feedback_items[1:]:
+            item.context = dict(feedback.context)
         candidate_artifact = _find_artifact(artifacts, "profile_candidate")
         if candidate_artifact is not None:
             return RunExecutionOutcome(
@@ -40,7 +69,7 @@ class ImprovementRunExecutor:
 
         diagnosis_artifact = _find_artifact(artifacts, "improvement_diagnosis")
         if diagnosis_artifact is None:
-            preparation = await self._workflow.diagnose([feedback])
+            preparation = await self._workflow.diagnose(feedback_items)
             diagnosis_artifact_id = f"{run.agent_run_id}:improvement-diagnosis"
             await self._artifacts.put(
                 diagnosis_artifact_id,
@@ -49,6 +78,7 @@ class ImprovementRunExecutor:
                     "agent_run_id": run.agent_run_id,
                     "kind": "improvement_diagnosis",
                     "feedback": feedback.model_dump(mode="json"),
+                    "feedback_items": [item.model_dump(mode="json") for item in feedback_items],
                     "diagnoses": [item.model_dump(mode="json") for item in preparation.diagnoses],
                     "regression_cases": [
                         item.model_dump(mode="json") for item in preparation.regression_cases
@@ -71,6 +101,12 @@ class ImprovementRunExecutor:
             )
 
         human_input = _latest_human_input(artifacts)
+        if human_input is not None and human_input.get("approve_profile_candidate") is False:
+            return RunExecutionOutcome(
+                status=RunStatus.SUCCEEDED,
+                artifact_ids=[str(diagnosis_artifact["artifact_id"])],
+                metrics={"candidate_declined": True},
+            )
         if human_input is None or human_input.get("approve_profile_candidate") is not True:
             return RunExecutionOutcome(
                 status=RunStatus.WAITING_INPUT,
@@ -80,8 +116,12 @@ class ImprovementRunExecutor:
         if not reviewer_id:
             raise ValueError("Profile candidate authorization requires reviewer_id.")
         diagnoses = [Diagnosis.model_validate(item) for item in diagnosis_artifact.get("diagnoses", [])]
+        feedback_items = [
+            AcceptedFeedback.model_validate(value)
+            for value in diagnosis_artifact.get("feedback_items", [diagnosis_artifact["feedback"]])
+        ]
         preparation = await self._workflow.build_candidate(
-            feedback=[feedback],
+            feedback=feedback_items,
             diagnoses=diagnoses,
             authorized_by=reviewer_id,
         )

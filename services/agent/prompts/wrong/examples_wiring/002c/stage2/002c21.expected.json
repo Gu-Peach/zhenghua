@@ -1,0 +1,114 @@
+{
+  "pdf_page_number": null,
+  "drawing_function": "002.C",
+  "drawing_page_number": 21,
+  "drawing_object_location": "+01F10",
+  "blank": false,
+  "needs_review": false,
+  "units": [
+    {
+      "unit_id": "002c21-ground-protection",
+      "wire_number": null,
+      "project_no": "1002001641",
+      "drawing_prefix": "DQ1002001641",
+      "attribute": null,
+      "model": null,
+      "spec": null,
+      "length": null,
+      "current": null,
+      "cable_context": null,
+      "unit_identity_confidence": "high",
+      "connections": [
+        {
+          "local_connection_id": "c21-xd21-15",
+          "core_number": null,
+          "color": null,
+          "line_number": "003C2021",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+01F10",
+            "device": "-XD21",
+            "name": "GROUND PROTECTION TERMINAL",
+            "terminal_board": "XD21",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "XD21:15"
+          },
+          "end": null,
+          "intermediate_points": [],
+          "references": [
+            {
+              "raw": "=003.C+01F11.3-FC103_L / =003.C+01F11.3/20.3",
+              "target_function": "003.C",
+              "target_drawing_page": 20,
+              "target_internal_page": null,
+              "target_pdf_page": null,
+              "target_column": 3,
+              "target_object": "+01F11.3-FC103_L",
+              "external": false,
+              "reason": null
+            }
+          ],
+          "status": "needs_reference",
+          "confidence": 0.98,
+          "remark": null,
+          "source_note": "跨 Plant Function 引用到 003.C/20 第3列",
+          "source_pdf_pages": [],
+          "source_drawing_pages": [],
+          "external_source_required": false
+        },
+        {
+          "local_connection_id": "c21-xd21-1",
+          "core_number": null,
+          "color": null,
+          "line_number": "003C0600",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+01F10",
+            "device": "-XD21",
+            "name": "GROUND PROTECTION TERMINAL",
+            "terminal_board": "XD21",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "XD21:1"
+          },
+          "end": null,
+          "intermediate_points": [],
+          "references": [
+            {
+              "raw": "=003.C+01F11.3-FC103_N / =003.C+01F11.3/20.4",
+              "target_function": "003.C",
+              "target_drawing_page": 20,
+              "target_internal_page": null,
+              "target_pdf_page": null,
+              "target_column": 4,
+              "target_object": "+01F11.3-FC103_N",
+              "external": false,
+              "reason": null
+            }
+          ],
+          "status": "needs_reference",
+          "confidence": 0.98,
+          "remark": null,
+          "source_note": "跨 Plant Function 引用到 003.C/20 第4列",
+          "source_pdf_pages": [],
+          "source_drawing_pages": [],
+          "external_source_required": false
+        }
+      ],
+      "source_pages": [],
+      "source_drawing_pages": [],
+      "status": "complete",
+      "confidence": 0.98,
+      "local_unit_index": 1
+    }
+  ],
+  "page_references": [],
+  "warnings": []
+}

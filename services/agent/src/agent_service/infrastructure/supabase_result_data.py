@@ -30,10 +30,12 @@ from ..domain.models.result_data import (
     ConnectionSearchResult,
     ResultCommitResult,
 )
+from ..domain.models.runs import ProfileRef
 from ..profiles import ProfileRegistry
 from .result_mapping import normalized_connection_from_record, proposal_to_normalized_units
 from .run_lease_context import current_run_lease
 from .supabase_client import SupabaseClient
+from .supabase_profile_packages import SupabaseProfilePackageRepository
 
 
 class SupabaseResultDataRepository:
@@ -45,10 +47,12 @@ class SupabaseResultDataRepository:
         *,
         profiles: ProfileRegistry,
         drawing_cache_root: Path,
+        profile_packages: SupabaseProfilePackageRepository | None = None,
     ) -> None:
         self._client = client
         self._profiles = profiles
         self._drawing_cache_root = drawing_cache_root.resolve()
+        self._profile_packages = profile_packages
 
     async def search_connections(
         self,
@@ -64,6 +68,8 @@ class SupabaseResultDataRepository:
             "result_version_id": query.result_version_id,
             "connection_id": query.connection_id,
             "wire_number": query.wire_number,
+            "start_terminal": query.start_terminal,
+            "end_terminal": query.end_terminal,
         }
         for field, value in fields.items():
             if value is not None:
@@ -74,14 +80,29 @@ class SupabaseResultDataRepository:
                 row for row in rows if query.terminal in {row.get("start_terminal"), row.get("end_terminal")}
             ]
         if query.result_version_id is None and query.connection_id is None:
-            latest = {
-                str(row["project_id"]): max(
-                    int(item["result_version"]) for item in rows if item["project_id"] == row["project_id"]
+            latest = {}
+            for project_id in {str(row["project_id"]) for row in rows}:
+                versions = await self._client.select(
+                    "result_versions",
+                    params={"project_id": f"eq.{project_id}", "order": "version.desc", "limit": "1"},
                 )
-                for row in rows
-            }
-            rows = [row for row in rows if int(row["result_version"]) == latest[str(row["project_id"])]]
+                if versions:
+                    latest[project_id] = int(versions[0]["version"])
+            rows = [row for row in rows if int(row["result_version"]) == latest.get(str(row["project_id"]))]
         return [_search_result(row) for row in rows]
+
+    async def authorize_correction(self, project_id: str, user_id: str) -> None:
+        owners = await self._client.select(
+            "projects", params={"id": f"eq.{project_id}", "owner_id": f"eq.{user_id}", "select": "id"}
+        )
+        if owners:
+            return
+        members = await self._client.select(
+            "project_members",
+            params={"project_id": f"eq.{project_id}", "user_id": f"eq.{user_id}", "select": "role"},
+        )
+        if not any(row.get("role") in {"owner", "editor"} for row in members):
+            raise ValueError("当前用户没有该项目的修订权限。")
 
     async def get_correction_bundle(self, connection_id: str) -> CorrectionEvidenceBundle:
         matches = await self.search_connections(ConnectionSearchQuery(connection_id=connection_id))
@@ -112,7 +133,18 @@ class SupabaseResultDataRepository:
             params={"project_id": f"eq.{match.project_id}", "order": "pdf_page_number.asc"},
         )
         drawing_by_id = {str(row["id"]): row for row in drawings}
+        workspace_rows = await self._client.select(
+            "workspaces", params={"project_id": f"eq.{match.project_id}"}
+        )
+        workspace_codes = {str(row["id"]): row.get("code") for row in workspace_rows}
         source_id = str(connection.get("source_drawing_id") or "")
+        unit_context: Mapping[str, Any] = {}
+        if connection.get("wiring_unit_id"):
+            context_rows = await self._client.select(
+                "wiring_units", params={"id": f"eq.{connection['wiring_unit_id']}", "limit": "1"}
+            )
+            if context_rows:
+                unit_context = context_rows[0]
         if not source_id and connection.get("wiring_unit_id"):
             unit_rows = await self._client.select(
                 "wiring_units",
@@ -149,10 +181,21 @@ class SupabaseResultDataRepository:
                 params={"id": f"eq.{match.project_id}", "select": "standard_profile", "limit": "1"},
             )
             profile_key = str(projects[0].get("standard_profile") or "zh")
-        binding = self._profiles.bind(profile_key, allow_experimental=True)
+        if self._profile_packages and isinstance(profile_value, Mapping):
+            binding = await self._profile_packages.bind(ProfileRef.model_validate(profile_value))
+        else:
+            binding = self._profiles.bind(
+                profile_key,
+                profile_value.get("version") if isinstance(profile_value, Mapping) else None,
+                allow_experimental=True,
+            )
+        if isinstance(profile_value, Mapping) and profile_value.get("checksum") != binding.profile.checksum:
+            raise ValueError("Correction must use the exact Profile checksum of the original result.")
 
         source_page = await self._drawing_input(match.project_id, source)
         current = _current_record(match, connection)
+        current["voltage_level"] = unit_context.get("voltage_level")
+        current["terminal_strip"] = unit_context.get("terminal_strip") or match.terminal_strip
         context_json = json.dumps(
             {"target_connection_id": connection_id, "current_record": current},
             ensure_ascii=False,
@@ -203,10 +246,15 @@ class SupabaseResultDataRepository:
                     allowed_target_drawings=target_drawing_ids,
                     allowed_connection_ids=[connection_id],
                 ),
-                evidence={"connection": current, "evidence_rows": evidence},
+                evidence={
+                    "connection": current,
+                    "evidence_rows": evidence,
+                    "source_run_id": result_rows[0].get("agent_run_id") if result_rows else None,
+                },
             ),
             profile=binding,
             base_result_version=match.result_version,
+            base_result_revision=match.result_revision,
             current_records=[current],
             record_versions={connection_id: match.record_version},
             evidence_ids=evidence_ids,
@@ -230,6 +278,18 @@ class SupabaseResultDataRepository:
             ],
             cross_page_requests=cross_requests,
             cross_page_task_targets=task_targets,
+            available_pages=[
+                DrawingPageInput(
+                    pdf_page_number=int(row["pdf_page_number"]),
+                    drawing_id=str(row["id"]),
+                    image_path=self._drawing_cache_root / match.project_id / f"{row['id']}.png",
+                    storage_bucket=str(row.get("image_bucket") or "project-assets"),
+                    storage_path=str(row.get("image_path") or ""),
+                    plant_function=workspace_codes.get(str(row["workspace_id"])),
+                    drawing_page_number=_positive_int(row.get("workspace_page")),
+                )
+                for row in drawings
+            ],
         )
 
     async def persist_extraction_proposal(
@@ -322,6 +382,40 @@ class SupabaseResultDataRepository:
                 "Result patch confirmation requires feedback_id.",
                 retryable=False,
             )
+        stored = await self._client.select(
+            "result_proposals",
+            params={
+                "id": f"eq.{proposal.proposal_id}",
+                "project_id": f"eq.{proposal.project_id}",
+                "limit": "1",
+            },
+        )
+        if stored and stored[0].get("committed_result_version_id"):
+            if str(stored[0].get("confirmed_by")) != confirmed_by:
+                raise AgentServiceError(ErrorCode.CHECKPOINT_CONFLICT, "Proposal confirmed by another user.")
+            receipt = stored[0].get("commit_receipt")
+            if not receipt:
+                committed_rows = await self._client.select(
+                    "result_versions",
+                    params={"id": f"eq.{stored[0]['committed_result_version_id']}", "limit": "1"},
+                )
+                receipt = {
+                    "result_version_id": stored[0]["committed_result_version_id"],
+                    "result_version": committed_rows[0]["version"],
+                    "result_revision": 1,
+                    "update_mode": "snapshot",
+                    "updated_connection_ids": [],
+                }
+            return ResultCommitResult(
+                proposal_id=proposal.proposal_id,
+                project_id=proposal.project_id,
+                previous_result_version=proposal.base_result_version,
+                confirmed_by=confirmed_by,
+                accepted_feedback=[
+                    await self.get_accepted_feedback(key) for key in proposal.feedback_ids or [feedback_id]
+                ],
+                **receipt,
+            )
         versions = await self._client.select(
             "result_versions",
             params={
@@ -336,12 +430,7 @@ class SupabaseResultDataRepository:
                 "The base result version no longer exists.",
                 retryable=False,
             )
-        units = await self._version_payload(str(versions[0]["id"]))
-        by_connection = {
-            str(connection["source_connection_id"]): (unit, connection)
-            for unit in units
-            for connection in unit["connections"]
-        }
+        changes = []
         before_values: dict[str, Any] = {}
         after_values: dict[str, Any] = {}
         evidence_ids: list[str] = []
@@ -352,14 +441,27 @@ class SupabaseResultDataRepository:
                     "Confirmed correction proposals accept replace operations only.",
                     retryable=False,
                 )
-            pair = by_connection.get(operation.target_id)
-            if pair is None:
+            rows = await self._client.select(
+                "wiring_connections", params={"id": f"eq.{UUID(operation.target_id)}", "limit": "1"}
+            )
+            unit_rows = await self._client.select(
+                "wiring_units",
+                params={
+                    "id": f"eq.{rows[0]['wiring_unit_id']}"
+                    if rows
+                    else "eq.00000000-0000-0000-0000-000000000000",
+                    "project_id": f"eq.{proposal.project_id}",
+                    "result_version_id": f"eq.{versions[0]['id']}",
+                    "limit": "1",
+                },
+            )
+            if not rows or not unit_rows:
                 raise AgentServiceError(
                     ErrorCode.PROJECT_CONTEXT_NOT_FOUND,
                     "A correction target is outside the base result version.",
                     retryable=False,
                 )
-            unit, current = pair
+            current = rows[0]
             if operation.expected_version is not None and operation.expected_version != int(
                 current["record_version"]
             ):
@@ -371,17 +473,17 @@ class SupabaseResultDataRepository:
             before_values[operation.target_id] = operation.before
             after_values[operation.target_id] = operation.after
             evidence_ids.extend(operation.evidence_ids)
-            current.update(
-                normalized_connection_from_record(
-                    operation.after,
-                    current=current,
-                    record_version=int(current["record_version"]) + 1,
-                )
+            changes.append(
+                {
+                    "target_id": operation.target_id,
+                    "expected_version": operation.expected_version,
+                    "before": operation.before,
+                    "after": operation.after,
+                    "record": normalized_connection_from_record(
+                        operation.after, current=current, record_version=int(current["record_version"]) + 1
+                    ),
+                }
             )
-            current["status"] = "confirmed"
-            current["needs_review"] = False
-            if operation.after.get("terminal_strip") not in (None, ""):
-                unit["terminal_strip"] = str(operation.after["terminal_strip"])
 
         accepted = AcceptedFeedback(
             feedback_id=feedback_id,
@@ -394,24 +496,62 @@ class SupabaseResultDataRepository:
             before=before_values,
             after=after_values,
             evidence_ids=sorted(set(evidence_ids)) or [f"feedback:{feedback_id}"],
-            stage_artifact_ids=[f"{proposal.agent_run_id}:correction"],
-            trace_ids=[f"{proposal.agent_run_id}:trace"],
+            stage_artifact_ids=proposal.stage_artifact_ids or [f"{proposal.agent_run_id}:result-proposal"],
+            trace_ids=proposal.trace_ids,
             prompt_checksum=proposal.profile.checksum or "unversioned-profile",
+            correction_run_id=proposal.agent_run_id,
+            feedback_origin=proposal.feedback_origin,
         )
-        committed = await self._commit_rpc(
-            proposal=proposal,
-            created_by=confirmed_by,
-            target_status="accepted",
-            units=units,
-            feedback_updates=[
-                {
-                    "feedback_id": feedback_id,
-                    "before": before_values,
-                    "after": after_values,
-                    "accepted_payload": accepted.model_dump(mode="json"),
+        feedback_updates = []
+        for key in proposal.feedback_ids or [feedback_id]:
+            rows = await self._client.select("feedback_items", params={"id": f"eq.{key}", "limit": "1"})
+            bundle = rows[0].get("correction_bundle", {}) if rows else {}
+            target_id = bundle.get("facts", {}).get("target", {}).get("id")
+            before = {target_id: before_values[target_id]} if target_id in before_values else before_values
+            after = {target_id: after_values[target_id]} if target_id in after_values else after_values
+            origin = (
+                bundle.get("context", {}).get("evidence", {}).get("feedback_origin", proposal.feedback_origin)
+            )
+            item_feedback = accepted.model_copy(
+                update={
+                    "feedback_id": key,
+                    "before": before,
+                    "after": after,
+                    "feedback_origin": origin,
+                    "target": AffectedScope(type=ScopeType.CONNECTION, ids=list(before)),
                 }
-            ],
-        )
+            )
+            feedback_updates.append(
+                {
+                    "feedback_id": key,
+                    "before": before,
+                    "after": after,
+                    "accepted_payload": item_feedback.model_dump(mode="json"),
+                }
+            )
+        try:
+            committed = await self._client.rpc(
+                "apply_confirmed_result_patch",
+                {
+                    "value": {
+                        "proposal_id": proposal.proposal_id,
+                        "project_id": proposal.project_id,
+                        "confirmed_by": confirmed_by,
+                        "changes": changes,
+                        "feedback_updates": feedback_updates,
+                    }
+                },
+            )
+        except AgentServiceError as exc:
+            if exc.code == ErrorCode.CHECKPOINT_CONFLICT:
+                raise AgentServiceError(
+                    ErrorCode.BASE_VERSION_CONFLICT,
+                    "结果或记录已变更，请重新生成修订 proposal。",
+                    retryable=False,
+                ) from exc
+            raise
+        if not isinstance(committed, Mapping):
+            raise AgentServiceError(ErrorCode.INTERNAL_ERROR, "Invalid patch receipt.")
         stored_feedback = await self.get_accepted_feedback(feedback_id)
         return ResultCommitResult(
             proposal_id=proposal.proposal_id,
@@ -420,7 +560,11 @@ class SupabaseResultDataRepository:
             result_version=int(committed["result_version"]),
             result_version_id=str(committed["result_version_id"]),
             confirmed_by=confirmed_by,
-            accepted_feedback=[stored_feedback],
+            accepted_feedback=[stored_feedback]
+            + [await self.get_accepted_feedback(key) for key in proposal.feedback_ids if key != feedback_id],
+            result_revision=int(committed["result_revision"]),
+            update_mode="in_place",
+            updated_connection_ids=list(committed["updated_connection_ids"]),
         )
 
     async def get_accepted_feedback(self, feedback_id: str) -> AcceptedFeedback:
@@ -563,6 +707,7 @@ def _search_result(row: Mapping[str, Any]) -> ConnectionSearchResult:
         workspace_page=str(row["workspace_page"]) if row.get("workspace_page") is not None else None,
         result_version_id=str(row["result_version_id"]),
         result_version=int(row["result_version"]),
+        result_revision=int(row.get("result_revision") or 1),
         record_version=int(row.get("record_version") or 1),
         source_document_id=str(row["source_document_id"]),
         wire_number=str(row["wire_number"]) if row.get("wire_number") is not None else None,

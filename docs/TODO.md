@@ -4,6 +4,19 @@
 
 ## 进行中
 
+- [x] 准备 test0 三条混合纠错注错样例：PDF 核对 XD3:251→2、XD3:260→1、006.M/1 XD3:113→006.C/1 X3:1，仅将最新代次三条 end_terminal 改为999；标记人工注错并备份原值/预期/消息到忽略的 runs/test0-mixed-prepared-001，revision 1→2。未修改规则、起点、跨页状态/引用，未调用模型或重启服务。
+
+- [ ] 用户混合纠错人工验收：加载新模型输出接口后运行 `2.纠错agent/run_acceptance.py`，人工构造直接答案＋同页＋跨页输入，确认修订、检查规则无问题或拒绝意外候选；第二个规则问题脚本等待用户构造问题。
+
+- [ ] 用户重载 Agent 后验收原位纠错：本地 `20261011020000` 和契约 V3 已部署，直接答案/Stage 2/3 共用稳定 ID 提交；先只对当前最新行注错，确认后检查同 ID 更新和 revision，历史不清理、现有服务未重启。
+
+- [x] 修复案例 A 确认后的 409：只读确认版本 2 已 accepted，错误来自归因 run 把 feedback ID 当成 PDF ID；改用原纠错 run 的 source document，冻结 Profile，归因启动失败明确返回已提交结果；5 项相关回归/strict mypy 通过，未重复提交修订或重启服务，待用户同 proposal 幂等补启动。
+
+- [x] 修复案例 A 的 Supervisor MODEL_SCHEMA_INVALID：实际模型输出数字页码及 start_terminal 导致校验失败；增加方向查询、编号整数归一化和动态输出 Schema，23 项相关离线测试/strict mypy 通过；修复后只读模型路由和唯一匹配验证通过，未分派工作流或修改线表，服务待用户重载。
+
+- [x] 编写纠错批次与 Bucket Profile 资源包修改方案：保留跨页 Stage 2→Stage 3，复用 test0 手工注错/自然语言输入验收，不新增终端验收脚本；本轮仅文档、不修改代码/数据库/规则包。详见 `docs/service/agent/correction-agent-refactor-plan.md` 与 ADR-0009。
+- [ ] API/Worker 启用 `AGENT_PROFILE_PACKAGES_ENABLED=true` 并由用户加载新代码，然后进行 test0 手工纠错验收；数据库迁移和 ZH bootstrap 包发布已完成，现有服务未重启。
+
 - [ ] Gate B 真实模型人工验收：使用已有 Auth 用户 UUID、真实 PDF 和人工 baseline，通过显式开关/终端确认运行 `1.3stage/run_acceptance.py`；接口与 Fake 验收已完成，准确率尚未验收。
 
 - [x] 从保留的 `.git-new` 恢复本地 Git 历史和 origin，整理当前源码、文档及版本化 Few-shot 资产，排除密钥、缓存和提取运行产物。
@@ -22,6 +35,8 @@
 - [ ] 确认 Agent Harness 的 V1 边界与 Profile 发布门禁。
 
 ## 下一步
+
+- [ ] 补齐纠错/改进（protocol 1）run 的过期 RUNNING 接管和 fenced 写入；当前仅已持久 item 能在重新执行时复用，不声称自动故障恢复。
 
 - [ ] 初始化 monorepo 根配置。
 - [ ] 创建 FastAPI 新模块目录和兼容适配层。
@@ -66,6 +81,18 @@
 - [ ] 生产部署采用自管 Redis/Celery，还是托管队列。
 
 ## 已完成
+
+- [x] 修复 ImprovementDiagnoser 输出契约：system 动态注入完整 Diagnosis JSON Schema，明确字段/枚举且保留严格校验与端点兼容；24 项相关离线测试、全包 strict mypy 和修改文件 Ruff 通过。原三条修订已提交，未重提取/重新提交/注错，也未写数据库、调用真实模型或重启服务；用户重载后仅恢复失败的归因 run。
+
+- [x] 修复混合纠错起点身份匹配：区分位置/设备/端子、保留稳定 ID 和起点，缺失/歧义/重复明确报错；Worker 记录安全异常类型和调用帧。33 项相关离线回归、全包 strict mypy 和修改文件 Ruff 通过，失败任务 Stage 2 产物只读重放通过；未改数据库或规则、未调用真实模型、未重启服务。用户重载后用新会话重跑混合验收。
+
+- [x] 第一个混合纠错终端脚本：纯 HTTP 输入/SSE/阶段与模型输出、人工确认、原位数据核对、规则无问题/证据不足/拒绝意外候选分支、逐步落盘和只监看模式；只读观测接口过滤私有推理并限制用户范围。离线 Mock 流程/相关回归、strict mypy/Ruff 通过，未调用真实模型或重启服务，第二个脚本未创建。
+
+- [x] 原位纠错（ADR-0010）：当前集合内连接/单元/证据 ID 和线号保持稳定，revision/record_version+1，before/after 留在 feedback，proposal receipt 幂等；内存/Supabase、确认消息、分页契约已同步。17 项相关离线测试/strict mypy/Ruff 通过，真实数据库合成回滚验证权限/幂等/过期拒绝/批次原子性，本地 migration 已部署，不修改 test0 的现有值、不重启服务。
+
+- [x] 部署纠错资源包：本地 `zhenghua_test` 事务应用并登记 `20261011010000`，发布与 test0 checksum 一致的 ZH bootstrap；29 个包文件下载校验通过，7 张图片签名 URL 可生成，匿名元数据读取为 0 行，原线表摘要不变；修复 void RPC 空成功响应解析。未运行真实模型、未更改服务开关或重启服务。
+
+- [x] 纠错方案代码基础：混合 CorrectionBatch、统一 proposal 提交、Stage 2→Stage 3 持久阶段调用、归因证据上下文、自包含 Profile 资源包及候选发布/回滚适配器；26 项离线测试、全包 strict mypy/Ruff 通过。数据库部署、真实包上传、人工验收和非提取 run 接管/fencing 未完成，详见 Agent 实施记录。
 
 - [x] Gate B 实现：阶段 0 临时附件与业务源 PDF 隔离、冻结 Profile/确认审计、原子 run/event/queue、published 树与版本化分页结果、阶段摘要/SSE 续传和纯 HTTP 脚本；113 默认测试、2 个真实本地 Supabase/Fake HTTP 场景通过，22 migration 空库/旧数据及原子失败回滚通过；真实 VLM 未运行、Web/JWT 代理未接。
 

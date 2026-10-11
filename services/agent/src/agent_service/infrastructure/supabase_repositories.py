@@ -247,7 +247,10 @@ class SupabaseProposalRepository:
         )
         if not rows:
             return None
-        return ResultProposal.model_validate(rows[0]["payload"])
+        from ..domain.models.proposals import ResultPatchProposal
+        value = rows[0]["payload"]
+        return (ResultPatchProposal.model_validate(value) if "feedback_id" in value
+                else ResultProposal.model_validate(value))
 
 
 class SupabaseTraceStore:

@@ -9,6 +9,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
+from ...application.model_output_view import model_output_view
 from ...application.supervisor_conversation import SupervisorConversationService
 from ...domain.enums import ErrorCode
 from ...domain.errors import AgentServiceError
@@ -33,6 +34,18 @@ def _http_error(exc: Exception) -> HTTPException:
     if isinstance(exc, PermissionError):
         return HTTPException(status_code=403, detail="Conversation or attachment access denied.")
     if isinstance(exc, AgentServiceError):
+        if exc.code in {ErrorCode.BASE_VERSION_CONFLICT, ErrorCode.CHECKPOINT_CONFLICT}:
+            return HTTPException(status_code=409, detail={"code": exc.code.value, "message": exc.message})
+        if exc.code == ErrorCode.MODEL_SCHEMA_INVALID:
+            return HTTPException(
+                status_code=502,
+                detail={
+                    "code": exc.code.value,
+                    "message": exc.message,
+                    "schema": exc.details.get("schema"),
+                    "validation_errors": exc.details.get("validation_errors", []),
+                },
+            )
         if exc.code in {ErrorCode.PROFILE_INVALID, ErrorCode.PROFILE_NOT_CONFIRMED}:
             return HTTPException(status_code=400, detail={"code": exc.code.value, "message": exc.message})
         return HTTPException(status_code=502, detail={"code": exc.code.value, "message": exc.message})
@@ -196,3 +209,18 @@ async def stream_supervisor_turn(payload: ConversationTurn, request: Request) ->
     return StreamingResponse(
         generate(), media_type="text/event-stream", headers={"Cache-Control": "no-cache"}
     )
+
+
+@router.get("/conversations/{conversation_id}/turns/{turn_id}/model-output")
+async def get_turn_model_output(
+    conversation_id: str, turn_id: str, user_id: str, request: Request
+) -> dict[str, Any]:
+    key = f"turn:{turn_id}"
+    traces = await request.app.state.trace_store.list(key)
+    items = [
+        model_output_view(key, index, trace)
+        for index, trace in enumerate(traces)
+        if trace.get("metadata", {}).get("conversation_id") == conversation_id
+        and trace.get("metadata", {}).get("user_id") == user_id
+    ]
+    return {"items": items, "reasoning_exposed": False}

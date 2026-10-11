@@ -23,12 +23,14 @@ Supervisor 只接收 `profile_key / confidence / evidence / status`：
 - `find_connections`：按项目、工作区、业务页码、线号、端子等条件查找候选，返回稳定 ID；
 - `get_connection_bundle`：按 `project_id + result_version_id + connection_id` 读取当前记录、来源页、Profile 和版本；
 - `create_result_patch_proposal`：保存字段级 before/after、证据、expected version 和 unchanged assertion；
-- `commit_result_patch`：只允许业务 Server 在用户确认后调用，校验 base version 并创建新结果版本；
+- `commit_result_patch`：用户确认后校验 generation/revision/record_version，在当前集合原位更新目标连接，保留 ID、线号和 before/after 审计（ADR-0010）；
 - `record_accepted_feedback`：提交已被用户接受的修订，供离线 Improvement 使用。
 
 项目名称、工作区名称、线号和端子只用于搜索。出现多个候选时 Supervisor 必须追问；实际修订必须使用稳定 ID。Stage Agent、Supervisor 和 Improvement Agent 均不直接覆盖生产结果。
 
 ## 3. Correction 路由与 Stage 2/3
+
+混合用户消息的 `CorrectionBatch`、Profile Bucket 资源包和 test0 人工验收以[纠错 Agent 与 Profile 资源包改造方案](./correction-agent-refactor-plan.md)为准；代码基础已实现，数据库部署和人工验收未完成，状态见[实施记录](./changelog/2026-10-11-correction-packages-implementation.md)。
 
 Correction Workflow 使用确定性矩阵，不增加自由规划 Agent：
 
@@ -36,14 +38,14 @@ Correction Workflow 使用确定性矩阵，不增加自由规划 Agent：
 | --- | --- |
 | 用户给出明确正确值 | 直接生成 patch，不调用 VLM |
 | `is_cross_page = same_page` 且需重新识别 | 只重跑目标连接所在页的 Stage 2 |
-| `is_cross_page = cross_page` 且需重新识别 | Stage 2 复核来源引用，再按已有索引定向运行 Stage 3 |
+| `is_cross_page = cross_page` 且需重新识别 | Stage 2 复核来源引用，再按已有索引定向运行 Stage 3；不提供 Stage 3-only |
 | `is_cross_page = unknown` | Stage 2 重新判断；不足时 `needs_review`，禁止猜测 |
 | 工作区/页面身份错误 | Stage 1 后按新的 `is_cross_page` 决定 Stage 2/3 |
 | 格式、排序、单位或去重 | 只运行确定性工具 |
 
 纠错上下文是结构化数据，包括 connection ID、允许字段、观察到的问题和证据引用；用户自由文本不能成为系统 Prompt，也不能扩大连接或字段 allowlist。
 
-所有路径最终只生成 `ResultPatchProposal`。业务 Server 展示 diff，用户确认后用乐观锁提交新 `result_version`。
+所有路径最终只生成 `ResultPatchProposal`。业务 Server 展示 diff，用户确认后用乐观锁原位提交当前连接；代次不变，revision 递增。
 
 ## 4. `is_cross_page` 三态字段
 
@@ -61,7 +63,7 @@ is_cross_page = same_page | cross_page | unknown
 
 ## 5. Improvement、规则确认和发布门禁
 
-在线修订成功后立即返回新结果版本，不等待根因分析。只有用户接受并由 Server 提交的修订才进入异步 Improvement：
+在线修订成功后立即返回稳定 connection IDs 和新 revision，不等待根因分析。只有用户接受并由 Server 提交的修订才进入异步 Improvement：
 
 1. `ImprovementDiagnoserAgent` 读取 before/after、原图证据、Stage 产物、Profile/Prompt/模型版本，判断模型感知、幻觉、Prompt、Few-shot、跨页规则、确定性规则、映射或证据不足；
 2. 原因和改动建议返回 Supervisor 展示；
@@ -91,10 +93,10 @@ is_cross_page = same_page | cross_page | unknown
      -> Correction Workflow
         -> direct patch
         -> 或 Stage 2
-        -> 或 Stage 2 -> Stage 3
+        -> 或 Stage 2 -> Stage 3（跨页统一路径）
         -> ResultPatchProposal
      -> 用户确认
-     -> Server commit_result_patch -> 新 result_version
+     -> Server commit_result_patch -> 原位更新 / revision+1 / before-after 审计
      -> record_accepted_feedback
      -> ImprovementDiagnoserAgent（异步）
      -> Supervisor 展示原因和建议

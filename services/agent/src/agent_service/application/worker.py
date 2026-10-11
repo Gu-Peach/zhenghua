@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import traceback
 from contextlib import suppress
 from dataclasses import dataclass, field
 from typing import Protocol
@@ -127,6 +128,7 @@ class AgentWorker:
                         "agent_run_id": run.agent_run_id,
                         "kind": "result_proposal",
                         "proposal_id": proposal_id,
+                        "proposal": outcome.proposal.model_dump(mode="json"),
                     },
                 )
                 await self._publisher.publish(
@@ -178,8 +180,24 @@ class AgentWorker:
             else:
                 await self._fail(run, exc.code, exc.message, retryable=exc.retryable)
         except Exception as exc:  # worker boundary: normalize unexpected failures
+            # Frame locations and type are useful diagnostics; exception messages,
+            # source lines and locals may contain credentials or model/private data.
+            frames = [
+                {
+                    "file": frame.filename.replace("\\", "/").rsplit("/", 1)[-1],
+                    "line": frame.lineno,
+                    "function": frame.name,
+                }
+                for frame in traceback.extract_tb(exc.__traceback__)
+            ]
+            logger.error(
+                "Worker run %s failed (%s); stage=%s; frames=%s",
+                run.agent_run_id,
+                type(exc).__name__,
+                run.current_stage,
+                frames,
+            )
             await self._fail(run, ErrorCode.INTERNAL_ERROR, "Unexpected worker failure.")
-            _ = exc
         finally:
             self._tokens.pop(run_id, None)
             await self._queue.acknowledge(run_id)

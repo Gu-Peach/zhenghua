@@ -1,5 +1,11 @@
 # Agent Service
 
+混合纠错的第一个纯 HTTP 终端脚本见 [`agent_test/2.纠错agent/README.md`](./agent_test/2.纠错agent/README.md)：阶段事件/结构化模型输出、人工提交和规则无问题判定，意外候选建议只能拒绝。需要 API/Worker 加载最新代码；第二个规则问题脚本未创建。
+
+局部纠错现按用户要求改为原位更新（[ADR-0010](../../docs/adr/0010-in-place-confirmed-corrections.md)）：直接答案和 Stage 2/3 重识别在确认后保持连接 ID/线号不变，使用 revision/record_version 校验并保留 feedback 审计。完整提取仍产生代次。`20261011020000` 已在本地部署；现有服务需由用户重载才使用新提交代码，旧历史没有删除。见[实施记录](../../docs/service/agent/changelog/2026-10-11-in-place-corrections.md)。
+
+纠错混合批次和 Profile 资源包的实现说明见[实施记录](../../docs/service/agent/changelog/2026-10-11-correction-packages-implementation.md)，本地 migration/ZH bootstrap 已部署，见[部署记录](../../docs/service/agent/changelog/2026-10-11-profile-package-deployment.md)。API/Worker 加载新代码前需要设置 `AGENT_PROFILE_PACKAGES_ENABLED=true`；现有服务未重启。本地 Profile 默认兼容模式不受影响。验收直接复用 test0 人工注错及已有 HTTP 对话，不新增纠错终端脚本。
+
 独立的 Python Agent API、运行底座和图纸 Profile 服务。默认监听 `8100`，不创建用户或直接覆盖生产线表。迁移期内部验收可登记已有 owner 的项目/源 PDF，并通过受控事务创建结果版本；不替代业务 Server 的浏览器鉴权入口。
 
 当前已实现 Agent 服务骨架、Profile Router、ZH 三阶段本地提取链路，以及 Run/Worker、Supervisor、Correction 和 Improvement 的受控执行基座：

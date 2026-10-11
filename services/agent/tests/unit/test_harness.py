@@ -16,6 +16,7 @@ from agent_service.harness import (
     FakeModelGateway,
     InMemoryCheckpointStore,
     InMemoryRunRepository,
+    InMemoryTraceStore,
     ModelRequest,
     OpenAICompatibleModelGateway,
     ToolCallContext,
@@ -28,6 +29,41 @@ from agent_service.harness.retry import RetryPolicy
 
 class ParsedAnswer(BaseModel):
     value: str
+
+
+def test_invalid_model_output_keeps_private_response_and_safe_error_fields() -> None:
+    async def run() -> None:
+        content = '{"value":42}'
+        traces = InMemoryTraceStore()
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda _request: httpx.Response(
+                    200,
+                    json={"choices": [{"message": {"content": content}}]},
+                )
+            )
+        ) as client:
+            gateway = OpenAICompatibleModelGateway(
+                base_url="http://model.local", default_model="fake", client=client, trace_store=traces
+            )
+            with pytest.raises(AgentServiceError) as captured:
+                await gateway.invoke(
+                    ModelRequest(
+                        agent_name="supervisor",
+                        run_id="failed-output",
+                        messages=[{"role": "user", "content": "test"}],
+                        output_model=ParsedAnswer,
+                    )
+                )
+        assert captured.value.code == ErrorCode.MODEL_SCHEMA_INVALID
+        assert captured.value.details["validation_errors"] == [{"location": ["value"], "type": "string_type"}]
+        assert "42" not in json.dumps(captured.value.details)
+        recorded = await traces.list("failed-output")
+        assert len(recorded) == 1
+        assert recorded[0]["response_content"] == content
+        assert recorded[0]["schema_error"]["schema"] == "ParsedAnswer"
+
+    asyncio.run(run())
 
 
 class ToolInput(BaseModel):

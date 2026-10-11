@@ -16,11 +16,55 @@ from agent_service.domain.enums import (
     SupervisorTurnStatus,
     WorkflowKind,
 )
-from agent_service.domain.models.supervisor import ConversationTurn, SupervisorTargetHint
+from agent_service.domain.models.supervisor import (
+    ConversationTurn,
+    SupervisorModelOutput,
+    SupervisorTargetHint,
+)
 from agent_service.harness import FakeModelGateway
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
 PROMPT = REPOSITORY_ROOT / "services" / "agent" / "prompts" / "supervisor.md"
+
+
+def test_real_case_a_output_accepts_numeric_page_and_directional_terminal() -> None:
+    async def run() -> None:
+        payload = {
+            "intent": "CORRECT_RESULT",
+            "confidence": 0.98,
+            "reason": "修订终点端子",
+            "requires_input": False,
+            "question": None,
+            "extracted_hints": {},
+            "correction_items": [
+                {
+                    "query": {
+                        "workspace_name": "082.R",
+                        "workspace_page": 50,
+                        "wire_number": 1000,
+                        "start_terminal": "XD3:251",
+                    },
+                    "field": "end_terminal",
+                    "observed_problem": "终点端子错误",
+                    "suggested_value_present": True,
+                    "suggested_value": "2",
+                    "issue_kind": "DIRECT_VALUE_CHANGE",
+                }
+            ],
+        }
+        output = SupervisorModelOutput.model_validate(payload)
+        assert output.correction_items[0].query.workspace_page == "50"
+        assert output.correction_items[0].query.wire_number == "1000"
+        gateway = FakeModelGateway([json.dumps(payload, ensure_ascii=False)])
+        decision = await SupervisorAgent(gateway=gateway, prompt_path=PROMPT).decide(
+            ConversationTurn(
+                conversation_id="case-a", user_id="user-1", project_id="project-1", message="终点端子改回2"
+            )
+        )
+        assert decision.status == SupervisorTurnStatus.DISPATCHED
+        assert decision.command.payload["correction_items"][0]["query"]["start_terminal"] == "XD3:251"
+
+    asyncio.run(run())
 
 
 def output(

@@ -98,6 +98,17 @@ class SupervisorEventPresenter:
         public: list[dict[str, Any]] = []
         for artifact in artifact_payloads:
             kind = artifact.get("kind")
+            if kind == "result_proposal":
+                proposal = artifact.get("proposal") or {}
+                public.append(
+                    {
+                        "kind": kind,
+                        "proposal_id": artifact.get("proposal_id"),
+                        "base_result_version": proposal.get("base_result_version"),
+                        "operations": proposal.get("operations", []),
+                        "validation": proposal.get("validation"),
+                    }
+                )
             if kind == "improvement_diagnosis":
                 diagnoses = artifact.get("diagnoses")
                 safe_diagnoses: list[dict[str, Any]] = []
@@ -112,6 +123,10 @@ class SupervisorEventPresenter:
                                 "explanation": item.get("explanation"),
                                 "recommended_action": item.get("recommended_action"),
                                 "profile_candidate_required": item.get("profile_candidate_required", False),
+                                "profile_path": item.get("profile_path"),
+                                "problem_excerpt": item.get("problem_excerpt"),
+                                "recommended_change": item.get("recommended_change"),
+                                "regression_cases": item.get("regression_cases", []),
                             }
                         )
                 public.append(

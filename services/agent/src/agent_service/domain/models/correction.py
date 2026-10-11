@@ -14,6 +14,7 @@ from ..enums import (
 from .common import StrictModel
 from .extraction_stages import (
     CrossPageCompletionRequest,
+    DrawingPageInput,
     PageClassificationRequest,
     PageScanRequest,
 )
@@ -72,11 +73,23 @@ class CorrectionPlan(StrictModel):
     reason: str = Field(min_length=1)
 
 
+class CorrectionBatch(StrictModel):
+    batch_id: str
+    project_id: str
+    base_result_version_id: str
+    profile: ProfileBinding
+    feedback_ids: list[str] = Field(min_length=1)
+    direct_patch: list[str] = Field(default_factory=list)
+    stage2: list[str] = Field(default_factory=list)
+    stage2_stage3: list[str] = Field(default_factory=list)
+
+
 class CorrectionEvidenceBundle(StrictModel):
     facts: CorrectionFacts
     context: CorrectionContext
     profile: ProfileBinding
     base_result_version: int = Field(ge=0)
+    base_result_revision: int = Field(default=1, ge=1)
     current_records: list[dict[str, Any]] = Field(min_length=1)
     unaffected_records: list[dict[str, Any]] = Field(default_factory=list)
     record_versions: dict[str, int] = Field(default_factory=dict)
@@ -85,3 +98,4 @@ class CorrectionEvidenceBundle(StrictModel):
     page_scan_requests: list[PageScanRequest] = Field(default_factory=list)
     cross_page_requests: list[CrossPageCompletionRequest] = Field(default_factory=list)
     cross_page_task_targets: dict[str, str] = Field(default_factory=dict)
+    available_pages: list[DrawingPageInput] = Field(default_factory=list)

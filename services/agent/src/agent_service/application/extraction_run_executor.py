@@ -14,6 +14,7 @@ from ..harness.stores import CancellationToken
 from ..infrastructure.document.pdf_runtime import load_pdf_module
 from ..infrastructure.project_assets import SupabaseProjectAssetStore
 from ..infrastructure.source_documents import SourceDocumentProvider
+from ..infrastructure.supabase_profile_packages import SupabaseProfilePackageRepository
 from ..infrastructure.supabase_stage_repository import SupabaseStageRepository
 from ..profiles import ProfileRegistry
 from ..tools.profile_detection import ProfileDetectionTool
@@ -37,6 +38,7 @@ class FullExtractionRunExecutor:
         profile_detection: ProfileDetectionTool | None = None,
         project_assets: SupabaseProjectAssetStore | None = None,
         durable_stages: SupabaseStageRepository | None = None,
+        profile_packages: SupabaseProfilePackageRepository | None = None,
     ) -> None:
         self._settings = settings
         self._profiles = profiles
@@ -47,6 +49,7 @@ class FullExtractionRunExecutor:
         self._profile_detection = profile_detection
         self._project_assets = project_assets
         self._durable_stages = durable_stages
+        self._profile_packages = profile_packages
 
     async def execute(self, run: AgentRun, cancellation: CancellationToken) -> RunExecutionOutcome:
         cancellation.raise_if_cancelled()
@@ -95,7 +98,11 @@ class FullExtractionRunExecutor:
                 )
             profile_key = detection.assigned_profile.key
             run.profile_hint = profile_key
-        profile = self._profiles.bind(profile_key, run.profile.version if run.profile else None)
+        profile = (
+            await self._profile_packages.bind(run.profile)
+            if self._profile_packages and run.profile
+            else self._profiles.bind(profile_key, run.profile.version if run.profile else None)
+        )
         run.profile = profile.profile
         if run.protocol_version == 2:
             if self._durable_stages is None:
@@ -365,7 +372,11 @@ class FullExtractionRunExecutor:
     ) -> RunExecutionOutcome:
         repository = self._durable_stages
         assert repository is not None and run.profile is not None
-        profile = self._profiles.bind(run.profile.key, run.profile.version)
+        profile = (
+            await self._profile_packages.bind(run.profile)
+            if self._profile_packages
+            else self._profiles.bind(run.profile.key, run.profile.version)
+        )
         inputs = await repository.load_input(run.agent_run_id)
         if inputs is None:
 

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
+import json
 from dataclasses import dataclass
 from pathlib import Path
-from uuid import uuid4
+from uuid import NAMESPACE_URL, uuid4, uuid5
 
 from ..agents.evaluation_judge import EvaluationJudgeAgent
 from ..agents.improvement_diagnoser import ImprovementDiagnoserAgent
@@ -20,7 +22,9 @@ from ..domain.models.improvement import (
 from ..domain.ports import CandidateRepository
 from ..harness.profile_sandbox import ProfileSandbox
 from ..harness.release_gate import ReleaseGate
+from ..infrastructure.supabase_profile_packages import SupabaseProfilePackageRepository
 from ..profiles import ProfileRegistry
+from ..profiles.package import build_package, seal_package
 from ..tools.improvement_intake import ImprovementIntake
 
 
@@ -53,6 +57,7 @@ class ImprovementWorkflow:
         sandbox: ProfileSandbox,
         candidates: CandidateRepository,
         release_gate: ReleaseGate | None = None,
+        profile_packages: SupabaseProfilePackageRepository | None = None,
     ) -> None:
         self._profiles = profiles
         self._diagnoser = diagnoser
@@ -62,6 +67,7 @@ class ImprovementWorkflow:
         self._candidates = candidates
         self._gate = release_gate or ReleaseGate()
         self._intake = ImprovementIntake()
+        self._packages = profile_packages
 
     async def diagnose(self, feedback: list[AcceptedFeedback]) -> ImprovementPreparation:
         if not feedback:
@@ -73,6 +79,24 @@ class ImprovementWorkflow:
         cases: list[ImprovementCase] = []
         for item in feedback:
             self._intake.validate(item)
+            if self._packages:
+                root, manifest = await self._packages.resolve(item.profile)
+                item.context["package_checksum"] = manifest.package_checksum
+            else:
+                snapshot = self._profiles.resolve(
+                    item.profile.key, item.profile.version, allow_experimental=True
+                )
+                if snapshot.checksum != item.profile.checksum:
+                    raise ValueError("Improvement Profile checksum no longer matches feedback.")
+                root = self._sandbox.root / "inputs" / snapshot.checksum[7:]
+                if not root.exists():
+                    await asyncio.to_thread(build_package, snapshot, root)
+            item.context["profile_files"] = {
+                path.relative_to(root).as_posix(): await asyncio.to_thread(path.read_text, encoding="utf-8")
+                for path in root.rglob("*")
+                if path.is_file() and path.suffix in {".md", ".json", ".txt"}
+            }
+            item.context["profile_root"] = str(root)
             diagnosis = await self._diagnoser.diagnose(item)
             diagnoses.append(diagnosis)
             cases.append(
@@ -140,13 +164,28 @@ class ImprovementWorkflow:
             diagnoses=selected_diagnoses,
         )
         profile = selected_feedback[0].profile
-        snapshot = self._profiles.resolve(profile.key, profile.version, allow_experimental=True)
         candidate_id = str(uuid4())
+        if self._packages:
+            source_root, _ = await self._packages.resolve(profile)
+        else:
+            snapshot = self._profiles.resolve(profile.key, profile.version, allow_experimental=True)
+            source_root = self._sandbox.root / "inputs" / snapshot.checksum[7:]
+            if not source_root.exists():
+                await asyncio.to_thread(build_package, snapshot, source_root)
         sandbox_path = self._sandbox.create(
             candidate_id=candidate_id,
-            source_profile=snapshot.profile_root,
+            source_profile=source_root,
         )
         checksum = self._sandbox.apply(sandbox_path, patch.operations)
+        profile_json = sandbox_path / "profile.json"
+        payload = json.loads(profile_json.read_text(encoding="utf-8"))
+        for identity in ("key", "adapter", "capabilities", "resource_mode"):
+            baseline = json.loads((source_root / "profile.json").read_text(encoding="utf-8"))
+            if payload[identity] != baseline[identity]:
+                raise ValueError("Candidate patch cannot change Profile identity or executable adapter.")
+        payload["version"] = f"{profile.version.split('-')[0]}-candidate.{candidate_id}"
+        profile_json.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        package_manifest = await asyncio.to_thread(seal_package, sandbox_path, source_checksum=checksum)
         candidate = ProfileCandidate(
             candidate_id=candidate_id,
             profile=profile,
@@ -157,8 +196,25 @@ class ImprovementWorkflow:
             diagnoses=selected_diagnoses,
             sandbox_path=str(sandbox_path),
             checksum=checksum,
+            resource_package_id=str(
+                uuid5(
+                    NAMESPACE_URL,
+                    f"profile-package:{package_manifest.profile_key}/{package_manifest.profile_version}/"
+                    f"{package_manifest.package_checksum[7:]}",
+                )
+            )
+            if self._packages
+            else None,
+            resource_package_checksum=package_manifest.package_checksum if self._packages else None,
         )
         await self._candidates.put(candidate)
+        if self._packages:
+            await self._packages.upload(
+                sandbox_path,
+                created_by=authorized_by,
+                candidate_id=candidate_id,
+                base_package_id=source_root.name,
+            )
         return ImprovementPreparation(
             regression_cases=cases,
             diagnoses=diagnoses,
@@ -205,7 +261,19 @@ class ImprovementWorkflow:
         )
 
     async def activate_canary(self, candidate_id: str) -> ProfileCandidate:
-        return await self._candidates.transition(candidate_id, ProfileCandidateStatus.ACTIVE)
+        candidate = await self._candidates.transition(candidate_id, ProfileCandidateStatus.ACTIVE)
+        if self._packages and candidate.resource_package_id:
+            audit = await self._candidates.audit_log(candidate_id)
+            reviewer = next(
+                (item.get("reviewer_id") for item in reversed(audit) if item.get("reviewer_id")), None
+            )
+            if not reviewer:
+                raise ValueError("Published candidate requires an audited reviewer.")
+            await self._packages.client.rpc(
+                "publish_profile_package", {"package_id": candidate.resource_package_id, "reviewer": reviewer}
+            )
+            await self._packages.load_registry(self._profiles)
+        return candidate
 
     async def assess_canary(
         self,
@@ -227,7 +295,14 @@ class ImprovementWorkflow:
         raise ValueError("Only draft or evaluating candidates can be rejected.")
 
     async def rollback(self, candidate_id: str, reviewer_id: str) -> ProfileCandidate:
-        return await self._candidates.rollback(candidate_id, reviewer_id)
+        candidate = await self._candidates.rollback(candidate_id, reviewer_id)
+        if self._packages and candidate.resource_package_id:
+            await self._packages.client.rpc(
+                "rollback_profile_package",
+                {"package_id": candidate.resource_package_id, "reviewer": reviewer_id},
+            )
+            await self._packages.load_registry(self._profiles)
+        return candidate
 
     def _candidate_groups(
         self,

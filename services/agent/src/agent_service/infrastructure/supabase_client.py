@@ -97,6 +97,9 @@ class SupabaseClient:
 
     async def rpc(self, function: str, payload: Mapping[str, Any]) -> Any:
         response = await self._request("POST", f"{self._base_url}/rest/v1/rpc/{function}", json=payload)
+        # PostgREST returns an empty successful response for RETURNS void functions.
+        if not response.content.strip():
+            return None
         return response.json()
 
     async def upload(

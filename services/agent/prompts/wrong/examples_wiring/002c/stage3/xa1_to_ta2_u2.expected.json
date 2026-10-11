@@ -1,0 +1,22 @@
+{
+  "task_id": "002c11-xa1-to-002c06-ta2-u2",
+  "end": {
+    "part": null,
+    "location": "+00",
+    "device": "-TA2",
+    "name": "AUXILIARY TRANSFORMER",
+    "terminal_board": "TA2",
+    "terminal_code": null,
+    "terminal_strip": null,
+    "terminal": "U2"
+  },
+  "intermediate_points": [],
+  "current": null,
+  "current_basis": null,
+  "current_source_text": null,
+  "status": "resolved",
+  "needs_review": false,
+  "confidence": 0.98,
+  "source_note": "根据 002.C/11 的 +00/6.1 引用、线号 002C0601 和 002.C/6 第1列确认终点 -TA2:U2",
+  "warnings": []
+}

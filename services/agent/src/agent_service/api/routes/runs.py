@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import AsyncIterator
+from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
+from ...application.model_output_view import model_output_view
 from ...application.run_read_models import stage_summary
-from ...domain.enums import RunStatus
+from ...domain.enums import RunStatus, RunType
 from ...domain.errors import AgentServiceError
 from ...domain.models.imports import RunStageSummaryResponse
 from ...domain.models.runs import CreateRunRequest
@@ -126,14 +128,36 @@ async def stream_run_events(
 async def get_stage_summary(agent_run_id: str, user_id: str, request: Request) -> RunStageSummaryResponse:
     try:
         return await stage_summary(
-            request.app.state.run_control, getattr(request.app.state, "durable_stages", None),
-            agent_run_id, user_id,
+            request.app.state.run_control,
+            getattr(request.app.state, "durable_stages", None),
+            agent_run_id,
+            user_id,
         )
     except AgentServiceError as exc:
         _raise_http(exc)
     except PermissionError as exc:
         raise HTTPException(403, detail="Run access denied.") from exc
     raise AssertionError("unreachable")
+
+
+@router.get("/{agent_run_id}/model-outputs")
+async def get_model_outputs(agent_run_id: str, user_id: str, request: Request) -> dict[str, Any]:
+    run = await request.app.state.run_control.get_required(agent_run_id)
+    if run.requested_by != user_id:
+        raise HTTPException(403, detail="Run model output access denied.")
+    keys = [run.agent_run_id]
+    if run.run_type == RunType.IMPROVEMENT_CANDIDATE:
+        keys += [
+            f"improvement:{key}"
+            for key in dict.fromkeys(
+                [run.feedback_id or run.source_document_id] + run.options.correction_feedback_ids
+            )
+        ]
+    items: list[dict[str, Any]] = []
+    for key in keys:
+        traces = await request.app.state.trace_store.list(key)
+        items.extend(model_output_view(key, index, trace) for index, trace in enumerate(traces))
+    return {"items": items, "reasoning_exposed": False}
 
 
 @router.get("/{agent_run_id}/artifacts", response_model=RunArtifactsResponse)

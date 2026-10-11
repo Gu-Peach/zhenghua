@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from ..enums import CorrectionIssueKind, CrossPageState
 from .common import StrictModel
@@ -19,6 +19,16 @@ class ConnectionSearchQuery(StrictModel):
     connection_id: str | None = None
     wire_number: str | None = None
     terminal: str | None = None
+    start_terminal: str | None = None
+    end_terminal: str | None = None
+
+    @field_validator("workspace_page", "wire_number", mode="before")
+    @classmethod
+    def normalize_numbered_search_term(cls, value: Any) -> Any:
+        """Keep business numbering textual while accepting model-produced integers."""
+        if isinstance(value, int) and not isinstance(value, bool):
+            return str(value)
+        return value
 
     @model_validator(mode="after")
     def require_search_term(self) -> ConnectionSearchQuery:
@@ -33,6 +43,8 @@ class ConnectionSearchQuery(StrictModel):
                 self.connection_id,
                 self.wire_number,
                 self.terminal,
+                self.start_terminal,
+                self.end_terminal,
             )
         ):
             raise ValueError("Connection search requires at least one constrained field.")
@@ -48,6 +60,7 @@ class ConnectionSearchResult(StrictModel):
     workspace_page: str | None = None
     result_version_id: str = Field(min_length=1)
     result_version: int = Field(ge=0)
+    result_revision: int = Field(default=1, ge=1)
     record_version: int = Field(ge=0)
     source_document_id: str = Field(min_length=1)
     wire_number: str | None = None
@@ -59,7 +72,9 @@ class ConnectionSearchResult(StrictModel):
 
 class PrepareCorrectionRequest(StrictModel):
     query: ConnectionSearchQuery
-    requested_by: str = Field(min_length=1)
+    requested_by: str = Field(default="supervisor", min_length=1)
+    item_id: str | None = None
+    feedback_origin: str = "user"
     field: str | None = None
     observed_problem: str = Field(min_length=1)
     suggested_value_present: bool = False
@@ -68,6 +83,28 @@ class PrepareCorrectionRequest(StrictModel):
 
     @model_validator(mode="after")
     def validate_direct_value(self) -> PrepareCorrectionRequest:
+        allowed_fields = {
+            "principle_number",
+            "voltage_level",
+            "terminal_strip",
+            "start_code",
+            "start_description",
+            "start_terminal",
+            "end_code",
+            "end_description",
+            "end_terminal",
+            "current_value",
+            "remark",
+            "color_mark",
+            "is_cross_page",
+            "end",
+            "start",
+            "current",
+            "color",
+            "line_number",
+        }
+        if self.field is not None and self.field not in allowed_fields:
+            raise ValueError("Correction field is outside the business field allowlist.")
         if self.issue_kind == CorrectionIssueKind.DIRECT_VALUE_CHANGE:
             if not self.field or not self.suggested_value_present:
                 raise ValueError("Direct value correction requires field and suggested value.")
@@ -88,3 +125,6 @@ class ResultCommitResult(StrictModel):
     result_version_id: str = Field(min_length=1)
     confirmed_by: str = Field(min_length=1)
     accepted_feedback: list[AcceptedFeedback] = Field(default_factory=list)
+    result_revision: int = Field(default=1, ge=1)
+    update_mode: Literal["snapshot", "in_place"] = "snapshot"
+    updated_connection_ids: list[str] = Field(default_factory=list)
