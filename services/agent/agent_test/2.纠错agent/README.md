@@ -47,7 +47,7 @@ $env:AGENT_ACCEPTANCE_USER_ID="<已有 Auth 用户 UUID>"
 4. 确认后通过业务 HTTP 查询当前结果，核对同 connection/unit ID、线号、代次、revision 和字段值；不使用 SQL 或数据库工具。
 5. 自动监看已启动的 Improvement，显示每条反馈的模型输出、诊断类别/依据和修改建议。
 6. 若规则无问题、没有候选建议：正常结束，记录 `candidate_rejection=not_needed`，不调用 PatchBuilder/Eval/ReleaseGate。
-7. 若意外建议候选：等待用户明确输入“拒绝规则候选”，通过 Supervisor 提交拒绝并监看结束；记录预期偏差为 FAIL。拒绝成功不等于诊断“规则无问题”，不能因此把测试标为 PASS。
+7. 默认模式若意外建议候选：等待用户明确输入“拒绝规则候选”，通过 Supervisor 提交拒绝并监看结束；记录预期偏差为 FAIL。规则问题案例使用 `--expect-rule-issue`，候选出现后输入“确认规则修改”，继续 Profile Patch、评测和发布门禁流程。
 
 “规则无问题”和“等待拒绝候选”不是必然连续的两个步骤：没有建议候选就不应强行创建等待事项。诊断为 `SOURCE_INSUFFICIENT` 时记 INCOMPLETE，不能证明规则正确。
 

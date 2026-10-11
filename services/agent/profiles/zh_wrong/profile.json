@@ -1,0 +1,24 @@
+{
+  "manifest_version": 1,
+  "key": "zh-wrong",
+  "version": "1.0.0",
+  "display_name": "振华电气图纸（规则候选测试）",
+  "description": "隔离的规则缺陷验收 Profile，不得用于生产项目。",
+  "status": "experimental",
+  "adapter": "zh_native",
+  "resource_mode": "legacy_reference",
+  "resources": {
+    "classification_prompt": "../../prompts/wrong/page_classification.md",
+    "page_scan_prompt": "../../prompts/wrong/page_scan_index.md",
+    "cross_page_prompt": "../../prompts/wrong/page_cross_page_completion.md",
+    "classification_examples": "../../prompts/wrong/examples_page_classification",
+    "wiring_examples": "../../prompts/wrong/examples_wiring/002c",
+    "routing_rules": "rules.json"
+  },
+  "capabilities": [
+    "page_classification",
+    "page_scan",
+    "cross_page_completion",
+    "full_document_extraction"
+  ]
+}

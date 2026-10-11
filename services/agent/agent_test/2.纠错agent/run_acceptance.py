@@ -41,7 +41,12 @@ FIELDS = (
 
 
 def arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="混合纠错纯 HTTP 终端验收：预期规则无问题，候选只允许拒绝")
+    parser = argparse.ArgumentParser(description="纠错纯 HTTP 终端验收：支持规则候选确认与拒绝")
+    parser.add_argument(
+        "--expect-rule-issue",
+        action="store_true",
+        help="按规则有问题案例运行；候选出现后允许确认并继续 Profile Patch/Eval 流程",
+    )
     parser.add_argument("--project-id", default=os.getenv("AGENT_ACCEPTANCE_PROJECT_ID"))
     parser.add_argument("--user-id", default=os.getenv("AGENT_ACCEPTANCE_USER_ID"))
     parser.add_argument("--base-url", default="http://127.0.0.1:8100")
@@ -303,7 +308,13 @@ class Acceptance:
                 return result
             offset += len(page["items"])
 
-    def execute(self, message: str, expected: dict[str, dict[str, Any]] | None) -> None:
+    def execute(
+        self,
+        message: str,
+        expected: dict[str, dict[str, Any]] | None,
+        *,
+        expect_rule_issue: bool = False,
+    ) -> None:
         before = self.rows()
         profiles_before = self.request("/v1/profiles")["items"]
         self.log("results_before", before)
@@ -395,13 +406,25 @@ class Acceptance:
         checks["no_candidate_recommended"] = diagnosis.get("candidate_recommended") is False
         self.report["field_accuracy_validated"] = checks.get("human_expected_fields")
         if diagnosis.get("candidate_recommended"):
-            print("[预期偏差] Agent 建议规则候选；本脚本只允许人工拒绝，拒绝不等于证明规则没问题。")
-            while True:
-                answer = self.ask("用户（输入“拒绝规则候选”继续，/quit 退出）：")
-                if answer in {"拒绝规则候选", "拒绝", "不修改规则"}:
-                    break
-                print("本案例不授权创建候选，请明确拒绝或退出。")
-            reply = self.turn(answer, {"agent_run_id": improvement})
+            if not expect_rule_issue:
+                print("[预期偏差] Agent 建议规则候选；本脚本只允许人工拒绝，拒绝不等于证明规则没问题。")
+                while True:
+                    answer = self.ask("用户（输入“拒绝规则候选”继续，/quit 退出）：")
+                    if answer in {"拒绝规则候选", "拒绝", "不修改规则"}:
+                        break
+                    print("本案例不授权创建候选，请明确拒绝或退出。")
+                reply = self.turn(answer, {"agent_run_id": improvement})
+            else:
+                print("[规则问题] Agent 已识别规则候选；确认后将进入 Profile Patch、评测和发布门禁。")
+                while True:
+                    answer = self.ask("用户（输入“确认规则修改”继续，或“拒绝规则候选”退出）：")
+                    if answer in {"确认规则修改", "确认修改规则", "确认"}:
+                        reply = self.turn(answer, {"agent_run_id": improvement})
+                        break
+                    if answer in {"拒绝规则候选", "拒绝", "不修改规则"}:
+                        reply = self.turn(answer, {"agent_run_id": improvement})
+                        break
+                    print("请明确输入确认或拒绝。")
             if not (reply.get("receipt") or {}).get("agent_run_id"):
                 raise ValueError("拒绝未恢复归因任务，记录已保存。")
             run, artifacts = self.watch(improvement)
@@ -410,6 +433,9 @@ class Acceptance:
                 event.get("metrics", {}).get("candidate_declined") is True for event in events
             )
             self.report["candidate_rejection"] = "declined" if checks["rejection_applied"] else "not_applied"
+            if expect_rule_issue and answer in {"确认规则修改", "确认修改规则", "确认"}:
+                self.report["candidate_authorization"] = "requested"
+                self.report["candidate_rejection"] = "not_requested"
         else:
             print("[规则候选] 未建议创建候选，无待拒绝事项；本轮不调用 ProfilePatchBuilder。")
             self.report["candidate_rejection"] = "not_needed"
@@ -417,6 +443,10 @@ class Acceptance:
         checks["no_candidate_created"] = not any(
             item.get("kind") == "profile_candidate" for item in artifacts
         )
+        if expect_rule_issue:
+            checks["rule_issue_detected"] = bool(diagnoses) and bool(diagnosis.get("candidate_recommended"))
+            checks["candidate_authorization_requested"] = self.report.get("candidate_authorization") == "requested"
+            checks["no_candidate_created"] = False
         checks["production_profiles_unchanged"] = profiles_before == self.request("/v1/profiles")["items"]
         batch = self.report.get("batch", {})
         stages = self.report.get("stages", [])
@@ -491,7 +521,7 @@ def main() -> int:
                 else acceptance.ask("用户（输入一条包含直接答案＋同页重识别＋跨页重识别的消息）：")
             )
             acceptance.report["case_input"] = message
-            acceptance.execute(message, expected)
+            acceptance.execute(message, expected, expect_rule_issue=args.expect_rule_issue)
             return 0 if acceptance.report["acceptance"] == "PASS" else 1
         except (Stopped, KeyboardInterrupt) as exc:
             acceptance.report.update(acceptance="INCOMPLETE", stopped=str(exc) or "用户中断")

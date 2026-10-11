@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "profile_key": "zh-wrong",
+  "display_name": "振华电气图纸（规则候选测试）",
+  "detection": {
+    "summary": "用于规则问题归因验收的隔离 ZH Profile。",
+    "strong_signals": [
+      "首页出现 ZPMC 标志或文字",
+      "首页出现 上海振华重工 或 SHANGHAI ZPMC ELECTRIC COMPANY LIMITED"
+    ],
+    "supporting_signals": [
+      "标题栏包含 Project.NR、Plant Function、Page Number"
+    ],
+    "exclusion_signals": [
+      "标题栏明确标注其他制造商时不能判定为 ZH"
+    ],
+    "guidance": "仅用于测试规则归因，不覆盖生产 Profile。"
+  },
+  "extraction": {
+    "workflow": [
+      "page_classification",
+      "page_scan",
+      "build_cross_page_tasks",
+      "cross_page_completion",
+      "deterministic_validation"
+    ],
+    "dynamic_resources": {
+      "page_classification": ["classification_prompt", "classification_examples"],
+      "page_scan": ["page_scan_prompt", "wiring_examples"],
+      "cross_page_completion": ["cross_page_prompt", "wiring_examples"]
+    },
+    "business_rules": [
+      "使用 Plant Function + Page Number 建立图纸业务索引",
+      "跨页终点在本测试 Profile 中错误地去掉端子排前缀，供 Improvement 归因",
+      "Stage 3 只能补全任务指定连接，不能修改已确认起点"
+    ],
+    "output_contract": "wiring_connection_v1"
+  }
+}
