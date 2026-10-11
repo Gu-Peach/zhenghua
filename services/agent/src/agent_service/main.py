@@ -81,6 +81,7 @@ from .infrastructure.supabase_repositories import (
     SupabaseTraceStore,
 )
 from .infrastructure.supabase_result_data import SupabaseResultDataRepository
+from .infrastructure.supabase_stage_repository import SupabaseStageRepository
 from .observability import configure_logging
 from .profiles.registry import ProfileRegistry
 from .tools.extraction_runner import ScopedExtractionRunner
@@ -149,7 +150,7 @@ def create_app(
             service_role_key=resolved_settings.supabase_service_role_key or "",
             timeout_seconds=resolved_settings.supabase_request_timeout_seconds,
         )
-        runs = SupabaseRunRepository(supabase)
+        runs = SupabaseRunRepository(supabase, durable_extraction=True)
         events = SupabaseEventRepository(supabase)
         artifacts = SupabaseArtifactRepository(supabase)
         proposals = SupabaseProposalRepository(supabase)
@@ -192,6 +193,8 @@ def create_app(
         candidates = InMemoryCandidateRepository()
         evals = InMemoryEvalRepository()
         traces = InMemoryTraceStore()
+    durable_stages = SupabaseStageRepository(supabase) if supabase is not None else None
+    application.state.durable_stages = durable_stages
     run_control = RunControlService(
         runs=runs,
         events=events,
@@ -210,6 +213,7 @@ def create_app(
         artifacts=artifacts,
         proposals=proposals,
         result_data=result_data_repository,
+        durable_stages=durable_stages,
     )
     result_data_tool = ControlledResultDataTool(
         repository=result_data_repository,
@@ -248,6 +252,7 @@ def create_app(
             runtime_root=resolved_settings.workspace_root / "services" / "agent" / ".runtime",
             profile_detection=profile_detection_tool,
             project_assets=project_assets,
+            durable_stages=durable_stages,
         ),
     )
     correction_stages = (

@@ -86,6 +86,18 @@ class InMemoryRunRepository:
                 )
             self._runs[run.agent_run_id] = run.model_copy(deep=True)
 
+    async def control(self, agent_run_id: str, action: str) -> None:
+        run = await self.get(agent_run_id)
+        if run is None:
+            raise ValueError("Missing run.")
+        if action == "cancel":
+            run.status = RunStatus.CANCELLED
+        elif action == "resume" and run.status in {RunStatus.FAILED, RunStatus.WAITING_INPUT}:
+            run.status = RunStatus.QUEUED
+        else:
+            raise ValueError("Invalid control transition.")
+        await self.save(run)
+
 
 class InMemoryEventRepository:
     def __init__(self) -> None:

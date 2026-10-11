@@ -1,6 +1,8 @@
 # 三阶段提取：阶段性持久化改造方案
 
-日期：2026-10-10。修订：V1.1（已纳入六项一致性评审意见）。状态：**方案待评审，尚未实施**。
+日期：2026-10-10。修订：V1.1（六项一致性约束的设计基线）。状态：**Gate A 已实施并验证；Gate B 未实施**。
+
+下文保留原设计基线与拟改动描述；当前实现、实际提交类型/位置和验证命令以 [Gate A 实施记录](./changelog/2026-10-10-gate-a-implementation.md) 为准。实施中为保护历史结果元数据，将新协议 workspace/drawing UUID 改为 run-scoped，并保留旧记录与旧 run 协议；未改变图纸识别算法或 `is_cross_page` 三态。
 
 适用范围：正式 `FULL_EXTRACTION` Worker 的三阶段提取。验收目录 `agent_test/1.3stage` 指整个三阶段链路，本文 Stage 1 专指其中的页面分类 Agent。设计依据见 [ADR-0007](../../adr/0007-durable-extraction-stage-boundaries.md)。
 
@@ -421,7 +423,9 @@ fencing 不仅覆盖 item/manifest：所有 Worker 侧 run save、阶段事件�
 
 - 现有 `agent_artifacts` 新增 nullable stage、item_id、schema_version、input_fingerprint 等索引列；旧 Artifact 不强制回填，复合索引 `(agent_run_id, stage, item_id)`，唯一约束以 canonical item/manifest 的幂等键为准。
 - 新 stage kind 的 CHECK/约束与内部 payload 身份检查；大集合分项提交、分页读取，不写整本 PDF Base64 或无界 checkpoint。
-- 两个提交 RPC及租约续期/fencing 所需追加字段/函数；不新增跨页业务表，不改变现有最终结果表含义。
+- 逐项/封存 RPC、fenced claim/renew/state transition/acknowledge、fenced result wrapper 与 finalize RPC；复用现有表，不新增跨页业务表，不改变现有最终结果表含义。
+- run 的冻结 input manifest、协议版本、lease generation、重试预算/历史引用；queue 的 expires_at/owner 与条件清理支持；project 的 classification publish epoch/已发布 snapshot 指针及投影 provenance。具体新增列按可索引需求设计，不能只存入无约束任意 JSON。新字段向旧 run 兼容，新协议入口禁止旧非 fenced 调用旁路。
+- receipt/proposal/result/manifest 所属 run/project 的关联约束；项目发布指针只可指向完整分类 manifest。补外键、唯一约束、索引与循环级联删除风险评审；不改变现有删除项目的 Storage 保留策略。
 - stage RPC 为 service-role-only，固定 search_path，撤销 public/anon/authenticated 执行权；服务层按 run/project 关联校验，不能仅相信传入 project_id。
 - 沿用现有表 RLS 的项目 owner/member 权限路径；验证匿名、非成员、成员读取与未授权写入。原始模型响应只通过受控授权接口暴露，避免把私有响应并入宽权限视图。
 - 不可变 Artifact 无需 updated_at；可变 checkpoint 使用现有 updated_at/CAS。run 外键级联维持现有策略，不自动级联删除 Storage。
@@ -434,13 +438,14 @@ fencing 不仅覆盖 item/manifest：所有 Worker 侧 run save、阶段事件�
 | 文件/目录 | 改动 |
 | --- | --- |
 | `domain/models/stage_persistence.py`（新增，位于 `services/agent/src/agent_service/`） | envelope、manifest、输入引用、提交 receipt、类型化跨页任务/聚合快照 |
+| `domain/models/runs.py`、`domain/models/proposals.py` | RunLease、冻结输入/发布 epoch、final receipt 引用与协议版本；保留现有 RunStatus 语义 |
 | `domain/models/extraction_stages.py` | 保持阶段结果兼容，补受控上下文引用与必要定位适配，避免端点/页号重复定义 |
-| `domain/ports.py` | 新 `ExtractionStageRepository`：commit_item、commit_manifest、load_snapshot、list_items；类型签名不接受任意 SQL |
+| `domain/ports.py` | 新 Stage repository 和有 token 的 claim/renew/transition/ack/finalize 协议；类型签名不接受任意 SQL |
 | `domain/schema.py`、`domain/models/__init__.py` | 注册新契约、版本/checksum 及导出；合同快照同步 |
 | `infrastructure/stage_repository.py`（新增） | Memory/Fake adapter，与 Supabase 相同提交/恢复语义 |
 | `infrastructure/supabase_stage_repository.py`（新增） | RPC adapter、分页/指纹加载、Schema 校验，不在 Graph 拼 SQL |
-| `infrastructure/project_assets.py`、`storage_paths.py` | 逐页不可变图片写入、Storage 引用下载校验；Stage 1 项目树提交移入受控事务路径 |
-| `infrastructure/supabase_repositories.py`、`infrastructure/queue.py` | 租约续期/fencing、CAS 整合与旧 runtime 兼容 |
+| `infrastructure/project_assets.py`、`storage_paths.py` | 逐页不可变图片、未发布分类投影；封存时事务发布项目树与 provenance |
+| `infrastructure/supabase_repositories.py`、`infrastructure/queue.py` | 原子 RUNNING 接管、lease token/续期、状态 RPC、条件 ack、退避及旧 run 协议隔离 |
 | `application/stage_persistence.py`（新增） | 处理项提交、阶段封存、重建输入、错误分类和指标 |
 | `application/extraction_run_executor.py` | 去掉 consume_progress 驱动落库；阶段 started/completed 由提交服务推进 |
 | `application/three_stage_extraction.py` | 注入 Stage repository/context loader；生产入口只从持久化清单组装请求 |
@@ -449,9 +454,11 @@ fencing 不仅覆盖 item/manifest：所有 Worker 侧 run save、阶段事件�
 | `graphs/document_extraction/pages.py` | 分类/扫描循环逐项提交；恢复改为 repository，缓存 JSON 非权威 |
 | `graphs/document_extraction/cross_page.py` | 任务生成/补全逐项提交；禁止原地改 Stage 2 数据，按清单重建 |
 | `graphs/document_extraction/normalization.py`、`exports.py` | 聚合/校验快照，最终导出从持久化结果生成 |
-| `application/worker.py`、`run_control.py` | 保留最终 Proposal/RPC；引用校验快照，取消/恢复与事件幂等整合 |
+| `application/worker.py`、`run_control.py` | 去掉仅 QUEUED 和无条件 finally ack；先查 final receipt、接管/退避/取消 fencing、状态与事件收口 |
+| `application/run_finalization.py`（新增） | 结果提交后只恢复收尾，幂等补 Artifact/终态/唯一事件 |
 | `tools/result_proposal.py` | 从已提交校验结果重建 Proposal，保持现有最终字段映射 |
-| `infrastructure/result_mapping.py`、`supabase_result_data.py` | 最终映射引用固定阶段身份/来源，避免被另一个 run 的最新图纸投影污染；既有字段含义变化另行评审 |
+| `infrastructure/result_mapping.py`、`supabase_result_data.py` | 固定来源映射、final receipt 查询、fenced result wrapper；保留既有版本创建算法 |
+| 项目树读取 adapter（后续业务 Server/API 模块，尚无现成入口） | 仅读取 published 分类 snapshot；机制验收先测试 repository，HTTP 接入归 Gate B |
 | `main.py` | 根据 persistence backend 注入正式 Stage repository |
 | 新 migration（上一节） | stage 提交事务、查询索引、约束、权限及租约支持 |
 | `tests/contract/test_domain_schema_snapshot.py` | 新 payload 与 checksum 契约 |
@@ -472,16 +479,24 @@ fencing 不仅覆盖 item/manifest：所有 Worker 侧 run save、阶段事件�
 
 后续 `services/agent/agent_test/1.3stage/run_acceptance.py` 只发 HTTP 用户输入、上传、展示 SSE、查询阶段摘要；不能导入 Agent/tool/VLM/Supabase 或手动推进 stage。真实模型通过显式开关启用，报告模型、案例、各阶段耗时、费用（供应商不支持则 unknown）及字段差异，不能用 exit code 0 代替验收通过。
 
-## 10. 分步实施与验收门槛
+## 10. 分步实施与两层验收门槛
 
-执行时按顺序，只允许一个步骤处于进行中；本轮只有方案编写完成，以下实现步骤全部未开始。
+执行时按顺序，只允许一个步骤处于进行中；步骤 1—5 已完成 Gate A，步骤 6/Gate B 尚未开始。
 
-1. 契约与 migration：定义类型、repository、SQL/RLS/租约；空库和旧数据快照执行新迁移。
-2. Render + Stage 1：逐页提交、项目树、清单屏障；删缓存后能从库恢复，Stage 2 不读旧状态。
+1. 契约与 migration：优先定义权威预期集合、双摘要、RunLease/接管/状态转换及最终 receipt/收尾协议；实现 SQL/RLS，空库和旧数据快照执行新迁移。
+2. Render + Stage 1：逐页未发布投影、完整集合屏障和原子项目树发布；删缓存后从库恢复，Stage 2 不读旧状态。
 3. Stage 2：逐页结果和聚合快照；任一数据库提交失败时 Stage 3 模型调用数必须为 0。
 4. Build tasks + Stage 3：数据库清单驱动，起点锁定，无目标/冲突复核，空任务也可完成。
-5. Validation + final commit：从数据库重建、最终业务 RPC、线号从 1000、结果幂等和版本冲突；取消及长任务租约验收。
-6. 上传/确认衔接与纯 HTTP 验收脚本：真实 Supabase、显式真实 VLM，完成 `1.3stage/test.md` 链路。
+5. Validation + final commit：从数据库重建、fenced 结果提交及幂等 finalize，线号从 1000；接管、取消、退避、版本冲突及故障窗口通过 Gate A。
+6. 上传/确认衔接与纯 HTTP 验收脚本：单独接口建设，完成 Gate B 的上传/确认/Worker/SSE 与显式真实 VLM。
+
+### Gate A：阶段持久化能力（步骤 1—5）
+
+真实 Supabase/PostgreSQL + Fake VLM，独立于上传/聊天接口建设验收。必须证明数据库屏障、canonical 幂等、权威集合、原子树发布、失效 RUNNING 接管、旧 Worker 全路径 fencing、无缓存续跑、最终收尾故障恢复与字段一致性。先通过此门槛，可以标记“阶段持久化机制已实现/通过 Gate A”，不能称完整用户链路已打通。
+
+### Gate B：用户完整链路（步骤 6）
+
+前置 Gate A。服务端业务上传、Profile 用户确认、run 创建、真实 Worker 与 SSE 经纯 HTTP 客户端串联；先 Fake VLM HTTP 回归，再通过显式真实模型开关运行人工确认案例并输出字段级/成本/耗时报告。Gate B 才可标记“`1.3stage` 用户链路验收完成”。未接 Web/鉴权代理仍须单独说明，不用 Agent 内部 HTTP 验收冒充整个产品上线。
 
 必测场景：
 
@@ -492,5 +507,23 @@ fencing 不仅覆盖 item/manifest：所有 Worker 侧 run save、阶段事件�
 - Stage 3 不改变 Stage 2 起点；跨页连接最终可追溯来源，物理页号不与业务页号混淆。
 - 最终数据库字段级结果与现有固定回归一致；模型重试、费用、耗时不伪造。
 - 空库/旧数据 migration、RLS 越权、签名 URL、分页加载、默认测试不调用付费模型。
+- RUNNING lease 到期后新 Worker 自动接管；旧 Worker 的 fail/save/commit/finalize/ack 全部拒绝；QUEUED 退避不被 finally 删除，数据库时钟过期与 lease 续期交界可重复验证。
+- PDF 100 页提交 99 页、重复页凑计数、错误上游/另一 run 项、漏 planning decision：封存必须拒绝；counts/ready 不可由调用方伪造。
+- result RPC 成功后分别在 receipt 回包、Artifact、终态、事件、ack 点崩溃：只补收尾，不重复模型/版本/线号；取消竞争按事务先后规则稳定处理。
+- 同项目两个 run 交替完成 Stage 1：未封存树不可见，旧 epoch 不覆盖新树，发布事务失败保留上次完整树。
+- request ID 重用不同内容被拒绝；相同输入/不同模型结果保存冲突不改 canonical，metrics/attempt 变化不影响业务去重，但完整记录摘要变化可被验证。
 
-完成定义：只有“阶段提交失败可阻断下游 + 丢失内存/缓存仍可续跑 + 最终规范化数据/事件一致 + 真实 HTTP 验收”全部通过，才标为阶段性持久化已实现。方案文件存在不等于这项能力已经完成。
+完成定义分开记录 Gate A、Gate B 及未运行测试；不得因为 Gate B 接口未建设就否认已验收机制，也不得只完成 Gate A 就宣称完整产品链路通过。方案文件存在不等于任何 Gate 已通过。
+
+## 11. V1.1 评审闭环
+
+| 评审项 | 方案落点 | 实施前必须具备的证据 |
+| --- | --- | --- |
+| RUNNING 接管及全路径 fencing | 6.5、7、8 | 原子状态表/token/RPC 契约与旧入口隔离设计 |
+| 上游权威预期集合 | 4.6、6.2 | 冻结 PDF 页数、connection planning coverage、SQL 集合相等校验 |
+| 结果已提交后的恢复收尾 | 4.7、6.3 | durable receipt、finalize 原子事务、异常/取消竞争协议 |
+| Stage 1 发布时机及多 run | 4.2、6.4 | 未发布 run 投影、项目 epoch/published 指针、树查询约束 |
+| checksum/幂等/冲突 | 4.8 | 三种摘要固定字段、规范化版本、first-success canonical 策略 |
+| 两层交付门槛 | 10 | Gate A 与 Gate B 分别记状态/测试报告 |
+
+六项一致性约束已纳入 Gate A 实现/验证；用户上传/确认的 Gate B 仍是独立未完成事项。

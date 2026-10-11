@@ -6,17 +6,19 @@ from collections.abc import Mapping
 from typing import Any
 from uuid import UUID
 
-from ..domain.enums import ErrorCode, RunStatus
+from ..domain.enums import ErrorCode, RunStatus, RunType
 from ..domain.errors import AgentServiceError
 from ..domain.models.common import utc_now
 from ..domain.models.proposals import ResultProposal
 from ..domain.models.runs import AgentEvent, AgentRun, CreateRunRequest
+from .run_lease_context import current_run_lease
 from .supabase_client import SupabaseClient
 
 
 class SupabaseRunRepository:
-    def __init__(self, client: SupabaseClient) -> None:
+    def __init__(self, client: SupabaseClient, *, durable_extraction: bool = False) -> None:
         self._client = client
+        self._durable_extraction = durable_extraction
 
     async def create(self, request: CreateRunRequest, idempotency_key: str) -> AgentRun:
         if not idempotency_key.strip():
@@ -28,6 +30,8 @@ class SupabaseRunRepository:
             return _run_from_row(existing)
 
         run = AgentRun.from_request(request, idempotency_key)
+        if self._durable_extraction and run.run_type == RunType.FULL_EXTRACTION:
+            run.protocol_version = 2
         rows = await self._client.insert("agent_runs", _run_to_row(run, fingerprint=fingerprint))
         if not rows:
             raise _missing_row("agent run")
@@ -40,7 +44,19 @@ class SupabaseRunRepository:
         )
         return _run_from_row(rows[0]) if rows else None
 
+    async def control(self, agent_run_id: str, action: str) -> None:
+        await self._client.rpc("gate_a_control", {"target": agent_run_id, "action": action})
+
     async def save(self, run: AgentRun) -> None:
+        lease = current_run_lease.get()
+        if run.protocol_version == 2:
+            if lease is None or lease.run_id != run.agent_run_id:
+                raise AgentServiceError(ErrorCode.CHECKPOINT_CONFLICT, "Durable run save requires a lease.")
+            await self._client.rpc("gate_a_runtime_write", {
+                "target": run.agent_run_id, "token": lease.model_dump(mode="json"),
+                "kind": "run", "value": _run_to_row(run, include_identity=False),
+            })
+            return
         current = await self.get(run.agent_run_id)
         if (
             current is not None
@@ -90,6 +106,13 @@ class SupabaseEventRepository:
         self._client = client
 
     async def append(self, event: AgentEvent) -> AgentEvent:
+        lease = current_run_lease.get()
+        if lease is not None and lease.run_id == event.agent_run_id:
+            seq = await self._client.rpc("gate_a_runtime_write", {
+                "target": event.agent_run_id, "token": lease.model_dump(mode="json"),
+                "kind": "event", "value": event.model_dump(mode="json"),
+            })
+            return event.model_copy(update={"seq": int(seq)})
         seq = await self._client.rpc(
             "append_agent_event",
             {
@@ -135,6 +158,12 @@ class SupabaseArtifactRepository:
             raise ValueError("Artifacts require kind.")
         existing = await self.get(artifact_id)
         value = dict(payload)
+        lease = current_run_lease.get()
+        if lease is not None and lease.run_id == run_id:
+            await self._client.rpc("gate_a_runtime_write", {
+                "target": run_id, "token": lease.model_dump(mode="json"), "kind": "artifact", "value": value,
+            })
+            return
         if existing is not None:
             if dict(existing) != value:
                 raise AgentServiceError(
@@ -187,6 +216,13 @@ class SupabaseProposalRepository:
                     f"Proposal {proposal.proposal_id!r} already exists with different content.",
                     retryable=False,
                 )
+            return proposal.proposal_id
+        lease = current_run_lease.get()
+        if lease is not None and lease.run_id == proposal.agent_run_id:
+            await self._client.rpc("gate_a_runtime_write", {
+                "target": proposal.agent_run_id, "token": lease.model_dump(mode="json"),
+                "kind": "proposal", "value": proposal.model_dump(mode="json"),
+            })
             return proposal.proposal_id
         await self._client.insert(
             "result_proposals",
@@ -334,6 +370,7 @@ def _run_to_row(
     if include_identity:
         row.update(
             {
+                "protocol_version": run.protocol_version,
                 "id": _uuid(run.agent_run_id),
                 "idempotency_key": run.idempotency_key,
                 "request_fingerprint": fingerprint or "saved-run",
@@ -350,6 +387,7 @@ def _run_from_row(row: Mapping[str, Any]) -> AgentRun:
     return AgentRun.model_validate(
         {
             "agent_run_id": str(row["id"]),
+            "protocol_version": row.get("protocol_version", 1),
             "idempotency_key": row["idempotency_key"],
             "run_type": row["run_type"],
             "status": row["status"],

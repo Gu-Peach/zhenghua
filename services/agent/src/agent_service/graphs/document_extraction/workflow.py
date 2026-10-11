@@ -5,7 +5,12 @@ import inspect
 import shutil
 from collections.abc import Callable, Iterable
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
+
+from agent_service.domain.enums import AgentStage
+
+if TYPE_CHECKING:
+    from agent_service.application.stage_persistence import DurableExtractionSession
 
 from agent_service.application.document_extraction.ports import (
     DocumentStageClient as VLMClient,
@@ -111,7 +116,10 @@ def build_document_graph(
         graph_type = _FallbackStateGraph
 
     async def page_scan_node(state: GraphState) -> dict[str, Any]:
-        return await _page_scan_loop_node(state, runtime)
+        result = await _page_scan_loop_node(state, runtime)
+        if runtime.durable:
+            result.update(_normalize_and_deduplicate_node(cast(GraphState, {**state, **result}), runtime))
+        return result
 
     async def build_cross_page_tasks_node(state: GraphState) -> dict[str, Any]:
         return _build_cross_page_tasks_node(state, runtime)
@@ -123,21 +131,48 @@ def build_document_graph(
         return await _classify_pages_node(state, runtime)
 
     async def assemble_table_node(state: GraphState) -> dict[str, Any]:
+        if runtime.durable:
+            state = cast(GraphState, {**state, **_normalize_and_deduplicate_node(state, runtime)})
         return _assemble_table_node(state, runtime)
 
+    def fenced(stage: AgentStage, node: Callable[[GraphState], Any]) -> Callable[[GraphState], Any]:
+        async def wrapped(state: GraphState) -> dict[str, Any]:
+            async def invoke(value: GraphState) -> dict[str, Any]:
+                result = node(value)
+                return cast(dict[str, Any], await result if inspect.isawaitable(result) else result)
+
+            if runtime.durable:
+                return await runtime.durable.run_node(stage, invoke, state, runtime)
+            return await invoke(state)
+
+        return wrapped
+
+    async def render_pages(state: GraphState) -> dict[str, Any]:
+        if runtime.durable:
+            return await asyncio.to_thread(_pdf_to_images_node, state, runtime)
+        return _pdf_to_images_node(state, runtime)
+
     graph = graph_type(GraphState)
-    graph.add_node("pdf_to_images", lambda state: _pdf_to_images_node(state, runtime))
+    graph.add_node(
+        "pdf_to_images", fenced(AgentStage.RENDER, render_pages)
+    )
 
     graph.add_node("build_page_index", lambda _state: {})
-    graph.add_node("classify_pages", classify_pages_node)
-    graph.add_node("page_scan_loop", page_scan_node)
-    graph.add_node("normalize_and_deduplicate", lambda state: _normalize_and_deduplicate_node(state, runtime))
-    graph.add_node("build_cross_page_tasks", build_cross_page_tasks_node)
-    graph.add_node("resolve_cross_page", resolve_cross_page_node)
+    graph.add_node("classify_pages", fenced(AgentStage.PAGE_CLASSIFICATION, classify_pages_node))
+    graph.add_node("page_scan_loop", fenced(AgentStage.PAGE_SCAN, page_scan_node))
     graph.add_node(
-        "normalize_after_cross_page", lambda state: _normalize_and_deduplicate_node(state, runtime)
+        "normalize_and_deduplicate",
+        lambda state: {} if runtime.durable else _normalize_and_deduplicate_node(state, runtime),
     )
-    graph.add_node("assemble_table", assemble_table_node)
+    graph.add_node(
+        "build_cross_page_tasks", fenced(AgentStage.BUILD_CROSS_PAGE_TASKS, build_cross_page_tasks_node)
+    )
+    graph.add_node("resolve_cross_page", fenced(AgentStage.CROSS_PAGE_COMPLETION, resolve_cross_page_node))
+    graph.add_node(
+        "normalize_after_cross_page",
+        lambda state: {} if runtime.durable else _normalize_and_deduplicate_node(state, runtime),
+    )
+    graph.add_node("assemble_table", fenced(AgentStage.VALIDATION, assemble_table_node))
     sequence = [
         START,
         "pdf_to_images",
@@ -166,6 +201,7 @@ async def run_document_extraction(
     output_mode: str | None = None,
     extraction_client: VLMClient | None = None,
     policy: ExtractionPolicy,
+    durable: DurableExtractionSession | None = None,
 ) -> AgentRunResult:
 
     resolved_mode = (output_mode or settings.output_mode or "library").strip().lower()
@@ -186,6 +222,7 @@ async def run_document_extraction(
         policy=policy,
         preloaded_images=preloaded_images,
         progress=progress,
+        durable=durable,
     )
     graph = build_document_graph(runtime=runtime)
     initial_state: GraphState = {

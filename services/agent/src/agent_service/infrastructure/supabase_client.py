@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Mapping, Sequence
 from typing import Any
 from urllib.parse import quote
@@ -171,11 +172,24 @@ class SupabaseClient:
         if response.status_code >= 300:
             retryable = response.status_code >= 500 or response.status_code == 429
             code = ErrorCode.PERSISTENCE_UNAVAILABLE if retryable else ErrorCode.INVALID_REQUEST
+            details: dict[str, Any] = {"status_code": response.status_code}
+            try:
+                error = response.json()
+                if isinstance(error, dict):
+                    details["provider_code"] = str(error.get("code", ""))[:80]
+                    if details["provider_code"] == "PT409":
+                        code = ErrorCode.CHECKPOINT_CONFLICT
+                        retryable = False
+                    message = str(error.get("message", ""))
+                    message = re.sub(r"sb_secret_[\w-]+|(?i:Bearer)\s+[^\s,]+", "[REDACTED]", message)
+                    details["provider_message"] = message[:400]
+            except ValueError:
+                pass
             raise AgentServiceError(
                 code,
                 f"Supabase request failed with HTTP {response.status_code}.",
                 retryable=retryable,
-                details={"status_code": response.status_code},
+                details=details,
             )
         return response
 

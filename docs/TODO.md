@@ -6,7 +6,6 @@
 
 - [x] 从保留的 `.git-new` 恢复本地 Git 历史和 origin，整理当前源码、文档及版本化 Few-shot 资产，排除密钥、缓存和提取运行产物。
 
-- [ ] 按六项评审意见修订三阶段持久化方案/ADR：Worker 接管、权威预期集合、最终收尾、项目树发布、双摘要幂等和两层验收；本轮仅改文档。
 - [x] 排查 Codex 新模型不可见问题：核对官方发布、客户端版本、配置优先级、模型目录来源与账号返回，并在需要时备份和刷新自定义目录。
 - [ ] 将规范化线表 migration 应用到远端 Supabase，并执行空库、权限、线号并发和旧数据快照验证。
 - [ ] 完成 Agent M8 剩余生产化：完整中断续跑测试和 ZH 真实字段级基线；Supabase 持久 repository 与跨进程租约队列已完成。
@@ -30,7 +29,8 @@
 
 ## Agent
 
-- [ ] 评审并实施三阶段持久化方案：数据库逐项结果与阶段清单、严格提交/读取屏障、无缓存续跑，再接入 `1.3stage` 纯 HTTP 验收；设计文档已完成，代码/migration 未开始。
+- [x] 实施阶段持久化 Gate A：真实数据库/Fake VLM 验证阶段屏障、RUNNING 接管/fencing、权威集合、最终收尾、树发布、退避/取消及独立 Worker 进程空缓存续跑；不包含 Gate B。
+- [ ] Gate A 通过后建设 Gate B：上传/Profile 确认/HTTP/SSE 与 `1.3stage` 纯 HTTP 用户链路及显式真实模型验收；不由客户端编排工具。
 - [ ] 严格按 M0-M16 顺序实现并逐阶段验收 Agent，不并行跳过依赖门槛。
 - [x] 预先建立 Supervisor/Correction 架构决策、领域契约、意图决策骨架和确定性纠错路由；Supervisor Graph 后续开发。
 - [x] 建立 Stage 1 页面分类、Stage 2 当前页扫描、Stage 3 跨页补全独立 Agent 子图，并通过 ZH adapter 复用原流程。
@@ -65,6 +65,8 @@
 
 ## 已完成
 
+- [x] Gate A：逐阶段提交/读库屏障、不可变模型项/清单、输入/结果/记录摘要、Worker fencing 与幂等 finalize；105 项默认测试通过、10 个真实 Supabase/Fake VLM 场景分批通过，21 份 migration 空库/合成旧数据验证通过；未调用真实 VLM、未重启既有服务。
+- [x] 按六项评审意见修订持久化方案/ADR 至 V1.1：补齐 Worker 状态接管、上游权威集合、最终 receipt/finalize、未发布树/epoch、精确摘要/冲突语义和 Gate A/B；仅文档，运行链路未改。
 - [x] 编写三阶段持久化改造方案及 proposed ADR-0007：逐轮数据结构、数据库/Storage 位置、事务/恢复边界、最终字段映射、改动文件与验收顺序；本轮仅交付文档。
 - [x] 建立阶段 0 纯 HTTP 终端验收脚本、会话附件接口、Supervisor 短期记忆与检测后确认闭环；103 项 Agent 测试、strict mypy、Ruff 与 compileall 通过，默认测试不调用真实 VLM。短期记忆限定为单进程最近 12 回合，长期记忆仍未实现。
 - [x] 修复真实 OpenAI-compatible 模型请求中结构化 Supervisor 消息的 `content` 类型，并以请求体回归覆盖 mapping 序列化；重新执行阶段 0 前需让 Agent 服务加载修复后的代码。

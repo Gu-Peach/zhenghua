@@ -32,6 +32,7 @@ from ..domain.models.result_data import (
 )
 from ..profiles import ProfileRegistry
 from .result_mapping import normalized_connection_from_record, proposal_to_normalized_units
+from .run_lease_context import current_run_lease
 from .supabase_client import SupabaseClient
 
 
@@ -70,16 +71,12 @@ class SupabaseResultDataRepository:
         rows = await self._client.select("wiring_connection_rows", params=params)
         if query.terminal is not None:
             rows = [
-                row
-                for row in rows
-                if query.terminal in {row.get("start_terminal"), row.get("end_terminal")}
+                row for row in rows if query.terminal in {row.get("start_terminal"), row.get("end_terminal")}
             ]
         if query.result_version_id is None and query.connection_id is None:
             latest = {
                 str(row["project_id"]): max(
-                    int(item["result_version"])
-                    for item in rows
-                    if item["project_id"] == row["project_id"]
+                    int(item["result_version"]) for item in rows if item["project_id"] == row["project_id"]
                 )
                 for row in rows
             }
@@ -240,6 +237,47 @@ class SupabaseResultDataRepository:
         proposal: ResultProposal,
         created_by: str,
     ) -> ResultCommitResult:
+        lease = current_run_lease.get()
+        if lease is not None and lease.run_id == proposal.agent_run_id:
+            rows = await self._client.select(
+                "agent_artifacts",
+                params={
+                    "artifact_id": f"eq.{proposal.agent_run_id}:gate_a_manifest:PAGE_CLASSIFICATION:manifest",
+                    "agent_run_id": f"eq.{proposal.agent_run_id}",
+                    "limit": "1",
+                },
+            )
+            if not rows:
+                raise ValueError("No committed classification snapshot.")
+            pages = rows[0]["payload"]["snapshot"]["pages"]
+            drawings = [
+                {
+                    "id": p["drawing_id"],
+                    "workspace_id": p["workspace_id"],
+                    "pdf_page_number": p["page_number"],
+                }
+                for p in pages
+            ]
+            workspaces = [
+                {"id": p["workspace_id"], "code": p.get("function"), "name": p.get("function") or "UNKNOWN"}
+                for p in pages
+            ]
+            units = proposal_to_normalized_units(proposal, drawings=drawings, workspaces=workspaces)
+            committed = await self._commit_rpc(
+                proposal=proposal,
+                created_by=created_by,
+                target_status="needs_review" if proposal.status == "NEEDS_REVIEW" else "draft",
+                units=units,
+                feedback_updates=[],
+            )
+            return ResultCommitResult(
+                proposal_id=proposal.proposal_id,
+                project_id=proposal.project_id,
+                previous_result_version=proposal.base_result_version,
+                result_version=int(committed["result_version"]),
+                result_version_id=str(committed["result_version_id"]),
+                confirmed_by=created_by,
+            )
         drawings = await self._client.select(
             "drawings",
             params={"project_id": f"eq.{proposal.project_id}", "order": "pdf_page_number.asc"},
@@ -404,21 +442,31 @@ class SupabaseResultDataRepository:
         feedback_updates: list[dict[str, Any]],
     ) -> Mapping[str, Any]:
         try:
-            value = await self._client.rpc(
-                "commit_wiring_result",
-                {
-                    "proposal_key": proposal.proposal_id,
-                    "target_project_id": str(UUID(proposal.project_id)),
-                    "target_agent_run_id": str(UUID(proposal.agent_run_id)),
-                    "created_by_user": str(UUID(created_by)),
-                    "expected_base_version": proposal.base_result_version,
-                    "target_status": target_status,
-                    "profile_value": proposal.profile.model_dump(mode="json"),
-                    "model_value": proposal.model.model_dump(mode="json"),
-                    "units_value": units,
-                    "feedback_updates": feedback_updates,
-                },
-            )
+            parameters = {
+                "proposal_key": proposal.proposal_id,
+                "target_project_id": str(UUID(proposal.project_id)),
+                "target_agent_run_id": str(UUID(proposal.agent_run_id)),
+                "created_by_user": str(UUID(created_by)),
+                "expected_base_version": proposal.base_result_version,
+                "target_status": target_status,
+                "profile_value": proposal.profile.model_dump(mode="json"),
+                "model_value": proposal.model.model_dump(mode="json"),
+                "units_value": units,
+                "feedback_updates": feedback_updates,
+            }
+            lease = current_run_lease.get()
+            if lease is not None and lease.run_id == proposal.agent_run_id:
+                value = await self._client.rpc(
+                    "gate_a_commit_result",
+                    {
+                        "target": proposal.agent_run_id,
+                        "token": lease.model_dump(mode="json"),
+                        "value": parameters,
+                        "run_status": "NEEDS_REVIEW" if target_status == "needs_review" else "SUCCEEDED",
+                    },
+                )
+            else:
+                value = await self._client.rpc("commit_wiring_result", parameters)
         except AgentServiceError as exc:
             if exc.code == ErrorCode.INVALID_REQUEST:
                 raise AgentServiceError(

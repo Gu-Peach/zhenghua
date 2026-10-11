@@ -36,7 +36,7 @@ LangGraph 继续负责有状态、可恢复的在线 Graph；Harness 负责工�
 - [反馈与自完善](./feedback-and-improvement.md)：局部重提取、问题归因、Eval Harness 和发布门禁。
 - [Supervisor 与工作流](./supervisor-and-workflows.md)：对话主 Agent、意图路由、子 Agent 调度和事件反馈。
 - [Supervisor 与专业 Agent 串联 V2](./supervisor-agent-orchestration-v2.md)：Profile Detection 内部工具、受控数据工具、三态跨页纠错和 Improvement 发布闭环。
-- [三阶段持久化改造方案](./stage-persistence-refactor-plan.md)：逐项提交结构、阶段清单、数据库/Storage 位置、事务屏障与改动文件；待评审，尚未实施。
+- [三阶段持久化改造方案](./stage-persistence-refactor-plan.md)：V1.1 逐项提交、权威集合、Worker 接管/fencing、最终收尾、项目树发布、摘要与 Gate A/B；待评审，尚未实施。
 - [ADR-0001](../../adr/0001-independent-agent-service.md)：独立 Agent 服务和受控结果提交决策。
 - [ADR-0004](../../adr/0004-agent-result-persistence-boundary.md)：规范化结果落库、显式修订确认和持久化 Improvement 边界。
 - [ADR-0005](../../adr/0005-retire-zh-workflow-runtime.md)：`zh_workflow` 迁移、公共文档 Graph 与 Profile 策略边界。
@@ -55,6 +55,7 @@ LangGraph 继续负责有状态、可恢复的在线 Graph；Harness 负责工�
 
 ## 当前实现状态
 
+- Gate A 已实现并验证：[实施记录](./changelog/2026-10-10-gate-a-implementation.md)。正式 Supabase FULL_EXTRACTION 使用 protocol 2 的数据库阶段屏障、RUNNING 接管和幂等 finalize；10 个真实库/Fake VLM 场景分批通过。Gate B 上传/确认/HTTP 用户链路未建设，不能称整个用户链路已完成。
 - 阶段 0 已有纯 HTTP 终端验收脚本；独立 DETECT_PROFILE 意图调用首页识别并强制等待确认。HTTP 回合加载最近 12 轮对话、附件、待确认事项和确认结果；只实现同进程短期记忆，服务重启/多实例/长期记忆尚未支持。
 - 正式 ZH 提取已迁入公共 `graphs/document_extraction`，Stage 1/2/3 子 Agent 继续负责模型调用；PDF/checkpoint/导出迁入基础设施，共享结构化阶段模型。ZH 确定性规则通过策略注入。`zh_workflow` 兼容目录已删除，全部调用直接使用新模块。
 - 旧相邻页分段与批量提取及关联决策器、协议、批量 checkpoint 已删除，旧 `agent_service.zh_workflow.*` import 路径不再受支持。

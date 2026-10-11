@@ -4,6 +4,10 @@ from typing import Any, TypedDict
 
 
 class PageMeta(TypedDict, total=False):
+    image_ref: dict[str, str]
+    workspace_id: str
+    drawing_id: str
+    workspace_page: str | None
     page_number: int
     image_path: str
     function: str | None
@@ -35,6 +39,7 @@ class CrossPageTask(TypedDict, total=False):
 
 
 class GraphState(TypedDict, total=False):
+    planning_sources: dict[str, Any]
     pdf_path: str
     pages: list[PageMeta]
     segments: list[list[int]]

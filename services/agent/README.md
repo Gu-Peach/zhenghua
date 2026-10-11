@@ -6,6 +6,8 @@
 
 阶段 0 的纯 HTTP 终端验收见 [`agent_test/0.detection_test/README.md`](./agent_test/0.detection_test/README.md)。Supervisor 现具备进程内短期会话记忆，支持上传会话 PDF、只识别类型、等待用户确认，以及确认后追问当前类型；长期记忆和跨进程对话恢复尚未实现。
 
+Gate A 的正式 Supabase FULL_EXTRACTION 使用 protocol 2：各阶段提交后从数据库重新加载，上游项/输入固定，支持过期 RUNNING 接管、fencing、空缓存恢复和结果 receipt 驱动的幂等收尾。旧 run/旧脚本保留 protocol 1；本地三阶段 CLI 仍不落库。实际验证与命令见 [Gate A 记录](../../docs/service/agent/changelog/2026-10-10-gate-a-implementation.md)。这不代表 Gate B 上传/确认用户链路或 Web 接入已经完成。
+
 - FastAPI 应用、配置、日志和健康检查；
 - Run/Event/Proposal/Correction/Supervisor 公共领域契约；
 - Model Gateway、Tool Registry、Context、Checkpoint 和 Trace 最小 Harness；

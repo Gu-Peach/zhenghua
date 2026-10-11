@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import logging
+from contextlib import suppress
 from dataclasses import dataclass, field
 from typing import Protocol
 
@@ -8,6 +10,7 @@ from ..domain.enums import AgentStage, ErrorCode, EventType, RunStatus, RunType
 from ..domain.errors import AgentServiceError
 from ..domain.models.proposals import ResultProposal
 from ..domain.models.runs import AgentRun, EventError
+from ..domain.models.stage_persistence import RunLease
 from ..domain.ports import (
     ArtifactRepository,
     ProposalSink,
@@ -16,7 +19,11 @@ from ..domain.ports import (
     RunRepository,
 )
 from ..harness.stores import CancellationToken
+from ..infrastructure.run_lease_context import current_run_lease
+from ..infrastructure.supabase_stage_repository import SupabaseStageRepository
 from .run_control import RunEventPublisher
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,6 +50,7 @@ class AgentWorker:
         artifacts: ArtifactRepository,
         proposals: ProposalSink,
         result_data: ResultDataRepository | None = None,
+        durable_stages: SupabaseStageRepository | None = None,
     ) -> None:
         self._runs = runs
         self._queue = queue
@@ -50,6 +58,7 @@ class AgentWorker:
         self._artifacts = artifacts
         self._proposals = proposals
         self._result_data = result_data
+        self._durable_stages = durable_stages
         self._executors: dict[RunType, RunExecutor] = {}
         self._tokens: dict[str, CancellationToken] = {}
         self._stop_event = asyncio.Event()
@@ -79,6 +88,10 @@ class AgentWorker:
                     pass
 
     async def run_once(self) -> bool:
+        if self._durable_stages is not None:
+            lease = await self._durable_stages.claim()
+            if lease is not None:
+                return await self._run_durable(lease)
         run_id = await self._queue.dequeue()
         if run_id is None:
             return False
@@ -170,6 +183,94 @@ class AgentWorker:
         finally:
             self._tokens.pop(run_id, None)
             await self._queue.acknowledge(run_id)
+        return True
+
+    async def _run_durable(self, lease: RunLease) -> bool:
+        """Recover RUNNING leases; a committed result only needs finalization."""
+        repository = self._durable_stages
+        assert repository is not None
+        context = current_run_lease.set(lease)
+        token = self._tokens.setdefault(lease.run_id, CancellationToken())
+
+        async def heartbeat() -> None:
+            while True:
+                await asyncio.sleep(max(0.2, repository.lease_seconds / 3))
+                try:
+                    await repository.action(lease, "renew", {"seconds": repository.lease_seconds})
+                except Exception:
+                    token.cancel()
+                    return
+
+        renewal = asyncio.create_task(heartbeat())
+        try:
+            if lease.mode == "cleanup":
+                await repository.action(lease, "ack")
+                return True
+            receipt = await repository.final_receipt(lease.run_id)
+            if receipt:
+                await repository.finalize(lease.run_id)
+                await repository.action(lease, "ack")
+                return True
+            run = await self._runs.get(lease.run_id)
+            if run is None:
+                raise ValueError("Missing leased run.")
+            executor = self._executors[run.run_type]
+            outcome = await executor.execute(run, token)
+            token.raise_if_cancelled()
+            if outcome.proposal is None:
+                await repository.action(lease, "pause", {"status": outcome.status.value})
+                await repository.action(lease, "ack")
+                return True
+            if self._result_data is None:
+                raise ValueError("Durable extraction requires result persistence.")
+            await self._proposals.submit(outcome.proposal)
+            await self._result_data.persist_extraction_proposal(outcome.proposal, run.requested_by)
+            await repository.finalize(lease.run_id)
+            await repository.action(lease, "ack")
+        except Exception as exc:
+            logger.error(
+                "Durable run %s failed (%s): %s",
+                lease.run_id,
+                type(exc).__name__,
+                exc.details if isinstance(exc, AgentServiceError) else str(exc),
+            )
+            # Unknown commit outcome: query first. If even that query fails,
+            # leave RUNNING and let lease expiry recover; never guess failure.
+            try:
+                receipt = await repository.final_receipt(lease.run_id)
+                if receipt is None:
+                    current = await self._runs.get(lease.run_id)
+                    await repository.record_attempt(
+                        lease.run_id,
+                        current.current_stage if current and current.current_stage else AgentStage.RENDER,
+                        "run-recovery",
+                        {
+                            "error_type": type(exc).__name__,
+                            "retryable": isinstance(exc, AgentServiceError) and exc.retryable,
+                        },
+                    )
+                    await repository.action(
+                        lease,
+                        "fail",
+                        {
+                            "retryable": isinstance(exc, AgentServiceError) and exc.retryable,
+                            "error": {
+                                "code": exc.code.value
+                                if isinstance(exc, AgentServiceError)
+                                else ErrorCode.INTERNAL_ERROR.value,
+                                "message": "Durable extraction failed; inspect stage history.",
+                                "retryable": isinstance(exc, AgentServiceError) and exc.retryable,
+                            },
+                        },
+                    )
+            except Exception:
+                pass  # Loss of lease is not permission to write FAILED or ack.
+        finally:
+            renewal.cancel()
+            with suppress(asyncio.CancelledError):
+                await renewal
+            self._tokens.pop(lease.run_id, None)
+            current_run_lease.reset(context)
         return True
 
     async def _fail(

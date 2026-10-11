@@ -4,6 +4,10 @@ import logging
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from agent_service.application.stage_persistence import DurableExtractionSession
 
 from agent_service.application.document_extraction.ports import (
     DocumentStageClient as VLMClient,
@@ -44,6 +48,7 @@ class GraphRuntime:
     extraction_errors: dict[str, str] = field(default_factory=dict)
     validation_warnings: list[str] = field(default_factory=list)
     scan_page_numbers: set[int] | None = None
+    durable: DurableExtractionSession | None = None
 
     def __post_init__(self) -> None:
         self.payload_by_path = {}

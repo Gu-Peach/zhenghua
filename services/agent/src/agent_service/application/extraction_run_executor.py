@@ -2,19 +2,24 @@ from __future__ import annotations
 
 import asyncio
 import re
+from dataclasses import replace
 from pathlib import Path
 
 from ..config import AgentSettings
 from ..domain.enums import AgentStage, EventType, ProfileDetectionStatus, RunStatus
 from ..domain.models.runs import AgentRun
+from ..domain.models.stage_persistence import StageInput
 from ..domain.ports import ArtifactRepository
 from ..harness.stores import CancellationToken
+from ..infrastructure.document.pdf_runtime import load_pdf_module
 from ..infrastructure.project_assets import SupabaseProjectAssetStore
 from ..infrastructure.source_documents import SourceDocumentProvider
+from ..infrastructure.supabase_stage_repository import SupabaseStageRepository
 from ..profiles import ProfileRegistry
 from ..tools.profile_detection import ProfileDetectionTool
 from ..tools.result_proposal import build_extraction_result_proposal
 from .run_control import RunEventPublisher
+from .stage_persistence import DurableExtractionSession
 from .three_stage_extraction import run_three_stage_extraction
 from .worker import RunExecutionOutcome
 
@@ -31,6 +36,7 @@ class FullExtractionRunExecutor:
         runtime_root: Path,
         profile_detection: ProfileDetectionTool | None = None,
         project_assets: SupabaseProjectAssetStore | None = None,
+        durable_stages: SupabaseStageRepository | None = None,
     ) -> None:
         self._settings = settings
         self._profiles = profiles
@@ -40,6 +46,7 @@ class FullExtractionRunExecutor:
         self._runtime_root = runtime_root.resolve()
         self._profile_detection = profile_detection
         self._project_assets = project_assets
+        self._durable_stages = durable_stages
 
     async def execute(self, run: AgentRun, cancellation: CancellationToken) -> RunExecutionOutcome:
         cancellation.raise_if_cancelled()
@@ -81,8 +88,12 @@ class FullExtractionRunExecutor:
                 )
             profile_key = detection.assigned_profile.key
             run.profile_hint = profile_key
-        profile = self._profiles.bind(profile_key)
+        profile = self._profiles.bind(profile_key, run.profile.version if run.profile else None)
         run.profile = profile.profile
+        if run.protocol_version == 2:
+            if self._durable_stages is None:
+                raise ValueError("Protocol 2 requires durable stages.")
+            return await self._execute_durable(run, access.local_path, access.checksum, cancellation)
         output_dir = self._runtime_root / run.agent_run_id
         artifact_ids: list[str] = []
         completed_stages: set[AgentStage] = set()
@@ -340,4 +351,74 @@ class FullExtractionRunExecutor:
             proposal=proposal,
             artifact_ids=artifact_ids,
             metrics={"operations": len(proposal.operations), "pages": page_total},
+        )
+
+    async def _execute_durable(
+        self, run: AgentRun, pdf_path: Path, checksum: str, cancellation: CancellationToken
+    ) -> RunExecutionOutcome:
+        repository = self._durable_stages
+        assert repository is not None and run.profile is not None
+        profile = self._profiles.bind(run.profile.key, run.profile.version)
+        inputs = await repository.load_input(run.agent_run_id)
+        if inputs is None:
+
+            def page_count() -> int:
+                with load_pdf_module().open(str(pdf_path)) as document:
+                    return int(document.page_count)
+
+            inputs = StageInput(
+                run_id=run.agent_run_id,
+                project_id=run.project_id,
+                source_document_id=run.source_document_id,
+                source_checksum=checksum,
+                profile=profile.profile,
+                page_count=await asyncio.to_thread(page_count),
+                configuration={
+                    "model": run.options.model_override or self._settings.default_model,
+                    "render_dpi": self._settings.extraction_render_dpi,
+                    "max_tokens": self._settings.model_max_tokens,
+                    "json_mode": self._settings.model_json_mode,
+                    "enable_thinking": self._settings.model_enable_thinking,
+                    "fewshot_max_image_side": self._settings.model_fewshot_max_image_side,
+                    "bucket": self._settings.supabase_storage_bucket,
+                },
+            )
+        if inputs.source_checksum != checksum or inputs.profile != profile.profile:
+            raise ValueError("Source or frozen Profile changed.")
+        await repository.initialize(inputs)
+        output_dir = self._runtime_root / run.agent_run_id
+        session = DurableExtractionSession(repository, inputs, output_dir, pdf_path)
+        frozen_settings = replace(
+            self._settings,
+            default_model=inputs.configuration["model"],
+            extraction_render_dpi=inputs.configuration["render_dpi"],
+            model_max_tokens=inputs.configuration["max_tokens"],
+            model_json_mode=inputs.configuration["json_mode"],
+            model_enable_thinking=inputs.configuration["enable_thinking"],
+            model_fewshot_max_image_side=inputs.configuration["fewshot_max_image_side"],
+            supabase_storage_bucket=inputs.configuration["bucket"],
+        )
+        result = await run_three_stage_extraction(
+            pdf_path=pdf_path,
+            output_dir=output_dir,
+            profile=profile,
+            settings=frozen_settings,
+            run_id=run.agent_run_id,
+            project_id=run.project_id,
+            cancellation=cancellation,
+            durable=session,
+        )
+        proposal = build_extraction_result_proposal(
+            agent_run_id=run.agent_run_id,
+            project_id=run.project_id,
+            source_document_id=run.source_document_id,
+            base_result_version=run.expected_result_version or 0,
+            profile=profile,
+            model_name=str(inputs.configuration["model"] or "unconfigured"),
+            state=result.execution.state,
+            validation_warnings=result.execution.validation_warnings,
+        )
+        return RunExecutionOutcome(
+            status=RunStatus.NEEDS_REVIEW if proposal.status == "NEEDS_REVIEW" else RunStatus.SUCCEEDED,
+            proposal=proposal,
         )

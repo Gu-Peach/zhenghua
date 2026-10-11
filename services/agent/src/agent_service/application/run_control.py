@@ -88,6 +88,9 @@ class RunControlService:
 
     async def cancel(self, agent_run_id: str) -> AgentRun:
         run = await self.get_required(agent_run_id)
+        if run.protocol_version == 2:
+            await self.runs.control(agent_run_id, "cancel")
+            return await self.get_required(agent_run_id)
         if run.status in {RunStatus.SUCCEEDED, RunStatus.FAILED, RunStatus.CANCELLED}:
             return run
         run.status = RunStatus.CANCELLED
@@ -97,6 +100,9 @@ class RunControlService:
 
     async def resume(self, agent_run_id: str) -> AgentRun:
         run = await self.get_required(agent_run_id)
+        if run.protocol_version == 2:
+            await self.runs.control(agent_run_id, "resume")
+            return await self.get_required(agent_run_id)
         if run.status not in {RunStatus.FAILED, RunStatus.WAITING_INPUT, RunStatus.NEEDS_REVIEW}:
             raise AgentServiceError(
                 ErrorCode.INVALID_REQUEST,

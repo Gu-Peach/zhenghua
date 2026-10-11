@@ -33,9 +33,23 @@ from .models.result_data import (
     ResultCommitResult,
 )
 from .models.runs import AgentEvent, AgentRun, CreateRunRequest
+from .models.stage_persistence import (
+    RunFinalizationReceipt,
+    RunLease,
+    StageCommitReceipt,
+    StageInput,
+    StageItem,
+    StageManifest,
+)
 from .models.supervisor import ConversationTurn, SupervisorDecision, SupervisorUserEvent
 
 CONTRACT_MODELS = (
+    RunLease,
+    StageInput,
+    StageItem,
+    StageManifest,
+    StageCommitReceipt,
+    RunFinalizationReceipt,
     AgentRun,
     CreateRunRequest,
     AgentEvent,

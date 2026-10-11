@@ -258,7 +258,7 @@ PDF 渲染、页面索引、跨页任务生成、字段归一化和校验是确�
 
 ### 8.2 DrawingProfile 协议
 
-阶段间“提交后从库读取”的改造另见 [ADR-0007](./adr/0007-durable-extraction-stage-boundaries.md) 和 [详细方案](./service/agent/stage-persistence-refactor-plan.md)。该方案尚未实施；现有阶段产物持久化不等于严格的数据库阶段屏障。
+阶段间“提交后从库读取”的改造另见 [ADR-0007](./adr/0007-durable-extraction-stage-boundaries.md) 和 [详细方案](./service/agent/stage-persistence-refactor-plan.md)。机制 Gate A 已实施：新协议保存不可变逐项结果/清单，下一阶段从数据库加载，接管过期 RUNNING、fencing 和最终收尾已验证。项目树原子发布，新协议元数据绑定 run 快照以保护历史证据。用户链路 Gate B 尚未建设，二者分别验收。
 
 每个 Profile 提供：
 

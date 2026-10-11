@@ -17,6 +17,8 @@
 
 Supervisor 意图增加 `DETECT_PROFILE` 与 `QUERY_CONTEXT`；前者只检测并等待确认，后者查询本会话类型选择。常规 `/turns` 与流式回合均由会话服务加载历史和目标引用。阶段 0 确认成功返回 `ANSWERED`，不创建 FULL_EXTRACTION run。域 Schema checksum 已同步。
 
+Gate A 增加 AgentRun.protocol_version（默认 1，正式 Supabase FULL_EXTRACTION 新 run 为 2）和 RunLease/StageInput/StageItem/StageManifest/StageCommitReceipt/RunFinalizationReceipt 领域契约。阶段 manifest 由数据库计算预期集合/计数，下一阶段须按同 run 上游清单加载；最终 receipt 与 run 收尾区分。Schema checksum：`sha256:e7563577b531403060ab0bec0cb59a2e876b5fae04feede99b0b3597d33c1591`。新 RPC 仅 service-role 可执行，不新增 Web 可直调接口；Gate B 未实施。
+
 ## 2. Run 类型
 
 ```text

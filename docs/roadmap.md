@@ -83,7 +83,9 @@
 - [x] 实现 Supervisor 主 Agent、受控工作流分派、阶段事件翻译和连接/图纸/工作区级 Correction Workflow；Supabase 模式已接入结果查询、Correction bundle、显式确认和版本化事务提交。
 - [x] 建立阶段 0 纯 HTTP 终端验收、独立只检测/确认闭环与单进程 Supervisor 短期记忆；近期对话、附件和待确认对象注入 LLM，上下文不会由测试脚本伪造。
 - [x] 编写三阶段持久化改造方案和 proposed ADR：逐项结构化提交、阶段清单、数据库读写屏障及改动文件已列明，尚未实施。
-- [ ] 按评审方案实现数据库阶段屏障、跨进程无缓存恢复和 `1.3stage` 纯 HTTP 全链路验收。
+- [x] 将持久化方案/ADR 修订为 V1.1，纳入六项一致性评审约束；设计完成不等于机制已实现。
+- [x] Gate A：阶段提交/读库屏障、RUNNING 接管/fencing、最终收尾、树发布、退避/取消和独立进程空缓存恢复已验证；真实 Supabase/Fake VLM 10 场景分批通过，21 份 migration 空库/合成旧数据验证通过。
+- [ ] Gate B：Gate A 通过后接入上传/Profile 确认/HTTP/SSE 与 `1.3stage` 纯 HTTP 全链路及显式真实模型验收。
 - [x] 串联 Supervisor V2 离线闭环：Profile Detection 内部工具、受控结果工具、`is_cross_page` 三态 Stage 2/3 纠错，以及需用户授权的 Improvement/Profile 候选链路。
 - [x] 建立 Eval Harness、Profile 沙箱、确定性 Release Gate、人工审批、canary 与回滚状态机；候选、评测、门禁与审计已持久化，实际 Profile 文件部署执行器仍待接入。
 

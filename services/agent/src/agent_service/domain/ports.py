@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any, Protocol, runtime_checkable
 
-from .enums import ProfileCandidateStatus
+from .enums import AgentStage, ProfileCandidateStatus
 from .models.correction import CorrectionEvidenceBundle
 from .models.extraction import ExtractionExecutionResult, LegacyExtractionRequest
 from .models.extraction_stages import (
@@ -23,6 +23,7 @@ from .models.improvement import (
 from .models.proposals import ResultProposal
 from .models.result_data import ConnectionSearchQuery, ConnectionSearchResult, ResultCommitResult
 from .models.runs import AgentEvent, AgentRun, CreateRunRequest
+from .models.stage_persistence import StageCommitReceipt, StageInput, StageItem, StageManifest
 
 
 @runtime_checkable
@@ -32,6 +33,18 @@ class RunRepository(Protocol):
     async def get(self, agent_run_id: str) -> AgentRun | None: ...
 
     async def save(self, run: AgentRun) -> None: ...
+
+    async def control(self, agent_run_id: str, action: str) -> None: ...
+
+
+class ExtractionStageRepository(Protocol):
+    async def initialize(self, inputs: StageInput) -> StageInput: ...
+
+    async def commit_item(self, item: StageItem, *, model_cache: bool = False) -> StageCommitReceipt: ...
+
+    async def load_snapshot(self, run_id: str, stage: AgentStage) -> StageManifest | None: ...
+
+    async def seal(self, run_id: str, stage: AgentStage, snapshot: dict[str, Any]) -> StageManifest: ...
 
 
 @runtime_checkable

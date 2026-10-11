@@ -67,6 +67,7 @@ class CreateRunRequest(StrictModel):
 
 class AgentRun(StrictModel):
     agent_run_id: str = Field(default_factory=lambda: str(uuid4()))
+    protocol_version: int = Field(default=1, ge=1, le=2)
     idempotency_key: str = Field(min_length=1)
     run_type: RunType
     status: RunStatus = RunStatus.QUEUED

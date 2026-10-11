@@ -12,12 +12,22 @@ from ..agents.cross_page_resolver import CrossPageResolverAgent
 from ..agents.page_classifier import PageClassifierAgent
 from ..agents.page_scanner import PageScannerAgent
 from ..config import AgentSettings
+from ..domain.enums import AgentStage
 from ..domain.models.extraction import ExtractionExecutionResult
 from ..domain.models.extraction_stages import (
     CrossPageCompletionRequest,
     DrawingPageInput,
     PageClassificationRequest,
     PageScanRequest,
+)
+from ..domain.models.extraction_stages import (
+    CrossPageCompletionResult as CompletionAgentResult,
+)
+from ..domain.models.extraction_stages import (
+    PageClassificationResult as ClassificationAgentResult,
+)
+from ..domain.models.extraction_stages import (
+    PageScanResult as ScanAgentResult,
 )
 from ..domain.models.profiles import ProfileBinding
 from ..domain.models.wiring import (
@@ -35,13 +45,14 @@ from ..harness.stores import CancellationToken
 from ..profiles.extraction_policy import default_extraction_policies
 from .document_extraction.settings import Settings as DocumentExtractionSettings
 from .extraction_stage_factory import build_extraction_stage_dispatcher
+from .stage_persistence import DurableExtractionSession
 
 ProgressCallback = Callable[[str], None]
 
 
 @dataclass(frozen=True, slots=True)
 class ThreeStageRunResult:
-    """Filesystem result of one test run; no database side effects are performed."""
+    """Document output; a supplied durable session owns stage persistence."""
 
     execution: ExtractionExecutionResult
     output_dir: Path
@@ -85,12 +96,14 @@ class ExtractionStageGraphClient:
         stages: Any,
         output_dir: Path,
         cancellation: CancellationToken | None = None,
+        durable: DurableExtractionSession | None = None,
     ) -> None:
         self._run_id = run_id
         self._project_id = project_id
         self._profile = profile
         self._output_dir = output_dir
         self._cancellation = cancellation
+        self._durable = durable
         self._classified_page_paths: dict[int, Path] = {}
         self._classifier = PageClassifierAgent(stages=stages)
         self._scanner = PageScannerAgent(stages=stages)
@@ -98,15 +111,26 @@ class ExtractionStageGraphClient:
 
     async def classify_page(self, image: Any, *, context_text: str = "") -> Any:
         self._raise_if_cancelled()
-        result = await run_page_classification(
-            agent=self._classifier,
-            request=PageClassificationRequest(
-                run_id=self._run_id,
-                project_id=self._project_id,
-                profile=self._profile,
-                page=self._page(image),
-                known_context=context_text,
-            ),
+        request = PageClassificationRequest(
+            run_id=self._run_id,
+            project_id=self._project_id,
+            profile=self._profile,
+            page=self._page(image),
+            known_context=context_text,
+        )
+
+        async def invoke() -> ClassificationAgentResult:
+            return await run_page_classification(agent=self._classifier, request=request)
+
+        result = (
+            await self._durable.model_result(
+                AgentStage.PAGE_CLASSIFICATION,
+                f"pdf-page:{request.page.pdf_page_number}",
+                ClassificationAgentResult,
+                invoke,
+            )
+            if self._durable
+            else await invoke()
         )
         return PageClassification(
             plant_function=result.plant_function,
@@ -120,15 +144,26 @@ class ExtractionStageGraphClient:
 
     async def scan_page(self, image: Any, *, page_context: str = "") -> Any:
         self._raise_if_cancelled()
-        result = await run_page_scan(
-            agent=self._scanner,
-            request=PageScanRequest(
-                run_id=self._run_id,
-                project_id=self._project_id,
-                profile=self._profile,
-                page=self._page(image),
-                page_context=page_context,
-            ),
+        request = PageScanRequest(
+            run_id=self._run_id,
+            project_id=self._project_id,
+            profile=self._profile,
+            page=self._page(image),
+            page_context=page_context,
+        )
+
+        async def invoke() -> ScanAgentResult:
+            return await run_page_scan(agent=self._scanner, request=request)
+
+        result = (
+            await self._durable.model_result(
+                AgentStage.PAGE_SCAN,
+                f"pdf-page:{request.page.pdf_page_number}",
+                ScanAgentResult,
+                invoke,
+            )
+            if self._durable
+            else await invoke()
         )
         return PageScanResult.model_validate(
             result.model_dump(mode="python", exclude={"run_id", "project_id", "profile"})
@@ -141,16 +176,27 @@ class ExtractionStageGraphClient:
         task_context: str = "",
     ) -> Any:
         self._raise_if_cancelled()
-        result = await run_cross_page_completion(
-            agent=self._resolver,
-            request=CrossPageCompletionRequest(
-                run_id=self._run_id,
-                project_id=self._project_id,
-                profile=self._profile,
-                task_id=_task_id(task_context),
-                target_page=self._page(target_image),
-                task_context=task_context or "indexed cross-page reference",
-            ),
+        request = CrossPageCompletionRequest(
+            run_id=self._run_id,
+            project_id=self._project_id,
+            profile=self._profile,
+            task_id=_task_id(task_context),
+            target_page=self._page(target_image),
+            task_context=task_context or "indexed cross-page reference",
+        )
+
+        async def invoke() -> CompletionAgentResult:
+            return await run_cross_page_completion(agent=self._resolver, request=request)
+
+        result = (
+            await self._durable.model_result(
+                AgentStage.CROSS_PAGE_COMPLETION,
+                request.task_id,
+                CompletionAgentResult,
+                invoke,
+            )
+            if self._durable
+            else await invoke()
         )
         return CrossPageCompletion.model_validate(
             result.model_dump(mode="python", exclude={"run_id", "project_id", "profile"})
@@ -241,6 +287,7 @@ async def run_three_stage_extraction(
     max_pdf_pages: int = 0,
     progress: ProgressCallback | None = None,
     cancellation: CancellationToken | None = None,
+    durable: DurableExtractionSession | None = None,
 ) -> ThreeStageRunResult:
     """Run the document workflow through the Agent's three extraction subgraphs.
 
@@ -274,6 +321,7 @@ async def run_three_stage_extraction(
         stages=stage_dispatcher,
         output_dir=output_dir,
         cancellation=cancellation,
+        durable=durable,
     )
 
     report("starting PDF rendering and three-stage LangGraph extraction")
@@ -285,6 +333,7 @@ async def run_three_stage_extraction(
         output_mode=workflow_settings.output_mode,
         extraction_client=graph_client,
         policy=policy,
+        durable=durable,
     )
     execution = ExtractionExecutionResult(
         run_id=run_id,
