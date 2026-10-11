@@ -53,6 +53,13 @@ class FullExtractionRunExecutor:
         if run.expected_result_version is None:
             return RunExecutionOutcome(status=RunStatus.WAITING_INPUT)
         access = await self._documents.get(run.source_document_id, run.project_id)
+        confirmation = run.options.profile_confirmation
+        if confirmation and (
+            confirmation.source_checksum != access.checksum
+            or confirmation.profile != run.profile
+            or confirmation.confirmed_by != run.requested_by
+        ):
+            raise ValueError("Confirmed Profile/source/actor no longer matches the frozen run.")
         profile_key = run.profile_hint or (run.profile.key if run.profile else None)
         if not profile_key:
             if self._profile_detection is None:

@@ -14,6 +14,12 @@ from .models.extraction_stages import (
     PageScanRequest,
     PageScanResult,
 )
+from .models.imports import (
+    ImportedDocument,
+    ProjectResultsResponse,
+    ProjectTreeResponse,
+    RunStageSummaryResponse,
+)
 from .models.improvement import (
     AcceptedFeedback,
     Diagnosis,
@@ -44,6 +50,10 @@ from .models.stage_persistence import (
 from .models.supervisor import ConversationTurn, SupervisorDecision, SupervisorUserEvent
 
 CONTRACT_MODELS = (
+    ImportedDocument,
+    ProjectTreeResponse,
+    ProjectResultsResponse,
+    RunStageSummaryResponse,
     RunLease,
     StageInput,
     StageItem,

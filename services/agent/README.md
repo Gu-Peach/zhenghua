@@ -1,12 +1,14 @@
 # Agent Service
 
-独立的 Python Agent API、运行底座和图纸 Profile 服务。默认监听 `8100`，不管理用户、项目权限或生产线表，也不会直接覆盖业务 Server 数据。
+独立的 Python Agent API、运行底座和图纸 Profile 服务。默认监听 `8100`，不创建用户或直接覆盖生产线表。迁移期内部验收可登记已有 owner 的项目/源 PDF，并通过受控事务创建结果版本；不替代业务 Server 的浏览器鉴权入口。
 
 当前已实现 Agent 服务骨架、Profile Router、ZH 三阶段本地提取链路，以及 Run/Worker、Supervisor、Correction 和 Improvement 的受控执行基座：
 
 阶段 0 的纯 HTTP 终端验收见 [`agent_test/0.detection_test/README.md`](./agent_test/0.detection_test/README.md)。Supervisor 现具备进程内短期会话记忆，支持上传会话 PDF、只识别类型、等待用户确认，以及确认后追问当前类型；长期记忆和跨进程对话恢复尚未实现。
 
-Gate A 的正式 Supabase FULL_EXTRACTION 使用 protocol 2：各阶段提交后从数据库重新加载，上游项/输入固定，支持过期 RUNNING 接管、fencing、空缓存恢复和结果 receipt 驱动的幂等收尾。旧 run/旧脚本保留 protocol 1；本地三阶段 CLI 仍不落库。实际验证与命令见 [Gate A 记录](../../docs/service/agent/changelog/2026-10-10-gate-a-implementation.md)。这不代表 Gate B 上传/确认用户链路或 Web 接入已经完成。
+Gate A 的正式 Supabase FULL_EXTRACTION 使用 protocol 2：各阶段提交后从数据库重新加载，上游项/输入固定，支持过期 RUNNING 接管、fencing、空缓存恢复和结果 receipt 驱动的幂等收尾。旧 run/旧脚本保留 protocol 1；本地三阶段 CLI 仍不落库。实际验证与命令见 [Gate A 记录](../../docs/service/agent/changelog/2026-10-10-gate-a-implementation.md)。
+
+Gate B 内部上传/确认/Worker/SSE 链路已接通，见 [阶段 1 HTTP 验收说明](./agent_test/1.3stage/README.md)。`/v1/imports` 要求已有 Supabase Auth 用户 UUID、内部 Bearer 和 Idempotency-Key；确认后原子登记带冻结 Profile 的持久 run。项目树只读 published snapshot，结果按固定版本分页，SSE 支持 Last-Event-ID。真实模型字段准确率和 Web/JWT 代理尚未验收。本地已应用 `20261011000000` 原子入队 migration，部署其他库时须应用新增 migration。
 
 - FastAPI 应用、配置、日志和健康检查；
 - Run/Event/Proposal/Correction/Supervisor 公共领域契约；
@@ -50,7 +52,7 @@ AGENT_SUPABASE_STORAGE_BUCKET=project-assets
 
 不要沿用旧公开 `images` Bucket。新链路的原始 PDF、页面图片和阶段产物必须写入 migration 创建的私有 `project-assets`；service-role key 只允许存在于 Server/Agent 进程环境中。
 
-启动 Agent API（当前用于探活、Profile 查询和首页识别；PDF 全链路测试使用下方 CLI）：
+启动 Agent API（探活、Profile、阶段 0/1 HTTP 验收与 run 控制；CLI 为不落库的单独测试入口）：
 
 ```powershell
 $env:PYTHONPATH="services/agent/src;."

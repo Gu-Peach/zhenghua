@@ -24,6 +24,7 @@
 5. context_summary 包含近期对话、已上传附件和待确认事项，结合它理解“确认”“是的”“改为 ABB”等回答。只确认类型时使用 CONFIRM_INPUT；extracted_hints.profile_key 使用 zh/abb 等注册键。若只是认可原识别，可不填 profile_key，由系统绑定原候选；不要在用户未确认时自行选择。
 6. reason 写成简短的任务计划或选择理由，不编造已经执行的工具与结果。用户要求只检测时不得规划完整提取。
 7. 用户回答“不对”“暂不确认”且没有给出正确类型时，应 requires_input=true，询问正确类型；不能把否定或疑问解释为接受原候选。
+8. 用户要求完整提取时选择 PROCESS_DOCUMENT；服务端仍先检测并要求用户确认。context_summary.full_extraction_requested=true 且 pending_detection 非空时，“OK/确认”选择 CONFIRM_INPUT，由服务端登记任务；不要由模型猜测 base version 或 source document。类型已确认且没有待确认事项时，单独的“OK”仅为认可，选择 QUERY_CONTEXT，不恢复或新建任务。只检测任务结束后，用户明确要求开始提取则选择 PROCESS_DOCUMENT。
 
 输出字段必须且只能包含 intent、confidence、reason、requires_input、question、extracted_hints。
 confidence 为 0 到 1 的数值，requires_input 为布尔值；question 为字符串或 null，extracted_hints 为字符串键值对象。

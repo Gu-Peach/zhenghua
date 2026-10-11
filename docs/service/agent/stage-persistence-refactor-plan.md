@@ -1,6 +1,6 @@
 # 三阶段提取：阶段性持久化改造方案
 
-日期：2026-10-10。修订：V1.1（六项一致性约束的设计基线）。状态：**Gate A 已实施并验证；Gate B 未实施**。
+日期：2026-10-10。修订：V1.1（六项一致性约束的设计基线）。状态：**Gate A 已实施并验证；Gate B 接口/Fake 验收已完成，真实模型人工验收待执行**。
 
 下文保留原设计基线与拟改动描述；当前实现、实际提交类型/位置和验证命令以 [Gate A 实施记录](./changelog/2026-10-10-gate-a-implementation.md) 为准。实施中为保护历史结果元数据，将新协议 workspace/drawing UUID 改为 run-scoped，并保留旧记录与旧 run 协议；未改变图纸识别算法或 `is_cross_page` 三态。
 
@@ -481,7 +481,7 @@ fencing 不仅覆盖 item/manifest：所有 Worker 侧 run save、阶段事件�
 
 ## 10. 分步实施与两层验收门槛
 
-执行时按顺序，只允许一个步骤处于进行中；步骤 1—5 已完成 Gate A，步骤 6/Gate B 尚未开始。
+执行时按顺序，只允许一个步骤处于进行中；步骤 1—5 已完成 Gate A，步骤 6 的内部接口/纯 HTTP 客户端/Fake 验收已实施，详见 [Gate B 记录](./changelog/2026-10-11-gate-b-implementation.md)。真实模型人工验收尚未执行。
 
 1. 契约与 migration：优先定义权威预期集合、双摘要、RunLease/接管/状态转换及最终 receipt/收尾协议；实现 SQL/RLS，空库和旧数据快照执行新迁移。
 2. Render + Stage 1：逐页未发布投影、完整集合屏障和原子项目树发布；删缓存后从库恢复，Stage 2 不读旧状态。
@@ -526,4 +526,4 @@ fencing 不仅覆盖 item/manifest：所有 Worker 侧 run save、阶段事件�
 | checksum/幂等/冲突 | 4.8 | 三种摘要固定字段、规范化版本、first-success canonical 策略 |
 | 两层交付门槛 | 10 | Gate A 与 Gate B 分别记状态/测试报告 |
 
-六项一致性约束已纳入 Gate A 实现/验证；用户上传/确认的 Gate B 仍是独立未完成事项。
+六项一致性约束已纳入 Gate A 实现/验证；Gate B 内部上传/确认链路与 Fake 验收已完成，真实模型人工验收和 Web/JWT 接入仍独立待办。

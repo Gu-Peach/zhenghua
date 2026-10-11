@@ -4,6 +4,8 @@
 
 ## 进行中
 
+- [ ] Gate B 真实模型人工验收：使用已有 Auth 用户 UUID、真实 PDF 和人工 baseline，通过显式开关/终端确认运行 `1.3stage/run_acceptance.py`；接口与 Fake 验收已完成，准确率尚未验收。
+
 - [x] 从保留的 `.git-new` 恢复本地 Git 历史和 origin，整理当前源码、文档及版本化 Few-shot 资产，排除密钥、缓存和提取运行产物。
 
 - [x] 排查 Codex 新模型不可见问题：核对官方发布、客户端版本、配置优先级、模型目录来源与账号返回，并在需要时备份和刷新自定义目录。
@@ -30,7 +32,7 @@
 ## Agent
 
 - [x] 实施阶段持久化 Gate A：真实数据库/Fake VLM 验证阶段屏障、RUNNING 接管/fencing、权威集合、最终收尾、树发布、退避/取消及独立 Worker 进程空缓存续跑；不包含 Gate B。
-- [ ] Gate A 通过后建设 Gate B：上传/Profile 确认/HTTP/SSE 与 `1.3stage` 纯 HTTP 用户链路及显式真实模型验收；不由客户端编排工具。
+- [x] Gate B 接口与 Fake 验收：业务上传/Profile 确认/原子入队、持久 Worker、HTTP 查询/SSE、`1.3stage` 纯 HTTP 终端脚本；真实模型人工验收另列。
 - [ ] 严格按 M0-M16 顺序实现并逐阶段验收 Agent，不并行跳过依赖门槛。
 - [x] 预先建立 Supervisor/Correction 架构决策、领域契约、意图决策骨架和确定性纠错路由；Supervisor Graph 后续开发。
 - [x] 建立 Stage 1 页面分类、Stage 2 当前页扫描、Stage 3 跨页补全独立 Agent 子图，并通过 ZH adapter 复用原流程。
@@ -64,6 +66,8 @@
 - [ ] 生产部署采用自管 Redis/Celery，还是托管队列。
 
 ## 已完成
+
+- [x] Gate B 实现：阶段 0 临时附件与业务源 PDF 隔离、冻结 Profile/确认审计、原子 run/event/queue、published 树与版本化分页结果、阶段摘要/SSE 续传和纯 HTTP 脚本；113 默认测试、2 个真实本地 Supabase/Fake HTTP 场景通过，22 migration 空库/旧数据及原子失败回滚通过；真实 VLM 未运行、Web/JWT 代理未接。
 
 - [x] Gate A：逐阶段提交/读库屏障、不可变模型项/清单、输入/结果/记录摘要、Worker fencing 与幂等 finalize；105 项默认测试通过、10 个真实 Supabase/Fake VLM 场景分批通过，21 份 migration 空库/合成旧数据验证通过；未调用真实 VLM、未重启既有服务。
 - [x] 按六项评审意见修订持久化方案/ADR 至 V1.1：补齐 Worker 状态接管、上游权威集合、最终 receipt/finalize、未发布树/epoch、精确摘要/冲突语义和 Gate A/B；仅文档，运行链路未改。

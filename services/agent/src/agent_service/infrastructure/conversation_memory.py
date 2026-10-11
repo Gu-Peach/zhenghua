@@ -5,6 +5,7 @@ from collections import OrderedDict
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from ..domain.models.imports import ImportedDocument
 from ..domain.models.profile_detection import ProfileAssignment, ProfileDetectionResult
 from ..graphs.supervisor.graph import SupervisorGraphResult
 
@@ -27,7 +28,13 @@ class ConversationMemory:
     attachments: dict[str, ConversationAttachment] = field(default_factory=dict)
     current_attachment_ids: list[str] = field(default_factory=list)
     pending_detection: ProfileDetectionResult | None = None
+    last_detection: ProfileDetectionResult | None = None
     assignment: ProfileAssignment | None = None
+    imports: dict[str, ImportedDocument] = field(default_factory=dict)
+    import_key: str | None = None
+    full_extraction_requested: bool = False
+    pending_attachment_ids: list[str] = field(default_factory=list)
+    confirmed_attachment_ids: list[str] = field(default_factory=list)
     agent_run_id: str | None = None
     responses: OrderedDict[str, tuple[str, SupervisorGraphResult]] = field(default_factory=OrderedDict)
 

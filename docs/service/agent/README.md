@@ -36,12 +36,14 @@ LangGraph 继续负责有状态、可恢复的在线 Graph；Harness 负责工�
 - [反馈与自完善](./feedback-and-improvement.md)：局部重提取、问题归因、Eval Harness 和发布门禁。
 - [Supervisor 与工作流](./supervisor-and-workflows.md)：对话主 Agent、意图路由、子 Agent 调度和事件反馈。
 - [Supervisor 与专业 Agent 串联 V2](./supervisor-agent-orchestration-v2.md)：Profile Detection 内部工具、受控数据工具、三态跨页纠错和 Improvement 发布闭环。
-- [三阶段持久化改造方案](./stage-persistence-refactor-plan.md)：V1.1 逐项提交、权威集合、Worker 接管/fencing、最终收尾、项目树发布、摘要与 Gate A/B；待评审，尚未实施。
+- [三阶段持久化改造方案](./stage-persistence-refactor-plan.md)：V1.1 逐项提交、权威集合、Worker 接管/fencing、最终收尾、项目树发布与 Gate A/B；Gate A 机制和 Gate B 接口/Fake 验收已实施，真实模型验收待执行。
+- [Gate B 执行计划](./gate-b-implementation-plan.md)、[实施记录](./changelog/2026-10-11-gate-b-implementation.md)：内部业务上传/确认/Worker/SSE 与纯 HTTP 客户端。
 - [ADR-0001](../../adr/0001-independent-agent-service.md)：独立 Agent 服务和受控结果提交决策。
 - [ADR-0004](../../adr/0004-agent-result-persistence-boundary.md)：规范化结果落库、显式修订确认和持久化 Improvement 边界。
 - [ADR-0005](../../adr/0005-retire-zh-workflow-runtime.md)：`zh_workflow` 迁移、公共文档 Graph 与 Profile 策略边界。
 - [ADR-0006](../../adr/0006-supervisor-short-term-memory-and-detection-acceptance.md)：阶段 0 HTTP 验收、会话附件与 Supervisor 短期记忆。
-- [ADR-0007](../../adr/0007-durable-extraction-stage-boundaries.md)：拟采用的三阶段数据库持久化边界。
+- [ADR-0007](../../adr/0007-durable-extraction-stage-boundaries.md)：三阶段数据库持久化边界。
+- [ADR-0008](../../adr/0008-gate-b-internal-business-imports.md)：Gate B 内部上传、原子入队与人工确认范围。
 - `changelog/`：Agent 模块阶段记录。
 
 ## V1 验收重点

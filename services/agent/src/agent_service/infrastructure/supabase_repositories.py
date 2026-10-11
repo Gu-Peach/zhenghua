@@ -32,6 +32,10 @@ class SupabaseRunRepository:
         run = AgentRun.from_request(request, idempotency_key)
         if self._durable_extraction and run.run_type == RunType.FULL_EXTRACTION:
             run.protocol_version = 2
+            row = await self._client.rpc("gate_b_create_extraction", {
+                "value": _run_to_row(run, fingerprint=fingerprint),
+            })
+            return _run_from_row(row)
         rows = await self._client.insert("agent_runs", _run_to_row(run, fingerprint=fingerprint))
         if not rows:
             raise _missing_row("agent run")

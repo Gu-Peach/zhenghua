@@ -6,6 +6,10 @@ archived under `docs/service/`.
 
 详细变更见 [CHANGELOG.md](./CHANGELOG.md)。
 
+## 2026-10-11
+
+- Implemented Gate B internal business PDF import, human-confirmed frozen Profile/run creation, atomic run/event/queue registration, published project-tree and versioned result read models, resumable SSE, and a tools-free terminal HTTP client. Fake HTTP and local Supabase/Fake model verification passed; real-model field accuracy and browser JWT/Web integration remain pending. See [Agent record](../service/agent/changelog/2026-10-11-gate-b-implementation.md).
+
 ## 2026-10-10
 
 - Completed Gate A mechanism acceptance: protocol-2 durable stage snapshots/read barriers, RUNNING takeover/fencing, immutable classification publication and finalization receipts. Ten real-Supabase/Fake-VLM scenarios passed in batches, including isolated worker-process recovery; 21 ordered migrations passed empty/legacy synthetic verification. Legacy runs remain compatible; Gate B user-flow integration and real-VLM evaluation remain pending. See [implementation record](../service/agent/changelog/2026-10-10-gate-a-implementation.md).

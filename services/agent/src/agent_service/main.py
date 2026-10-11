@@ -12,6 +12,7 @@ from .agents.improvement_diagnoser import ImprovementDiagnoserAgent
 from .agents.profile_patch_builder import ProfilePatchBuilderAgent
 from .agents.supervisor import SupervisorAgent
 from .api.routes.health import router as health_router
+from .api.routes.imports import router as imports_router
 from .api.routes.improvement import router as improvement_router
 from .api.routes.profiles import router as profiles_router
 from .api.routes.proposals import router as proposals_router
@@ -56,6 +57,7 @@ from .harness import (
     ProfileSandbox,
 )
 from .harness.retry import RetryPolicy
+from .infrastructure.business_imports import SupabaseBusinessImports
 from .infrastructure.conversation_memory import ShortTermConversationStore
 from .infrastructure.correction_data import (
     CorrectionDataRepository,
@@ -206,6 +208,10 @@ def create_app(
     application.state.checkpoint_store = checkpoints
     application.state.supabase = supabase
     application.state.project_assets = project_assets
+    business_imports = SupabaseBusinessImports(
+        supabase, bucket=resolved_settings.supabase_storage_bucket,
+    ) if supabase else None
+    application.state.business_imports = business_imports
     worker = AgentWorker(
         runs=runs,
         queue=queue,
@@ -328,12 +334,16 @@ def create_app(
                 detection=profile_detection_tool,
                 memory=ShortTermConversationStore(),
                 model_name=resolved_settings.default_model or "unconfigured",
+                business_imports=business_imports,
+                documents=source_documents,
+                run_control=run_control,
                 attachment_root=(
                     resolved_settings.workspace_root / "services" / "agent" / ".runtime" / "conversations"
                 ),
             )
         application.state.improvement_workflow = improvement_workflow
     application.include_router(health_router)
+    application.include_router(imports_router)
     application.include_router(profiles_router)
     application.include_router(runs_router)
     application.include_router(supervisor_router)

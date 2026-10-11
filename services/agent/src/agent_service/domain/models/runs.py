@@ -38,6 +38,17 @@ class RunOptions(StrictModel):
     dry_run: bool = False
     keep_stage_artifacts: bool = True
     model_override: str | None = None
+    profile_confirmation: ProfileConfirmation | None = None
+
+
+class ProfileConfirmation(StrictModel):
+    profile: ProfileRef
+    confirmed_by: str
+    source_checksum: str
+    detection_run_id: str
+    detected_profile: ProfileRef | None = None
+    confidence: float = Field(ge=0, le=1)
+    confirmed_at: datetime
 
 
 class CreateRunRequest(StrictModel):
@@ -47,6 +58,7 @@ class CreateRunRequest(StrictModel):
     feedback_id: str | None = None
     requested_by: str = Field(min_length=1)
     profile_hint: str | None = None
+    profile: ProfileRef | None = None
     expected_result_version: int | None = Field(default=None, ge=0)
     scope: RunScope
     callback: CallbackConfig | None = None
@@ -97,6 +109,7 @@ class AgentRun(StrictModel):
             scope=request.scope,
             feedback_id=request.feedback_id,
             profile_hint=request.profile_hint,
+            profile=request.profile,
             expected_result_version=request.expected_result_version,
             options=request.options,
         )

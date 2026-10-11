@@ -6,8 +6,10 @@ from collections.abc import AsyncIterator
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
+from ...application.run_read_models import stage_summary
 from ...domain.enums import RunStatus
 from ...domain.errors import AgentServiceError
+from ...domain.models.imports import RunStageSummaryResponse
 from ...domain.models.runs import CreateRunRequest
 from ..dependencies import require_internal_service
 from ..schemas import HumanInputRequest, RunArtifactsResponse, RunEventsResponse, RunResponse
@@ -73,6 +75,7 @@ async def stream_run_events(
     agent_run_id: str,
     request: Request,
     after_seq: int = Query(default=-1, ge=-1),
+    last_event_id: int | None = Header(default=None, alias="Last-Event-ID", ge=-1),
 ) -> StreamingResponse:
     try:
         await request.app.state.run_control.get_required(agent_run_id)
@@ -80,7 +83,7 @@ async def stream_run_events(
         _raise_http(exc)
 
     async def generate() -> AsyncIterator[str]:
-        cursor = after_seq
+        cursor = max(after_seq, last_event_id if last_event_id is not None else -1)
         while not await request.is_disconnected():
             events = await request.app.state.run_control.events.list_after(agent_run_id, cursor)
             for event in events:
@@ -94,8 +97,20 @@ async def stream_run_events(
                 RunStatus.NEEDS_REVIEW,
                 RunStatus.FAILED,
                 RunStatus.CANCELLED,
+                RunStatus.WAITING_INPUT,
             }:
-                return
+                # Run may become terminal after the first fetch. Drain events committed
+                # with its terminal transition, including batches above the REST row limit.
+                remaining = await request.app.state.run_control.events.list_after(agent_run_id, cursor)
+                if not remaining:
+                    return
+                for event in remaining:
+                    cursor = event.seq
+                    yield (
+                        f"id: {event.seq}\nevent: {event.event_type.value}\n"
+                        f"data: {event.model_dump_json()}\n\n"
+                    )
+                continue
             if not events:
                 yield ": keep-alive\n\n"
                 await asyncio.sleep(0.5)
@@ -105,6 +120,20 @@ async def stream_run_events(
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@router.get("/{agent_run_id}/summary", response_model=RunStageSummaryResponse)
+async def get_stage_summary(agent_run_id: str, user_id: str, request: Request) -> RunStageSummaryResponse:
+    try:
+        return await stage_summary(
+            request.app.state.run_control, getattr(request.app.state, "durable_stages", None),
+            agent_run_id, user_id,
+        )
+    except AgentServiceError as exc:
+        _raise_http(exc)
+    except PermissionError as exc:
+        raise HTTPException(403, detail="Run access denied.") from exc
+    raise AssertionError("unreachable")
 
 
 @router.get("/{agent_run_id}/artifacts", response_model=RunArtifactsResponse)

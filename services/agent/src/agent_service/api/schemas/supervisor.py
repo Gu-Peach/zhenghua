@@ -45,3 +45,5 @@ class ConversationMemoryResponse(StrictModel):
     pending_detection: ProfileDetectionResult | None = None
     profile_assignment: ProfileAssignment | None = None
     agent_run_id: str | None = None
+    project_id: str | None = None
+    full_extraction_requested: bool = False

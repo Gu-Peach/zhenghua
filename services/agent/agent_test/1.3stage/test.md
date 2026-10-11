@@ -1,5 +1,7 @@
 该阶段测试主agent接收到pdf，调用profile_detection和三阶段agent提取数据存放到supabase的链路
 
+执行入口与前置条件见 [README.md](./README.md)，使用 `run_acceptance.py`。接口/Fake 验收已实现，真实 PDF 的人工字段基线仍需显式运行；脚本只发 HTTP 用户输入，不编排 Agent 工具。
+
 链路包括：
 
 1. 主agent接收到pdf之后主agent的思考

@@ -17,7 +17,7 @@
 
 Supervisor 意图增加 `DETECT_PROFILE` 与 `QUERY_CONTEXT`；前者只检测并等待确认，后者查询本会话类型选择。常规 `/turns` 与流式回合均由会话服务加载历史和目标引用。阶段 0 确认成功返回 `ANSWERED`，不创建 FULL_EXTRACTION run。域 Schema checksum 已同步。
 
-Gate A 增加 AgentRun.protocol_version（默认 1，正式 Supabase FULL_EXTRACTION 新 run 为 2）和 RunLease/StageInput/StageItem/StageManifest/StageCommitReceipt/RunFinalizationReceipt 领域契约。阶段 manifest 由数据库计算预期集合/计数，下一阶段须按同 run 上游清单加载；最终 receipt 与 run 收尾区分。Schema checksum：`sha256:e7563577b531403060ab0bec0cb59a2e876b5fae04feede99b0b3597d33c1591`。新 RPC 仅 service-role 可执行，不新增 Web 可直调接口；Gate B 未实施。
+Gate A 增加 AgentRun.protocol_version（默认 1，正式 Supabase FULL_EXTRACTION 新 run 为 2）和 RunLease/StageInput/StageItem/StageManifest/StageCommitReceipt/RunFinalizationReceipt 领域契约。阶段 manifest 由数据库计算预期集合/计数，下一阶段须按同 run 上游清单加载；最终 receipt 与 run 收尾区分。Gate B 增加业务 import/read model 与 ProfileConfirmation，当前 Schema checksum：`sha256:1c141c9e0026e89b3141cd19e838aeb6608e2313886d8346f9c11a42b98653ed`。新 RPC 仅 service-role 可执行，不新增 Web 可直调接口；Gate B 内部接口/Fake 验收已实现，真实模型验收未执行。
 
 ## 2. Run 类型
 
@@ -427,3 +427,20 @@ Server 和 Agent 必须共享 OpenAPI 快照或生成 Client，并至少覆盖�
 - proposal 被拒绝后不修改生产数据；
 - cancel/resume；
 - Agent 离线时 Server 的降级状态。
+
+## 13. Gate B 内部验收接口（已实现）
+
+这些 `/v1` 路由由内部 Bearer 保护，只供可信 Server/受控终端；`user_id` 是调用者传入的已有 Auth UUID，不是浏览器身份凭证。新读接口仅允许 owner / run.requested_by。Web JWT/成员代理未实现。
+
+| 方法/路径 | 输入与输出 |
+| --- | --- |
+| `POST /v1/imports` | raw PDF body；Query `user_id,conversation_id,project_name,filename`；Header `Idempotency-Key`。返回 ImportedDocument（project/source/attachment UUID、checksum、size、page_count）。UUID 由 owner+key 固定；不同内容同 key 拒绝，部分上传原 key 重试，不自动创建用户 |
+| `POST /v1/supervisor/turns[/stream]` | ConversationTurn。上传后脚本仅发 user/message/conversation/turn ID；服务端补附件/project。PROCESS_DOCUMENT→首页检测/WAITING_INPUT→CONFIRM_INPUT→持久 FULL_EXTRACTION；响应 receipt.agent_run_id 用于后续查询 |
+| `GET /v1/projects/{project_id}/tree?user_id=...` | ProjectTreeResponse；只展开 published 分类 snapshot，封存前只有 sources；不返回公开图片 URL |
+| `GET /v1/projects/{project_id}/results?user_id=...` | `result_version_id` 可选；`offset>=0,limit=1..500`；返回固定版本、扁平字段、has_more；翻页必须沿用第一次返回的版本 ID |
+| `GET /v1/runs/{agent_run_id}/summary?user_id=...` | RunStageSummaryResponse；阶段封存/计数/digest/持久事件跨度/模型/Profile/final receipt；费用 unknown/null |
+| `GET /v1/runs/{agent_run_id}/events/stream` | `after_seq` 或 `Last-Event-ID` 续传；关闭前排空终态事件。既有 run/events 路由继续信任内部服务身份，不作为浏览器越权边界 |
+
+CreateRunRequest 新增可选 `profile: ProfileRef`；RunOptions 新增类型化 `profile_confirmation`，保存确认 Profile、操作者、源 checksum、检测 ID/置信度和确认时间。业务入口由服务端填写 `expected_result_version=0`，LLM 不猜版本。protocol 2 新 run、RUN_CREATED、queue 在 `gate_b_create_extraction` 内原子登记；service-role-only、owner/source 关联及指纹冲突校验。Gate B 固定完整提取 key 到 source UUID，重传/重启复用已有任务，不改旧确认审计。
+
+`/v1/imports` 是受限内部验收上传，不替代产品大文件直传。会话在进程重启后消失，但已创建 run/阶段/结果仍可用 ID 查询；未确认会话需重新检测确认。ABB experimental 不可正式提取，阶段 0 仍可只确认类型。OpenAPI 路由/响应模型测试和 domain schema checksum 已同步，Web TS Client 尚未接这些内部接口。

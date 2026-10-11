@@ -71,6 +71,9 @@ def main() -> None:
                 "and proname='gate_a_finalize';",
             )
             assert checks.strip() == "1"
+            if any(path.name.startswith("20261011000000") for path in migrations):
+                execute(database, (ROOT / "services/agent/tests/assets/gate_b_atomic_creation.sql")
+                        .read_text(encoding="utf-8"))
             print(f"PASS {scenario}: {len(migrations)} ordered migrations; legacy data preserved")
         finally:
             # Only the exact UUID database created by this iteration can be removed.

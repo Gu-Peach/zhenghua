@@ -10,6 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 
 from ...application.supervisor_conversation import SupervisorConversationService
+from ...domain.enums import ErrorCode
 from ...domain.errors import AgentServiceError
 from ...domain.models.supervisor import ConversationTurn, SupervisorUserEvent
 from ...graphs.supervisor import run_supervisor_graph
@@ -32,6 +33,8 @@ def _http_error(exc: Exception) -> HTTPException:
     if isinstance(exc, PermissionError):
         return HTTPException(status_code=403, detail="Conversation or attachment access denied.")
     if isinstance(exc, AgentServiceError):
+        if exc.code in {ErrorCode.PROFILE_INVALID, ErrorCode.PROFILE_NOT_CONFIRMED}:
+            return HTTPException(status_code=400, detail={"code": exc.code.value, "message": exc.message})
         return HTTPException(status_code=502, detail={"code": exc.code.value, "message": exc.message})
     return HTTPException(status_code=400, detail=str(exc))
 
