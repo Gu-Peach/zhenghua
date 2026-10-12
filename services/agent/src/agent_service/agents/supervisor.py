@@ -209,6 +209,6 @@ class SupervisorAgent:
             SupervisorIntent.VIEW_RULES: "正在读取当前 Profile 的公开规则。",
             SupervisorIntent.CONFIRM_INPUT: "已收到确认，正在恢复对应任务。",
             SupervisorIntent.CONFIRM_RESULT_PATCH: "已收到结果修订确认，正在提交新结果版本。",
-            SupervisorIntent.AUTHORIZE_PROFILE_CANDIDATE: "已确认创建规则候选，正在恢复改进任务。",
+            SupervisorIntent.AUTHORIZE_PROFILE_CANDIDATE: "已确认规则修改，正在落地并启用新版本。",
         }
         return messages[intent]

@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
 import pytest
+
 from agent_service.agents.evaluation_judge import EvaluationJudgeAgent
 from agent_service.application.candidate_evaluation import (
     CandidateEvaluationExecutor,
@@ -337,7 +338,17 @@ def test_target_start_is_passed_without_expected_answers(
     asyncio.run(run())
 
 
-def test_worker_persists_results_and_resume_skips_model_calls(tmp_path: Path) -> None:
+def test_worker_persists_results_and_resume_skips_model_calls(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Sub-millisecond mocks otherwise randomly trip the latency-ratio gate.
+    from itertools import count
+
+    ticks = count()
+    monkeypatch.setattr(
+        "agent_service.application.candidate_evaluation.perf_counter", lambda: float(next(ticks))
+    )
+
     async def run() -> None:
         candidates = InMemoryCandidateRepository()
         candidate = ProfileCandidate(

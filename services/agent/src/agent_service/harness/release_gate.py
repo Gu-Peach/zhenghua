@@ -157,6 +157,46 @@ class InMemoryCandidateRepository:
             )
             return updated.model_copy(deep=True)
 
+    async def activate_confirmed(self, candidate_id: str, reviewer_id: str) -> ProfileCandidate:
+        if not reviewer_id.strip():
+            raise ValueError("Explicit human confirmation requires reviewer_id.")
+        async with self._lock:
+            candidate = self._items[candidate_id]
+            if candidate.status == ProfileCandidateStatus.ACTIVE:
+                if reviewer_id not in self._reviews.get(candidate_id, []):
+                    raise PermissionError("Confirmation belongs to another reviewer.")
+                return candidate.model_copy(deep=True)
+            if candidate.status not in {
+                ProfileCandidateStatus.DRAFT,
+                ProfileCandidateStatus.EVALUATING,
+                ProfileCandidateStatus.REJECTED,
+                ProfileCandidateStatus.APPROVED,
+                ProfileCandidateStatus.CANARY,
+            }:
+                raise ValueError("Candidate cannot be published in its current state.")
+            previous = self._active.get(candidate.profile.key)
+            if previous and previous != candidate_id:
+                self._previous_active[candidate.profile.key] = previous
+                self._items[previous] = self._items[previous].model_copy(
+                    update={"status": ProfileCandidateStatus.RETIRED}
+                )
+            self._reviews.setdefault(candidate_id, []).append(reviewer_id)
+            self._active[candidate.profile.key] = candidate_id
+            updated = candidate.model_copy(update={"status": ProfileCandidateStatus.ACTIVE})
+            self._items[candidate_id] = updated
+            self._audit.append(
+                {
+                    "candidate_id": candidate_id,
+                    "action": "confirmed_publish",
+                    "from": candidate.status.value,
+                    "to": "ACTIVE",
+                    "reviewer_id": reviewer_id,
+                    "payload": {"evaluation_required": False, "checksum": candidate.checksum},
+                    "occurred_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+            return updated.model_copy(deep=True)
+
     async def rollback(self, candidate_id: str, reviewer_id: str) -> ProfileCandidate:
         async with self._lock:
             candidate = self._items[candidate_id]

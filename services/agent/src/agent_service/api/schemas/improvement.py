@@ -20,6 +20,10 @@ class StartEvaluationRequest(ReviewerRequest):
     allow_real_model: bool = False
 
 
+class ConfirmRuleUpdateRequest(ReviewerRequest):
+    confirmed: bool = False
+
+
 class ConfirmCandidateReleaseRequest(ReviewerRequest):
     evaluation_run_id: str = Field(min_length=1)
     confirmed: bool = False

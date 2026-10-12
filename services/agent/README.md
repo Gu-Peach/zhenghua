@@ -2,7 +2,7 @@
 
 规则库支持人工基于可用模板创建新 key，封存到私有 Bucket 后立即注册；所有登录用户共享读取，创建者确认删除后停用。要求 `AGENT_PROFILE_PACKAGES_ENABLED=true` 和既有 Supabase 配置。Profile API/新任务入口/首页检测刷新远端 active 集合并为同 key 选择最新版本；已冻结任务仍使用原 checksum。首次使用新增 adapter 需重载服务以加载新代码。见 [ADR-0012](../../docs/adr/0012-shared-ready-rule-library.md)。
 
-混合纠错和既有候选的评测/审核/发布终端入口见 [`agent_test/2.纠错agent/README.md`](./agent_test/2.纠错agent/README.md)。`run_acceptance.py` 完成纠错/归因；`run_rule_release.py` 从已生成候选接续，实际评测、审核、发布分别输入确认。API/Worker 需加载最新代码；真实评测还要求服务 `AGENT_ALLOW_REAL_EVALUATION=true`（默认 false）及请求显式授权。开发中未执行真实评测或发布。
+2026-10-13 起，规则修改取消评测/二次审核：[ADR-0013](../../docs/adr/0013-confirmed-rule-update-without-evaluation.md)。聊天归因建议经一次“确认规则修改”后直接构建并启用包。已有候选由 `run_rule_release.py --candidate-id ... --user-id ...` 接续，输入“确认规则修改”即可；不调用模型评测，不需要 `AGENT_ALLOW_REAL_EVALUATION` 或脚本真实模型开关。需应用 migration `20261013000000` 并重载 API/Worker（不自动停止现有任务）。详见 [`纠错验收说明`](./agent_test/2.纠错agent/README.md)。
 
 局部纠错现按用户要求改为原位更新（[ADR-0010](../../docs/adr/0010-in-place-confirmed-corrections.md)）：直接答案和 Stage 2/3 重识别在确认后保持连接 ID/线号不变，使用 revision/record_version 校验并保留 feedback 审计。完整提取仍产生代次。`20261011020000` 已在本地部署；现有服务需由用户重载才使用新提交代码，旧历史没有删除。见[实施记录](../../docs/service/agent/changelog/2026-10-11-in-place-corrections.md)。
 

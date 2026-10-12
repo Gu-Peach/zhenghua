@@ -196,9 +196,14 @@ class SupervisorConversationService:
                             "proposal_id": item.get("proposal_id"),
                             "diagnoses": item.get("diagnoses"),
                             "candidate_recommended": item.get("candidate_recommended"),
+                            "candidate_id": item.get("candidate", {}).get("candidate_id"),
+                            "candidate_status": item.get("candidate", {}).get("status"),
                         }
                         for item in pending_artifacts
-                        if item.get("kind") in {"result_proposal", "improvement_diagnosis"}
+                        if item.get("kind") in {
+                            "result_proposal", "improvement_diagnosis", "profile_candidate",
+                            "profile_candidate_pending", "profile_rule_update",
+                        }
                     ],
                 }
                 if self._proposals and pending_run.status.value == "NEEDS_REVIEW":
@@ -216,6 +221,45 @@ class SupervisorConversationService:
                 context_summary=summary,
                 on_event=on_event,
             )
+            # Older clients/models may classify the explicit rule confirmation as
+            # generic CONFIRM_INPUT.  Once the referenced run already contains a
+            # rule-candidate artifact, route that same user confirmation through
+            # the idempotent publish handler instead of calling /resume.  This
+            # prevents a second resume from being rejected after publication has
+            # already moved the run out of WAITING_INPUT.
+            if (
+                result.decision.intent.value == "CONFIRM_INPUT"
+                and memory.agent_run_id
+                and context.get("pending_task", {}).get("artifacts")
+                and any(
+                    item.get("kind")
+                    in {"profile_candidate", "profile_candidate_pending", "profile_rule_update"}
+                    for item in context["pending_task"]["artifacts"]
+                )
+                and any(token in turn.message for token in ("规则", "候选", "发布", "启用"))
+            ):
+                command = result.decision.command
+                if command is not None:
+                    command = command.model_copy(
+                        update={
+                            "action": "authorize_profile_candidate",
+                            "payload": {
+                                **command.payload,
+                                "user_message": turn.message,
+                            },
+                        }
+                    )
+                    result = result.model_copy(
+                        update={
+                            "decision": result.decision.model_copy(
+                                update={
+                                    "intent": "AUTHORIZE_PROFILE_CANDIDATE",
+                                    "command": command,
+                                    "user_message": "已确认规则修改，正在落地并启用新版本。",
+                                }
+                            )
+                        }
+                    )
             memory.current_attachment_ids = attachments
             if result.receipt and result.receipt.agent_run_id:
                 memory.agent_run_id = result.receipt.agent_run_id

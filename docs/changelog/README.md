@@ -8,6 +8,8 @@ archived under `docs/service/`.
 
 ## 2026-10-13
 
+- 按用户决策，规则归因建议经一次确认后直接构建并启用新包，取消模型评测/二次审核门禁；保留旧版本、权限/冲突保护及原子审计，已有项目不重绑。Agent/HTTP/聊天/终端同步，详见 [ADR-0013](../adr/0013-confirmed-rule-update-without-evaluation.md) 和 [实施记录](../service/agent/changelog/2026-10-13-confirmed-rules.md)。
+
 - 项目切换改为保留框架、局部加载，目录不随选择重拉；Server 项目列表按创建时间/ID 固定排序，更新/选择不置顶。17 项浏览器回归、29 项 Server 默认测试及 Web 检查通过，见 [Web 记录](../apps/web/changelog/2026-10-13-stable-project-switch.md) 和 [Server 记录](../service/server/changelog/2026-10-13-stable-project-order.md)。
 
 - 左侧项目目录点击名称/文件夹直接切换项目，箭头控制当前项目折叠，移除二次“打开项目”入口。17 项浏览器夹具及 Web 检查通过，见 [记录](../apps/web/changelog/2026-10-13-project-folder-navigation.md)。

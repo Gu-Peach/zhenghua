@@ -17,19 +17,17 @@ ROOT = Path(__file__).resolve().parents[4]
 
 
 @pytest.mark.parametrize(
-    "answers,passed,expected_posts",
+    "answers,expected_posts",
     [
-        (["开始评测", "确认审核", "确认发布"], True, ["evaluations", "approve", "publish"]),
-        (["开始评测", "拒绝"], True, ["evaluations"]),
-        (["开始评测", "确认审核", "拒绝"], True, ["evaluations", "approve"]),
-        (["开始评测"], False, ["evaluations"]),
+        (["确认规则修改"], ["confirm"]),
+        (["拒绝"], []),
+        (["确认审核"], []),
     ],
 )
-def test_terminal_requires_two_separate_confirmations(
+def test_terminal_requires_one_confirmation_without_evaluation(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
     answers: list[str],
-    passed: bool,
     expected_posts: list[str],
 ) -> None:
     spec = importlib.util.spec_from_file_location(
@@ -56,7 +54,7 @@ def test_terminal_requires_two_separate_confirmations(
                         {
                             "artifact_id": "report",
                             "kind": "evaluation_report",
-                            "gate": {"passed": passed},
+                            "gate": {"passed": False},
                             "report": {"cost_reported": False},
                         }
                     ]
@@ -78,7 +76,7 @@ def test_terminal_requires_two_separate_confirmations(
     monkeypatch.setattr("builtins.input", lambda prompt: next(choices))
     result = script.main()
     assert posts == expected_posts
-    assert result == (0 if "publish" in posts else 1 if not passed else 2)
+    assert result == (0 if "confirm" in posts else 2)
 
 
 def test_http_release_contract_and_internal_auth() -> None:
@@ -104,9 +102,35 @@ def test_http_release_contract_and_internal_auth() -> None:
         client.post(
             "/v1/profile-candidates/c/evaluations", json={"reviewer_id": "other"}, headers=headers
         ).status_code
-        == 403
+        == 410
     )
     schema = app.openapi()
     assert "/v1/profile-candidates/{candidate_id}/publish" in schema["paths"]
     required = schema["components"]["schemas"]["ConfirmCandidateReleaseRequest"]["required"]
     assert "evaluation_run_id" in required
+
+
+def test_http_direct_confirmation_is_authenticated_and_explicit() -> None:
+    app = FastAPI()
+    app.state.settings = SimpleNamespace(internal_token="test-token", environment="test")
+    service = AsyncMock(spec=CandidateReleaseService)
+    service.confirm.side_effect = ValueError("Explicit confirmation required")
+    app.state.candidate_release = service
+    app.include_router(router)
+    client = TestClient(app)
+    path = "/v1/profile-candidates/c/confirm"
+    assert client.post(path, json={"reviewer_id": "u", "confirmed": True}).status_code == 401
+    headers = {"Authorization": "Bearer test-token"}
+    assert client.post(path, json={"reviewer_id": "u"}, headers=headers).status_code == 409
+    service.confirm.assert_awaited_once_with("c", "u", False)
+    service.confirm.side_effect = PermissionError("wrong owner")
+    assert (
+        client.post(path, json={"reviewer_id": "other", "confirmed": True}, headers=headers).status_code
+        == 403
+    )
+    service.start.assert_not_called()
+    schema = app.openapi()
+    assert "/v1/profile-candidates/{candidate_id}/confirm" in schema["paths"]
+    assert (
+        "evaluation_run_id" not in schema["components"]["schemas"]["ConfirmRuleUpdateRequest"]["properties"]
+    )

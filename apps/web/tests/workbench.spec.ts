@@ -27,6 +27,35 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+test("规则建议一次确认后直接启用，不出现评测审核提示", async ({ page }) => {
+  const run = "confirmed-rule-fixture";
+  let confirmed = false;
+  await page.route("**/api/v1/supervisor/turns/stream", async route => {
+    confirmed = route.request().postDataJSON().message === "确认规则修改";
+    const response = { receipt: { agent_run_id: run }, user_event: { user_message: confirmed ? "规则修改已启用" : "请确认规则建议", requires_input: !confirmed } };
+    await route.fulfill({ contentType: "text/event-stream", body: `event: response\ndata: ${JSON.stringify(response)}\n\n` });
+  });
+  await page.route(`**/api/v1/runs/${run}/events/stream?**`, route => route.fulfill({ contentType: "text/event-stream", body: "" }));
+  await page.route(`**/api/v1/runs/${run}`, route => route.fulfill({ json: { run: { status: confirmed ? "SUCCEEDED" : "WAITING_INPUT" } } }));
+  await page.route(`**/api/v1/runs/${run}/artifacts`, route => route.fulfill({ json: { items: confirmed ? [
+    { kind: "profile_candidate_pending", candidate: { status: "DRAFT" } },
+    { kind: "profile_rule_update", candidate: { status: "ACTIVE", summary: "跨页终点保留 X3: 前缀", operations: [{ relative_path: "resources/cross_page_prompt.md" }] } },
+  ] : [{ kind: "improvement_diagnosis", candidate_recommended: true, diagnoses: [{ recommended_change: "保留完整端子标识" }] }] } }));
+  await page.goto(`/projects/${project}`);
+  await page.getByRole("button", { name: "打开 AI 聊天面板" }).click();
+  const input = page.getByRole("textbox", { name: "向主 Agent 提出自然语言需求" });
+  await input.fill("请归因规则问题");
+  await page.getByRole("button", { name: "发送给主 Agent" }).click();
+  await expect(page.locator(".agent-feed")).toContainText("待确认规则建议");
+  await input.fill("确认规则修改");
+  await page.getByRole("button", { name: "发送给主 Agent" }).click();
+  await expect(page.locator(".agent-feed")).toContainText("规则修改已生效");
+  await expect(page.locator(".agent-feed")).not.toContainText("需要离线评测");
+  await page.screenshot({ path: "../../.runtime/web-tests/confirmed-rules-desktop.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: "../../.runtime/web-tests/confirmed-rules-mobile.png", fullPage: true });
+});
+
 test("规则包创建注册、冲突重试与删除确认", async ({ page }) => {
   const customId = "10000000-0000-4000-8000-000000000077";
   let created = false; let attempts = 0; let deletes = 0;

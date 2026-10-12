@@ -478,9 +478,21 @@ def _normalize_page_scan(payload: Any, page_number: int) -> dict[str, Any]:
         unit.setdefault("unit_id", f"page-unit-{unit_index}")
         unit["connections"] = unit.get("connections") or unit.get("records") or []
         unit.pop("records", None)
+        # Models sometimes emit numeric drawing page labels (for example 432)
+        # even though the domain contract keeps labels as strings. Normalize
+        # both unit- and connection-level page lists before Pydantic validation.
+        for field in ("source_drawing_pages",):
+            values = unit.get(field)
+            if isinstance(values, list):
+                unit[field] = [str(value) for value in values if value not in (None, "")]
         for connection in unit["connections"]:
             if not isinstance(connection, dict):
                 continue
+            values = connection.get("source_drawing_pages")
+            if isinstance(values, list):
+                connection["source_drawing_pages"] = [
+                    str(value) for value in values if value not in (None, "")
+                ]
             for side in ("start", "end"):
                 if not isinstance(connection.get(side), dict):
                     endpoint = {

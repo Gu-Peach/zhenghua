@@ -79,6 +79,14 @@ class SupabaseCandidateRepository:
             raise
         return ProfileCandidate.model_validate(payload)
 
+    async def activate_confirmed(self, candidate_id: str, reviewer_id: str) -> ProfileCandidate:
+        """Publish the verified package and candidate with one audited DB transaction."""
+        payload = await self._client.rpc(
+            "confirm_and_publish_profile_candidate",
+            {"candidate_key": candidate_id, "reviewer": reviewer_id, "confirmed_value": True},
+        )
+        return ProfileCandidate.model_validate(payload)
+
     async def rollback(self, candidate_id: str, reviewer_id: str) -> ProfileCandidate:
         try:
             payload = await self._client.rpc(

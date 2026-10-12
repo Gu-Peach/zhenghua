@@ -123,6 +123,8 @@ class CandidateRepository(Protocol):
 
     async def get(self, candidate_id: str) -> ProfileCandidate: ...
 
+    async def activate_confirmed(self, candidate_id: str, reviewer_id: str) -> ProfileCandidate: ...
+
     async def transition(
         self,
         candidate_id: str,

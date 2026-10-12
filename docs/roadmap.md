@@ -3,6 +3,8 @@
 > 最后更新：2026-10-12
 > 状态含义：`planned`、`in progress`、`blocked`、`done`
 
+2026-10-13 规则确认直接发布完成（用户新决策）：取消在线改进链路的模型评测/二次审核，保留不可变版本、权限/完整性/冲突检查和原子审计；新评测入口关闭，旧入队任务兼容。默认/Fake、18 项浏览器回归、28 migration 两类数据库验证通过，真实候选发布待用户重载验收。见 [记录](./service/agent/changelog/2026-10-13-confirmed-rules.md)。
+
 2026-10-13 稳定项目切换完成：目录按创建时间固定排序，选择不置顶；保留框架并局部加载，不重复拉目录。17 项浏览器、29 项 Server 默认测试和 Web 检查通过，见 [记录](./apps/web/changelog/2026-10-13-stable-project-switch.md)。
 
 2026-10-13 项目目录单击导航已完成：名称/文件夹直接切换项目，当前项目箭头控制折叠，移除二次打开入口；17 项浏览器夹具及 Web typecheck/lint/build 通过。见 [记录](./apps/web/changelog/2026-10-13-project-folder-navigation.md)。

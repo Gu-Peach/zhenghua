@@ -82,6 +82,31 @@ def test_page_scan_normalizes_cross_page_state_from_visible_evidence() -> None:
     assert unknown["units"][0]["connections"][0]["is_cross_page"] == "unknown"
 
 
+def test_page_scan_normalizes_numeric_source_drawing_pages() -> None:
+    result = _normalize_page_scan(
+        {
+            "units": [
+                {
+                    "unit_id": "u1",
+                    "source_drawing_pages": [432],
+                    "connections": [
+                        {
+                            "line_number": "1015",
+                            "source_drawing_pages": [205, 432],
+                            "start": {"terminal": "X1:1"},
+                            "end": {"terminal": "X2:1"},
+                        }
+                    ],
+                }
+            ]
+        },
+        1,
+    )
+    assert result["units"][0]["source_drawing_pages"] == ["432"]
+    assert result["units"][0]["connections"][0]["source_drawing_pages"] == ["205", "432"]
+    PageScanData.model_validate(result)
+
+
 class Stage2ChangesToSamePage:
     def __init__(self) -> None:
         self.stage3_calls = 0

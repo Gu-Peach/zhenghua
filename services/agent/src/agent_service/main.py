@@ -388,6 +388,7 @@ def create_app(
             registry,
             result_data_tool,
             proposals,
+            candidate_release=application.state.candidate_release,
         )
         application.state.supervisor_runtime = {
             "agent": SupervisorAgent(

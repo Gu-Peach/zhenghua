@@ -9,7 +9,7 @@ from uuid import NAMESPACE_URL, uuid4, uuid5
 from ..agents.evaluation_judge import EvaluationJudgeAgent
 from ..agents.improvement_diagnoser import ImprovementDiagnoserAgent
 from ..agents.profile_patch_builder import ProfilePatchBuilderAgent
-from ..domain.enums import EvalCaseKind, ProfileCandidateStatus
+from ..domain.enums import EvalCaseKind, ProfileCandidateStatus, ProfileStatus
 from ..domain.models.improvement import (
     AcceptedFeedback,
     Diagnosis,
@@ -19,12 +19,13 @@ from ..domain.models.improvement import (
     ProfileCandidate,
     ReleaseDecision,
 )
+from ..domain.models.profiles import ProfileManifest, ProfileSnapshot
 from ..domain.ports import CandidateRepository
 from ..harness.profile_sandbox import ProfileSandbox
 from ..harness.release_gate import ReleaseGate
 from ..infrastructure.supabase_profile_packages import SupabaseProfilePackageRepository
 from ..profiles import ProfileRegistry
-from ..profiles.package import build_package, seal_package
+from ..profiles.package import PackageManifest, build_package, safe_path, seal_package, verify_package
 from ..tools.improvement_intake import ImprovementIntake
 
 
@@ -137,6 +138,7 @@ class ImprovementWorkflow:
         feedback: list[AcceptedFeedback],
         diagnoses: list[Diagnosis],
         authorized_by: str,
+        candidate_id: str | None = None,
     ) -> ImprovementPreparation:
         if not authorized_by.strip():
             raise ValueError("Profile candidate creation requires explicit user authorization.")
@@ -159,12 +161,37 @@ class ImprovementWorkflow:
         selected = groups[0]
         selected_feedback = [item for item, _ in selected]
         selected_diagnoses = [item for _, item in selected]
+        candidate_id = candidate_id or str(uuid4())
+        try:
+            existing = await self._candidates.get(candidate_id)
+        except KeyError:
+            existing = None
+        if existing is not None:
+            if (
+                existing.source_feedback_ids != [item.feedback_id for item in selected_feedback]
+                or existing.profile != selected_feedback[0].profile
+            ):
+                raise ValueError("Candidate retry differs from its frozen feedback.")
+            if self._packages:
+                source_root, _ = await self._packages.resolve(existing.profile)
+                await self._packages.upload(
+                    Path(existing.sandbox_path),
+                    created_by=authorized_by,
+                    candidate_id=candidate_id,
+                    base_package_id=source_root.name,
+                )
+            return ImprovementPreparation(
+                regression_cases=cases,
+                diagnoses=diagnoses,
+                candidate=existing,
+                reason="复用本轮已构建的规则修改包。",
+                candidate_recommended=True,
+            )
         patch = await self._patch_builder.build(
             feedback=selected_feedback,
             diagnoses=selected_diagnoses,
         )
         profile = selected_feedback[0].profile
-        candidate_id = str(uuid4())
         if self._packages:
             source_root, _ = await self._packages.resolve(profile)
         else:
@@ -223,6 +250,37 @@ class ImprovementWorkflow:
             candidate_recommended=True,
             authorization_required=False,
         )
+
+    async def publish_confirmed(self, candidate_id: str, reviewer_id: str) -> ProfileCandidate:
+        """Enable a verified rule package after explicit human confirmation, without VLM evaluation."""
+        if not reviewer_id.strip():
+            raise ValueError("Rule publication requires a human reviewer.")
+        candidate = await self._candidates.get(candidate_id)
+        if self._packages:
+            root, package = await self._packages.candidate_package(candidate)
+        else:
+            root = Path(candidate.sandbox_path)
+            package = PackageManifest.model_validate_json(
+                (root / "manifest.json").read_text(encoding="utf-8")
+            )
+            await asyncio.to_thread(verify_package, root, package)
+        if package.source_profile_checksum != candidate.checksum:
+            raise ValueError("Rule package content no longer matches the confirmed candidate.")
+        manifest = ProfileManifest.model_validate_json((root / "profile.json").read_text(encoding="utf-8"))
+        snapshot = ProfileSnapshot(
+            manifest=manifest.model_copy(update={"status": ProfileStatus.ACTIVE}),
+            profile_root=root,
+            manifest_path=root / "profile.json",
+            resolved_resources={key: root / safe_path(path) for key, path in manifest.resources.items()},
+            checksum=candidate.checksum,
+        )
+        self._profiles.load_rules(snapshot)
+        published = await self._candidates.activate_confirmed(candidate_id, reviewer_id)
+        if self._packages:
+            await self._packages.load_registry(self._profiles)
+        else:
+            self._profiles.register_snapshot(snapshot)
+        return published
 
     async def evaluate(self, candidate_id: str, report: EvalReport) -> ImprovementEvaluation:
         if report.candidate_id != candidate_id:

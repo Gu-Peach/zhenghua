@@ -415,7 +415,7 @@ class Acceptance:
                     print("本案例不授权创建候选，请明确拒绝或退出。")
                 reply = self.turn(answer, {"agent_run_id": improvement})
             else:
-                print("[规则问题] Agent 已识别规则候选；确认后将进入 Profile Patch、评测和发布门禁。")
+                print("[规则问题] Agent 已给出修改建议；确认后将直接修改并启用新规则包，不进行评测。")
                 while True:
                     answer = self.ask("用户（输入“确认规则修改”继续，或“拒绝规则候选”退出）：")
                     if answer in {"确认规则修改", "确认修改规则", "确认"}:
@@ -441,13 +441,24 @@ class Acceptance:
             self.report["candidate_rejection"] = "not_needed"
         checks["diagnosis_finished"] = run["status"] == "SUCCEEDED"
         checks["no_candidate_created"] = not any(
-            item.get("kind") == "profile_candidate" for item in artifacts
+            item.get("kind") in {"profile_candidate", "profile_candidate_pending", "profile_rule_update"}
+            for item in artifacts
         )
         if expect_rule_issue:
             checks["rule_issue_detected"] = bool(diagnoses) and bool(diagnosis.get("candidate_recommended"))
-            checks["candidate_authorization_requested"] = self.report.get("candidate_authorization") == "requested"
-            checks["no_candidate_created"] = False
+            checks["candidate_authorization_requested"] = (
+                self.report.get("candidate_authorization") == "requested"
+            )
+            checks.pop("no_candidate_created", None)
+            if self.report.get("candidate_authorization") == "requested":
+                checks["rules_updated"] = any(
+                    item.get("kind") == "profile_rule_update"
+                    and item.get("candidate", {}).get("status") == "ACTIVE"
+                    for item in artifacts
+                )
         checks["production_profiles_unchanged"] = profiles_before == self.request("/v1/profiles")["items"]
+        if expect_rule_issue and self.report.get("candidate_authorization") == "requested":
+            checks.pop("production_profiles_unchanged", None)
         batch = self.report.get("batch", {})
         stages = self.report.get("stages", [])
         checks["mixed_three_routes"] = all(

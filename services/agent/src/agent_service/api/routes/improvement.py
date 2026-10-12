@@ -15,7 +15,11 @@ from ..schemas import (
     PrepareCandidateResponse,
     ReviewerRequest,
 )
-from ..schemas.improvement import ConfirmCandidateReleaseRequest, StartEvaluationRequest
+from ..schemas.improvement import (
+    ConfirmCandidateReleaseRequest,
+    ConfirmRuleUpdateRequest,
+    StartEvaluationRequest,
+)
 
 router = APIRouter(
     prefix="/v1",
@@ -35,9 +39,17 @@ def _release(request: Request) -> CandidateReleaseService:
 async def start_evaluation(
     candidate_id: str, payload: StartEvaluationRequest, request: Request
 ) -> dict[str, Any]:
+    raise HTTPException(410, detail="规则修改不再需要模型评测；请确认建议后调用 /confirm。")
+
+
+@router.post("/profile-candidates/{candidate_id}/confirm")
+async def confirm_rule_update(
+    candidate_id: str, payload: ConfirmRuleUpdateRequest, request: Request
+) -> dict[str, Any]:
     try:
-        run = await _release(request).start(candidate_id, payload.reviewer_id, payload.allow_real_model)
-        return {"run": run.model_dump(mode="json")}
+        return _model_json(
+            await _release(request).confirm(candidate_id, payload.reviewer_id, payload.confirmed)
+        )
     except PermissionError as exc:
         raise HTTPException(403, detail=str(exc)) from exc
     except (KeyError, ValueError) as exc:

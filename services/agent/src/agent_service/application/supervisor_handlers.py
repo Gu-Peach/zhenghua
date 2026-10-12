@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from ..domain.enums import CorrectionIssueKind, RunType, ScopeType, WorkflowKind
+from ..domain.enums import CorrectionIssueKind, EventType, RunStatus, RunType, ScopeType, WorkflowKind
 from ..domain.errors import AgentServiceError
 from ..domain.models.result_data import ConnectionSearchQuery, PrepareCorrectionRequest
 from ..domain.models.runs import CreateRunRequest, RunOptions, RunScope
@@ -10,6 +10,7 @@ from ..domain.models.supervisor import WorkflowCommand
 from ..domain.ports import ProposalSink
 from ..profiles import ProfileRegistry
 from ..tools.result_data import ControlledResultDataTool
+from .candidate_release import CandidateReleaseService
 from .run_control import RunControlService
 from .workflow_registry import WorkflowDispatchReceipt, WorkflowRegistry
 
@@ -330,9 +331,15 @@ class ReadOnlyWorkflowHandler:
 
 
 class ResumeWorkflowHandler:
-    def __init__(self, run_control: RunControlService, result_data: ControlledResultDataTool) -> None:
+    def __init__(
+        self,
+        run_control: RunControlService,
+        result_data: ControlledResultDataTool,
+        candidate_release: CandidateReleaseService | None = None,
+    ) -> None:
         self._runs = run_control
         self._result_data = result_data
+        self._candidate_release = candidate_release
 
     async def dispatch(self, command: WorkflowCommand) -> WorkflowDispatchReceipt:
         run_id = command.target.agent_run_id
@@ -342,6 +349,63 @@ class ResumeWorkflowHandler:
         input_payload = dict(hints)
         run = await self._runs.get_required(run_id)
         await self._result_data.authorize_project(run.project_id, command.user_id)
+        artifacts = await self._runs.artifacts.list_for_run(run_id)
+        candidate = next(
+            (
+                a
+                for a in artifacts
+                if a.get("kind") in {"profile_rule_update", "profile_candidate", "profile_candidate_pending"}
+            ),
+            None,
+        )
+        if candidate and command.action == "authorize_profile_candidate":
+            if self._candidate_release is None:
+                return _waiting(command, "规则发布服务未配置，尚未修改规则。")
+            published = await self._candidate_release.confirm(
+                str(candidate["candidate"]["candidate_id"]),
+                command.user_id,
+                True,
+            )
+            artifact_id = f"{run_id}:profile-rule-update"
+            await self._runs.artifacts.put(
+                artifact_id,
+                {
+                    "artifact_id": artifact_id,
+                    "agent_run_id": run_id,
+                    "kind": "profile_rule_update",
+                    "candidate": published.model_dump(mode="json"),
+                    "authorized_by": command.user_id,
+                    "evaluation_required": False,
+                    "reason": "用户确认后规则修改已落地并启用；旧项目未自动切换规则版本。",
+                },
+            )
+            if run.status in {RunStatus.NEEDS_REVIEW, RunStatus.WAITING_INPUT}:
+                run.status = RunStatus.SUCCEEDED
+                await self._runs.runs.save(run)
+                if not await self._runs.publisher.has_event(run_id, EventType.RUN_COMPLETED):
+                    await self._runs.publisher.publish(
+                        run,
+                        EventType.RUN_COMPLETED,
+                        message="规则修改已确认并启用。",
+                        artifact_refs=[artifact_id],
+                        metrics={"rules_updated": True},
+                    )
+            return WorkflowDispatchReceipt(
+                command_id=command.command_id,
+                workflow=command.workflow,
+                status="COMPLETED",
+                agent_run_id=run_id,
+                message="规则修改已落地并启用，无需评测或再次审核。",
+                payload={"candidate_id": published.candidate_id, "rules_updated": True},
+            )
+        if run.status != RunStatus.WAITING_INPUT:
+            return WorkflowDispatchReceipt(
+                command_id=command.command_id,
+                workflow=command.workflow,
+                status="COMPLETED",
+                agent_run_id=run_id,
+                message=f"任务当前为 {run.status.value}，没有等待中的确认，不会重复执行。",
+            )
         if str(input_payload.get("approve_profile_candidate", "")).lower() == "false":
             input_payload["approve_profile_candidate"] = False
         if command.action == "authorize_profile_candidate":
@@ -363,6 +427,7 @@ def register_default_supervisor_handlers(
     profiles: ProfileRegistry,
     result_data: ControlledResultDataTool,
     proposals: ProposalSink,
+    candidate_release: CandidateReleaseService | None = None,
 ) -> None:
     registry.register(WorkflowKind.PROFILE_DETECTION, ProcessDocumentWorkflowHandler(run_control))
     registry.register(
@@ -370,7 +435,9 @@ def register_default_supervisor_handlers(
         CorrectionWorkflowHandler(run_control, result_data, proposals),
     )
     registry.register(WorkflowKind.READ_ONLY_QUERY, ReadOnlyWorkflowHandler(run_control, profiles))
-    registry.register(WorkflowKind.RESUME_WAITING_RUN, ResumeWorkflowHandler(run_control, result_data))
+    registry.register(
+        WorkflowKind.RESUME_WAITING_RUN, ResumeWorkflowHandler(run_control, result_data, candidate_release)
+    )
 
 
 def _waiting(command: WorkflowCommand, message: str) -> WorkflowDispatchReceipt:

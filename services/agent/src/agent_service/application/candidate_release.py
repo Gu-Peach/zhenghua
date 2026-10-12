@@ -61,6 +61,22 @@ class CandidateReleaseService:
             + (candidate.resource_package_checksum or candidate.checksum),
         )
 
+    async def confirm(self, candidate_id: str, reviewer_id: str, confirmed: bool) -> ProfileCandidate:
+        """Explicit, provenance-authorized publication with no evaluation receipt."""
+        if not confirmed:
+            raise ValueError("Rule modification requires explicit human confirmation.")
+        candidate = await self.candidates.get(candidate_id)
+        if not candidate.source_feedback_ids:
+            raise ValueError("Candidate has no accepted feedback provenance.")
+        for key in candidate.source_feedback_ids:
+            feedback = await self.data.get_accepted_feedback(key)
+            if not feedback.correction_run_id:
+                raise ValueError("Candidate feedback lacks its source correction run.")
+            source = await self.runs.get_required(feedback.correction_run_id)
+            if source.requested_by != reviewer_id:
+                raise PermissionError("Only the source feedback owner may confirm rule modification.")
+        return await self.workflow.publish_confirmed(candidate_id, reviewer_id)
+
     async def receipt(self, candidate_id: str, run_id: str, reviewer_id: str) -> EvalReport:
         run = await self.runs.get_required(run_id)
         if run.requested_by != reviewer_id:

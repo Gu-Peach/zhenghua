@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from typing import Any
+from uuid import NAMESPACE_URL, uuid5
 
 from ..domain.enums import RunStatus
 from ..domain.models.improvement import AcceptedFeedback, Diagnosis
@@ -61,14 +62,10 @@ class ImprovementRunExecutor:
         for item in feedback_items[1:]:
             item.context = dict(feedback.context)
         candidate_artifact = _find_artifact(artifacts, "profile_candidate")
-        if candidate_artifact is not None:
-            return RunExecutionOutcome(
-                status=RunStatus.NEEDS_REVIEW,
-                artifact_ids=[str(candidate_artifact["artifact_id"])],
-            )
+        candidate_artifact = candidate_artifact or _find_artifact(artifacts, "profile_candidate_pending")
 
         diagnosis_artifact = _find_artifact(artifacts, "improvement_diagnosis")
-        if diagnosis_artifact is None:
+        if diagnosis_artifact is None and candidate_artifact is None:
             preparation = await self._workflow.diagnose(feedback_items)
             diagnosis_artifact_id = f"{run.agent_run_id}:improvement-diagnosis"
             await self._artifacts.put(
@@ -104,17 +101,20 @@ class ImprovementRunExecutor:
         if human_input is not None and human_input.get("approve_profile_candidate") is False:
             return RunExecutionOutcome(
                 status=RunStatus.SUCCEEDED,
-                artifact_ids=[str(diagnosis_artifact["artifact_id"])],
+                artifact_ids=[str((diagnosis_artifact or candidate_artifact or {})["artifact_id"])],
                 metrics={"candidate_declined": True},
             )
         if human_input is None or human_input.get("approve_profile_candidate") is not True:
             return RunExecutionOutcome(
                 status=RunStatus.WAITING_INPUT,
-                artifact_ids=[str(diagnosis_artifact["artifact_id"])],
+                artifact_ids=[str((candidate_artifact or diagnosis_artifact or {})["artifact_id"])],
             )
         reviewer_id = str(human_input.get("reviewer_id") or "").strip()
-        if not reviewer_id:
-            raise ValueError("Profile candidate authorization requires reviewer_id.")
+        if not reviewer_id or reviewer_id != run.requested_by:
+            raise PermissionError("Rule modification requires confirmation from the source user.")
+        if candidate_artifact is not None:
+            return await self._publish(run, candidate_artifact["candidate"]["candidate_id"], reviewer_id)
+        assert diagnosis_artifact is not None
         diagnoses = [Diagnosis.model_validate(item) for item in diagnosis_artifact.get("diagnoses", [])]
         feedback_items = [
             AcceptedFeedback.model_validate(value)
@@ -124,26 +124,44 @@ class ImprovementRunExecutor:
             feedback=feedback_items,
             diagnoses=diagnoses,
             authorized_by=reviewer_id,
+            candidate_id=str(uuid5(NAMESPACE_URL, f"confirmed-rule-update:{run.agent_run_id}")),
         )
         if preparation.candidate is None:
             raise ValueError("Authorized candidate creation did not produce a candidate.")
-        candidate_artifact_id = f"{run.agent_run_id}:profile-candidate"
+        candidate_artifact_id = f"{run.agent_run_id}:profile-candidate-pending"
         await self._artifacts.put(
             candidate_artifact_id,
             {
                 "artifact_id": candidate_artifact_id,
                 "agent_run_id": run.agent_run_id,
-                "kind": "profile_candidate",
+                "kind": "profile_candidate_pending",
                 "candidate": preparation.candidate.model_dump(mode="json"),
                 "regression_cases": [item.model_dump(mode="json") for item in preparation.regression_cases],
                 "authorized_by": reviewer_id,
                 "reason": preparation.reason,
             },
         )
+        return await self._publish(run, preparation.candidate.candidate_id, reviewer_id)
+
+    async def _publish(self, run: AgentRun, candidate_id: str, reviewer_id: str) -> RunExecutionOutcome:
+        candidate = await self._workflow.publish_confirmed(candidate_id, reviewer_id)
+        artifact_id = f"{run.agent_run_id}:profile-rule-update"
+        await self._artifacts.put(
+            artifact_id,
+            {
+                "artifact_id": artifact_id,
+                "agent_run_id": run.agent_run_id,
+                "kind": "profile_rule_update",
+                "candidate": candidate.model_dump(mode="json"),
+                "authorized_by": reviewer_id,
+                "evaluation_required": False,
+                "reason": "用户确认后规则修改已落地并启用；旧项目未自动切换规则版本。",
+            },
+        )
         return RunExecutionOutcome(
-            status=RunStatus.NEEDS_REVIEW,
-            artifact_ids=[candidate_artifact_id],
-            metrics={"candidate_created": True},
+            status=RunStatus.SUCCEEDED,
+            artifact_ids=[artifact_id],
+            metrics={"rules_updated": True},
         )
 
 

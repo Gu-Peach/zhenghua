@@ -93,17 +93,21 @@ function ProjectWorkspace({ id, projects, onUpload, onProjectLoaded }: { id: str
         const proposal = artifacts.items.find(a => a.kind === "result_proposal");
         const diagnosis = artifacts.items.find(a => a.kind === "improvement_diagnosis");
         const candidate = artifacts.items.find(a => a.kind === "profile_candidate");
+        const ruleUpdate = artifacts.items.find(a => a.kind === "profile_rule_update");
         if (proposal?.proposal_id) {
           const detail = await request<{ operations: unknown[]; feedback_id?: string; committed_result_version_id?: string | null }>(`/api/v1/proposals/${encodeURIComponent(proposal.proposal_id)}`);
           const needsConfirmation = !!detail.feedback_id && !detail.committed_result_version_id;
           setHint(needsConfirmation ? { proposal_id: proposal.proposal_id } : { agent_run_id: currentRun.current });
           setEvents(e => [...e, { id: crypto.randomUUID(), kind: "result", title: needsConfirmation ? "待确认修订" : detail.feedback_id ? "修订已提交" : "提取结果", detail: JSON.stringify(detail.operations, null, 2), status: needsConfirmation ? "pending" : "done", timestamp: new Date().toISOString() }]);
+        } else if (ruleUpdate) {
+          setHint({ agent_run_id: currentRun.current });
+          setEvents(e => [...e.map(item => item.kind === "result" && item.status === "pending" ? { ...item, status: "done" as const } : item), { id: crypto.randomUUID(), kind: "result", title: "规则修改已生效", detail: `已按你的确认修改并启用新规则版本，无需评测或再次审核。已有项目未自动切换版本。\n${JSON.stringify(ruleUpdate.candidate, null, 2)}`, status: "done", timestamp: new Date().toISOString() }]);
         } else if (candidate) {
           setHint({ agent_run_id: currentRun.current });
-          setEvents(e => [...e, { id: crypto.randomUUID(), kind: "result", title: "规则候选已生成", detail: `候选尚未发布，需要离线评测和人工审核，不会自动修改生产规则。\n${JSON.stringify(candidate.candidate, null, 2)}`, status: "done", timestamp: new Date().toISOString() }]);
+          setEvents(e => [...e, { id: crypto.randomUUID(), kind: "result", title: "已有规则修改待确认", detail: `确认后直接启用该规则包，无需评测或再次审核。\n${JSON.stringify(candidate.candidate, null, 2)}`, status: "pending", timestamp: new Date().toISOString() }]);
         } else if (diagnosis) {
           setHint({ agent_run_id: currentRun.current });
-          setEvents(e => [...e, { id: crypto.randomUUID(), kind: "result", title: diagnosis.candidate_recommended ? "待确认规则建议" : "纠错归因结果", detail: JSON.stringify(diagnosis.diagnoses, null, 2), status: diagnosis.candidate_recommended ? "pending" : "done", timestamp: new Date().toISOString() }]);
+          setEvents(e => [...e, { id: crypto.randomUUID(), kind: "result", title: diagnosis.candidate_recommended ? "待确认规则建议" : "纠错归因结果", detail: `${diagnosis.candidate_recommended ? "确认规则修改后将直接修改并启用新规则版本。\n" : ""}${JSON.stringify(diagnosis.diagnoses, null, 2)}`, status: diagnosis.candidate_recommended ? "pending" : "done", timestamp: new Date().toISOString() }]);
         } else setHint({ agent_run_id: currentRun.current });
       }
     } catch (e) { if (!abort.current?.signal.aborted) setEvents(events => [...events, { id: crypto.randomUUID(), kind: "error", title: "连接/任务失败", detail: String(e), status: "failed", timestamp: new Date().toISOString() }]); }

@@ -2,9 +2,9 @@
 
 ABB 独立三阶段资源演进见 [初版记录](./changelog/2026-10-12-abb-resource-draft.md)、[1.1.1 精简记录](./changelog/2026-10-12-abb-resource-compact.md) 和 [1.1.2 可用实现](./changelog/2026-10-12-abb-ready-profile.md)。当前各阶段一案例、图片 1/1/2 张；独立 `abb_native` adapter/policy 和 Bucket 可用包已完成，真实模型字段级回归仍待人工验收。
 
-规则库人工创建/删除与动态注册见 [实施记录](../server/changelog/2026-10-12-shared-rule-library.md)：所有登录用户共享手工规则包，存储后直接可用，同 key 新任务选择最新 active 版本；停用后精确历史绑定仍可读取。AI 规则候选继续遵循独立评测/审核流程。
+规则库人工创建/删除与动态注册见 [实施记录](../server/changelog/2026-10-12-shared-rule-library.md)：所有登录用户共享手工规则包，存储后直接可用，同 key 新任务选择最新 active 版本；停用后精确历史绑定仍可读取。AI 规则修改按 [ADR-0013](../../adr/0013-confirmed-rule-update-without-evaluation.md) 经一次用户确认后直接启用。
 
-当前候选评测/审核/发布契约见 [实施计划](./candidate-release-plan.md) 和 [2026-10-12 实现记录](./changelog/2026-10-12-candidate-release.md)。纯 HTTP 终端从既有候选接续，真实模型及发布验收待用户确认执行。
+当前归因/确认/直接规则发布契约见 [2026-10-13 实现记录](./changelog/2026-10-13-confirmed-rules.md)。旧 [候选评测计划](./candidate-release-plan.md) 仅为历史记录；不再开放新评测任务。三阶段提取及结果校验不变。
 
 目标评测 Stage 2 已补齐起点定位，保持正确终点隔离；旧评测产物不覆盖，失败候选的新评测入口仍是独立缺口。见 [定位修复记录](./changelog/2026-10-12-evaluation-source-locator.md)。
 

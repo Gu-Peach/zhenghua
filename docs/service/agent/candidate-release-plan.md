@@ -1,5 +1,7 @@
 # 候选评测、审核与发布实施计划
 
+> 历史方案：2026-10-13 已由用户决策 [ADR-0013](../../adr/0013-confirmed-rule-update-without-evaluation.md) 替代。当前无需评测/二次审核，一次确认直接启用包；旧代码只兼容已启动的评测，不开放新评测入口。
+
 日期：2026-10-12。复用既有候选/评测/运行/产物/资源包表，不新增 migration。
 
 1. 已完成：新增 PROFILE_EVALUATION Worker。冻结基线资源包 checksum 与固定案例人工 expected，加入候选 source_feedback_ids 对应目标案例。基线/候选都以同一输入执行，不读候选修改后的 expected，不在模型输入中提供答案；评测时关闭图片 Few-shot，避免把测试样例答案直接喂回模型。

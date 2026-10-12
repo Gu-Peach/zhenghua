@@ -21,7 +21,6 @@ from agent_service.application.workflow_registry import WorkflowRegistry
 from agent_service.domain.enums import (
     CorrectionIssueKind,
     CrossPageState,
-    EvalCaseKind,
     EventType,
     RunStatus,
     RunType,
@@ -35,7 +34,6 @@ from agent_service.domain.models.correction import (
     CorrectionFacts,
     FeedbackTarget,
 )
-from agent_service.domain.models.improvement import EvalCaseResult, EvalReport
 from agent_service.domain.models.result_data import ConnectionSearchResult
 from agent_service.domain.models.supervisor import ConversationTurn, SupervisorTargetHint
 from agent_service.graphs.supervisor import run_supervisor_graph
@@ -49,7 +47,6 @@ from agent_service.harness import (
     ProfileSandbox,
     ReleaseGate,
 )
-from agent_service.harness.eval_runner import EvalRunner
 from agent_service.infrastructure.correction_data import InMemoryCorrectionDataProvider
 from agent_service.infrastructure.queue import InMemoryRunQueue
 from agent_service.infrastructure.result_data import InMemoryResultDataRepository
@@ -332,7 +329,7 @@ class SupervisorAgentChainTests(unittest.TestCase):
                     workflows=workflows,
                     turn=ConversationTurn(
                         conversation_id="conversation-1",
-                        user_id="reviewer-1",
+                        user_id="user-1",
                         project_id="project-1",
                         message="确认创建规则候选",
                         target_hint=SupervisorTargetHint(agent_run_id=improvement_run_id),
@@ -341,30 +338,18 @@ class SupervisorAgentChainTests(unittest.TestCase):
                 self.assertTrue(await worker.run_once())
                 candidate_artifacts = await artifacts.list_for_run(improvement_run_id)  # type: ignore[arg-type]
                 candidate_payload = next(
-                    item for item in candidate_artifacts if item.get("kind") == "profile_candidate"
+                    item for item in candidate_artifacts if item.get("kind") == "profile_rule_update"
                 )
                 candidate_id = candidate_payload["candidate"]["candidate_id"]
                 candidate = await candidates.get(candidate_id)
-                self.assertEqual(candidate.status.value, "DRAFT")
-
-                results = [
-                    EvalCaseResult(
-                        case_id="case-1",
-                        kind=EvalCaseKind.TARGET,
-                        expected={"end_terminal": "X21:2"},
-                        actual={"end_terminal": "X21:2"},
-                    )
-                ]
-                report = EvalReport(
-                    candidate_id=candidate_id,
-                    baseline=EvalRunner.metrics(results),
-                    candidate=EvalRunner.metrics(results),
-                    baseline_results=results,
-                    candidate_results=results,
-                )
-                evaluated = await improvement.evaluate(candidate_id, report)
-                self.assertTrue(evaluated.gate.passed)
-                self.assertEqual(evaluated.judgement.recommendation.value, "APPROVE")
+                self.assertEqual(candidate.status.value, "ACTIVE")
+                self.assertFalse(await candidates.gate_passed(candidate_id))
+                completed_run = await runs.get(improvement_run_id)  # type: ignore[arg-type]
+                self.assertEqual(completed_run.status, RunStatus.SUCCEEDED)  # type: ignore[union-attr]
+                published_again = await improvement.publish_confirmed(candidate_id, "user-1")
+                self.assertEqual(published_again.status.value, "ACTIVE")
+                audit = await candidates.audit_log(candidate_id)
+                self.assertEqual(sum(a["action"] == "confirmed_publish" for a in audit), 1)
                 run_events = await events.list_after(improvement_run_id)  # type: ignore[arg-type]
                 self.assertTrue(
                     any(event.event_type == EventType.HUMAN_INPUT_REQUIRED for event in run_events)
