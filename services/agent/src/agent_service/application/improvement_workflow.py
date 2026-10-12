@@ -281,7 +281,7 @@ class ImprovementWorkflow:
                 },
             )
             allowed = {candidate.resource_package_id, package_rows[0].get("base_package_id")}
-            if len(active_rows) != 1 or active_rows[0]["id"] not in allowed:
+            if not any(row["id"] in allowed for row in active_rows):
                 raise ValueError(
                     "Active Profile changed since this candidate was built; re-evaluation required."
                 )

@@ -189,7 +189,7 @@ def test_import_conflicts_invalid_pdf_auth_and_storage_retry(tmp_path: Path) -> 
         assert denied.status_code == 401
 
 
-def test_unknown_and_experimental_profile_never_enqueue(tmp_path: Path) -> None:
+def test_unknown_requires_confirmation_then_ready_abb_enqueues(tmp_path: Path) -> None:
     app, client, _, _, pdf = setup(tmp_path, [
         intent("PROCESS_DOCUMENT"), detection(recognized=False), intent("CONFIRM_INPUT"),
         intent("CONFIRM_INPUT", {"profile_key": "abb"}),
@@ -200,9 +200,9 @@ def test_unknown_and_experimental_profile_never_enqueue(tmp_path: Path) -> None:
         assert turn(client, user, "提取").json()["receipt"]["status"] == "WAITING_INPUT"
         assert turn(client, user, "OK").json()["receipt"]["status"] == "WAITING_INPUT"
         selected = turn(client, user, "是 ABB")
-        assert selected.status_code == 400
-        assert selected.json()["detail"]["code"] == "PROFILE_INVALID"
-        assert client.portal.call(app.state.run_control.queue.size) == 0
+        assert selected.status_code == 200
+        assert selected.json()["receipt"]["status"] == "QUEUED"
+        assert client.portal.call(app.state.run_control.queue.size) == 1
 
 
 def test_business_upload_does_not_inherit_temporary_pdf_confirmation(tmp_path: Path) -> None:

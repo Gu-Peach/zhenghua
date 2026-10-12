@@ -108,7 +108,7 @@ export interface RuleLibraryItem {
   name: string;
   version: string;
   summary: string;
-  status: "published" | "candidate";
+  status: "published";
   updatedAt: string;
   canDelete: boolean;
   isActive: boolean;

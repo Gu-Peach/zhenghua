@@ -8,6 +8,13 @@ archived under `docs/service/`.
 
 ## 2026-10-12
 
+- 规则库取消手工包草稿门槛：所有登录用户共享读取，写入后直接可用；同 key 新任务选择最新 active 版本，历史 checksum 保留，Improvement 隔离候选及其精确回滚仍受审核范围保护。三个 additive migration 已应用并通过非创建者 RLS、空库/旧数据重放。ABB 1.1.2 已接入独立三阶段 adapter/policy、上传并读回校验，当前可执行但真实模型字段准确率仍待验收。见 [ADR-0012](../adr/0012-shared-ready-rule-library.md)、[Server 记录](../service/server/changelog/2026-10-12-shared-rule-library.md) 和 [Agent 记录](../service/agent/changelog/2026-10-12-abb-ready-profile.md)。
+
+- 候选目标评测的 Stage 2 上下文补齐明确起点定位，保留正确终点隔离和严格起点匹配；不改 Profile/数据库/发布门禁。32 项相关离线回归通过，真实模型未运行，旧冻结评测不会因重载或 resume 自动重测，见 [Agent 修复记录](../service/agent/changelog/2026-10-12-evaluation-source-locator.md)。
+
+- 图纸库只展示当前项目的图纸目录，不展示旧的项目文件夹列表或工作区分组；线表左侧导航仍保留工作区层级。该条最初实现了规则状态显示，后续已由同日共享规则库决策取代。
+  - 收尾增加空目录/跨工作区定位回归，最终 11 项浏览器夹具与 Web typecheck/lint/build 通过，截图已检查。ABB 创建者已只读核对，用户当前账号可见性尚待确认，见 [Web 记录](../apps/web/changelog/2026-10-12-resource-library.md)。
+
 - 按用户要求将 ABB 样例精简为三个阶段各一例、图片 1/1/2 张；abb@1.1.1 草稿上传私有 Bucket，18 文件读回核验通过，不覆盖旧不可变包或生产绑定。见 [Agent 精简记录](../service/agent/changelog/2026-10-12-abb-resource-compact.md)。
 
 - ABB 1.1.0 三阶段资源改为独立 Prompt/图片/manifest/expected/task 格式，上传私有 agent-profile-assets 草稿并读回验证 45 文件；不替换生产包或项目绑定。独立确定性策略和真实模型验收尚未完成，见 [Agent 资源实施记录](../service/agent/changelog/2026-10-12-abb-resource-draft.md)。

@@ -1,10 +1,10 @@
 {
   "manifest_version": 1,
   "key": "abb",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "display_name": "ABB 电气图纸",
-  "description": "ABB annotated three-stage resource draft; independent deterministic adapter and engineering approval pending.",
-  "status": "experimental",
+  "description": "ABB three-stage extraction Profile with independent prompts, examples, reference parsing and deterministic policy.",
+  "status": "active",
   "adapter": "abb_native",
   "resource_mode": "legacy_reference",
   "resources": {
@@ -20,6 +20,7 @@
   "capabilities": [
     "page_classification",
     "page_scan",
-    "cross_page_completion"
+    "cross_page_completion",
+    "full_document_extraction"
   ]
 }

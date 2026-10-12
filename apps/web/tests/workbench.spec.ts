@@ -81,6 +81,64 @@ test("规则包创建注册、冲突重试与删除确认", async ({ page }) => 
   expect(attempts).toBe(2); expect(deletes).toBe(1);
 });
 
+test("图纸库只显示图纸目录，不显示项目或工作区文件夹", async ({ page }) => {
+  await page.goto(`/projects/${project}`);
+  await page.getByRole("button", { name: "图纸库", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "图纸目录" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "图纸 1 · PDF 1" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "图纸 2 · PDF 2" })).toBeVisible();
+  await expect(page.getByRole("list", { name: "项目图纸文件夹" })).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "002.C" })).toHaveCount(0);
+  await page.screenshot({ path: "../../.runtime/web-tests/drawing-library-desktop.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: "../../.runtime/web-tests/drawing-library-mobile.png", fullPage: true });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(392);
+});
+
+test("图纸目录跨工作区平铺，点击保留正确工作区定位", async ({ page }) => {
+  const otherWorkspace = "10000000-0000-4000-8000-000000000008";
+  await page.route(`**/api/v1/projects/${project}`, route => route.fulfill({ json: {
+    ...detail, workspaces: [
+      { ...detail.workspaces[0], drawings: [drawing(source, "1")] },
+      { id: otherWorkspace, name: "006.M", code: "006.M", drawings: [{ ...drawing(target, "2"), workspace_id: otherWorkspace }] },
+    ],
+  } }));
+  await page.goto(`/projects/${project}`);
+  await page.getByRole("button", { name: "图纸库", exact: true }).click();
+  const directory = page.getByRole("region", { name: "图纸目录", exact: true });
+  await expect(directory.getByRole("button")).toHaveCount(2);
+  await expect(directory.getByText("006.M", { exact: true })).toHaveCount(0);
+  const loaded = page.waitForRequest(request => {
+    const url = new URL(request.url());
+    return url.pathname.endsWith("/connections") && url.searchParams.get("drawing_id") === target && url.searchParams.get("workspace_id") === otherWorkspace;
+  });
+  await directory.getByRole("button", { name: "图纸 2 · PDF 2", exact: true }).click();
+  await loaded;
+  await expect(page.getByRole("heading", { name: "线表结果" })).toBeVisible();
+});
+
+test("没有已发布分类的项目显示图纸目录空态", async ({ page }) => {
+  await page.route(`**/api/v1/projects/${project}`, route => route.fulfill({ json: { ...detail, workspaces: [] } }));
+  await page.goto(`/projects/${project}`);
+  await page.getByRole("button", { name: "图纸库", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("暂无图纸，页面分类完成后会显示图纸目录。");
+});
+
+test("规则库将旧 ABB draft 响应按可用规则展示", async ({ page }) => {
+  await page.route("**/api/v1/rule-library", route => route.fulfill({ json: [
+    { id: packageId, profile_key: "abb", profile_version: "1.1.2", package_checksum: "sha256:fixture", status: "draft", created_at: "2026-10-12", can_delete: false },
+  ] }));
+  await page.goto(`/projects/${project}`);
+  await page.getByRole("button", { name: "规则库", exact: true }).click();
+  await expect(page.getByText("可用", { exact: true })).toBeVisible();
+  await expect(page.getByText("草稿", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("所有登录用户共享规则包，存储后可直接查看与提取")).toBeVisible();
+  await page.screenshot({ path: "../../.runtime/web-tests/rule-library-desktop.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: "../../.runtime/web-tests/rule-library-mobile.png", fullPage: true });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(392);
+});
+
 test("规则模板加载失败可重试，空库禁止创建", async ({ page }) => {
   let attempts = 0;
   await page.route(`**/api/v1/rule-library/${packageId}`, route => {
@@ -99,7 +157,7 @@ test("规则模板加载失败可重试，空库禁止创建", async ({ page }) 
   await page.reload();
   await page.getByRole("button", { name: "规则库", exact: true }).click();
   await page.getByRole("button", { name: "新建规则包", exact: true }).click();
-  await expect(page.getByText("没有可用的规则模板，请先发布一个完整的规则包。")).toBeVisible();
+  await expect(page.getByText("没有可用的完整规则模板。")).toBeVisible();
   await expect(page.getByRole("button", { name: "创建并注册", exact: true })).toHaveCount(0);
 });
 

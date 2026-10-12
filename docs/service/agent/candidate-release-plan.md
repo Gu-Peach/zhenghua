@@ -33,3 +33,11 @@ Domain 契约版本升至 4，并更新 schema checksum；HTTP OpenAPI 测试验
 暂时性模型/网络失败保留已提交案例，显式 `/resume` 后只补未完成项；无法校验的输出保存失败结果，不能过门禁。发布不是跨表单事务：candidate 可能已 ACTIVE 但包 RPC 失败，此时同一 receipt 重试 `/publish` 补齐；判断实际发布以资源包 active 和发布响应为准。基线版本检查在应用层，当前串行使用场景适用，多发布者并发的数据库 CAS 不在本轮实现范围。
 
 评测复用现有三阶段 adapter；目标案例同页跑 Stage 2、跨页跑 Stage 2→3，不写线表。固定案例必须三阶段/正例/负例齐全，后续新增 Profile 缺少固定集时阻断发布。默认测试使用 Fake Model；开发中未调用真实模型，也未批准或发布候选。
+
+## 目标 Stage 2 定位上下文修复（2026-10-12，离线验证完成）
+
+目标案例的 `PageScanRequest.page_context` 应由评测应用层组装为结构化 JSON：任务说明、`target_connection.connection_id` 与冻结记录的 `start` / `start_*` 起点身份。明确这些字段仅用于定位，实际线路和终点须从图中重新读取；不得复制原始上下文、终点、accepted-feedback 正确答案或 raw payload。`expected` 留在评测器中用于输出比较，不进入 Stage 2/3 模型请求。
+
+继续通过 `ScopedExtractionRunner` 包装任务、Stage 2 adapter 组合 Profile Prompt 与图片；不让 Supervisor 编写完整提示词，不修改 Profile 资源。严格起点匹配不放宽，缺项/歧义仍阻断。仅新建数据集使用修复后的输入，旧 run 的冻结数据集和逐项结果保持不变，`/resume` 不等于新一轮评测；失败候选的新评测入口缺口不在本次修复范围。
+
+4 种同页/跨页、扁平/嵌套起点用例通过 Fake Gateway 核验最终多模态消息，32 项相关离线回归通过。既有 ABB adapter 名称断言失败未改；未执行真实模型评测，详见 [修复记录](./changelog/2026-10-12-evaluation-source-locator.md)。

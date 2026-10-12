@@ -1,4 +1,4 @@
-"""Upload experimental resources without activating a production Profile."""
+"""Upload a verified Profile resource package; stored packages are immediately usable."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ from agent_service.profiles.registry import ProfileRegistry
 
 
 async def main() -> None:
-    parser = argparse.ArgumentParser(description="Upload an experimental Profile draft; never publish it.")
+    parser = argparse.ArgumentParser(description="Upload and register a verified Profile resource package.")
     parser.add_argument("profile_key")
     parser.add_argument("--user-id", required=True, type=UUID)
     args = parser.parse_args()
@@ -32,8 +32,8 @@ async def main() -> None:
     )
     registry.load_all()
     snapshot = registry.resolve(args.profile_key, allow_experimental=True)
-    if snapshot.manifest.status != ProfileStatus.EXPERIMENTAL:
-        parser.error("Draft upload requires an experimental local Profile.")
+    if snapshot.manifest.status not in {ProfileStatus.ACTIVE, ProfileStatus.EXPERIMENTAL}:
+        parser.error("Only a usable local Profile can be uploaded.")
     client = SupabaseClient(
         base_url=settings.supabase_url or "", service_role_key=settings.supabase_service_role_key or ""
     )
@@ -43,9 +43,9 @@ async def main() -> None:
     with tempfile.TemporaryDirectory() as temporary:
         root = Path(temporary) / "package"
         manifest = await asyncio.to_thread(build_package, snapshot, root)
-        row = await packages.upload(root, created_by=str(args.user_id), status="draft")
-        if row["status"] != "draft":
-            raise ValueError("Identical package already has a different lifecycle status; not changing it.")
+        row = await packages.upload(root, created_by=str(args.user_id), status="active")
+        if row["status"] == "retired":
+            raise ValueError("Identical package was retired and cannot be re-enabled implicitly.")
         remote = await client.download(bucket=packages.bucket, object_path=str(row["manifest_path"]))
         if checksum(remote) != row["manifest_checksum"]:
             raise ValueError("Uploaded manifest checksum differs.")
@@ -59,7 +59,10 @@ async def main() -> None:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(value)
         await asyncio.to_thread(verify_package, verified, manifest)
-        print(f"Uploaded draft {manifest.profile_key}@{manifest.profile_version}; readback verified.")
+        print(
+            f"Uploaded usable package {manifest.profile_key}@{manifest.profile_version}; "
+            "readback verified."
+        )
         print(f"package_id={row['id']}")
         print(f"bucket={packages.bucket}; prefix={row['storage_prefix']}")
         print(f"checksum={manifest.package_checksum}; files={len(manifest.files)}")

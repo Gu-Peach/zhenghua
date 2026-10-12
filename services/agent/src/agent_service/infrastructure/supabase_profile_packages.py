@@ -150,7 +150,7 @@ class SupabaseProfilePackageRepository:
         rules = ProfileRuleSet.model_validate_json(resources["routing_rules"].read_text(encoding="utf-8"))
         return ProfileBinding(
             profile=profile,
-            status=manifest.status,
+            status=ProfileStatus.ACTIVE,
             adapter=manifest.adapter,
             rules=rules,
             resolved_resources=resources,
@@ -158,7 +158,24 @@ class SupabaseProfilePackageRepository:
 
     async def load_registry(self, registry: ProfileRegistry) -> None:
         async with self._registry_lock:
-            rows = await self.client.select("profile_resource_packages", params={"status": "eq.active"})
+            rows = await self.client.select(
+                "profile_resource_packages",
+                params={"status": "eq.active", "order": "created_at.desc,id.desc"},
+            )
+            # Uploaded packages are immediately ready. One latest default per key;
+            # exact frozen checksums continue to resolve older immutable packages.
+            latest: dict[str, dict[str, object]] = {}
+            for row in sorted(
+                rows,
+                key=lambda item: (
+                    str(item.get("created_at") or ""),
+                    str(item.get("profile_version") or ""),
+                    str(item.get("id") or ""),
+                ),
+                reverse=True,
+            ):
+                latest.setdefault(str(row["profile_key"]), row)
+            rows = list(latest.values())
             signature = tuple(sorted((str(row["id"]), str(row["package_checksum"])) for row in rows))
             if self._loaded_sets.get(registry) == signature:
                 return

@@ -2,20 +2,30 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from pathlib import Path
 
+from agent_service.application.extraction_stage_factory import build_extraction_stage_dispatcher
+from agent_service.config import AgentSettings
 from agent_service.domain.enums import ProfileStatus
 from agent_service.domain.models.extraction_stages import (
     CrossPageCompletionData,
+    CrossPageCompletionRequest,
+    DrawingPageInput,
     PageClassificationData,
+    PageClassificationRequest,
     PageScanData,
+    PageScanRequest,
 )
+from agent_service.harness.model_gateway import FakeModelGateway
 from agent_service.infrastructure.document.few_shot import (
     load_cross_page_few_shot_examples,
     load_page_classification_few_shot_examples,
     load_page_scan_few_shot_examples,
 )
+from agent_service.profiles.abb import AbbExtractionPolicy
+from agent_service.profiles.extraction_policy import default_extraction_policies
 from agent_service.profiles.package import build_package, verify_package
 from agent_service.profiles.registry import ProfileRegistry
 
@@ -24,24 +34,107 @@ RESOURCES = ROOT / "services" / "agent" / "prompts" / "abb"
 WIRING = RESOURCES / "examples_wiring" / "annotated"
 
 
-def test_abb_resources_are_independent_and_experimental(tmp_path: Path) -> None:
+def test_abb_resources_are_independent_and_ready(tmp_path: Path) -> None:
     registry = ProfileRegistry(
         profile_root=ROOT / "services" / "agent" / "profiles",
         workspace_root=ROOT,
         allow_legacy_references=True,
     )
     registry.load_all()
-    abb = registry.resolve("abb", allow_experimental=True)
-    assert abb.manifest.status == ProfileStatus.EXPERIMENTAL
-    assert abb.manifest.version == "1.1.1"
+    abb = registry.resolve("abb")
+    assert abb.manifest.status == ProfileStatus.ACTIVE
+    assert abb.manifest.version == "1.1.2"
     assert abb.manifest.adapter == "abb_native"
-    assert "full_document_extraction" not in abb.manifest.capabilities
+    assert "full_document_extraction" in abb.manifest.capabilities
     assert all("prompts/zh" not in str(path).replace("\\", "/") for path in abb.resolved_resources.values())
     package = build_package(abb, tmp_path / "package")
     verify_package(tmp_path / "package", package)
     assert any("provenance.json" in entry.path for entry in package.files)
     # One classification image and two shared wiring images; unused cases are not packaged.
     assert sum(Path(entry.path).suffix == ".png" for entry in package.files) == 3
+
+
+def test_abb_native_policy_is_registered_and_resolves_sheet_reference() -> None:
+    policy = default_extraction_policies().resolve("abb_native")
+    assert isinstance(policy, AbbExtractionPolicy)
+    prepared = policy.prepare_reference(
+        {
+            "raw": "/241.1A",
+            "target_drawing_page": None,
+            "target_internal_page": None,
+            "target_column": None,
+        },
+        source_page={"page_number": 1, "function": "LV11"},
+        drawing_index={
+            "pages": [
+                {"pdf_page": 1, "function": "LV11", "internal_page": 205},
+                {"pdf_page": 2, "function": "LV12", "internal_page": 241},
+            ]
+        },
+    )
+    assert prepared["target_pdf_page"] == 2
+    assert prepared["target_function"] == "LV12"
+    assert prepared["target_column"] == 1
+
+
+def test_abb_package_routes_all_three_stages_without_zh_rules() -> None:
+    async def run() -> None:
+        registry = ProfileRegistry(
+            profile_root=ROOT / "services" / "agent" / "profiles",
+            workspace_root=ROOT,
+            allow_legacy_references=True,
+        )
+        registry.load_all()
+        binding = registry.bind("abb")
+        gateway = FakeModelGateway(
+            [
+                '{"plant_function":"LV11","drawing_page_number":205,"confidence":0.99}',
+                '{"pdf_page_number":1,"drawing_function":"LV11","drawing_page_number":205,'
+                '"units":[{"unit_id":"q4","connections":[]}]}',
+                '{"task_id":"abb-task","end":{"device":"-Q1","terminal":"2"},'
+                '"status":"resolved"}',
+            ]
+        )
+        dispatcher = build_extraction_stage_dispatcher(
+            AgentSettings(model_base_url="http://model.invalid/v1", default_model="fake"),
+            gateway=gateway,
+        )
+        source = DrawingPageInput(pdf_page_number=1, image_path=RESOURCES / "1.png")
+        target = DrawingPageInput(pdf_page_number=2, image_path=RESOURCES / "2.png")
+        result1 = await dispatcher.classify_page(
+            PageClassificationRequest(
+                run_id="abb-run", project_id="abb-project", profile=binding, page=source
+            )
+        )
+        result2 = await dispatcher.scan_page(
+            PageScanRequest(
+                run_id="abb-run", project_id="abb-project", profile=binding, page=source
+            )
+        )
+        result3 = await dispatcher.resolve_cross_page(
+            CrossPageCompletionRequest(
+                run_id="abb-run",
+                project_id="abb-project",
+                profile=binding,
+                task_id="abb-task",
+                target_page=target,
+                task_context='{"task_id":"abb-task","source_record":{"start_terminal":"2"}}',
+            )
+        )
+        assert result1.drawing_page_number == 205
+        assert result2.drawing_function == "LV11"
+        assert result3.end and result3.end.terminal == "2"
+        assert all(call.metadata["profile"] == "abb" for call in gateway.calls)
+        request_text = "\n".join(
+            str(message["content"])
+            for call in gateway.calls
+            for message in call.messages
+            if message["role"] == "user"
+        )
+        assert "不使用 ZH 起点白名单" in request_text
+        assert "起点端子只能是 XD0" not in request_text
+
+    asyncio.run(run())
 
 
 def test_classification_uses_one_current_sheet_not_cont() -> None:

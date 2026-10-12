@@ -1,9 +1,9 @@
-import { Activity, Brain, Bot, Check, Circle, Loader2, Send, Sparkles, XCircle } from "lucide-react";
+import { Activity, Brain, Bot, Check, Circle, Loader2, Send, Sparkles, X, XCircle } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import type { AgentStageProgress } from "@/apis/agent";
 import type { AgentEvent } from "@/apis/types";
 
-interface AiPanelProps {
+export interface AiPanelProps {
   events: AgentEvent[];
   stageProgress: AgentStageProgress[];
   isRunning: boolean;
@@ -12,9 +12,11 @@ interface AiPanelProps {
   onSimulationToggle: (enabled: boolean) => void;
   onRunRepair: (message: string) => void;
   onReconnect?: () => void;
+  onClose?: () => void;
+  isVisible?: boolean;
 }
 
-export function AiPanel({ events, stageProgress, isRunning, hasPendingUpload, simulationEnabled, onSimulationToggle, onRunRepair, onReconnect }: AiPanelProps) {
+export function AiPanel({ events, stageProgress, isRunning, hasPendingUpload, simulationEnabled, onSimulationToggle, onRunRepair, onReconnect, onClose, isVisible = true }: AiPanelProps) {
   const [request, setRequest] = useState("");
   const feed = useRef<HTMLDivElement>(null);
   const followTail = useRef(true);
@@ -22,7 +24,7 @@ export function AiPanel({ events, stageProgress, isRunning, hasPendingUpload, si
   const latestEvent = events[events.length - 1];
   const stageLabel = currentStage?.agentName ?? latestEvent?.stage ?? (latestEvent?.status === "pending" ? latestEvent.title : isRunning ? "Supervisor 正在分析需求" : hasPendingUpload ? "等待类型确认" : "等待上传 PDF 或用户需求");
   const stageStatus = currentStage ? "正在处理" : isRunning ? "思考中" : latestEvent?.status === "failed" ? "执行失败" : latestEvent?.status === "pending" ? "等待确认" : latestEvent?.kind === "result" ? "已完成" : "等待触发";
-  useEffect(() => { if (feed.current && followTail.current) feed.current.scrollTop = feed.current.scrollHeight; }, [events.length, latestEvent?.detail, isRunning]);
+  useEffect(() => { if (isVisible && feed.current && followTail.current) feed.current.scrollTop = feed.current.scrollHeight; }, [events.length, latestEvent?.detail, isRunning, isVisible]);
 
   function submitRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,7 +38,7 @@ export function AiPanel({ events, stageProgress, isRunning, hasPendingUpload, si
     <aside className="ai-panel">
       <div className="ai-heading">
         <div><span className="ai-mark"><Sparkles size={17} /></span><span><strong>Supervisor 主 Agent</strong><small>思考与子 Agent 调度</small></span></div>
-        <span className={`agent-run-status ${isRunning ? "running" : hasPendingUpload ? "queued" : ""}`}><i />{isRunning ? "执行中" : hasPendingUpload ? "待启动" : "已就绪"}</span>
+        <div className="ai-heading-actions"><span className={`agent-run-status ${isRunning ? "running" : hasPendingUpload ? "queued" : ""}`}><i />{isRunning ? "执行中" : hasPendingUpload ? "待启动" : "已就绪"}</span>{onClose ? <button type="button" onClick={onClose} aria-label="收起聊天窗口" title="收起聊天窗口"><X size={18} /></button> : null}</div>
       </div>
       <div className="agent-current-stage"><span className={isRunning ? "agent-pulse" : ""}><Bot size={16} /></span><div><small>当前阶段</small><strong>{stageLabel}</strong></div><span className="agent-stage-state">{stageStatus}</span></div>
       <div ref={feed} className="agent-feed" role="log" aria-live="polite" aria-label="主 Agent 流式思考和子 Agent 事件" onScroll={e => { const node = e.currentTarget; followTail.current = node.scrollHeight - node.scrollTop - node.clientHeight < 80; }}>

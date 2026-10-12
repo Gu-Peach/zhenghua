@@ -3,6 +3,7 @@ from __future__ import annotations
 from ..config import AgentSettings
 from ..harness.model_gateway import ModelGateway, OpenAICompatibleModelGateway
 from ..harness.retry import RetryPolicy
+from ..infrastructure.abb_vlm_stages import AbbVlmExtractionStageAdapter
 from ..infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
 from .extraction_stage_dispatcher import ProfileBoundStageDispatcher
 
@@ -29,4 +30,5 @@ def build_extraction_stage_dispatcher(
     )
     dispatcher = ProfileBoundStageDispatcher()
     dispatcher.register("zh_native", ZhVlmExtractionStageAdapter(settings, model_gateway))
+    dispatcher.register("abb_native", AbbVlmExtractionStageAdapter(settings, model_gateway))
     return dispatcher

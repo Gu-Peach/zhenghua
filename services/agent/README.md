@@ -1,6 +1,6 @@
 # Agent Service
 
-规则库支持人工基于已发布模板创建新 key，封存到私有 Bucket 后发布并自动注册；创建者确认删除后停用。要求 `AGENT_PROFILE_PACKAGES_ENABLED=true` 和既有 Supabase 配置。Profile API/新任务入口/首页检测刷新远端 active 集合，其他 API/Worker 进程无需因包变动重启；已冻结任务仍使用原 checksum。首次使用新功能需用户重载服务以加载新代码，本轮未停止任何服务。见[生命周期实施记录](../../docs/service/server/changelog/2026-10-12-rule-package-lifecycle.md)。
+规则库支持人工基于可用模板创建新 key，封存到私有 Bucket 后立即注册；所有登录用户共享读取，创建者确认删除后停用。要求 `AGENT_PROFILE_PACKAGES_ENABLED=true` 和既有 Supabase 配置。Profile API/新任务入口/首页检测刷新远端 active 集合并为同 key 选择最新版本；已冻结任务仍使用原 checksum。首次使用新增 adapter 需重载服务以加载新代码。见 [ADR-0012](../../docs/adr/0012-shared-ready-rule-library.md)。
 
 混合纠错和既有候选的评测/审核/发布终端入口见 [`agent_test/2.纠错agent/README.md`](./agent_test/2.纠错agent/README.md)。`run_acceptance.py` 完成纠错/归因；`run_rule_release.py` 从已生成候选接续，实际评测、审核、发布分别输入确认。API/Worker 需加载最新代码；真实评测还要求服务 `AGENT_ALLOW_REAL_EVALUATION=true`（默认 false）及请求显式授权。开发中未执行真实评测或发布。
 
@@ -35,12 +35,12 @@ M4 的真实 VLM 首页识别评测和 ZH 固定案例字段级回归仍未执�
 
 Supabase 模式下，完整提取 Proposal 会原子写入规范化结果版本；source document 和 Correction drawing 会从私有 Bucket 下载并校验或重新物化。受控结果工具支持多条件查询、持久 Correction bundle、乐观版本提交和 accepted feedback；Profile candidate、release gate、eval、状态审计和模型 Trace 也会持久化。Stage 1/2/3 本身仍只返回结构化候选，只有完整提取持久步骤或用户明确确认修订后才调用受控提交 RPC。
 
-ABB Profile 1.1.1 为 experimental，使用独立三阶段 Prompt，各阶段仅一案例：Stage 1 原页 205、Stage 2 原页 205（示范 Q4 跨页连接）、Stage 3 原页 205+目标页 241。资源已上传私有 `agent-profile-assets`，状态为 `draft`，18 文件读回核验通过；独立 `abb_native` 确定性策略尚未注册，当前全量 PDF runner 仍只支持 ZH。样本工程确认和真实模型字段级回归通过后才能审核发布。示例范围和待确认事项见 [ABB 资源说明](prompts/abb/README.md)。
+ABB Profile 1.1.2 使用独立三阶段 Prompt，各阶段仅一案例：Stage 1 原页 205、Stage 2 原页 205（示范 Q4 跨页连接）、Stage 3 原页 205+目标页 241。资源已上传私有 `agent-profile-assets` 并读回校验；`abb_native` VLM adapter、Sheet/Cont 页面索引、跨页引用与确定性策略已注册，全量 Graph 可执行。真实模型字段级质量仍待人工验收。见 [ABB 资源说明](prompts/abb/README.md)。
 
-上传 experimental 资源草稿（不发布、不替换 active 包；使用已有 Auth 用户 UUID）：
+上传可用规则资源包（不覆盖不可变旧包；使用已有 Auth 用户 UUID）：
 
 ```powershell
-.\.venv\Scripts\python.exe services/agent/scripts/upload_profile_draft.py abb `
+.\.venv\Scripts\python.exe services/agent/scripts/upload_profile_package.py abb `
   --user-id "<已有 Auth 用户 UUID>"
 ```
 
@@ -215,5 +215,5 @@ $env:AGENT_DEFAULT_MODEL="your-vlm"
 - 新原生子 Agent 通过 Harness 调用模型与工具；`legacy_zh_adapter.py` 与 `legacy_zh_stages.py` 仅保留旧 Agent 调用方的兼容入口，不导入或执行旧 `backend` 实现。
 - `LegacyZhExtractionAdapter` 只返回候选结果，不提交生产数据。
 - `LegacyZhStageAdapter` 只执行单阶段 VLM 调用并返回候选 Schema，不负责索引、最终校验或生产数据写入。
-- ABB 当前保持 `experimental`，不能作为默认生产 Profile。
+- ABB 当前可作为新任务 Profile；真实模型准确率基线仍未完成，验收前应保留人工确认和 `needs_review` 路径。
 - Supabase 模式已持久化 Run/Event/Artifact/Proposal/Checkpoint/Trace、源 PDF、页面图片、规范化结果版本、Correction/accepted feedback、候选、评测、门禁审计和租约队列。启用远端资源包后，候选评测从冻结 Bucket 包读取，人工审核/发布通过服务端 receipt；隔离沙箱不直接覆盖生产 Profile。Bucket 发布执行器已实现，真实模型评测和发布验收待执行。

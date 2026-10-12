@@ -842,6 +842,31 @@ def test_rule_delete_owner_confirmation_and_library_visibility(client) -> None:
     assert http.get("/api/v1/rule-library", headers=headers()).json() == []
 
 
+def test_shared_manual_rule_is_visible_to_other_authenticated_users(client) -> None:
+    http, backend = client
+    package = rule_fixture(backend, status="draft")
+    row = http.get("/api/v1/rule-library", headers=headers("outsider")).json()[0]
+    assert row["id"] == package
+    assert row["can_delete"] is False
+
+
+def test_rule_library_lists_only_latest_usable_version_per_key(client) -> None:
+    http, backend = client
+    first = rule_fixture(backend)
+    newer = copy.deepcopy(backend.tables["profile_resource_packages"][0])
+    newer.update(
+        id=str(uuid4()),
+        profile_version="1.1.2",
+        created_at="2026-10-12T01:00:00Z",
+        package_checksum="sha256:newer",
+    )
+    backend.tables["profile_resource_packages"].append(newer)
+    rows = http.get("/api/v1/rule-library", headers=headers()).json()
+    assert len(rows) == 1
+    assert rows[0]["id"] != first
+    assert rows[0]["profile_version"] == "1.1.2"
+
+
 def test_rule_template_unavailable_and_invalid_input_never_calls_agent(client) -> None:
     http, backend = client
     package = rule_fixture(backend, status="retired")

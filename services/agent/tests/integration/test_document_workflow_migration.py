@@ -177,11 +177,10 @@ def test_production_sources_do_not_import_zh_workflow_or_vendor_rules_in_graph()
                 assert all("zh_workflow" not in alias.name for alias in node.names), str(path)
 
 
-def test_unregistered_policy_does_not_inherit_zh_rules() -> None:
-    import pytest
-
-    with pytest.raises(ValueError, match="No deterministic extraction policy"):
-        default_extraction_policies().resolve("abb_native")
+def test_abb_policy_is_registered_without_inheriting_zh_rules() -> None:
+    policy = default_extraction_policies().resolve("abb_native")
+    assert policy.__class__.__module__.endswith("profiles.abb.policy")
+    assert policy.__class__.__name__ == "AbbExtractionPolicy"
 
 
 def test_wiring_models_reuse_shared_domain_models() -> None:

@@ -4,12 +4,23 @@
 
 ## 进行中
 
+- [ ] 2026-10-13 前端目录/悬浮聊天：图纸库项目→工作区→图片原地展开及懒加载预览；右侧聊天改为右下角按钮切换的悬浮面板，保留消息草稿、任务订阅和人工确认。执行计划见 docs/apps/web/floating-chat-plan.md。
+
+- [x] 规则库取消草稿使用门槛：三个增量 migration 已应用；所有登录用户可读非候选手工规则包，旧 draft 升 active，同 key 默认最新版本，候选隔离/回滚不误伤其他版本。ABB 1.1.2 已上传读回并以 `abb_native` 注册，Stage 1/2/3 Fake 链路、RLS 非创建者读取、27 个 migration 空库/旧数据重放通过。未调用真实模型或修改项目数据。
+
+- [x] 完成图纸目录最终检查：空目录提示、跨工作区平铺/点击定位、桌面/窄屏截图；11 项 Playwright、Web typecheck/lint/build 通过。初次只读核对发现 ABB 旧包为 draft；后续按用户新决策迁移为共享 active 并新增 1.1.2。
+- [x] 用户确认规则库与账号无关后改为共享读取；数据库用非创建者 authenticated 身份验证可见 ABB，浏览器不再依赖包创建者 UUID。
+
+- [x] 修复候选评测 Stage 2 定位上下文：明确传递冻结目标的起点身份，不传正确终点/原记录答案；4 种同页/跨页、扁平/嵌套起点用例核验最终模型消息，32 项相关离线回归通过、1 项既有 ABB adapter 名称断言失败未改，Ruff/161 源文件 mypy 通过。不改数据库/规则包/运行服务，不调用真实模型；旧评测缓存与失败后新评测入口仍另行处理。见 Agent 目标定位修复记录。
+
+- [x] 图纸库只展示当前项目图纸、不展示项目或工作区文件夹；规则库显示共享可用包，不再显示草稿/候选/已发布三态。AI Improvement 候选不属于规则库列表。
+
 - [x] 精简 ABB 样本：Stage 1 一页、Stage 2 一张含 Q4 跨页连接的原页（示例答案范围明确）、Stage 3 一例原页+目标页；三个阶段各一案例。abb@1.1.1 草稿已上传私有 Bucket，18 文件读回核验通过；11 项相关离线回归/Ruff 通过。原图、旧远端包与生产绑定保留，见 docs/service/agent/changelog/2026-10-12-abb-resource-compact.md。
 
 - [x] ABB 样本资源包：4 张标注图整理为 4 个 Stage 1、4 个局部 Stage 2、7 个 Stage 3 样例，独立 Prompt/manifest/expected/task 与来源说明完成；21 项离线回归通过，abb@1.1.0 草稿上传私有 agent-profile-assets，45 文件读回校验通过。不改 test0、active 包或运行服务，见 docs/service/agent/changelog/2026-10-12-abb-resource-draft.md。
-- [ ] ABB 生产启用：工程确认 expected 与原理号优先级，实现独立 abb_native 确定性策略，运行真实图片字段级模型回归并通过审核发布。当前资源包仅 draft。
+- [ ] ABB 质量验收：`abb_native` 执行支持及 1.1.2 可用包已完成；仍需工程确认 expected 与原理号优先级，并运行真实图片字段级回归。无需再做草稿发布操作。
 
-- [x] 规则库包管理实现：基于已发布模板新建、人工确认后 Bucket 发布/Agent 自动注册、创建者删除/停用并保留历史引用；API/Web/动态注册同步。44 项 Agent/Server 回归、7 项浏览器夹具、应用 strict 类型检查、相关 Python Ruff/mypy 通过。未调用模型、不改 test0、不停止服务，见 `docs/service/server/changelog/2026-10-12-rule-package-lifecycle.md`。
+- [x] 规则库包管理实现：基于共享可用模板新建、人工确认后 Bucket 直接注册、创建者删除/停用并保留历史引用；后续已由 ADR-0012 取消手工包草稿/发布步骤。API/Web/动态注册同步，未调用模型、不改 test0、不停止服务。
 - [ ] 规则包交付验收：用户重载 Agent/Server 后验收真实 Bucket 创建/停用；修复本机 node_modules 读取权限后运行自动 OpenAPI 类型生成、Web lint/production build。本轮这些检查受 EPERM 限制，生成类型暂按已导出的 OpenAPI 手动同步。
 
 - [ ] 工作台剩余验收：真实 Bucket 三阶段资源与图纸索引已通过；用户已授权使用现有 8100 和一次性项目调用真实模型。上传/检测/人工确认后的三阶段已成功，继续在同一临时项目验证纠错/人工确认/归因并清理；不停止用户任务，不改 Schema/test0。

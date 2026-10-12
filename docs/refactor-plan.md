@@ -180,6 +180,8 @@ Checkpoint 写入 Worker 本地 runtime 或专用对象路径，不再写入 Web
 
 ### 6.2 项目工作台
 
+2026-10-13 展示更新：真实工作台改为左侧导航+中间业务内容两列，Supervisor 聊天移入右下角按钮控制的悬浮窗口；图纸库为项目→工作区→图片原地展开与预览。下面三栏描述保留为早期方案，当前实现以 [前端更新计划](./apps/web/floating-chat-plan.md) 为准。
+
 采用稳定三栏布局：
 
 - Header：品牌、项目切换、运行状态、用户菜单；
@@ -320,6 +322,7 @@ AI 对话框由一个 Supervisor Agent 负责总揽。它只理解用户意图�
 
 ## 10. 安全
 
+- 规则资源库共享/直接可用契约以 [ADR-0012](./adr/0012-shared-ready-rule-library.md) 为准：所有登录用户可读；未停用包不再设置草稿/发布前提，新任务选最新包，既有运行 checksum 不变。该例外不扩大项目数据权限或取消规则编辑前的用户授权。
 - 浏览器只持有 publishable/anon key，不得出现 service-role key。
 - API 验证 Supabase JWT，并在所有查询中强制项目权限。
 - Storage 默认私有，使用签名 URL；禁止公开整个 PDF Bucket。

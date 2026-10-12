@@ -1,4 +1,4 @@
-# ABB 图片样本资源（1.1.1 草稿）
+# ABB 三阶段规则资源（1.1.2）
 
 按用户要求精简为每阶段一个案例，使用两张原始整页图：`1.png`（LV11/Sheet 205）和 `2.png`（LV12/Sheet 241）。原始 `1.png`～`4.png` 均保留，原图序号不是 PDF 物理页号。
 
@@ -14,6 +14,6 @@
 
 红色教学标注不是业务字段；不确定电流/端点留空。任务物理序号 1/2 是合成夹具位置，不代表原 PDF；PageScanData.pdf_page_number 为 null。来源和范围见 `examples_wiring/annotated/provenance.json`。
 
-expected 仍待工程确认，未运行真实模型。资源包仅为 draft，独立 `abb_native` 确定性策略未注册，尚不能作为生产提取 Profile。旧 1.1.0 远端草稿保留为不可变历史，当前使用 1.1.1 精简草稿。
+资源包已接入独立 `abb_native` 三阶段适配器、Sheet 引用解析与确定性策略，可供新任务直接选择。当前未运行 ABB 真实模型字段级验收，因此“可执行”不等于识别准确率已验收；无法确认的字段仍应置空并进入复核。旧版本保留为不可变历史，新任务默认使用最新可用版本。
 
 复现图片：`.\.venv\Scripts\python.exe services/agent/scripts/prepare_abb_example_images.py`。

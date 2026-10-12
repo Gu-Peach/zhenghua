@@ -71,8 +71,8 @@ class ProfilePackageLifecycle:
             base_rows = await self.packages.client.select(
                 "profile_resource_packages", params={"id": f"eq.{value.base_package_id}"}
             )
-            if not base_rows or base_rows[0]["status"] != "active":
-                raise PackageLifecycleError(404, "TEMPLATE_UNAVAILABLE", "请选择一个已发布的规则模板")
+            if not base_rows or base_rows[0]["status"] == "retired":
+                raise PackageLifecycleError(404, "TEMPLATE_UNAVAILABLE", "请选择一个未停用的规则模板")
             base = base_rows[0]
             root, manifest = await self.packages._resolve_row(base)
             package_id = str(uuid5(NAMESPACE_URL, f"human-profile-key:{value.profile_key}"))
@@ -93,7 +93,7 @@ class ProfilePackageLifecycle:
                 row = await self.packages.upload(
                     target,
                     created_by=user,
-                    status="draft",
+                    status="active",
                     base_package_id=str(value.base_package_id),
                     package_id=package_id,
                 )
@@ -102,11 +102,8 @@ class ProfilePackageLifecycle:
             if row["status"] != "active":
                 await self.packages.client.update(
                     "profile_resource_packages",
-                    {"approved_by": user},
-                    filters={"id": f"eq.{package_id}", "created_by": f"eq.{user}", "status": "eq.draft"},
-                )
-                await self.packages.client.rpc(
-                    "publish_profile_package", {"package_id": package_id, "reviewer": user}
+                    {"status": "active"},
+                    filters={"id": f"eq.{package_id}", "created_by": f"eq.{user}"},
                 )
             await self.packages.load_registry(self.registry)
             return {
@@ -125,8 +122,6 @@ class ProfilePackageLifecycle:
                 raise PackageLifecycleError(404, "PACKAGE_NOT_FOUND", "规则包不存在")
             if rows[0]["created_by"] != str(UUID(user)):
                 raise PackageLifecycleError(403, "PACKAGE_DELETE_DENIED", "只能删除自己创建的规则包")
-            if rows[0]["status"] not in {"active", "retired"}:
-                raise PackageLifecycleError(409, "PACKAGE_NOT_PUBLISHED", "未发布候选请通过候选审核流程处理")
             await self.packages.client.update(
                 "profile_resource_packages",
                 {"status": "retired"},
@@ -141,7 +136,7 @@ def clone_package(root: Path, target: Path, value: CreateProfilePackage, base_ch
     shutil.copytree(root, target)
     profile_path = target / "profile.json"
     profile = ProfileManifest.model_validate_json(profile_path.read_text(encoding="utf-8"))
-    if profile.adapter != "zh_native":
+    if profile.adapter not in {"zh_native", "abb_native"}:
         raise PackageLifecycleError(422, "UNSUPPORTED_ADAPTER", "当前模板的提取适配器尚未实现")
     profile = profile.model_copy(
         update={

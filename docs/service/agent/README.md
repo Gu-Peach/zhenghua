@@ -1,10 +1,12 @@
 # Agent 服务设计索引
 
-ABB 独立三阶段图片样本与 Bucket 草稿见 [初版资源实施记录](./changelog/2026-10-12-abb-resource-draft.md) 和 [1.1.1 精简记录](./changelog/2026-10-12-abb-resource-compact.md)。当前各阶段仅一案例、图片 1/1/2 张，资源整理和上传已完成；独立确定性策略、工程确认与真实模型回归仍是生产启用门槛。
+ABB 独立三阶段资源演进见 [初版记录](./changelog/2026-10-12-abb-resource-draft.md)、[1.1.1 精简记录](./changelog/2026-10-12-abb-resource-compact.md) 和 [1.1.2 可用实现](./changelog/2026-10-12-abb-ready-profile.md)。当前各阶段一案例、图片 1/1/2 张；独立 `abb_native` adapter/policy 和 Bucket 可用包已完成，真实模型字段级回归仍待人工验收。
 
-规则库人工创建/删除与动态注册见 [实施记录](../server/changelog/2026-10-12-rule-package-lifecycle.md)：新任务以数据库 active 包集合为准，停用后精确历史绑定仍可读取；AI 规则候选继续遵循独立评测/审核/发布流程。
+规则库人工创建/删除与动态注册见 [实施记录](../server/changelog/2026-10-12-shared-rule-library.md)：所有登录用户共享手工规则包，存储后直接可用，同 key 新任务选择最新 active 版本；停用后精确历史绑定仍可读取。AI 规则候选继续遵循独立评测/审核流程。
 
 当前候选评测/审核/发布契约见 [实施计划](./candidate-release-plan.md) 和 [2026-10-12 实现记录](./changelog/2026-10-12-candidate-release.md)。纯 HTTP 终端从既有候选接续，真实模型及发布验收待用户确认执行。
+
+目标评测 Stage 2 已补齐起点定位，保持正确终点隔离；旧评测产物不覆盖，失败候选的新评测入口仍是独立缺口。见 [定位修复记录](./changelog/2026-10-12-evaluation-source-locator.md)。
 
 > 状态：Draft for review  
 > 日期：2026-10-09  
@@ -79,7 +81,7 @@ LangGraph 继续负责有状态、可恢复的在线 Graph；Harness 负责工�
 - M9-M10 已串联 Supervisor Graph、受控结果查询/纠错工具和三态 `is_cross_page` 路由。明确答案直接生成最小 patch；重新识别按 `same_page/cross_page/unknown` 调用 Stage 2/3；按 ADR-0010，Supabase 模式在用户确认后通过受控 RPC 原位更新当前连接，保留 ID/线号、增加 revision 并保存审计，不再复制整份 accepted 版本。
 - M11-M14 已串联 accepted-feedback intake、问题归因、显式候选授权、Profile Sandbox、Eval Runner、Evaluation Judge、Release Gate、人工审批、canary、审计和回滚；反馈、候选、评测、门禁和审计 repository 已持久化。
 - 纠错混合批次、Bucket Profile 资源包适配器和 Improvement 证据上下文已写入代码；26 项相关离线测试通过。本地新增 migration 和 ZH bootstrap 包已部署、下载校验通过；API/Worker 远端包开关及真实人工验收未执行，不能称完整生产验收完成。详见[部署记录](./changelog/2026-10-11-profile-package-deployment.md)。
-- M15 被 ABB 资产阻塞：现有 Stage 2 Prompt 仍含 ZH `XD` 白名单，不能在缺少人工确认的 ABB 正负例、跨页案例和 expected JSON 时启用。
+- M15 的 ABB 执行阻塞已解除：ABB Stage 2/3 使用独立指令、图片和确定性策略，不含 ZH `XD` 白名单。真实模型字段质量尚未验收。
 - M16 被跨模块基础设施阻塞：`apps/api` 尚未形成可用业务 API，Web 仍使用 Mock Supervisor，Server 会话持久化、事件代理、结果事务和生产授权适配器未实现。
 - 详细代码状态、命令和限制见 [`services/agent/README.md`](../../../services/agent/README.md)，逐项验收状态见 [Agent TODO](./TODO.md)。
 

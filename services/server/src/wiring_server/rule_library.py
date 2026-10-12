@@ -19,9 +19,9 @@ class RuleLibraryService:
             {"id": f"eq.{value.base_package_id}"},
             token=token,
         )
-        if not rows or rows[0]["status"] != "active":
+        if not rows or rows[0]["status"] == "retired":
             raise ServiceError(
-                404, "TEMPLATE_UNAVAILABLE", "请选择一个已发布的规则模板"
+                404, "TEMPLATE_UNAVAILABLE", "请选择一个未停用的规则模板"
             )
         result: dict[str, Any] = await self.agent.call(
             "POST",

@@ -14,7 +14,7 @@
 
 ## 能力与边界
 
-- 规则库新建/删除：`POST /api/v1/rule-library` 基于 active 模板克隆新 key，JWT 提供创建者身份，`confirmed=true` 后封存/发布并注册到 Agent；`DELETE /api/v1/rule-library/{id}?confirmed=true` 仅创建者可执行。删除为停用，保留历史资源；同内容创建重试幂等，停用 key 不复用。无需新增 migration。完整契约见[实施记录](../../docs/service/server/changelog/2026-10-12-rule-package-lifecycle.md)。
+- 规则库新建/删除：`GET /api/v1/rule-library` 向所有已登录用户返回每个 key 的最新可用手工规则包；`POST` 基于任一未停用模板克隆新 key，确认后立即注册；`DELETE /{id}?confirmed=true` 仅创建者可执行。删除为停用，历史 checksum 保留；Improvement 隔离候选不进入规则库。共享契约见 [ADR-0012](../../docs/adr/0012-shared-ready-rule-library.md)。
 - Supabase Auth 登录、JWT 在线校验、HttpOnly refresh cookie、续期与退出。
 - 项目列表/创建/重命名/删除，发布后项目树，业务页/PDF 页独立。
 - 线表服务端分页、工作区/图纸/文字过滤、线号与原理号独立返回。

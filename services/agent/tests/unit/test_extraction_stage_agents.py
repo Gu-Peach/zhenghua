@@ -20,12 +20,12 @@ from agent_service.domain.models.extraction_stages import (
     PageScanData,
     PageScanRequest,
 )
-from agent_service.harness.model_gateway import FakeModelGateway
 from agent_service.graphs.extraction import (
     run_cross_page_completion,
     run_page_classification,
     run_page_scan,
 )
+from agent_service.harness.model_gateway import FakeModelGateway
 from agent_service.infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
 from agent_service.profiles import ProfileRegistry
 
@@ -220,7 +220,7 @@ def test_profile_bound_dispatcher_rejects_missing_adapter() -> None:
     asyncio.run(run())
 
 
-def test_experimental_abb_cannot_fall_through_to_zh_adapter() -> None:
+def test_abb_never_falls_through_to_zh_adapter() -> None:
     async def run() -> None:
         registry = ProfileRegistry(
             profile_root=ROOT / "services" / "agent" / "profiles",
@@ -236,7 +236,7 @@ def test_experimental_abb_cannot_fall_through_to_zh_adapter() -> None:
         )
         dispatcher = ProfileBoundStageDispatcher()
         dispatcher.register("zh_native", FakeStages())
-        with pytest.raises(ValueError, match="native_pending"):
+        with pytest.raises(ValueError, match="abb_native"):
             await dispatcher.classify_page(request)
 
     asyncio.run(run())

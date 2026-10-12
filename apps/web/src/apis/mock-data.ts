@@ -8,7 +8,7 @@ export const mockDrawingLibrary: DrawingLibraryItem[] = [
 
 export const mockRuleLibrary: RuleLibraryItem[] = [
   { id: "rule-zh", key: "zh", name: "振华 ZH / EPLAN", version: "zh-2026.10", summary: "矩形端子、页码引用与跨页索引解析", status: "published", updatedAt: "今天 09:30", canDelete: false, isActive: true },
-  { id: "rule-abb", key: "abb", name: "ABB / Circle Mark", version: "abb-2026.04", summary: "圆圈放线标志与 ABB 端子规则", status: "candidate", updatedAt: "昨天 16:00", canDelete: false, isActive: false },
+  { id: "rule-abb", key: "abb", name: "ABB / Circle Mark", version: "abb-2026.04", summary: "圆圈放线标志与 ABB 端子规则", status: "published", updatedAt: "昨天 16:00", canDelete: false, isActive: true },
 ];
 
 export const mockProjects: ProjectSummary[] = [

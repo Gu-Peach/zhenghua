@@ -302,10 +302,30 @@ class CandidateEvaluationExecutor:
                     }
                 ]
                 bundle.context.instruction = "Evaluate from the images only; no corrected answer is supplied."
+                # Source identity is a locator, not an expected destination. Do not
+                # reuse the original context, which can contain accepted answers.
+                page_context = json.dumps(
+                    {
+                        "task": "candidate_evaluation_reextract",
+                        "instruction": (
+                            "Locate only target_connection by its source location, device and terminal. "
+                            "The source fields are locating hints, not destination answers. "
+                            "Re-read the actual wire and same-page endpoint or cross-page reference "
+                            "from the image using the Profile rules; do not scan unrelated connections. "
+                            "Do not infer a destination from these hints. "
+                            "If the source cannot be confirmed, return needs_review rather than "
+                            "substituting another terminal. No corrected destination is supplied."
+                        ),
+                        "target_connection": {
+                            key: value
+                            for key, value in bundle.current_records[0].items()
+                            if key in {"connection_id", "start"} or key.startswith("start_")
+                        },
+                    },
+                    ensure_ascii=False,
+                )
                 bundle.page_scan_requests = [
-                    req.model_copy(
-                        update={"page_context": "Evaluation: identify the source connection from this image."}
-                    )
+                    req.model_copy(update={"page_context": page_context})
                     for req in bundle.page_scan_requests
                 ]
                 bundle.cross_page_requests = []

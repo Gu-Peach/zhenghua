@@ -16,7 +16,7 @@
       "只有通用 IEC 图形不等于 ABB",
       "制造商明确是 ZPMC/振华时不判 ABB"
     ],
-    "guidance": "优先可见制造商证据；该版为实验资源，不能以图号推定其他图册。"
+    "guidance": "优先可见制造商证据；不能仅以图号推定其他图册。"
   },
   "extraction": {
     "workflow": [
@@ -41,7 +41,7 @@
       "数字原理号优先起点；缺失时用端子/Sheet 或设备端子/Sheet 回退",
       "跨页 /241.1A 保留地址；源电位的功能不等于目标图框功能",
       "Stage 3 只补任务终点；起点冻结，范围电流和电压不作为单一 current",
-      "资源待工程确认；abb_native 确定性策略尚未注册，禁止生产启用"
+      "ABB 使用独立 abb_native 确定性策略，不复用 ZH 端子白名单、方向或引用规则"
     ],
     "output_contract": "wiring_connection_v1"
   }

@@ -6,7 +6,6 @@ from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
 import pytest
-
 from agent_service.agents.evaluation_judge import EvaluationJudgeAgent
 from agent_service.application.candidate_evaluation import (
     CandidateEvaluationExecutor,
@@ -133,7 +132,11 @@ def test_real_evaluation_requires_server_and_request_consent(tmp_path: Path) -> 
     asyncio.run(run())
 
 
-def test_target_expected_values_are_not_passed_to_model_context(tmp_path: Path) -> None:
+@pytest.mark.parametrize("cross_page", [False, True], ids=["same-page", "cross-page"])
+@pytest.mark.parametrize("nested_start", [False, True], ids=["flat-start", "nested-start"])
+def test_target_start_is_passed_without_expected_answers(
+    tmp_path: Path, cross_page: bool, nested_start: bool
+) -> None:
     async def run() -> None:
         registry = ProfileRegistry(
             profile_root=ROOT / "services/agent/profiles", workspace_root=ROOT, allow_legacy_references=True
@@ -151,7 +154,7 @@ def test_target_expected_values_are_not_passed_to_model_context(tmp_path: Path) 
                 "feedback_id": "f",
                 "target": {"type": "CONNECTION", "id": "c1", "project_id": "p", "result_version_id": "v"},
                 "issue_kind": "DIRECT_VALUE_CHANGE",
-                "is_cross_page": "cross_page",
+                "is_cross_page": "cross_page" if cross_page else "same_page",
             },
             context={
                 "feedback_id": "f",
@@ -164,7 +167,11 @@ def test_target_expected_values_are_not_passed_to_model_context(tmp_path: Path) 
             current_records=[
                 {
                     "connection_id": "c1",
-                    "start_terminal": "XD3:113",
+                    **(
+                        {"start": {"location": "+SRC", "device": "XD3", "terminal": "114"}}
+                        if nested_start
+                        else {"start_location": "+SRC", "start_device": "XD3", "start_terminal": "XD3:113"}
+                    ),
                     "end_terminal": "X3:1",
                     "end": {"terminal": "X3:1"},
                     "source_note": "expected X3:1",
@@ -218,7 +225,18 @@ def test_target_expected_values_are_not_passed_to_model_context(tmp_path: Path) 
         assert target.expected["end_terminal"] == "X3:1"
         assert "X3:1" not in target.bundle.context.model_dump_json()
         assert "X3:1" not in json.dumps(target.bundle.current_records)
-        assert "X3:1" not in target.bundle.page_scan_requests[0].page_context
+        page_context = target.bundle.page_scan_requests[0].page_context
+        assert "X3:1" not in page_context
+        locating = json.loads(page_context)["target_connection"]
+        assert locating["connection_id"] == "c1"
+        assert "end" not in locating and "end_terminal" not in locating
+        assert "raw_payload" not in locating and "source_note" not in locating
+        if nested_start:
+            assert locating["start"] == {"location": "+SRC", "device": "XD3", "terminal": "114"}
+        else:
+            assert locating["start_location"] == "+SRC"
+            assert locating["start_device"] == "XD3"
+            assert locating["start_terminal"] == "XD3:113"
         from agent_service.domain.models.extraction_stages import CrossPageCompletionData, PageScanData
         from agent_service.domain.models.runs import AgentRun
 
@@ -231,9 +249,14 @@ def test_target_expected_values_are_not_passed_to_model_context(tmp_path: Path) 
                         "connections": [
                             {
                                 "local_connection_id": "local",
-                                "start": {"terminal": "XD3:113"},
-                                "is_cross_page": "cross_page",
-                                "references": [{"target_pdf_page": 2}],
+                                "start": {
+                                    "location": "+SRC",
+                                    "device": "XD3",
+                                    "terminal": "114" if nested_start else "XD3:113",
+                                },
+                                "end": None if cross_page else {"terminal": "X3:1"},
+                                "is_cross_page": "cross_page" if cross_page else "same_page",
+                                "references": [{"target_pdf_page": 2}] if cross_page else [],
                             }
                         ],
                     }
@@ -265,10 +288,51 @@ def test_target_expected_values_are_not_passed_to_model_context(tmp_path: Path) 
         actual = await executor._execute_case(target, bound, agent_run, CancellationToken())
         assert actual == target.expected
         assert stages.scan_page.await_count == 1
-        assert stages.resolve_cross_page.await_count == 1
-        cross_request = stages.resolve_cross_page.call_args.args[0]
-        assert "X3:1" not in cross_request.task_context
-        assert cross_request.run_id.startswith(agent_run.agent_run_id + ":evaluation:")
+        scan_request = stages.scan_page.call_args.args[0]
+        assert "X3:1" not in scan_request.page_context
+        wrapped = json.loads(scan_request.page_context)
+        assert json.loads(wrapped["original_context"])["target_connection"] == locating
+        assert scan_request.run_id.startswith(agent_run.agent_run_id + ":evaluation:")
+        assert stages.resolve_cross_page.await_count == int(cross_page)
+        if cross_page:
+            cross_request = stages.resolve_cross_page.call_args.args[0]
+            assert "X3:1" not in cross_request.task_context
+            assert cross_request.run_id.startswith(agent_run.agent_run_id + ":evaluation:")
+
+        # Also inspect the final multimodal messages, not just the stage DTO.
+        from agent_service.application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
+        from agent_service.config import AgentSettings
+        from agent_service.infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
+
+        responses = [stages.scan_page.return_value.model_dump_json()]
+        if cross_page:
+            responses.append(stages.resolve_cross_page.return_value.model_dump_json())
+        gateway = FakeModelGateway(responses)
+        dispatcher = ProfileBoundStageDispatcher()
+        dispatcher.register("zh_native", ZhVlmExtractionStageAdapter(AgentSettings(), gateway))
+        executor.stages = dispatcher
+        model_bound = bound.model_copy(
+            update={
+                "resolved_resources": {
+                    **bound.resolved_resources,
+                    "classification_examples": tmp_path / "no-fewshot",
+                    "wiring_examples": tmp_path / "no-fewshot",
+                }
+            }
+        )
+        assert await executor._execute_case(target, model_bound, agent_run) == target.expected
+        assert len(gateway.calls) == 1 + int(cross_page)
+        assert all(len(request.messages) == 2 for request in gateway.calls)
+        user_content = gateway.calls[0].messages[-1]["content"]
+        assert user_content[0]["type"] == "text"
+        user_text = user_content[0]["text"]
+        assert "target_connection" in user_text
+        assert ("114" if nested_start else "XD3:113") in user_text
+        assert "+SRC" in user_text and "XD3" in user_text
+        assert "X3:1" not in user_text and "999" not in user_text
+        assert any(part["type"] == "image_url" for part in user_content)
+        if cross_page:
+            assert "X3:1" not in gateway.calls[1].messages[-1]["content"][0]["text"]
 
     asyncio.run(run())
 

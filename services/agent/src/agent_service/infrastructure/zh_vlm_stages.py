@@ -41,13 +41,7 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
     async def classify_page(self, request: PageClassificationRequest) -> PageClassificationData:
         if request.page.blank:
             return PageClassificationData(blank=True, confidence=1.0, reason="blank page from PDF renderer")
-        user_text = (
-            "只读取当前图纸的 Plant Function 和 Page Number，并判断是否为空白页或非接线图。"
-            "不要提取线路、端子、线号或端点。"
-            f"\nPDF物理页码：{request.page.pdf_page_number}"
-            f"\n已知上下文：{request.known_context or '无'}"
-            "\n严格输出 PageClassification JSON。"
-        )
+        user_text = self.classification_instruction(request)
         return await self._invoke_stage(
             stage="page_classification",
             request_id=request.run_id,
@@ -62,6 +56,15 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             item_id=f"pdf-page:{request.page.pdf_page_number}",
         )
 
+    def classification_instruction(self, request: PageClassificationRequest) -> str:
+        return (
+            "只读取当前图纸的 Plant Function 和 Page Number，并判断是否为空白页或非接线图。"
+            "不要提取线路、端子、线号或端点。"
+            f"\nPDF物理页码：{request.page.pdf_page_number}"
+            f"\n已知上下文：{request.known_context or '无'}"
+            "\n严格输出 PageClassification JSON。"
+        )
+
     async def scan_page(self, request: PageScanRequest) -> PageScanData:
         if request.page.blank or request.page.non_wiring:
             return PageScanData(
@@ -70,21 +73,7 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
                 drawing_page_number=request.page.drawing_page_number,
                 blank=request.page.blank,
             )
-        user_text = (
-            "当前是第二阶段逐页扫描，只把当前图片当作来源页；未明确提供目标图时，不要补全跨页终点。\n"
-            "只提取当前来源页发出的、具有允许起点端子的连接。同页可确认的终点填写 end；"
-            "跨页引用绑定到对应 connection，end=null，status=needs_reference。\n"
-            "必须沿当前端子实际连接的导线追踪，并读取该导线旁、断线处或箭头处的放线标记；"
-            "不能按端子/设备邻近关系配对，也不能借用相邻导线标记。\n"
-            "同一 wire_number 下不同芯、起点、终点或路径分别输出 connection；"
-            "相同 line_number 不代表可合并。\n"
-            "起点端子只能是 XD0、XA、XD10、XD11、XD12、XD21、XD23、XD22、XD24、XD3、XD5、XD4、XH。\n"
-            "current 只填图上明确可见的电流或额定电流值，不得推算，看不清填 null。\n"
-            "批注框、箭头只用于指示检查位置，不是图纸字段。\n"
-            f"当前页上下文：{request.page_context or '无'}\n"
-            f"PDF物理页码：{request.page.pdf_page_number}\n"
-            "严格输出 PageScanData JSON。"
-        )
+        user_text = self.scan_instruction(request)
         return await self._invoke_stage(
             stage="page_scan",
             request_id=request.run_id,
@@ -99,22 +88,28 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             item_id=f"pdf-page:{request.page.pdf_page_number}",
         )
 
+    def scan_instruction(self, request: PageScanRequest) -> str:
+        return (
+            "当前是第二阶段逐页扫描，只把当前图片当作来源页；未明确提供目标图时，不要补全跨页终点。\n"
+            "只提取当前来源页发出的、具有允许起点端子的连接。同页可确认的终点填写 end；"
+            "跨页引用绑定到对应 connection，end=null，status=needs_reference。\n"
+            "必须沿当前端子实际连接的导线追踪，并读取该导线旁、断线处或箭头处的放线标记；"
+            "不能按端子/设备邻近关系配对，也不能借用相邻导线标记。\n"
+            "同一 wire_number 下不同芯、起点、终点或路径分别输出 connection；"
+            "相同 line_number 不代表可合并。\n"
+            "起点端子只能是 XD0、XA、XD10、XD11、XD12、XD21、XD23、XD22、XD24、XD3、XD5、XD4、XH。\n"
+            "current 只填图上明确可见的电流或额定电流值，不得推算，看不清填 null。\n"
+            "批注框、箭头只用于指示检查位置，不是图纸字段。\n"
+            f"当前页上下文：{request.page_context or '无'}\n"
+            f"PDF物理页码：{request.page.pdf_page_number}\n"
+            "严格输出 PageScanData JSON。"
+        )
+
     async def resolve_cross_page(
         self,
         request: CrossPageCompletionRequest,
     ) -> CrossPageCompletionData:
-        user_text = (
-            "当前是第三阶段跨页补全。本次只提供一张图片，即引用定位到的唯一目标页。\n"
-            "来源页不作为图片输入；起点、线号、芯号、来源页和引用信息全部以 task_context 为准。\n"
-            "只处理 task_context 指定的这一条 connection，不要提取目标页其他线路。"
-            "沿放线标记和 Plant Function + Page Number + Column 引用，在目标页实际追线确认终点。\n"
-            "只有图中明确确认后才填写 end；无法确认时 end=null、status=needs_review，不能猜测。\n"
-            "如果 task_context 已有 current，输出 current=null 表示不修改 Stage 2 的已有电流；"
-            "只有目标页明确给出本连接电流且 task_context 中为空时才输出电流。\n"
-            f"任务上下文：{request.task_context}\n"
-            f"目标 PDF 物理页：{request.target_page.pdf_page_number}\n"
-            "严格输出 CrossPageCompletionData JSON。"
-        )
+        user_text = self.cross_page_instruction(request)
         return await self._invoke_stage(
             stage="cross_page_completion",
             request_id=request.run_id,
@@ -128,6 +123,20 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             output_model=CrossPageCompletionData,
             normalize=lambda value: _normalize_cross_page(value, request.task_id),
             item_id=request.task_id,
+        )
+
+    def cross_page_instruction(self, request: CrossPageCompletionRequest) -> str:
+        return (
+            "当前是第三阶段跨页补全。本次只提供一张图片，即引用定位到的唯一目标页。\n"
+            "来源页不作为图片输入；起点、线号、芯号、来源页和引用信息全部以 task_context 为准。\n"
+            "只处理 task_context 指定的这一条 connection，不要提取目标页其他线路。"
+            "沿放线标记和 Plant Function + Page Number + Column 引用，在目标页实际追线确认终点。\n"
+            "只有图中明确确认后才填写 end；无法确认时 end=null、status=needs_review，不能猜测。\n"
+            "如果 task_context 已有 current，输出 current=null 表示不修改 Stage 2 的已有电流；"
+            "只有目标页明确给出本连接电流且 task_context 中为空时才输出电流。\n"
+            f"任务上下文：{request.task_context}\n"
+            f"目标 PDF 物理页：{request.target_page.pdf_page_number}\n"
+            "严格输出 CrossPageCompletionData JSON。"
         )
 
     async def _invoke_stage(
@@ -443,15 +452,21 @@ def _normalize_page_scan(payload: Any, page_number: int) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError("Page scan must be a JSON object or array.")
     normalized = dict(payload)
-    if "drawing_function" in normalized and "drawing_page_number" not in normalized:
-        normalized["drawing_page_number"] = normalized["drawing_function"]
+    # A legacy model occasionally used drawing_function for a numeric page.
+    # Preserve real function codes such as 002.C or LV11.
+    function_value = normalized.get("drawing_function")
+    legacy_numeric_page = isinstance(function_value, int) or (
+        isinstance(function_value, str) and function_value.strip().isdigit()
+    )
+    if legacy_numeric_page and "drawing_page_number" not in normalized:
+        normalized["drawing_page_number"] = function_value
+        normalized.pop("drawing_function", None)
     if "references" in normalized and "page_references" not in normalized:
         normalized["page_references"] = normalized["references"]
     normalized.pop("records", None)
     normalized.pop("connections", None)
     normalized.pop("items", None)
     normalized.pop("references", None)
-    normalized.pop("drawing_function", None)
     if not isinstance(normalized.get("units"), list):
         rows = normalized.get("connections") or normalized.get("records") or normalized.get("items")
         normalized["units"] = (

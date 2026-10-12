@@ -24,8 +24,8 @@ export function RulePackageCreator({ items, onClose, onCreated }: { items: RuleL
   return <div className="modal-backdrop"><section className="resource-modal rule-create-modal" role="dialog" aria-modal="true" aria-labelledby="rule-create-heading">
     <header><h2 id="rule-create-heading">新建规则包</h2><button type="button" disabled={saving} onClick={onClose} aria-label="关闭新建规则包"><X size={18} /></button></header>
     <div className="rule-create-body">
-      <p>基于已发布模板建立独立规则包，继承图片样例、预期答案和提取算法。创建后立即注册给 Agent，用于新任务。</p>
-      {!templates.length ? <p>没有可用的规则模板，请先发布一个完整的规则包。</p> : <>
+      <p>基于可用模板建立独立规则包，继承图片样例、预期答案和提取算法。创建后立即注册给 Agent，用于新任务。</p>
+      {!templates.length ? <p>没有可用的完整规则模板。</p> : <>
         <label>规则模板<select aria-label="规则模板" value={baseId} disabled={saving} onChange={event => { setBaseId(event.target.value); setResource(null); setError(""); }}>{templates.map(item => <option key={item.id} value={item.id}>{item.name} · {item.version}</option>)}</select></label>
         {error ? <p role="alert">{error}<button type="button" onClick={() => { setError(""); setRetry(n => n + 1); }}>重新读取模板</button></p> : resource === null ? <p role="status">正在读取模板资源…</p> : <RuleForm key={baseId} baseId={baseId} resource={resource} onCreated={onCreated} onClose={onClose} saving={saving} setSaving={setSaving} />}
       </>}

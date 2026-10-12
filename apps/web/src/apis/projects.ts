@@ -52,7 +52,7 @@ export const projectApi = {
   },
   async listRuleLibrary(): Promise<RuleLibraryItem[]> {
     const rows = await request<Schema["RuleRead"][]>("/api/v1/rule-library");
-    return rows.map(row => ({ id: row.id, key: row.profile_key, name: row.profile_key, version: row.profile_version, summary: `真实资源包 · ${row.package_checksum.slice(7, 19)} · ${row.status}`, status: row.status === "active" ? "published" : "candidate", updatedAt: row.created_at, canDelete: row.can_delete ?? false, isActive: row.status === "active" }));
+    return rows.filter(row => row.status !== "retired").map(row => ({ id: row.id, key: row.profile_key, name: row.profile_key, version: row.profile_version, summary: `真实资源包 · ${row.package_checksum.slice(7, 19)}`, status: "published", updatedAt: row.created_at, canDelete: row.can_delete ?? false, isActive: true }));
   },
   async createRule(body: Schema["RuleCreate"]): Promise<Schema["RuleCreateReceipt"]> { return request("/api/v1/rule-library", { method: "POST", body: JSON.stringify(body) }); },
   async deleteRule(id: string): Promise<void> { await request(`/api/v1/rule-library/${id}?confirmed=true`, { method: "DELETE" }); },

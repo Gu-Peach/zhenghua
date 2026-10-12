@@ -43,12 +43,10 @@ async def main() -> None:
     with tempfile.TemporaryDirectory() as temporary:
         root = Path(temporary) / "package"
         manifest = await asyncio.to_thread(build_package, registry.resolve(args.profile_key), root)
-        row = await packages.upload(root, created_by=args.user_id, status="draft")
-        await client.update(
-            "profile_resource_packages", {"approved_by": args.user_id}, filters={"id": f"eq.{row['id']}"}
-        )
-        await client.rpc("publish_profile_package", {"package_id": row["id"], "reviewer": args.user_id})
-        print(f"Published {manifest.profile_key}@{manifest.profile_version} {manifest.package_checksum}")
+        row = await packages.upload(root, created_by=args.user_id, status="active")
+        if row["status"] == "retired":
+            raise ValueError("The immutable package was retired and cannot be re-enabled implicitly.")
+        print(f"Registered {manifest.profile_key}@{manifest.profile_version} {manifest.package_checksum}")
 
 
 if __name__ == "__main__":

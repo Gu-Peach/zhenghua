@@ -42,8 +42,10 @@ class ExtractionPolicyRegistry:
 
 
 def default_extraction_policies() -> ExtractionPolicyRegistry:
+    from .abb.policy import AbbExtractionPolicy
     from .zh.policy import ZhExtractionPolicy
 
     registry = ExtractionPolicyRegistry()
+    registry.register("abb_native", AbbExtractionPolicy)
     registry.register("zh_native", ZhExtractionPolicy)
     return registry

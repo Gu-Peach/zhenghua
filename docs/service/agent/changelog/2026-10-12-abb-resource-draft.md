@@ -1,5 +1,7 @@
 # ABB 1.1.0 图片样本资源草稿
 
+> 后续状态：已被 1.1.2 可用 Profile 取代；旧不可变对象保留，并由共享规则 migration 将手工包标为 active。见 [1.1.2 记录](./2026-10-12-abb-ready-profile.md)。
+
 日期：2026-10-12。任务范围为用户提供的 `services/agent/prompts/abb/1.png`～`4.png` 整理与私有 Bucket 上传。
 
 ## 样本与规则

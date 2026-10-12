@@ -579,18 +579,26 @@ class WorkbenchService:
             {
                 "order": "profile_key.asc,created_at.desc",
                 "status": "neq.retired",
+                "candidate_id": "is.null",
                 "select": "id,profile_key,profile_version,source_profile_checksum,package_checksum,status,created_at,published_at,created_by",
             },
             token=token,
         )
+        latest: dict[str, dict[str, Any]] = {}
+        for row in sorted(
+            rows,
+            key=lambda item: (
+                str(item.get("profile_key") or ""),
+                str(item.get("created_at") or ""),
+                str(item.get("profile_version") or ""),
+            ),
+            reverse=True,
+        ):
+            if row["status"] != "retired":
+                latest.setdefault(str(row["profile_key"]), row)
         return [
-            {
-                **row,
-                "can_delete": row.get("created_by") == user
-                and row["status"] == "active",
-            }
-            for row in rows
-            if row["status"] != "retired"
+            {**row, "can_delete": row.get("created_by") == user}
+            for row in sorted(latest.values(), key=lambda item: str(item["profile_key"]))
         ]
 
     async def package(self, package_id: str, token: str) -> dict[str, Any]:
