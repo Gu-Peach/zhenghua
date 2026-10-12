@@ -4,6 +4,7 @@ from typing import Any, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 
+from ...application.candidate_release import CandidateReleaseService
 from ...application.improvement_workflow import ImprovementWorkflow
 from ..dependencies import require_internal_service
 from ..schemas import (
@@ -14,12 +15,49 @@ from ..schemas import (
     PrepareCandidateResponse,
     ReviewerRequest,
 )
+from ..schemas.improvement import ConfirmCandidateReleaseRequest, StartEvaluationRequest
 
 router = APIRouter(
     prefix="/v1",
     tags=["improvement"],
     dependencies=[Depends(require_internal_service)],
 )
+
+
+def _release(request: Request) -> CandidateReleaseService:
+    service = getattr(request.app.state, "candidate_release", None)
+    if not isinstance(service, CandidateReleaseService):
+        raise HTTPException(503, detail="Candidate evaluation/release is not configured.")
+    return service
+
+
+@router.post("/profile-candidates/{candidate_id}/evaluations", status_code=202)
+async def start_evaluation(
+    candidate_id: str, payload: StartEvaluationRequest, request: Request
+) -> dict[str, Any]:
+    try:
+        run = await _release(request).start(candidate_id, payload.reviewer_id, payload.allow_real_model)
+        return {"run": run.model_dump(mode="json")}
+    except PermissionError as exc:
+        raise HTTPException(403, detail=str(exc)) from exc
+    except (KeyError, ValueError) as exc:
+        raise HTTPException(409, detail=str(exc)) from exc
+
+
+@router.post("/profile-candidates/{candidate_id}/publish")
+async def publish_candidate(
+    candidate_id: str, payload: ConfirmCandidateReleaseRequest, request: Request
+) -> dict[str, Any]:
+    try:
+        return _model_json(
+            await _release(request).publish(
+                candidate_id, payload.evaluation_run_id, payload.reviewer_id, payload.confirmed
+            )
+        )
+    except PermissionError as exc:
+        raise HTTPException(403, detail=str(exc)) from exc
+    except (KeyError, ValueError) as exc:
+        raise HTTPException(409, detail=str(exc)) from exc
 
 
 def _workflow(request: Request) -> ImprovementWorkflow:
@@ -90,27 +128,23 @@ async def evaluate_candidate(
     payload: CandidateEvaluationRequest,
     request: Request,
 ) -> dict[str, Any]:
-    try:
-        result = await _workflow(request).evaluate(candidate_id, payload.report)
-        await request.app.state.eval_repository.put(result.report)
-    except (KeyError, ValueError) as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
-    return {
-        "report": result.report.model_dump(mode="json"),
-        "judgement": result.judgement.model_dump(mode="json"),
-        "gate": result.gate.model_dump(mode="json"),
-        "candidate": result.candidate.model_dump(mode="json"),
-    }
+    raise HTTPException(
+        409, detail="Client-supplied reports are not release evidence; start /evaluations instead."
+    )
 
 
 @router.post("/profile-candidates/{candidate_id}/approve")
 async def approve_candidate(
     candidate_id: str,
-    payload: ReviewerRequest,
+    payload: ConfirmCandidateReleaseRequest,
     request: Request,
 ) -> dict[str, Any]:
     try:
-        candidate = await _workflow(request).approve(candidate_id, payload.reviewer_id)
+        candidate = await _release(request).approve(
+            candidate_id, payload.evaluation_run_id, payload.reviewer_id, payload.confirmed
+        )
+    except PermissionError as exc:
+        raise HTTPException(403, detail=str(exc)) from exc
     except (KeyError, ValueError) as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     return _model_json(candidate)
@@ -144,15 +178,13 @@ async def assess_canary(
     payload: CanaryAssessmentRequest,
     request: Request,
 ) -> dict[str, Any]:
-    try:
-        candidate = await _workflow(request).assess_canary(
-            candidate_id,
-            severe_regressions=payload.severe_regressions,
-            reviewer_id=payload.reviewer_id,
-        )
-    except (KeyError, ValueError) as exc:
-        raise HTTPException(status_code=409, detail=str(exc)) from exc
-    return _model_json(candidate)
+    raise HTTPException(
+        409,
+        detail=(
+            "Client-reported canary counts cannot authorize publication; "
+            "use /publish with a verified evaluation receipt."
+        ),
+    )
 
 
 @router.get("/profile-candidates/{candidate_id}/audit")

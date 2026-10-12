@@ -6,6 +6,34 @@ archived under `docs/service/`.
 
 详细变更见 [CHANGELOG.md](./CHANGELOG.md)。
 
+## 2026-10-12
+
+- 按用户要求将 ABB 样例精简为三个阶段各一例、图片 1/1/2 张；abb@1.1.1 草稿上传私有 Bucket，18 文件读回核验通过，不覆盖旧不可变包或生产绑定。见 [Agent 精简记录](../service/agent/changelog/2026-10-12-abb-resource-compact.md)。
+
+- ABB 1.1.0 三阶段资源改为独立 Prompt/图片/manifest/expected/task 格式，上传私有 agent-profile-assets 草稿并读回验证 45 文件；不替换生产包或项目绑定。独立确定性策略和真实模型验收尚未完成，见 [Agent 资源实施记录](../service/agent/changelog/2026-10-12-abb-resource-draft.md)。
+
+- 规则库支持基于已发布模板新建规则包并自动注册给 Agent；创建者可确认删除/停用，新任务不再选择，历史项目仍按冻结 checksum 读取资源。复用现有私有 Bucket、包元数据和发布 RPC，无 migration；新增 JWT 业务接口、Web 表单/确认和跨进程 Registry 刷新。离线验证与环境限制见 [Server 实施记录](../service/server/changelog/2026-10-12-rule-package-lifecycle.md)。
+
+- 独立结果审校对账遇到 `matched` 但缺少 `connection_id` 时改为保存为 `needs_review` 并继续后续页面，避免单个模型结构错误中断整批；该行不计为已确认匹配。离线回归覆盖，未调用真实模型。
+
+- 规则候选新增服务端 PROFILE_EVALUATION：固定三阶段/负例及 accepted-feedback 目标同图比较，持久评测 receipt，人工审核和发布分别确认；不可变 Bucket 包通过既有 RPC 发布，旧项目 Profile 冻结保留。公开审核契约要求 evaluation_run_id，旧外部报告不作为发布证据。49 项离线回归通过，未调用真实模型或发布候选，见 [Agent 记录](../service/agent/changelog/2026-10-12-candidate-release.md)。
+
+- 用户授权后的真实模型 Web→Server→现有 Agent 联调：PDF 上传/检测/人工确认后三阶段成功落库（5 页/13 连接，约 226 秒），真实 Bucket 三阶段资源面板和图纸索引通过。浏览器退出，纠错/确认/归因仍待验收；新增同项目续跑避免重复提取。自动审批服务自身模型权限 403 使续跑命令未执行，临时数据保留，不改 Schema/Agent 核心/test0。见 [联调状态](../service/server/changelog/2026-10-12-live-agent-acceptance.md)。
+
+- 按用户授权补齐端子新增/删除：Server 既有表原子事务、稳定 ID/线号/代次、完整证据审计与版本/幂等保护，Web 入口与 OpenAPI 同步。24 项默认 API/5 项浏览器夹具通过；真实一次性 Auth/数据库/Storage/API/浏览器增改删、双图及越权/过期/冲突/重放/审计失败回滚通过并清理，不改 test0/Schema/Agent 核心。完整上传/纠错验收未完成：共享队列 Fake 提取测试在 Worker claim 失败，有用户活跃消费者，未停服务。详见 [Server 最新记录](../service/server/changelog/2026-10-12-real-workbench.md) 与 [ADR-0011](../adr/0011-manual-connection-insert-delete.md)。
+
+- 修复 Gateway 误截补丁 JSON 字符串内嵌 Markdown 示例：先解析完整 JSON、仅剥离真正外层 fence。实际失败输出只读重放及31项相关离线测试通过；严格校验/发布门禁不变，未调用模型或写数据库。见 [Agent 记录](../service/agent/changelog/2026-10-12-embedded-fence-json-fix.md)。
+
+- 修复 ProfilePatchBuilder 的模型输出契约：只读 Trace 确认 invalid_json，动态注入实际 JSON Schema、完整文件字符串/转义/包相对路径要求；严格校验及发布门禁不变。11 项相关离线回归通过；未重复修订数据或调用真实模型，详见 [Agent 修复记录](../service/agent/changelog/2026-10-12-profile-patch-output-contract.md)。
+
+- 独立结果审校支持跨页引用页码 null/空白：保留原始引用并标记待复核，继续后续页面；修复已访问页循环漏检。11 项离线回归通过，未调用真实模型，未改生产 Agent/数据库。脚本修改生成新验证快照，旧报告保留但缓存不复用，见 [审校说明](../test/agent-run-001/VALIDATION_README.md)。
+
+- 完成性核对补齐规则包逐阶段 manifest 样例展示、纠错确认/刷新/归因说明与候选状态、内部 Agent 鉴权错误与上传请求头边界。21 项 Server、5 项浏览器夹具及真实资源包只读验证通过；完整真实验收与端子增删范围仍需用户选择，目标未完成。见 [完成性记录](../service/server/workbench-completion-audit.md)。
+
+- 真实工作台收尾修复：首次自动检测在 StrictMode 下被取消、最终确认消息遗漏、阶段卡片重复、错误待确认状态；补共享单元字段编辑、续传/重连、图片签名刷新、Auth 并发续期/过期退出与完整上传响应匹配。18 项 Server、4 项浏览器夹具回归通过；真实登录/写入/模型联调及端子增删范围仍待确认，不改数据库或 Agent 核心。
+
+- 开始真实 Web/Server 接入：新增 apps/api 与 services/server，Supabase Auth/项目权限、真实树/线表分页与手动修订、私有图纸/规则资源、Agent HTTP/SSE 安全代理；Web 切换真实接口、组首页码/线号、表格下方跨页预览、规则样例面板与可缩放布局。无 migration/Agent 核心改动。Fake API/Web 与只读真实库验证已执行，写入和真实模型全链路验收仍未完成，见 [实施进度](../service/server/changelog/2026-10-12-real-workbench.md)。
+
 ## 2026-10-11
 
 - Fixed Improvement diagnosis requests to include the runtime Diagnosis JSON Schema and exact field/enum constraints, retaining strict validation and compatible provider settings. Twenty-four focused offline checks passed; existing committed corrections were preserved. Reload and resume only the failed diagnosis run for live verification. See [Agent record](../service/agent/changelog/2026-10-11-improvement-diagnosis-schema-fix.md).

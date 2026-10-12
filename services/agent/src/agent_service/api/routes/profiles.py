@@ -1,20 +1,67 @@
 from __future__ import annotations
 
 from typing import Any
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
+from ...application.profile_package_lifecycle import (
+    CreateProfilePackage,
+    PackageLifecycleError,
+    ProfilePackageLifecycle,
+)
+from ...domain.errors import AgentServiceError
 from ...domain.models.runs import ProfileRef
 from ...infrastructure.supabase_profile_packages import SupabaseProfilePackageRepository
 from ...profiles import ProfileRegistryError
-from ..dependencies import require_internal_service
+from ..dependencies import refresh_current_profiles
 from ..schemas import ProfileRulesResponse
 
 router = APIRouter(
     prefix="/v1/profiles",
     tags=["profiles"],
-    dependencies=[Depends(require_internal_service)],
+    dependencies=[Depends(refresh_current_profiles)],
 )
+
+
+def _lifecycle(request: Request) -> ProfilePackageLifecycle:
+    service = request.app.state.profile_package_lifecycle
+    if service is None:
+        raise HTTPException(503, detail="请启用 Supabase 规则资源包模式")
+    return service  # type: ignore[no-any-return]
+
+
+def _package_error(exc: Exception) -> HTTPException:
+    if isinstance(exc, PackageLifecycleError):
+        return HTTPException(exc.status, detail={"code": exc.code, "message": exc.message})
+    if isinstance(exc, AgentServiceError):
+        return HTTPException(
+            503, detail={"code": "PACKAGE_STORAGE_FAILED", "message": "规则包存储失败，可重试"}
+        )
+    return HTTPException(422, detail={"code": "PACKAGE_INVALID", "message": "规则包资源校验失败"})
+
+
+@router.post("/packages", status_code=201)
+async def create_package(value: CreateProfilePackage, user_id: UUID, request: Request) -> dict[str, object]:
+    try:
+        return await _lifecycle(request).create(value, str(user_id))
+    except (PackageLifecycleError, AgentServiceError, ValueError, OSError) as exc:
+        raise _package_error(exc) from exc
+
+
+@router.delete("/packages/{package_id}")
+async def delete_package(
+    package_id: UUID,
+    user_id: UUID,
+    request: Request,
+    confirmed: bool = Query(default=False),
+) -> dict[str, object]:
+    if not confirmed:
+        raise HTTPException(422, detail={"code": "CONFIRMATION_REQUIRED", "message": "请确认删除规则包"})
+    try:
+        return await _lifecycle(request).retire(str(package_id), str(user_id))
+    except (PackageLifecycleError, AgentServiceError, ValueError, OSError) as exc:
+        raise _package_error(exc) from exc
 
 
 @router.get("")

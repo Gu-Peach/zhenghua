@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "description": "ABB 精简图框身份样例：仅 Sheet 205 一页；Sheet 为当前页，Cont 为续页。expected 待工程确认。",
+  "cases": [
+    {
+      "id": "lv11_205",
+      "title": "LV11/205：读取 Sheet，排除 Cont 206",
+      "images": [
+        {
+          "path": "lv11_205/page.png",
+          "role": "drawing_page"
+        }
+      ]
+    }
+  ]
+}

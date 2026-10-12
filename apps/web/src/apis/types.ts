@@ -1,3 +1,5 @@
+import type { components } from "./generated";
+
 export type EntityStatus = "completed" | "processing" | "review" | "queued" | "failed";
 
 export interface Drawing {
@@ -8,6 +10,7 @@ export interface Drawing {
   status: EntityStatus;
   recordCount: number;
   imageUrl?: string;
+  referenceNote?: string;
 }
 
 export interface Workspace {
@@ -43,6 +46,12 @@ export interface WiringRow {
   drawingId: string;
   page: string;
   lineNumber: string;
+  wireNumber?: string;
+  terminalStrip?: string;
+  colorMark?: string;
+  isCrossPage?: boolean;
+  recordVersion?: number;
+  raw?: Record<string, unknown>;
   voltageLevel: string;
   startCode: string;
   startDescription: string;
@@ -95,20 +104,15 @@ export interface DrawingLibraryItem {
 
 export interface RuleLibraryItem {
   id: string;
-  key: "zh" | "abb";
+  key: string;
   name: string;
   version: string;
   summary: string;
   status: "published" | "candidate";
   updatedAt: string;
+  canDelete: boolean;
+  isActive: boolean;
 }
 
-export interface LoginInput {
-  email: string;
-  password: string;
-}
-
-export interface LoginResult {
-  user: { id: string; name: string; email: string; role: string };
-  accessToken: string;
-}
+export type LoginInput = components["schemas"]["LoginInput"];
+export type LoginResult = components["schemas"]["SessionResponse"];

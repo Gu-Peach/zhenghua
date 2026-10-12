@@ -16,7 +16,7 @@ from ...domain.errors import AgentServiceError
 from ...domain.models.supervisor import ConversationTurn, SupervisorUserEvent
 from ...graphs.supervisor import run_supervisor_graph
 from ...tools.event_presenter import SupervisorEventPresenter
-from ..dependencies import require_internal_service
+from ..dependencies import refresh_current_profiles
 from ..schemas import SupervisorTurnResponse, SupervisorUserEventsResponse
 from ..schemas.supervisor import ConversationAttachmentResponse, ConversationMemoryResponse
 
@@ -55,7 +55,7 @@ def _http_error(exc: Exception) -> HTTPException:
 router = APIRouter(
     prefix="/v1/supervisor",
     tags=["supervisor"],
-    dependencies=[Depends(require_internal_service)],
+    dependencies=[Depends(refresh_current_profiles)],
 )
 
 

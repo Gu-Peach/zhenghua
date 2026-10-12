@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "description": "ABB 精简样例：Stage 2 一张完整原页，示范范围仅 Q4 出线；Stage 3 一例原页+目标页。expected 待工程确认。",
+  "images": {
+    "lv11_205": "images/lv11_205.png",
+    "lv12_241": "images/lv12_241.png"
+  },
+  "stage2_cases": [
+    {
+      "id": "lv11_205_q4_cross",
+      "title": "LV11/205：完整原页上的 Q4 跨页出线示例",
+      "expected": "stage2/lv11_205_q4_cross.expected.json",
+      "images": [
+        {
+          "path": "images/lv11_205.png",
+          "role": "source_page",
+          "note": "完整 Sheet 205 原页；本示例仅示范 Q4:2/4/6/8 出线到 Sheet 241 的四条跨页连接。expected 不是整页穷举结果，其他单元未纳入此示例答案。"
+        }
+      ]
+    }
+  ],
+  "stage3_cases": [
+    {
+      "id": "205_q4_l1_to_241_q1",
+      "title": "LV11/205 Q4:2 → LV12/241 Q1:2（原页+跨页）",
+      "input": "stage3/205_q4_l1_to_241_q1.task.json",
+      "expected": "stage3/205_q4_l1_to_241_q1.expected.json",
+      "images": [
+        {
+          "path": "images/lv11_205.png",
+          "role": "source_page",
+          "note": "Sheet 205 原页：核对 Q4 L1 和 /241.1A 引用；起点以冻结 task 为准，不重新扫描其他连接。"
+        },
+        {
+          "path": "images/lv12_241.png",
+          "role": "target_page",
+          "note": "Sheet 241 目标页：核对 =LV11-Q4 L1、/205.3D 并补全 +EH.Q21-Q1:2。物理页序号仅为样例位置。"
+        }
+      ]
+    }
+  ]
+}

@@ -16,6 +16,15 @@ class ReviewerRequest(StrictModel):
     reviewer_id: str = Field(min_length=1)
 
 
+class StartEvaluationRequest(ReviewerRequest):
+    allow_real_model: bool = False
+
+
+class ConfirmCandidateReleaseRequest(ReviewerRequest):
+    evaluation_run_id: str = Field(min_length=1)
+    confirmed: bool = False
+
+
 class CanaryAssessmentRequest(ReviewerRequest):
     severe_regressions: int = Field(ge=0)
 

@@ -7,10 +7,10 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from ...application.supervisor_conversation import SupervisorConversationService
 from ...domain.errors import AgentServiceError
 from ...domain.models.imports import ImportedDocument, ProjectResultsResponse, ProjectTreeResponse
-from ..dependencies import require_internal_service
+from ..dependencies import refresh_current_profiles
 
 router = APIRouter(prefix="/v1", tags=["business-imports"],
-                   dependencies=[Depends(require_internal_service)])
+                   dependencies=[Depends(refresh_current_profiles)])
 
 
 def _error(exc: Exception) -> HTTPException:

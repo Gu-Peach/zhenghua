@@ -98,6 +98,19 @@ class ProfileRegistry:
                 )
         self._snapshots[(snapshot.manifest.key, snapshot.manifest.version)] = snapshot
 
+    def replace_active_packages(self, snapshots: list[ProfileSnapshot]) -> None:
+        """Atomically install the authoritative remote set, preserving historical snapshots."""
+        for snapshot in snapshots:
+            self.load_rules(snapshot)
+        updated = {
+            key: previous.model_copy(
+                update={"manifest": previous.manifest.model_copy(update={"status": ProfileStatus.RETIRED})}
+            )
+            for key, previous in self._snapshots.items()
+        }
+        updated.update({(s.manifest.key, s.manifest.version): s for s in snapshots})
+        self._snapshots = updated
+
     def resolve(
         self,
         key: str,
@@ -126,6 +139,8 @@ class ProfileRegistry:
                 ]
             else:
                 raise ProfileRegistryError(f"Profile {key!r} has no active version.")
+        if not candidates:
+            raise ProfileRegistryError(f"Profile {key!r} has no selectable version.")
         selected = max(candidates, key=lambda item: item.manifest.semantic_version)
         if selected.manifest.status == ProfileStatus.EXPERIMENTAL and not allow_experimental:
             raise ProfileRegistryError(f"Profile {key!r}@{selected.manifest.version} is experimental.")

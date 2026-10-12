@@ -18,6 +18,8 @@ from .api.routes.profiles import router as profiles_router
 from .api.routes.proposals import router as proposals_router
 from .api.routes.runs import router as runs_router
 from .api.routes.supervisor import router as supervisor_router
+from .application.candidate_evaluation import CandidateEvaluationExecutor
+from .application.candidate_release import CandidateReleaseService
 from .application.correction_workflow import CorrectionWorkflowExecutor
 from .application.extraction_run_executor import FullExtractionRunExecutor
 from .application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
@@ -25,6 +27,7 @@ from .application.extraction_stage_factory import build_extraction_stage_dispatc
 from .application.improvement_run_executor import ImprovementRunExecutor
 from .application.improvement_workflow import ImprovementWorkflow, default_sandbox_root
 from .application.profile_detection import create_profile_detection_runtime
+from .application.profile_package_lifecycle import ProfilePackageLifecycle
 from .application.run_control import RunControlService
 from .application.supervisor_conversation import SupervisorConversationService
 from .application.supervisor_handlers import register_default_supervisor_handlers
@@ -210,6 +213,9 @@ def create_app(
         evals = InMemoryEvalRepository()
         traces = InMemoryTraceStore()
     durable_stages = SupabaseStageRepository(supabase) if supabase is not None else None
+    application.state.profile_package_lifecycle = (
+        ProfilePackageLifecycle(profile_packages, registry) if profile_packages is not None else None
+    )
     application.state.durable_stages = durable_stages
     run_control = RunControlService(
         runs=runs,
@@ -270,7 +276,15 @@ def create_app(
             registry=registry,
             gateway=model_gateway,
         )
-        profile_detection_tool = ProfileDetectionTool(profile_detection_runtime)
+
+        async def refresh_detection_profiles() -> None:
+            if profile_packages is not None:
+                await profile_packages.load_registry(registry)
+
+        profile_detection_tool = ProfileDetectionTool(
+            profile_detection_runtime,
+            refresh_profiles=refresh_detection_profiles,
+        )
     worker.register(
         RunType.FULL_EXTRACTION,
         FullExtractionRunExecutor(
@@ -340,6 +354,32 @@ def create_app(
                 artifacts=artifacts,
                 traces=traces,
             ),
+        )
+        worker.register(
+            RunType.PROFILE_EVALUATION,
+            CandidateEvaluationExecutor(
+                profiles=registry,
+                packages=profile_packages,
+                stages=correction_stages,
+                data=result_data_repository,
+                correction_data=correction_data,
+                artifacts=artifacts,
+                candidates=candidates,
+                evals=evals,
+                workflow=improvement_workflow,
+                runtime_root=resolved_settings.workspace_root / "services/agent/.runtime",
+                allow_real_model=resolved_settings.allow_real_evaluation,
+                publisher=run_control.publisher,
+            ),
+        )
+        application.state.candidate_release = CandidateReleaseService(
+            candidates=candidates,
+            evals=evals,
+            artifacts=artifacts,
+            runs=run_control,
+            data=result_data_repository,
+            workflow=improvement_workflow,
+            allow_real_model=resolved_settings.allow_real_evaluation,
         )
         workflows = WorkflowRegistry()
         register_default_supervisor_handlers(

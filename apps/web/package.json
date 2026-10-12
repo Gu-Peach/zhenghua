@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@eslint/js": "latest",
+    "@playwright/test": "^1.64.0",
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
@@ -27,6 +28,7 @@
     "eslint-plugin-react-hooks": "latest",
     "eslint-plugin-react-refresh": "latest",
     "globals": "latest",
+    "openapi-typescript": "^7.13.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "latest",
     "vite": "latest"

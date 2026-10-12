@@ -18,16 +18,16 @@ interface ProjectTreeProps {
 
 export function ProjectTree({ project, projects, selectedWorkspaceId, selectedDrawingId, stageProgress, uploadedFilename, simulationEnabled, onSelectWorkspace, onSelectDrawing }: ProjectTreeProps) {
   const [query, setQuery] = useState("");
-  const [expanded, setExpanded] = useState(() => project.workspaces.map((workspace) => workspace.id));
+  const [collapsed, setCollapsed] = useState<string[]>([]);
   const visibleProjects = useMemo(() => projects.filter((item) => `${item.name} ${item.company}`.toLowerCase().includes(query.toLowerCase())), [projects, query]);
   const stage1 = stageProgress.find((stage) => stage.stage === "Stage 1");
   const stage1Complete = stage1?.status === "done";
-  const uploadedFileStatus: EntityStatus = stage1?.status === "done" ? "completed" : stage1?.status === "failed" ? "failed" : stage1?.status === "processing" ? "processing" : "queued";
+  const uploadedFileStatus: EntityStatus = stage1?.status === "done" || project.workspaces.length > 0 ? "completed" : stage1?.status === "failed" ? "failed" : stage1?.status === "processing" ? "processing" : "queued";
   const stage2 = stageProgress.find((stage) => stage.stage === "Stage 2");
-  const hasWorkspaceIndex = stage1Complete || stageProgress.some((stage) => stage.stage === "数据库查询");
+  const hasWorkspaceIndex = project.workspaces.length > 0 || stage1Complete || stageProgress.some((stage) => stage.stage === "数据库查询");
 
   function toggleWorkspace(workspaceId: string) {
-    setExpanded((current) => current.includes(workspaceId) ? current.filter((id) => id !== workspaceId) : [...current, workspaceId]);
+    setCollapsed((current) => current.includes(workspaceId) ? current.filter((id) => id !== workspaceId) : [...current, workspaceId]);
   }
 
   return (
@@ -47,12 +47,12 @@ export function ProjectTree({ project, projects, selectedWorkspaceId, selectedDr
                   {active && (uploadedFilename || hasWorkspaceIndex) ? (
                     <div className="workspace-tree">
                   {uploadedFilename ? <div className="uploaded-file-row"><FileText size={15} /><span>{uploadedFilename}</span><StatusDot status={uploadedFileStatus} /></div> : null}
-                  {uploadedFilename && !hasWorkspaceIndex ? <p className="tree-empty">{simulationEnabled ? "Supervisor 正在分析并分类页面" : "等待开启模拟链路"}</p> : null}
+                  {uploadedFilename && !hasWorkspaceIndex ? <p className="tree-empty">{simulationEnabled ? "等待 Agent 分类并发布图纸索引" : "等待处理"}</p> : null}
                   {hasWorkspaceIndex && project.workspaces.length === 0 ? <p className="tree-empty">Stage 1 正在识别工作区</p> : null}
                   {hasWorkspaceIndex ? project.workspaces.map((workspace) => {
-                    const isExpanded = expanded.includes(workspace.id);
+                    const isExpanded = !collapsed.includes(workspace.id);
                     const isActive = selectedWorkspaceId === workspace.id && !selectedDrawingId;
-                    const workspaceStatus: EntityStatus = stage2?.status === "processing" ? "processing" : stage2?.status === "failed" ? "failed" : stage2?.status === "done" ? workspace.status : "queued";
+                    const workspaceStatus: EntityStatus = stage2?.status === "processing" ? "processing" : stage2?.status === "failed" ? "failed" : workspace.status;
                     return (
                       <div key={workspace.id} className="workspace-node">
                         <div className={`workspace-row ${isActive ? "active" : ""}`}>
@@ -63,7 +63,7 @@ export function ProjectTree({ project, projects, selectedWorkspaceId, selectedDr
                           <div className="drawing-tree">
                             {workspace.drawings.map((drawing) => (
                               <button type="button" key={drawing.id} className={`drawing-row ${selectedDrawingId === drawing.id ? "active" : ""}`} onClick={() => onSelectDrawing(workspace.id, drawing.id)}>
-                                <FileImage size={15} /><span><strong>图纸 {drawing.drawingPage}.png</strong><small>{drawing.name}</small></span><StatusDot status={stage2?.status === "processing" ? "processing" : stage2?.status === "failed" ? "failed" : stage2?.status === "done" ? drawing.status : "queued"} />
+                                <FileImage size={15} /><span><strong>图纸 {drawing.drawingPage}.png</strong><small>{drawing.name}</small></span><StatusDot status={stage2?.status === "processing" ? "processing" : stage2?.status === "failed" ? "failed" : drawing.status} />
                               </button>
                             ))}
                           </div>

@@ -227,14 +227,15 @@ class ImprovementWorkflow:
     async def evaluate(self, candidate_id: str, report: EvalReport) -> ImprovementEvaluation:
         if report.candidate_id != candidate_id:
             raise ValueError("Evaluation report candidate_id does not match the target candidate.")
-        candidate = await self._candidates.transition(
-            candidate_id,
-            ProfileCandidateStatus.EVALUATING,
-        )
+        candidate = await self._candidates.get(candidate_id)
+        if candidate.status == ProfileCandidateStatus.DRAFT:
+            candidate = await self._candidates.transition(candidate_id, ProfileCandidateStatus.EVALUATING)
+        elif candidate.status not in {ProfileCandidateStatus.EVALUATING, ProfileCandidateStatus.REJECTED}:
+            raise ValueError("Candidate is not in an evaluation state.")
         judgement = await self._judge.judge(report)
         gate = self._gate.evaluate(report)
         await self._candidates.record_gate(candidate_id, gate)
-        if not gate.passed:
+        if not gate.passed and candidate.status != ProfileCandidateStatus.REJECTED:
             candidate = await self._candidates.transition(
                 candidate_id,
                 ProfileCandidateStatus.REJECTED,
@@ -249,11 +250,13 @@ class ImprovementWorkflow:
     async def approve(self, candidate_id: str, reviewer_id: str) -> ProfileCandidate:
         if not await self._candidates.gate_passed(candidate_id):
             raise ValueError("Candidate cannot be approved before passing the deterministic gate.")
-        candidate = await self._candidates.transition(
-            candidate_id,
-            ProfileCandidateStatus.APPROVED,
-            reviewer_id=reviewer_id,
-        )
+        candidate = await self._candidates.get(candidate_id)
+        if candidate.status != ProfileCandidateStatus.APPROVED:
+            candidate = await self._candidates.transition(
+                candidate_id,
+                ProfileCandidateStatus.APPROVED,
+                reviewer_id=reviewer_id,
+            )
         return await self._candidates.transition(
             candidate.candidate_id,
             ProfileCandidateStatus.CANARY,
@@ -261,7 +264,31 @@ class ImprovementWorkflow:
         )
 
     async def activate_canary(self, candidate_id: str) -> ProfileCandidate:
-        candidate = await self._candidates.transition(candidate_id, ProfileCandidateStatus.ACTIVE)
+        candidate = await self._candidates.get(candidate_id)
+        if self._packages and candidate.resource_package_id:
+            await self._packages.candidate_package(candidate)
+            package_rows = await self._packages.client.select(
+                "profile_resource_packages",
+                params={
+                    "id": f"eq.{candidate.resource_package_id}",
+                },
+            )
+            active_rows = await self._packages.client.select(
+                "profile_resource_packages",
+                params={
+                    "profile_key": f"eq.{candidate.profile.key}",
+                    "status": "eq.active",
+                },
+            )
+            allowed = {candidate.resource_package_id, package_rows[0].get("base_package_id")}
+            if len(active_rows) != 1 or active_rows[0]["id"] not in allowed:
+                raise ValueError(
+                    "Active Profile changed since this candidate was built; re-evaluation required."
+                )
+        if candidate.status == ProfileCandidateStatus.CANARY:
+            candidate = await self._candidates.transition(candidate_id, ProfileCandidateStatus.ACTIVE)
+        elif candidate.status != ProfileCandidateStatus.ACTIVE:
+            raise ValueError("Only a reviewed canary may be published.")
         if self._packages and candidate.resource_package_id:
             audit = await self._candidates.audit_log(candidate_id)
             reviewer = next(

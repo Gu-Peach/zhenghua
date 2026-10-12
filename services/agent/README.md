@@ -1,10 +1,12 @@
 # Agent Service
 
-混合纠错的第一个纯 HTTP 终端脚本见 [`agent_test/2.纠错agent/README.md`](./agent_test/2.纠错agent/README.md)：阶段事件/结构化模型输出、人工提交和规则无问题判定，意外候选建议只能拒绝。需要 API/Worker 加载最新代码；第二个规则问题脚本未创建。
+规则库支持人工基于已发布模板创建新 key，封存到私有 Bucket 后发布并自动注册；创建者确认删除后停用。要求 `AGENT_PROFILE_PACKAGES_ENABLED=true` 和既有 Supabase 配置。Profile API/新任务入口/首页检测刷新远端 active 集合，其他 API/Worker 进程无需因包变动重启；已冻结任务仍使用原 checksum。首次使用新功能需用户重载服务以加载新代码，本轮未停止任何服务。见[生命周期实施记录](../../docs/service/server/changelog/2026-10-12-rule-package-lifecycle.md)。
+
+混合纠错和既有候选的评测/审核/发布终端入口见 [`agent_test/2.纠错agent/README.md`](./agent_test/2.纠错agent/README.md)。`run_acceptance.py` 完成纠错/归因；`run_rule_release.py` 从已生成候选接续，实际评测、审核、发布分别输入确认。API/Worker 需加载最新代码；真实评测还要求服务 `AGENT_ALLOW_REAL_EVALUATION=true`（默认 false）及请求显式授权。开发中未执行真实评测或发布。
 
 局部纠错现按用户要求改为原位更新（[ADR-0010](../../docs/adr/0010-in-place-confirmed-corrections.md)）：直接答案和 Stage 2/3 重识别在确认后保持连接 ID/线号不变，使用 revision/record_version 校验并保留 feedback 审计。完整提取仍产生代次。`20261011020000` 已在本地部署；现有服务需由用户重载才使用新提交代码，旧历史没有删除。见[实施记录](../../docs/service/agent/changelog/2026-10-11-in-place-corrections.md)。
 
-纠错混合批次和 Profile 资源包的实现说明见[实施记录](../../docs/service/agent/changelog/2026-10-11-correction-packages-implementation.md)，本地 migration/ZH bootstrap 已部署，见[部署记录](../../docs/service/agent/changelog/2026-10-11-profile-package-deployment.md)。API/Worker 加载新代码前需要设置 `AGENT_PROFILE_PACKAGES_ENABLED=true`；现有服务未重启。本地 Profile 默认兼容模式不受影响。验收直接复用 test0 人工注错及已有 HTTP 对话，不新增纠错终端脚本。
+纠错混合批次和 Profile 资源包的实现说明见[实施记录](../../docs/service/agent/changelog/2026-10-11-correction-packages-implementation.md)，本地 migration/ZH bootstrap 已部署，见[部署记录](../../docs/service/agent/changelog/2026-10-11-profile-package-deployment.md)。API/Worker 加载新代码前需要设置 `AGENT_PROFILE_PACKAGES_ENABLED=true`；现有服务未重启。本地 Profile 默认兼容模式不受影响。验收复用 test0；已有候选通过上述终端入口接续，不重复注错或执行纠错。
 
 独立的 Python Agent API、运行底座和图纸 Profile 服务。默认监听 `8100`，不创建用户或直接覆盖生产线表。迁移期内部验收可登记已有 owner 的项目/源 PDF，并通过受控事务创建结果版本；不替代业务 Server 的浏览器鉴权入口。
 
@@ -33,7 +35,16 @@ M4 的真实 VLM 首页识别评测和 ZH 固定案例字段级回归仍未执�
 
 Supabase 模式下，完整提取 Proposal 会原子写入规范化结果版本；source document 和 Correction drawing 会从私有 Bucket 下载并校验或重新物化。受控结果工具支持多条件查询、持久 Correction bundle、乐观版本提交和 accepted feedback；Profile candidate、release gate、eval、状态审计和模型 Trace 也会持久化。Stage 1/2/3 本身仍只返回结构化候选，只有完整提取持久步骤或用户明确确认修订后才调用受控提交 RPC。
 
-ABB Profile 仍为 experimental，当前全量 PDF runner 只支持 ZH。已有 ABB 目录虽包含独立样本，但其 Stage 2 prompt 仍使用 ZH 的 XD 起点白名单，不能据此启用 ABB；需先校正规则并由真实 ABB 图纸重新确认 expected JSON。
+ABB Profile 1.1.1 为 experimental，使用独立三阶段 Prompt，各阶段仅一案例：Stage 1 原页 205、Stage 2 原页 205（示范 Q4 跨页连接）、Stage 3 原页 205+目标页 241。资源已上传私有 `agent-profile-assets`，状态为 `draft`，18 文件读回核验通过；独立 `abb_native` 确定性策略尚未注册，当前全量 PDF runner 仍只支持 ZH。样本工程确认和真实模型字段级回归通过后才能审核发布。示例范围和待确认事项见 [ABB 资源说明](prompts/abb/README.md)。
+
+上传 experimental 资源草稿（不发布、不替换 active 包；使用已有 Auth 用户 UUID）：
+
+```powershell
+.\.venv\Scripts\python.exe services/agent/scripts/upload_profile_draft.py abb `
+  --user-id "<已有 Auth 用户 UUID>"
+```
+
+脚本上传后下载全部资源并校验 checksum；三阶段 schema、manifest 和路径会在打包时校验。样例图片副本可通过 `services/agent/scripts/prepare_abb_example_images.py` 复现。
 
 ## 启动
 
@@ -205,4 +216,4 @@ $env:AGENT_DEFAULT_MODEL="your-vlm"
 - `LegacyZhExtractionAdapter` 只返回候选结果，不提交生产数据。
 - `LegacyZhStageAdapter` 只执行单阶段 VLM 调用并返回候选 Schema，不负责索引、最终校验或生产数据写入。
 - ABB 当前保持 `experimental`，不能作为默认生产 Profile。
-- Supabase 模式已持久化 Run/Event/Artifact/Proposal/Checkpoint/Trace、源 PDF、页面图片、规范化结果版本、Correction/accepted feedback、候选、评测、门禁审计和租约队列。Profile 沙箱文件仍位于隔离运行目录，实际发布到生产 Profile 的部署执行器尚未实现。
+- Supabase 模式已持久化 Run/Event/Artifact/Proposal/Checkpoint/Trace、源 PDF、页面图片、规范化结果版本、Correction/accepted feedback、候选、评测、门禁审计和租约队列。启用远端资源包后，候选评测从冻结 Bucket 包读取，人工审核/发布通过服务端 receipt；隔离沙箱不直接覆盖生产 Profile。Bucket 发布执行器已实现，真实模型评测和发布验收待执行。

@@ -137,6 +137,8 @@ zhenghua/
 
 ### 5.2 数据约束
 
+人工单条端子增删按 [ADR-0011](./adr/0011-manual-connection-insert-delete.md) 实施：Server 既有表事务、稳定其他记录/线号、完整删除前证据审计和 revision/幂等；不新增数据库 Schema 或修改 Agent 核心。
+
 - `projects.owner_id`、成员关系和所有读取接口必须受 RLS/后端鉴权保护。
 - `drawings` 同时保存 PDF 物理页号和图纸业务页号，二者不得混用。
 - `wiring_connections` 保存可查询列；VLM 原始响应放 `raw_payload jsonb`，不能只存整包 JSON。

@@ -19,7 +19,7 @@ export function LoginView() {
     try {
       const session = await login({ email: String(data.get("email")), password: String(data.get("password")) });
       setSession(session);
-      navigate("/projects/peru-tpp-1-sts");
+      navigate("/projects");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "登录失败，请稍后重试");
     } finally {
@@ -44,14 +44,14 @@ export function LoginView() {
           <div className="login-heading"><span className="eyebrow">WELCOME BACK</span><h2>登录工程工作台</h2><p>使用企业账号继续访问项目与提取结果。</p></div>
           <form onSubmit={handleSubmit} className="login-form">
             <label htmlFor="email">邮箱</label>
-            <div className="input-shell"><Mail size={18} /><input id="email" name="email" type="email" defaultValue="engineer@zpmc.com" autoComplete="email" required /></div>
+            <div className="input-shell"><Mail size={18} /><input id="email" name="email" type="email" autoComplete="email" required /></div>
             <div className="password-label"><label htmlFor="password">密码</label><button type="button" className="text-button">忘记密码</button></div>
-            <div className="input-shell"><LockKeyhole size={18} /><input id="password" name="password" type={showPassword ? "text" : "password"} defaultValue="prototype" autoComplete="current-password" required /><button type="button" className="field-icon-button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "隐藏密码" : "显示密码"}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>
+            <div className="input-shell"><LockKeyhole size={18} /><input id="password" name="password" type={showPassword ? "text" : "password"} autoComplete="current-password" required /><button type="button" className="field-icon-button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "隐藏密码" : "显示密码"}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>
             <label className="check-row"><input type="checkbox" defaultChecked /><span>保持登录状态</span></label>
             {error ? <p className="form-error" role="alert">{error}</p> : null}
             <button type="submit" className="login-submit" disabled={submitting}>{submitting ? <Loader2 size={18} className="spin" /> : null}{submitting ? "正在登录" : "登录"}</button>
           </form>
-          <p className="login-support">访问受限？<Link to="/login">联系系统管理员</Link></p><p className="prototype-note">静态原型 · 当前使用 Mock 登录</p>
+          <p className="login-support">访问受限？<Link to="/login">联系系统管理员</Link></p><p className="prototype-note">Supabase 账号登录 · 项目权限隔离</p>
         </div>
       </section>
     </main>

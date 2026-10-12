@@ -57,6 +57,7 @@ services/agent/agent_test/**/runs/
 .ruff_cache/
 .runtime/
 services/agent/runtime/
+services/agent/.profile-sandbox/
 backend/cases/
 docs/test/
 *.tsbuildinfo

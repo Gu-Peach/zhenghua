@@ -1,0 +1,38 @@
+{
+  "version": 2,
+  "review_status": "pending_engineering_confirmation",
+  "annotation_source": "user_supplied_rule_drawings",
+  "expected_source": "image_transcription_by_coding_agent_no_model_calls",
+  "physical_page_numbering": "Synthetic ordinal in the two-image fixture only; original PDF ordinal unknown.",
+  "original_images": [
+    {
+      "original": "1.png",
+      "packaged_image": "images/lv11_205.png",
+      "function": "LV11",
+      "sheet": 205,
+      "location": "+EH.Q1.1",
+      "cont": 206
+    },
+    {
+      "original": "2.png",
+      "packaged_image": "images/lv12_241.png",
+      "function": "LV12",
+      "sheet": 241,
+      "location": "+EH.Q21",
+      "cont": 242
+    }
+  ],
+  "ambiguities": [
+    "LV11/205 PE 无唯一设备端点，不提供猜测答案。"
+  ],
+  "rules_not_inferred": [
+    "Neither breaker range maximum nor voltage is a single current.",
+    "Red instructional annotations are not extracted business descriptions.",
+    "No ZH start-terminal whitelist."
+  ],
+  "example_scope": {
+    "stage1": "One full source sheet 205.",
+    "stage2": "One full source sheet 205; expected demonstrates Q4 outgoing connections only, not exhaustive full-page extraction.",
+    "stage3": "One task Q4 L1 from sheet 205 to 241; source_page and target_page images."
+  }
+}

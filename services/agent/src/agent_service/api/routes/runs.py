@@ -13,13 +13,13 @@ from ...domain.enums import RunStatus, RunType
 from ...domain.errors import AgentServiceError
 from ...domain.models.imports import RunStageSummaryResponse
 from ...domain.models.runs import CreateRunRequest
-from ..dependencies import require_internal_service
+from ..dependencies import refresh_current_profiles
 from ..schemas import HumanInputRequest, RunArtifactsResponse, RunEventsResponse, RunResponse
 
 router = APIRouter(
     prefix="/v1/runs",
     tags=["runs"],
-    dependencies=[Depends(require_internal_service)],
+    dependencies=[Depends(refresh_current_profiles)],
 )
 
 
@@ -146,6 +146,13 @@ async def get_model_outputs(agent_run_id: str, user_id: str, request: Request) -
     if run.requested_by != user_id:
         raise HTTPException(403, detail="Run model output access denied.")
     keys = [run.agent_run_id]
+    if run.run_type == RunType.PROFILE_EVALUATION:
+        dataset = await request.app.state.run_control.artifacts.get(f"{agent_run_id}:evaluation-dataset")
+        if dataset:
+            for checksum in (dataset["baseline_profile"]["checksum"], dataset["candidate_checksum"]):
+                keys.extend(
+                    f"{agent_run_id}:evaluation:{checksum}:{case['case_id']}" for case in dataset["cases"]
+                )
     if run.run_type == RunType.IMPROVEMENT_CANDIDATE:
         keys += [
             f"improvement:{key}"

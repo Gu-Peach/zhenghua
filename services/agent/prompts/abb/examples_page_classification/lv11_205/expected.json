@@ -1,0 +1,9 @@
+{
+  "plant_function": "LV11",
+  "drawing_page_number": 205,
+  "blank": false,
+  "non_wiring": false,
+  "confidence": 0.98,
+  "needs_review": false,
+  "reason": "图框 =LV11、Sheet 205；Cont 206 为续页，图内局部功能不覆盖图框身份"
+}

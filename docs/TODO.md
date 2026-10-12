@@ -4,9 +4,38 @@
 
 ## 进行中
 
+- [x] 精简 ABB 样本：Stage 1 一页、Stage 2 一张含 Q4 跨页连接的原页（示例答案范围明确）、Stage 3 一例原页+目标页；三个阶段各一案例。abb@1.1.1 草稿已上传私有 Bucket，18 文件读回核验通过；11 项相关离线回归/Ruff 通过。原图、旧远端包与生产绑定保留，见 docs/service/agent/changelog/2026-10-12-abb-resource-compact.md。
+
+- [x] ABB 样本资源包：4 张标注图整理为 4 个 Stage 1、4 个局部 Stage 2、7 个 Stage 3 样例，独立 Prompt/manifest/expected/task 与来源说明完成；21 项离线回归通过，abb@1.1.0 草稿上传私有 agent-profile-assets，45 文件读回校验通过。不改 test0、active 包或运行服务，见 docs/service/agent/changelog/2026-10-12-abb-resource-draft.md。
+- [ ] ABB 生产启用：工程确认 expected 与原理号优先级，实现独立 abb_native 确定性策略，运行真实图片字段级模型回归并通过审核发布。当前资源包仅 draft。
+
+- [x] 规则库包管理实现：基于已发布模板新建、人工确认后 Bucket 发布/Agent 自动注册、创建者删除/停用并保留历史引用；API/Web/动态注册同步。44 项 Agent/Server 回归、7 项浏览器夹具、应用 strict 类型检查、相关 Python Ruff/mypy 通过。未调用模型、不改 test0、不停止服务，见 `docs/service/server/changelog/2026-10-12-rule-package-lifecycle.md`。
+- [ ] 规则包交付验收：用户重载 Agent/Server 后验收真实 Bucket 创建/停用；修复本机 node_modules 读取权限后运行自动 OpenAPI 类型生成、Web lint/production build。本轮这些检查受 EPERM 限制，生成类型暂按已导出的 OpenAPI 手动同步。
+
+- [ ] 工作台剩余验收：真实 Bucket 三阶段资源与图纸索引已通过；用户已授权使用现有 8100 和一次性项目调用真实模型。上传/检测/人工确认后的三阶段已成功，继续在同一临时项目验证纠错/人工确认/归因并清理；不停止用户任务，不改 Schema/test0。
+
+- [x] 规则候选评测/审核/发布代码：冻结固定正例/负例与 accepted-feedback 目标，三阶段实际调用、持久案例/报告与断点复用，服务端 receipt/gate、两次人工确认和不可变 Bucket 发布；纯 HTTP 终端入口。49 项离线测试、160 源文件 mypy/Ruff 通过，真实候选只读预检 9 案例通过。无 migration/模型调用/线上发布，真实评测和审核/发布验收待用户执行，见 docs/service/agent/candidate-release-plan.md。
+
+- [x] 修复规则补丁 JSON 解析：完整 JSON 优先、仅识别真正外层 fence，保留文件字符串内嵌代码块；新增纯 JSON/外层包装/前言三类回归，31 项相关测试与 158 源码类型检查通过，实际失败 Trace 只读重放通过。未调用模型/恢复任务/改库/发布规则，真实恢复待服务重载。
+
+- [x] 修复 ProfilePatchBuilder 输出契约：只读 Trace 确认失败为 ProfilePatchModelOutput invalid_json；动态注入 Schema，明确纯 JSON、转义、完整文件替换与包相对路径；11 项相关离线回归通过。未重提取/提交已完成修订、未调用真实模型或发布规则；真实恢复待重载服务。
+
+- [x] 修复独立提取审校脚本：缺失跨页页码保留待复核、循环引用检测；11 项离线回归通过，说明快照变化，未调用真实模型。
+- [x] 修复独立审校对账：模型返回 matched 但缺少 connection_id 时降级为 needs_review，避免中断整批；离线回归覆盖。
+
+- [x] 按用户确认完成单条端子新增/删除：既有表 Server 原子事务、权限/revision/幂等/before-after、稳定其他 ID/线号/代次与 Web 入口；24 项默认 API、5 项 HTTP 浏览器夹具通过，真实 Auth/DB/Storage/API/浏览器增改删/双图/越权/过期/冲突/重放/审计失败回滚通过。一次性项目/对象/账号及自建进程清理，不改 test0/Schema/Agent 核心。
+
+- [ ] 真实工作台接入（不改数据库/Agent 核心）：Server JWT/项目权限、项目树/线表 CRUD/图纸索引/私有资源包接口；Web 页码与线号分组、原页/跨页下方预览、编辑、规则资源面板、Agent 流式上传/纠错、可缩放布局。执行计划见 docs/service/server/workbench-integration-plan.md。
+  - [x] Server/Web 基础接入与 OpenAPI 类型；21 项 Fake API、5 项 Playwright 夹具、Ruff/mypy/lint/build、真实库只读与既有修订 RPC 回滚验证。
+  - [x] 真实 Auth 登录/续期、表格增改删与双图验收；事务失败回滚、权限/过期/幂等检查，临时数据清理。
+  - [x] 真实账号浏览器验证 Bucket 三阶段 Prompt/样例图片/描述/expected、资源链接刷新和图纸索引。
+  - [ ] PDF/纠错真实浏览器全链路验收：用户授权后上传/检测/确认与三阶段落库成功（5 页/13 连接，约 226 秒）；浏览器进程退出，纠错/确认/归因尚未验证。已有一次性项目可续跑，不重提取；自动审批服务模型权限 403 导致续跑命令未执行，详见 Server 联调记录。不停止用户服务。
+  - [x] 流式交互收尾：最终确认提示可见、阶段单卡片更新、等待/失败展示、断线重连、StrictMode 首次检测取消和登录重复续期修复；补齐共享字段编辑、图片链接刷新、上传完整响应契约。写入真实联调已完成，会话全链路另验，不改 Agent 核心或 Schema。
+  - [x] 完整性核对：规则 manifest 样例、纠错确认/归因、候选授权与 Agent 401 边界；端子增删和临时数据授权已落实。证据见 docs/service/server/workbench-completion-audit.md，完整 Agent 验收仍未完成。
+
 - [x] 准备 test0 三条混合纠错注错样例：PDF 核对 XD3:251→2、XD3:260→1、006.M/1 XD3:113→006.C/1 X3:1，仅将最新代次三条 end_terminal 改为999；标记人工注错并备份原值/预期/消息到忽略的 runs/test0-mixed-prepared-001，revision 1→2。未修改规则、起点、跨页状态/引用，未调用模型或重启服务。
 
-- [ ] 用户混合纠错人工验收：加载新模型输出接口后运行 `2.纠错agent/run_acceptance.py`，人工构造直接答案＋同页＋跨页输入，确认修订、检查规则无问题或拒绝意外候选；第二个规则问题脚本等待用户构造问题。
+- [ ] 用户混合纠错及规则发布人工验收：`2.纠错agent/run_acceptance.py` 检查混合修订/归因，规则问题使用 `--expect-rule-issue`；已生成候选使用 `run_rule_release.py` 接续实际评测、人工审核与发布，不重复注错或纠错。
 
 - [ ] 用户重载 Agent 后验收原位纠错：本地 `20261011020000` 和契约 V3 已部署，直接答案/Stage 2/3 共用稳定 ID 提交；先只对当前最新行注错，确认后检查同 ID 更新和 revision，历史不清理、现有服务未重启。
 
@@ -59,7 +88,7 @@
 - [x] Agent dotenv 配置仅加载 `services/agent/.env`；根目录和 `backend/.env` 不再参与配置合并。
 - [x] 修复 Stage 2/3 图片 Few-shot 超出 VLM 视觉 patch 预算的问题；请求内按配置缩小样例图，保留所有图像样例及原始图纸分辨率。
 - [ ] 使用真实 VLM 对 ZH 固定案例做字段级结果、耗时和费用对照。
-- [ ] 完成 ABB 三阶段 Prompt、图片 Few-shot 和 Expected JSON。
+- [x] 完成 ABB 三阶段独立 Prompt、图片 Few-shot 和 Expected JSON 草稿；工程确认与真实模型验收另列。
 - [ ] 增加 Profile 识别结果和人工覆盖字段。
 - [x] 通过 repository 接口保存阶段事件并提供可续传 SSE；Supabase 模式已接入持久 Run/Event/Artifact/Proposal/Checkpoint repository 和租约队列。
 - [x] 增加节点级幂等键、Run 创建幂等和任务取消检查。
@@ -86,7 +115,7 @@
 
 - [x] 修复混合纠错起点身份匹配：区分位置/设备/端子、保留稳定 ID 和起点，缺失/歧义/重复明确报错；Worker 记录安全异常类型和调用帧。33 项相关离线回归、全包 strict mypy 和修改文件 Ruff 通过，失败任务 Stage 2 产物只读重放通过；未改数据库或规则、未调用真实模型、未重启服务。用户重载后用新会话重跑混合验收。
 
-- [x] 第一个混合纠错终端脚本：纯 HTTP 输入/SSE/阶段与模型输出、人工确认、原位数据核对、规则无问题/证据不足/拒绝意外候选分支、逐步落盘和只监看模式；只读观测接口过滤私有推理并限制用户范围。离线 Mock 流程/相关回归、strict mypy/Ruff 通过，未调用真实模型或重启服务，第二个脚本未创建。
+- [x] 第一个混合纠错终端脚本：纯 HTTP 输入/SSE/阶段与模型输出、人工确认、原位数据核对、规则无问题/证据不足/拒绝意外候选分支、逐步落盘和只监看模式；只读观测接口过滤私有推理并限制用户范围。离线 Mock 流程/相关回归、strict mypy/Ruff 通过；后续已补充 `run_rule_release.py` 接续候选发布链路。
 
 - [x] 原位纠错（ADR-0010）：当前集合内连接/单元/证据 ID 和线号保持稳定，revision/record_version+1，before/after 留在 feedback，proposal receipt 幂等；内存/Supabase、确认消息、分页契约已同步。17 项相关离线测试/strict mypy/Ruff 通过，真实数据库合成回滚验证权限/幂等/过期拒绝/批次原子性，本地 migration 已部署，不修改 test0 的现有值、不重启服务。
 

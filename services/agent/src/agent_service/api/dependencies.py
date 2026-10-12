@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hmac
 
-from fastapi import Header, HTTPException, Request
+from fastapi import Depends, Header, HTTPException, Request
 
 
 async def require_internal_service(
@@ -23,3 +23,16 @@ async def require_internal_service(
     supplied = authorization[len(prefix) :]
     if not hmac.compare_digest(supplied, expected):
         raise HTTPException(status_code=401, detail="Internal service authorization is invalid.")
+
+
+async def refresh_current_profiles(
+    request: Request,
+    _: None = Depends(require_internal_service),
+) -> None:
+    """New commands see the remote active set; running frozen bindings stay unchanged."""
+    packages = getattr(request.app.state, "profile_packages", None)
+    if packages is not None and (request.method == "POST" or request.url.path.startswith("/v1/profiles")):
+        try:
+            await packages.load_registry(request.app.state.profile_registry)
+        except Exception as exc:
+            raise HTTPException(503, detail="规则注册同步失败，请稍后重试") from exc

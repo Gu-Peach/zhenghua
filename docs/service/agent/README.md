@@ -1,5 +1,11 @@
 # Agent 服务设计索引
 
+ABB 独立三阶段图片样本与 Bucket 草稿见 [初版资源实施记录](./changelog/2026-10-12-abb-resource-draft.md) 和 [1.1.1 精简记录](./changelog/2026-10-12-abb-resource-compact.md)。当前各阶段仅一案例、图片 1/1/2 张，资源整理和上传已完成；独立确定性策略、工程确认与真实模型回归仍是生产启用门槛。
+
+规则库人工创建/删除与动态注册见 [实施记录](../server/changelog/2026-10-12-rule-package-lifecycle.md)：新任务以数据库 active 包集合为准，停用后精确历史绑定仍可读取；AI 规则候选继续遵循独立评测/审核/发布流程。
+
+当前候选评测/审核/发布契约见 [实施计划](./candidate-release-plan.md) 和 [2026-10-12 实现记录](./changelog/2026-10-12-candidate-release.md)。纯 HTTP 终端从既有候选接续，真实模型及发布验收待用户确认执行。
+
 > 状态：Draft for review  
 > 日期：2026-10-09  
 > 目标部署：独立 Python 服务，默认端口 `8100`

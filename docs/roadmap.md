@@ -11,6 +11,7 @@
 - [x] 建立文档索引、CHANGELOG、TODO 和 `AGENTS.md`。
 - [x] 恢复正常本地 Git 仓库及原远程关联，补齐运行产物忽略规则和 Agent Few-shot 图片跟踪规则；业务阶段状态保持不变。
 - [ ] 固化 ZH 当前案例的结果基线、耗时和费用基线。
+  - 独立审校脚本已修复未知跨页页码与循环引用的待复核处理，11 项离线回归通过；真实模型审校及人工质量基线仍未完成。
 - [ ] 固化 ABB 的分类、页扫描和跨页 Few-shot 回归集。
 - [ ] 为现有 API 导出 OpenAPI 快照。
 
@@ -24,7 +25,7 @@
 - [ ] 配置 pnpm workspace、Turbo、TypeScript、Python `pyproject.toml`。
 - [x] 配置 pnpm workspace、Vite 和 TypeScript strict mode。
 - [x] 建立 React Router 静态登录页和应用布局。
-- [ ] 接入 Supabase Auth 与受保护路由守卫。
+- [x] 接入真实 Supabase Auth、HttpOnly 续期与受保护路由；一次性真实账号/API/浏览器登录通过。
 - [x] 实现 Header、三栏工作台和初始静态 AI 会话原型。
 - [x] 完成交互 Mock 工作台：图纸库/规则库、跨页端子定位、自然语言修复与显式模拟开关；无触发时为空态，PDF 上传后按 Stage 1/2/3 顺序流式展示 Agent 状态，Stage 1 完成后才呈现工作区和拆分页（真实 API、鉴权和持久化 SSE 待后续阶段）。
 - [x] 保留旧 Vite 前端作为迁移期 fallback。
@@ -37,7 +38,7 @@
 
 - [x] 已编写并应用本地 Supabase 的 projects/project_members/workspaces/drawings/result_versions/wiring/evidence 与 Agent runtime migration；托管远端环境仍待部署。
 - [x] 已为本批新表编写 RLS、索引、updated_at、版本和证据约束，并通过本地真实 Supabase 的 owner/anon、并发事件序号和线号分配验证；托管远端权限仍待复验。
-- [ ] 实现项目列表、项目树、图纸详情 API。
+- [x] 实现项目列表/项目树/图纸详情 API，真实只读库与临时项目登录查询通过。
 - [x] 实现私有 `project-assets` Bucket、稳定项目资产路径和签名 URL，并保留旧公开 `images` Bucket 作为迁移期兼容数据。
 - [ ] 编写旧 `wiring_tables` 到新模型的回填脚本。
 
@@ -45,7 +46,10 @@
 
 ## Phase 3：导入、拆分与事件流
 
-状态：planned
+状态：in progress
+
+- [ ] 2026-10-12 Web/Server 真实接入：项目/资源/JWT、表格增改删/下方预览、Agent SSE/阶段卡片实现，真实 CRUD/API/浏览器通过并清理；上传/Agent 完整链路仍待验收，详见 Server 实施记录。
+  - 用户授权后的真实 CRUD/双图/事务回滚、Bucket 三阶段资源面板与图纸索引通过。真实模型浏览器上传/检测/确认后的三阶段成功落库（5 页/13 连接，约 226 秒）。浏览器退出，纠错/确认/归因待同项目续跑；自动审批服务 403 配置故障使续跑未执行。现有 Agent/test0 不改，一次性项目保留，见 Server 联调记录。
 
 - [ ] 实现上传会话和客户端直传。
 - [x] Agent Stage 1 完成后将工作区、图纸元数据和 PDF 页面图片写入数据库及私有 Storage；项目创建/上传 HTTP API 仍待业务 Server 接入。
@@ -59,6 +63,7 @@
 
 状态：in progress
 
+- [x] 2026-10-12 规则库生命周期：已发布模板克隆新 key，人工确认创建后私有 Bucket 发布并动态注册到 Agent；创建者删除后停用，冻结历史引用保留。44 项 Agent/Server、7 项浏览器夹具和应用类型检查通过；真实库创建/停用及受环境权限阻塞的 Web lint/build/自动类型生成待验收，见 Server 规则包实施记录。
 - [x] 建立 Agent 模块按顺序开发与阶段验收清单。
 - [x] 建立 `services/agent` Python 包、模块目录、健康检查和测试骨架。
 - [x] 定义 `DrawingProfile`、注册表、资源 checksum 和不可变版本快照。
@@ -76,7 +81,9 @@
 - [x] 实现 run 创建、查询、事件、SSE、Artifact、Proposal、取消和恢复控制面 API。
 - [x] 建立 Agent 内部 Bearer 鉴权和 OpenAPI/Schema 契约测试；Server 调用端待 `apps/api` 建设。
 - [x] 将现有 ZH Prompt、图片 Few-shot、引用解析和校验迁入 ZH Profile/Agent 包；固定案例真实模型基线另行验收。
-- [ ] 建立 ABB Profile，使用圆圈放线标志和 ABB 独立案例。
+- [x] ABB 1.1.0 独立资源草稿：圆圈/斜杠规则、三阶段 Prompt、4/4/7 图片案例与结构化 expected/task；私有 Bucket 45 文件读回核验通过，21 项离线回归通过。
+- [x] ABB 1.1.1 按用户要求精简为三个阶段各一案例：图片 1/1/2 张（205、205、205+241）；18 文件 Bucket 草稿读回通过，11 项离线回归通过。
+- [ ] ABB Profile 生产启用：工程确认样本、注册独立 abb_native 策略、真实模型字段级回归与审核发布；当前 Bucket 包为 draft，不参与生产选择。
 - [x] Profile 自动检测低置信、未知或 experimental 时要求人工选择。
 - [x] 公共文档 Graph 移除 ZH 规则导入和按 client 能力切换的旧拓扑；端子、方向、电流、引用与导出字段通过 Profile 策略注入。`zh_workflow` 实现与兼容目录均已移除；ABB 策略注册仍需独立资产验收。
 - [x] 按用户要求删除相邻页分段、批量提取及关联策略/配置/checkpoint，所有提取和导出调用直接使用新模块。
@@ -88,12 +95,12 @@
 - [x] Gate B 接口/Fake 验收：内部业务上传、Profile 确认后原子创建 protocol 2 run、Worker/SSE、published 项目树/结果分页/阶段摘要，以及 `1.3stage` 纯 HTTP 客户端已接通；本地 Supabase/Fake HTTP 2 场景通过。
 - [ ] Gate B 真实模型人工验收：真实 PDF、人工字段 baseline、成本/耗时/差异报告；接口通过不等于准确率通过，Web/JWT 代理仍另行建设。
 - [x] 串联 Supervisor V2 离线闭环：Profile Detection 内部工具、受控结果工具、`is_cross_page` 三态 Stage 2/3 纠错，以及需用户授权的 Improvement/Profile 候选链路。
-- [x] 建立 Eval Harness、Profile 沙箱、确定性 Release Gate、人工审批、canary 与回滚状态机；候选、评测、门禁与审计已持久化，实际 Profile 文件部署执行器仍待接入。
+- [x] 建立 Eval Harness、Profile 沙箱、确定性 Release Gate、人工审批、canary 与回滚状态机；候选、评测、门禁与审计已持久化。2026-10-12 接入服务端三阶段候选评测/receipt 与不可变 Bucket 包发布执行器，真实评测和人工发布验收待执行。
 - [ ] 纠错改造：混合 `CorrectionBatch`、统一跨页 Stage 2→Stage 3、Profile 资源包适配器和归因上下文已实现；本地 `20261011010000` 迁移和 ZH bootstrap 已发布，待 API/Worker 开启远端包模式、test0 人工验收及纠错 RUNNING 接管。
 - [x] 修复案例 A 的 Supervisor Schema 边界：支持起点/终点精确查询、数字页码/线号归一化和完整 JSON Schema 提示；只读真实模型路由与唯一连接查询通过，实际 proposal/提交验收仍由用户继续。
 - [x] 案例 A 用户确认已创建 accepted 版本 2；修复提交后归因 source document 外键引用和成功结果报错边界。归因任务实际补启动及后续建议验收待用户重载服务后执行。
 - [x] 用户调整后的原位纠错代码和本地 migration 已完成：直接值/Stage 2/3 结果共用稳定连接 ID 更新，revision/审计/幂等保留；服务重载后的真实人工验收待执行，旧历史不删除。
-- [x] 第一个纯 HTTP 混合纠错终端验收及只读模型输出接口已实现：人工确认、规则无问题判定、意外候选只允许拒绝，离线回归通过；真实混合输入待用户执行，第二个规则问题脚本未开始。
+- [x] 纯 HTTP 混合纠错终端验收及只读模型输出接口已实现：人工确认、规则无问题判定、意外候选拒绝，离线回归通过；规则问题使用 `--expect-rule-issue`，既有候选由 `run_rule_release.py` 接续评测、审核与发布。真实完整链路待人工验收。
 - [x] 按用户要求完成 test0 三条真实图纸核对和终点端子人工注错，保存混合消息/字段级预期/可恢复备份；实际混合 Agent 执行和规则判定未运行，不以数据准备代替验收。
 - [x] 修复用户混合验收暴露的纠错起点匹配：位置/设备/端子分开比较，缺失/歧义/重复不再静默漏修，Worker 安全日志定位异常；33 项相关离线测试和保存的 Stage 2 产物只读重放通过。真实 Stage 3/确认提交/归因链路仍待用户重载后以新会话验收。
 - [x] 混合验收后续记录已通过 Stage 2/3、原位提交和人工预期字段检查；修复随后暴露的 Improvement 输出 Schema 缺失，24 项相关离线回归通过。真实归因/规则判定待重载后单独恢复失败归因 run，不重复线表修订。
@@ -102,10 +109,10 @@
 
 ## Phase 5：结果管理与导出
 
-状态：planned
+状态：in progress
 
 - [x] 完整提取通过原子 RPC 写入 `result_versions/wiring_units/wiring_connections/evidence`，并保留 `is_cross_page`、来源证据、Profile/模型和 Proposal 关联。
-- [ ] 实现结果分页、筛选、排序、来源定位和待复核视图。
+- [x] 实现 Server 结果分页/筛选/稳定排序/来源与跨页定位、待复核字段；端子增改删及审计，真实临时项目通过。专用待复核工作队列不在本轮范围。
 - [x] Agent/Supervisor 侧实现强类型行级修订、乐观版本校验、accepted feedback 与审计；外部业务 API 尚待接入。
 - [ ] 从结果版本生成 XLSX，并做字段和顺序一致性测试。
 - [ ] 下线前端从 `public/library` 和整包 JSONB 聚合结果的逻辑。
@@ -114,11 +121,15 @@
 
 ## Phase 6：反馈与 Agent 演进
 
+- [x] 2026-10-12 规则补丁解析修复：JSON 字符串内嵌 fence 不再被误截；31 项离线回归与实际失败 Trace 重放通过，真实恢复/评测/发布仍待用户验收。
+
+- [x] 2026-10-12 补丁生成输出契约：ProfilePatchBuilder 动态 Schema/纯 JSON/完整文件转义约束，离线回归通过；真实失败归因任务恢复、评测和发布仍待验收。
+
 状态：planned
 
 - [ ] 实现线表、图纸、工作区三级反馈入口。
 - [x] Agent 侧区分数据修订和规则建议，并持久化 Correction bundle、accepted feedback 和审计；面向 Web 的反馈 API 尚待接入。
-- [x] Agent 侧已持久化候选、离线评测、人工门禁、canary 和回滚状态；生产 Profile 文件部署执行器仍待实现。
+- [x] Agent 侧已持久化候选、离线评测、人工门禁、canary 和回滚状态；服务端评测及两次确认的 Bucket 发布执行器已实现，49 项离线回归通过，真实评测/发布/回滚待人工验收。
 - [x] 本地私有 Bucket 已部署并发布 ZH Prompt/Few-shot/expected/rules/schema 不可变 bootstrap 包；Improvement/候选适配器已实现。运行 API/Worker 开关、完整候选发布/回滚人工验收仍待执行。
 - [ ] 接入真实文档问答前，先完成权限、引用和防幻觉设计。
 

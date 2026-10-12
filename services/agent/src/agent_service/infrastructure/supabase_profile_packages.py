@@ -6,6 +6,8 @@ import mimetypes
 from pathlib import Path
 from uuid import NAMESPACE_URL, uuid5
 
+from ..domain.enums import ProfileStatus
+from ..domain.models.improvement import ProfileCandidate
 from ..domain.models.profiles import ProfileBinding, ProfileManifest, ProfileRuleSet, ProfileSnapshot
 from ..domain.models.runs import ProfileRef
 from ..profiles.package import PackageManifest, checksum, safe_path, verify_package
@@ -21,6 +23,8 @@ class SupabaseProfilePackageRepository:
         self.client = client
         self.cache_root = cache_root.resolve()
         self.bucket = "agent-profile-assets"
+        self._registry_lock = asyncio.Lock()
+        self._loaded_sets: dict[ProfileRegistry, tuple[tuple[str, str], ...]] = {}
 
     async def upload(
         self,
@@ -30,14 +34,17 @@ class SupabaseProfilePackageRepository:
         status: str = "candidate",
         candidate_id: str | None = None,
         base_package_id: str | None = None,
+        package_id: str | None = None,
     ) -> dict[str, object]:
         manifest_bytes = await asyncio.to_thread((root / "manifest.json").read_bytes)
         manifest = PackageManifest.model_validate_json(manifest_bytes)
         await asyncio.to_thread(verify_package, root, manifest)
         prefix = f"{manifest.profile_key}/{manifest.profile_version}/{manifest.package_checksum[7:]}"
-        package_id = str(uuid5(NAMESPACE_URL, f"profile-package:{prefix}"))
+        package_id = package_id or str(uuid5(NAMESPACE_URL, f"profile-package:{prefix}"))
         existing = await self.client.select("profile_resource_packages", params={"id": f"eq.{package_id}"})
         if existing:
+            if existing[0]["package_checksum"] != manifest.package_checksum:
+                raise ValueError("Profile package identity already contains different content.")
             return existing[0]
         for entry in manifest.files:
             content = await asyncio.to_thread((root / safe_path(entry.path)).read_bytes)
@@ -91,6 +98,22 @@ class SupabaseProfilePackageRepository:
         if len(matches) != 1:
             raise ValueError("No unique published Profile resource package matches the frozen checksum.")
         row = matches[0]
+        return await self._resolve_row(row)
+
+    async def candidate_package(self, candidate: ProfileCandidate) -> tuple[Path, PackageManifest]:
+        """Read an unpublished package only when its exact candidate identity/checksum matches."""
+        rows = await self.client.select(
+            "profile_resource_packages",
+            params={
+                "id": f"eq.{candidate.resource_package_id}",
+                "candidate_id": f"eq.{candidate.candidate_id}",
+            },
+        )
+        if len(rows) != 1 or rows[0]["package_checksum"] != candidate.resource_package_checksum:
+            raise ValueError("Candidate resource package identity/checksum mismatch.")
+        return await self._resolve_row(rows[0])
+
+    async def _resolve_row(self, row: dict[str, object]) -> tuple[Path, PackageManifest]:
         content = await self.client.download(
             bucket=str(row["storage_bucket"]), object_path=str(row["manifest_path"])
         )
@@ -134,9 +157,17 @@ class SupabaseProfilePackageRepository:
         )
 
     async def load_registry(self, registry: ProfileRegistry) -> None:
-        rows = await self.client.select("profile_resource_packages", params={"status": "eq.active"})
-        if not rows:
-            raise ValueError("Profile package mode enabled but no approved active package exists.")
+        async with self._registry_lock:
+            rows = await self.client.select("profile_resource_packages", params={"status": "eq.active"})
+            signature = tuple(sorted((str(row["id"]), str(row["package_checksum"])) for row in rows))
+            if self._loaded_sets.get(registry) == signature:
+                return
+            snapshots = await self._registry_snapshots(rows)
+            registry.replace_active_packages(snapshots)
+            self._loaded_sets[registry] = signature
+
+    async def _registry_snapshots(self, rows: list[dict[str, object]]) -> list[ProfileSnapshot]:
+        snapshots = []
         for row in rows:
             ref = ProfileRef(
                 key=str(row["profile_key"]),
@@ -147,8 +178,8 @@ class SupabaseProfilePackageRepository:
             binding = await self.bind(ref)
             manifest = ProfileManifest.model_validate_json(
                 (root / "profile.json").read_text(encoding="utf-8")
-            )
-            registry.register_snapshot(
+            ).model_copy(update={"status": ProfileStatus.ACTIVE})
+            snapshots.append(
                 ProfileSnapshot(
                     manifest=manifest,
                     profile_root=root,
@@ -157,6 +188,7 @@ class SupabaseProfilePackageRepository:
                     checksum=str(ref.checksum),
                 )
             )
+        return snapshots
 
     async def display(self, profile: ProfileRef) -> dict[str, object]:
         root, manifest = await self.resolve(profile)

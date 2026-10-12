@@ -1,182 +1,163 @@
-import { CheckCircle2, ChevronRight, Download, FileSpreadsheet, FileText, Loader2, RefreshCw, Search, Upload } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
-import { streamSupervisorRun, type AgentStageProgress, type SupervisorCommand, type SupervisorRequest } from "@/apis/agent";
-import { projectApi } from "@/apis/projects";
-import type { AgentEvent, DrawingLibraryItem, ProjectDetail, ProjectSummary, RuleLibraryItem, StageEvent, WiringRow } from "@/apis/types";
+import { FileSpreadsheet, FileText, Loader2, RefreshCw, Search, Upload } from "lucide-react";
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { runArtifacts, streamSupervisorRun, watchRun, type AgentStageProgress, type AgentStreamUpdate } from "@/apis/agent";
+import { projectApi, type ResultPage } from "@/apis/projects";
+import { request } from "@/apis/client";
+import type { AgentEvent, Drawing, ProjectDetail, ProjectSummary, RuleLibraryItem, WiringRow } from "@/apis/types";
 import { AiPanel } from "@/components/AiPanel";
 import { AppHeader } from "@/components/AppHeader";
+import { ConnectionEditor } from "@/components/ConnectionEditor";
+import { ConnectionCreator } from "@/components/ConnectionCreator";
 import { DrawingPreview } from "@/components/DrawingPreview";
 import { DrawingLibraryPanel, RuleLibraryPanel } from "@/components/LibraryPanel";
 import { ProjectTree } from "@/components/ProjectTree";
 import { ResultTable } from "@/components/ResultTable";
-import { StageTimeline } from "@/components/StageTimeline";
-import { useProjectWorkbench } from "@/hooks/use-project-workbench";
 
-interface ViewData {
-  project: ProjectDetail;
-  projects: ProjectSummary[];
-  rows: WiringRow[];
-  drawingLibrary: DrawingLibraryItem[];
-  ruleLibrary: RuleLibraryItem[];
-}
-
-type MainSection = "results" | "drawings" | "rules";
+type Imported = { project_id: string; attachment_id: string; conversationId: string };
+const emptyPage: ResultPage = { items: [], offset: 0, limit: 100, has_more: false };
 
 export function ProjectView() {
-  const { projectId = "peru-tpp-1-sts" } = useParams();
-  const [data, setData] = useState<ViewData | null>(null);
-  const [error, setError] = useState("");
-  const [retryKey, setRetryKey] = useState(0);
-
-  useEffect(() => {
-    let active = true;
-    Promise.all([
-      projectApi.get(projectId), projectApi.list(), projectApi.listConnections(projectId),
-      projectApi.listDrawingLibrary(), projectApi.listRuleLibrary(),
-    ]).then(([project, projects, rows, drawingLibrary, ruleLibrary]) => {
-      if (active) setData({ project, projects, rows, drawingLibrary, ruleLibrary });
-    }).catch((reason: unknown) => {
-      if (active) setError(reason instanceof Error ? reason.message : "项目加载失败");
-    });
-    return () => { active = false; };
-  }, [projectId, retryKey]);
-
-  function retry() {
-    setError("");
-    setData(null);
-    setRetryKey((value) => value + 1);
+  const { projectId } = useParams(); const navigate = useNavigate();
+  const [projects, setProjects] = useState<ProjectSummary[]>([]); const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true); const [retry, setRetry] = useState(0);
+  useEffect(() => { let active = true; projectApi.list().then(list => { if (active) { setProjects(list); setLoading(false); } }).catch(e => { if (active) { setError(String(e)); setLoading(false); } }); return () => { active = false; }; }, [projectId, retry]);
+  async function upload(file: File) {
+    setLoading(true); setError("");
+    try { const conversationId = crypto.randomUUID(); const imported = await projectApi.upload(file, conversationId); navigate(`/projects/${imported.project_id}`, { state: { imported: { ...imported, conversationId } } }); }
+    catch (e) { setError(String(e)); }
+    finally { setLoading(false); }
   }
-
-  if (error) return <main className="state-page"><strong>项目加载失败</strong><p>{error}</p><button type="button" onClick={retry}>重新加载</button></main>;
-  if (!data || data.project.id !== projectId) return <main className="state-page"><Loader2 size={24} className="spin" /><strong>正在加载项目</strong></main>;
-  return <ProjectWorkspace key={data.project.id} data={data} />;
+  async function rename(p: ProjectSummary) {
+    const name = window.prompt("项目名称", p.name);
+    if (!name?.trim()) return;
+    try { await projectApi.rename(p.id, name.trim()); setRetry(n => n + 1); } catch (e) { setError(String(e)); }
+  }
+  async function remove(p: ProjectSummary) {
+    if (!window.confirm(`删除项目“${p.name}”？原始 PDF、页面图片、线表和任务记录都会删除，无法撤销。`)) return;
+    try { await projectApi.remove(p); setRetry(n => n + 1); } catch (e) { setError(String(e)); }
+  }
+  if (loading) return <main className="state-page"><Loader2 className="spin" /><p>正在加载真实项目…</p></main>;
+  if (error) return <main className="state-page"><p role="alert">{error}</p><button type="button" onClick={() => { setError(""); setRetry(x => x + 1); }}>重试</button></main>;
+  if (!projectId) return <main className="project-list-page"><h1>项目目录</h1><p>选择已有项目，或上传一份 PDF 开始新的 Agent 任务。</p><label className="primary-button"><Upload size={16} />上传 PDF<input type="file" accept="application/pdf" className="visually-hidden" onChange={e => { if (e.target.files?.[0]) void upload(e.target.files[0]); }} /></label>{projects.map(p => <div key={p.id} className="project-list-item"><Link to={`/projects/${p.id}`}>{p.name}</Link><span>{p.updatedAt}</span><div><button type="button" onClick={() => void rename(p)}>重命名</button><button type="button" onClick={() => void remove(p)}>删除</button></div></div>)}{!projects.length ? <p>暂无项目，上传后自动创建项目。</p> : null}</main>;
+  return <ProjectWorkspace key={projectId} id={projectId} projects={projects} onUpload={upload} />;
 }
 
-function ProjectWorkspace({ data }: { data: ViewData }) {
-  const { project, projects } = data;
-  const [rows, setRows] = useState(data.rows);
-  const [agentEvents, setAgentEvents] = useState<AgentEvent[]>([]);
-  const [stageProgress, setStageProgress] = useState<AgentStageProgress[]>([]);
-  const drawingLibrary = data.drawingLibrary;
-  const [ruleLibrary, setRuleLibrary] = useState(data.ruleLibrary);
-  const [isRunning, setIsRunning] = useState(false);
-  const [simulationEnabled, setSimulationEnabled] = useState(false);
-  const [uploadedFilename, setUploadedFilename] = useState<string | null>(null);
-  const [pendingExtraction, setPendingExtraction] = useState(false);
-  const [activeSection, setActiveSection] = useState<MainSection>("results");
-  const [notice, setNotice] = useState<string | null>(null);
-  const pdfInputRef = useRef<HTMLInputElement>(null);
-  const workbench = useProjectWorkbench(project, rows);
-  const projectRows = rows.filter((row) => project.workspaces.some((workspace) => workspace.id === row.workspaceId));
-  const targetRow = rows.find((row) => row.id === workbench.highlightedRowId && row.endReference?.kind === "cross-page");
-  const processEvents: StageEvent[] = stageProgress.map((stage, index) => ({
-    id: `process-${stage.stage}`,
-    stage: `Agent ${index + 1}`,
-    title: stage.agentName ?? stage.stage,
-    detail: stage.status === "processing" ? "主 Agent 已调度该 Agent，正在处理。" : stage.status === "done" ? "处理完成，主 Agent 正在决定下一步。" : "处理失败。",
-    status: stage.status === "processing" ? "active" : stage.status === "done" ? "done" : stage.status === "failed" ? "failed" : "pending",
-    timestamp: "",
-  }));
+function ProjectWorkspace({ id, projects, onUpload }: { id: string; projects: ProjectSummary[]; onUpload: (file: File) => Promise<void> }) {
+  const location = useLocation();
+  const imported = (location.state as { imported?: Imported } | null)?.imported;
+  const [project, setProject] = useState<ProjectDetail | null>(null); const [rules, setRules] = useState<RuleLibraryItem[]>([]);
+  const [page, setPage] = useState<ResultPage>(emptyPage); const [error, setError] = useState(""); const [notice, setNotice] = useState("");
+  const [workspaceId, setWorkspace] = useState<string | null>(null); const [drawingId, setDrawing] = useState<string | null>(null);
+  const [offset, setOffset] = useState(0); const [query, setQuery] = useState(""); const [revision, setRevision] = useState(0); const [tableLoading, setTableLoading] = useState(false);
+  const [section, setSection] = useState<"results" | "drawings" | "rules">("results");
+  const [source, setSource] = useState<Drawing | null>(null); const [target, setTarget] = useState<Drawing | null>(null); const [targetTerminal, setTargetTerminal] = useState("");
+  const [highlight, setHighlight] = useState<string | null>(null); const [editing, setEditing] = useState<WiringRow | null>(null);
+  const [creating, setCreating] = useState(false); const [deleting, setDeleting] = useState(false);
+  const deletionKeys = useRef(new Map<string, string>());
+  const [events, setEvents] = useState<AgentEvent[]>([]); const [stages, setStages] = useState<AgentStageProgress[]>([]); const [running, setRunning] = useState(false);
+  const [hint, setHint] = useState<Record<string, string>>({});
+  const [left, setLeft] = useState(260); const [right, setRight] = useState(330);
+  const conversation = useRef(imported?.conversationId ?? sessionStorage.getItem(`conversation:${id}`) ?? crypto.randomUUID());
+  const currentRun = useRef<string | null>(null); const abort = useRef<AbortController | null>(null); const started = useRef(false);
+  const pdfInput = useRef<HTMLInputElement>(null);
+  const previewRequest = useRef(0);
 
-  async function runSupervisor(input: SupervisorCommand) {
-    if (isRunning) return;
-    const request: SupervisorRequest = { ...input, projectId: project.id };
-    const abortController = new AbortController();
-    setAgentEvents([]);
-    setStageProgress([]);
-    setIsRunning(true);
+  useEffect(() => { let active = true; Promise.all([projectApi.get(id), projectApi.listRuleLibrary()]).then(([p, r]) => { if (active) { setProject(p); setRules(r); setError(""); } }).catch(e => { if (active) setError(String(e)); }); return () => { active = false; }; }, [id, revision]);
+  useEffect(() => { let active = true; const timer = window.setTimeout(() => { setTableLoading(true); projectApi.connections(id, { workspaceId, drawingId, offset, search: query }).then(result => { if (active) { setPage(result); setError(""); } }).catch(e => { if (active) setError(String(e)); }).finally(() => { if (active) setTableLoading(false); }); }, 250); return () => { active = false; clearTimeout(timer); }; }, [id, workspaceId, drawingId, offset, query, revision]);
+  const defaultDrawing = drawingId ?? page.items[0]?.drawingId;
+  useEffect(() => { let active = true; const token = ++previewRequest.current; if (defaultDrawing) projectApi.drawing(defaultDrawing).then(d => { if (active && token === previewRequest.current) { setSource(d); setTarget(null); } }).catch(e => { if (active && token === previewRequest.current) setNotice(String(e)); }); return () => { active = false; }; }, [defaultDrawing]);
+
+  async function consume(stream: AsyncGenerator<AgentStreamUpdate>) {
+    setRunning(true); sessionStorage.setItem(`conversation:${id}`, conversation.current);
     try {
-      for await (const update of streamSupervisorRun(request, abortController.signal, projectRows)) {
-        if (update.stageUpdate) {
-          setStageProgress((current) => {
-            const index = current.findIndex((stage) => stage.stage === update.stageUpdate?.stage);
-            if (index < 0) return [...current, update.stageUpdate!];
-            const next = [...current];
-            next[index] = update.stageUpdate!;
-            return next;
-          });
-        }
-        if (update.event) setAgentEvents((current) => [
-          ...current.map((event) => event.status === "running" ? { ...event, status: "done" as const } : event),
-          update.event!,
-        ]);
-        if (update.rowPatch) setRows((current) => current.map((row) => row.id === update.rowPatch?.id ? update.rowPatch : row));
-        if (update.ruleCandidate) setRuleLibrary((current) => [update.ruleCandidate!, ...current.filter((rule) => rule.id !== update.ruleCandidate?.id)]);
+      for await (const update of stream) {
+        if (update.event) setEvents(e => e.some(x => x.id === update.event!.id) ? e.map(x => x.id === update.event!.id ? update.event! : x) : [...e, update.event!]);
+        if (update.event?.kind === "error") { setStages(s => s.map(stage => stage.status === "processing" ? { ...stage, status: "failed" } : stage)); setEvents(e => e.map(item => item.kind === "stage" && item.status === "running" ? { ...item, status: "failed" } : item)); }
+        if (update.stageUpdate) setStages(s => [...s.filter(x => x.stage !== update.stageUpdate!.stage), update.stageUpdate!]);
+        if (update.refresh) setRevision(n => n + 1);
+        if (update.runId) { currentRun.current = update.runId; sessionStorage.setItem(`run:${id}`, update.runId); }
       }
-    } catch (reason) {
-      const message = reason instanceof Error ? reason.message : "Agent 运行失败";
-      setStageProgress((current) => current.map((stage) => stage.status === "processing" ? { ...stage, status: "failed" } : stage));
-      setAgentEvents((current) => [
-        ...current.map((event) => event.status === "running" ? { ...event, status: "failed" as const } : event),
-        { id: `agent-error-${Date.now()}`, kind: "error", title: "主 Agent", detail: message, stage: "任务执行", status: "failed", timestamp: new Date().toLocaleTimeString("zh-CN", { hour12: false }) },
-      ]);
-    } finally {
-      setIsRunning(false);
+      if (currentRun.current) {
+        const artifacts = await runArtifacts(currentRun.current);
+        const proposal = artifacts.items.find(a => a.kind === "result_proposal");
+        const diagnosis = artifacts.items.find(a => a.kind === "improvement_diagnosis");
+        const candidate = artifacts.items.find(a => a.kind === "profile_candidate");
+        if (proposal?.proposal_id) {
+          const detail = await request<{ operations: unknown[]; feedback_id?: string; committed_result_version_id?: string | null }>(`/api/v1/proposals/${encodeURIComponent(proposal.proposal_id)}`);
+          const needsConfirmation = !!detail.feedback_id && !detail.committed_result_version_id;
+          setHint(needsConfirmation ? { proposal_id: proposal.proposal_id } : { agent_run_id: currentRun.current });
+          setEvents(e => [...e, { id: crypto.randomUUID(), kind: "result", title: needsConfirmation ? "待确认修订" : detail.feedback_id ? "修订已提交" : "提取结果", detail: JSON.stringify(detail.operations, null, 2), status: needsConfirmation ? "pending" : "done", timestamp: new Date().toISOString() }]);
+        } else if (candidate) {
+          setHint({ agent_run_id: currentRun.current });
+          setEvents(e => [...e, { id: crypto.randomUUID(), kind: "result", title: "规则候选已生成", detail: `候选尚未发布，需要离线评测和人工审核，不会自动修改生产规则。\n${JSON.stringify(candidate.candidate, null, 2)}`, status: "done", timestamp: new Date().toISOString() }]);
+        } else if (diagnosis) {
+          setHint({ agent_run_id: currentRun.current });
+          setEvents(e => [...e, { id: crypto.randomUUID(), kind: "result", title: diagnosis.candidate_recommended ? "待确认规则建议" : "纠错归因结果", detail: JSON.stringify(diagnosis.diagnoses, null, 2), status: diagnosis.candidate_recommended ? "pending" : "done", timestamp: new Date().toISOString() }]);
+        } else setHint({ agent_run_id: currentRun.current });
+      }
+    } catch (e) { if (!abort.current?.signal.aborted) setEvents(events => [...events, { id: crypto.randomUUID(), kind: "error", title: "连接/任务失败", detail: String(e), status: "failed", timestamp: new Date().toISOString() }]); }
+    finally { setRunning(false); setRevision(n => n + 1); }
+  }
+  async function send(message: string, attachmentIds: string[] = []) {
+    if (running) return;
+    abort.current = new AbortController();
+    setEvents(e => [...e, { id: crypto.randomUUID(), kind: "tool", title: "用户", detail: message, status: "done", timestamp: new Date().toISOString() }]);
+    currentRun.current = null;
+    sessionStorage.removeItem(`run:${id}`);
+    await consume(streamSupervisorRun({ projectId: id, conversationId: conversation.current, message, attachmentIds, targetHint: hint }, abort.current.signal));
+  }
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+    if (started.current) return;
+    started.current = true;
+    if (imported && !sessionStorage.getItem(`import-started:${id}`)) {
+      sessionStorage.setItem(`import-started:${id}`, "true");
+      void send("请识别这份 PDF 的图纸类型，确认后执行完整三阶段提取。", [imported.attachment_id]);
+    } else {
+      const run = sessionStorage.getItem(`run:${id}`);
+      if (run) { abort.current = new AbortController(); void consume(watchRun(run, abort.current.signal)); }
+      else if (sessionStorage.getItem(`conversation:${id}`)) {
+        void request<{ history?: Array<{ role: string; content: string }> }>(`/api/v1/supervisor/conversations/${conversation.current}`).then(memory => setEvents((memory.history ?? []).map(h => ({ id: crypto.randomUUID(), kind: "result", title: h.role === "user" ? "用户" : "Supervisor", detail: h.content, status: "done", timestamp: "" })))).catch(() => setNotice("Agent 短期会话不可恢复；结果仍保存在数据库，可开启新任务。"));
+      }
     }
-  }
+    }, 0);
+    return () => { window.clearTimeout(timer); abort.current?.abort(); };
+    // One run subscription per mounted project; mutations never run on refresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  function runRepair(message: string) {
-    void runSupervisor({ kind: "repair", message });
+  async function openSource(drawing: string) { const token = ++previewRequest.current; try { const image = await projectApi.drawing(drawing); if (token === previewRequest.current) { setSource(image); setTarget(null); } } catch (e) { if (token === previewRequest.current) setNotice(String(e)); } }
+  async function openTarget(row: WiringRow) { const token = ++previewRequest.current; setHighlight(row.id); try { const [s, t] = await Promise.all([projectApi.drawing(row.drawingId), projectApi.target(row)]); if (token === previewRequest.current) { setSource(s); setTarget(t); setTargetTerminal(row.endTerminal); setNotice(""); } } catch (e) { if (token === previewRequest.current) setNotice(String(e)); } }
+  function resize(e: PointerEvent<HTMLDivElement>, side: "left" | "right") {
+    e.currentTarget.setPointerCapture(e.pointerId); const start = e.clientX; const width = side === "left" ? left : right;
+    const node = e.currentTarget;
+    function move(event: globalThis.PointerEvent) { const value = Math.max(200, Math.min(600, width + (event.clientX - start) * (side === "left" ? 1 : -1))); if (side === "left") setLeft(value); else setRight(value); }
+    function stop() { node.removeEventListener("pointermove", move); node.removeEventListener("pointerup", stop); node.removeEventListener("pointercancel", stop); }
+    node.addEventListener("pointermove", move); node.addEventListener("pointerup", stop); node.addEventListener("pointercancel", stop);
   }
-
-  function handleSimulationToggle(enabled: boolean) {
-    setSimulationEnabled(enabled);
-    if (enabled && pendingExtraction && uploadedFilename && !isRunning) {
-      setPendingExtraction(false);
-      void runSupervisor({ kind: "extract", filename: uploadedFilename });
-    }
+  function selectWorkspace(ws: string) { setWorkspace(ws); setDrawing(null); setOffset(0); setSection("results"); }
+  async function deleteTerminal(row: WiringRow) {
+    if (deleting || !window.confirm(`删除线号 ${row.wireNumber} 下的端子 ${row.startTerminal}？仅删除该连接，保留修改前数据和证据审计。`)) return;
+    const fingerprint = `${row.id}:${page.result_revision}:${row.recordVersion}`;
+    if (!deletionKeys.current.has(fingerprint)) deletionKeys.current.set(fingerprint, crypto.randomUUID());
+    setDeleting(true);
+    try { await projectApi.deleteConnection(id, row, page, deletionKeys.current.get(fingerprint)!); setRevision(n => n + 1); setNotice(""); }
+    catch (reason) { setNotice(String(reason)); }
+    finally { setDeleting(false); }
   }
-
-  function handlePdfUpload(file?: File) {
-    if (!file) return;
-    setUploadedFilename(file.name);
-    setAgentEvents([]);
-    setStageProgress([]);
-    setPendingExtraction(!simulationEnabled);
-    if (simulationEnabled) {
-      setPendingExtraction(false);
-      void runSupervisor({ kind: "extract", filename: file.name });
-    }
-    if (pdfInputRef.current) pdfInputRef.current.value = "";
-  }
-
-  function showNotice(message: string) {
-    setNotice(message);
-    window.setTimeout(() => setNotice(null), 2400);
-  }
-
-  return (
-    <div className="workbench-app">
-      <AppHeader project={project} />
-      <main className="workbench-grid">
-        <ProjectTree project={project} projects={projects} selectedWorkspaceId={workbench.effectiveWorkspaceId} selectedDrawingId={workbench.selectedDrawingId} stageProgress={stageProgress} uploadedFilename={uploadedFilename} simulationEnabled={simulationEnabled} onSelectWorkspace={workbench.selectWorkspace} onSelectDrawing={workbench.selectDrawing} />
-        <section className="project-main">
-          <div className="project-context-bar">
-            <div className="breadcrumbs"><span>项目</span><ChevronRight size={14} /><span>{project.name}</span>{workbench.selectedWorkspace ? <><ChevronRight size={14} /><strong>{workbench.selectedWorkspace.code}</strong></> : null}</div>
-            <nav className="project-resource-nav" aria-label="项目资源导航">
-              <button type="button" className={activeSection === "results" ? "active" : ""} onClick={() => setActiveSection("results")}><FileSpreadsheet size={15} />线表工作区</button>
-              <button type="button" className={activeSection === "drawings" ? "active" : ""} onClick={() => setActiveSection("drawings")}><FileText size={15} />图纸库<span>{drawingLibrary.length}</span></button>
-              <button type="button" className={activeSection === "rules" ? "active" : ""} onClick={() => setActiveSection("rules")}><RefreshCw size={14} />规则库<span>{ruleLibrary.length}</span></button>
-            </nav>
-            <div className="context-actions"><input ref={pdfInputRef} className="visually-hidden" type="file" accept="application/pdf,.pdf" onChange={(event) => handlePdfUpload(event.target.files?.[0])} /><button type="button" className="secondary-button" disabled={isRunning} onClick={() => pdfInputRef.current?.click()}><Upload size={15} />{isRunning ? "Agent 处理中" : "上传 PDF"}</button><button type="button" className="primary-button" onClick={() => showNotice("结果快照 XLSX 将由导出 API 生成")}><Download size={16} />导出 XLSX</button></div>
-          </div>
-          <header className="project-overview">
-            <div className="overview-copy"><div className="overview-title"><h1>{project.name}</h1><span className={`project-status project-status-${project.status}`}><CheckCircle2 size={14} />{project.status === "completed" ? "已完成" : project.status === "review" ? "待复核" : "等待处理"}</span></div><p>{project.sourceFilename}</p><div className="project-meta"><span>项目号 <strong>{project.projectNo}</strong></span><span>图纸标准 <strong>{project.profile}</strong></span><span>当前版本 <strong>{project.resultVersion}</strong></span></div></div>
-            <div className="overview-stats"><div><strong>{project.workspaceCount}</strong><span>工作区</span></div><div><strong>{project.drawingCount}</strong><span>图纸</span></div><div><strong>{projectRows.length}</strong><span>示例记录</span></div><div className="progress-stat"><strong>{project.progress}%</strong><span>处理进度</span><i><b style={{ width: `${project.progress}%` }} /></i></div></div>
-          </header>
-          {activeSection === "drawings" ? <DrawingLibraryPanel items={drawingLibrary} activeProjectId={project.id} /> : null}
-          {activeSection === "rules" ? <RuleLibraryPanel items={ruleLibrary} /> : null}
-          {activeSection === "results" ? <>
-            <div className="content-tabs" role="tablist" aria-label="线表工作区视图"><button type="button" role="tab" aria-selected={workbench.activeTab === "results"} className={workbench.activeTab === "results" ? "active" : ""} onClick={() => workbench.setActiveTab("results")}><FileSpreadsheet size={16} />线表结果<span>{workbench.visibleRows.length}</span></button><button type="button" role="tab" aria-selected={workbench.activeTab === "drawing"} className={workbench.activeTab === "drawing" ? "active" : ""} onClick={() => workbench.setActiveTab("drawing")}><FileText size={16} />图纸与证据</button><button type="button" role="tab" aria-selected={workbench.activeTab === "events"} className={workbench.activeTab === "events" ? "active" : ""} onClick={() => workbench.setActiveTab("events")}><RefreshCw size={15} />处理过程</button></div>
-            {workbench.activeTab === "results" ? <section className="results-section"><div className="table-toolbar"><div><h2>{workbench.selectedDrawing ? `图纸 ${workbench.selectedDrawing.drawingPage} · ${workbench.selectedDrawing.name}` : workbench.selectedWorkspace ? `${workbench.selectedWorkspace.code} · ${workbench.selectedWorkspace.name}` : "线表结果"}</h2><span>{workbench.visibleRows.length} 条记录 · 按图纸页序排列</span></div><div className="table-tools"><label><Search size={16} /><input value={workbench.query} onChange={(event) => workbench.setQuery(event.target.value)} placeholder="搜索端子、原理号或描述" /></label></div></div><ResultTable rows={workbench.visibleRows} onOpenDrawing={workbench.openDrawing} onOpenTarget={workbench.openRowTarget} onHoverTarget={workbench.hoverRowTarget} highlightedRowId={workbench.highlightedRowId} /><footer className="table-footer"><span>第 1 页，共 1 页</span><div><button type="button" disabled>上一页</button><button type="button" className="active">1</button><button type="button" disabled>下一页</button></div></footer></section> : null}
-            {workbench.activeTab === "drawing" ? <DrawingPreview project={project} drawing={workbench.selectedDrawing} targetTerminal={targetRow?.endReference?.targetTerminal} /> : null}
-            {workbench.activeTab === "events" ? <StageTimeline events={processEvents} /> : null}
-          </> : null}
-        </section>
-        <AiPanel events={agentEvents} stageProgress={stageProgress} isRunning={isRunning} hasPendingUpload={pendingExtraction} simulationEnabled={simulationEnabled} onSimulationToggle={handleSimulationToggle} onRunRepair={runRepair} />
-      </main>
-      {notice ? <div className="prototype-toast" role="status">{notice}</div> : null}
-    </div>
-  );
+  function selectDrawing(ws: string, drawing: string) { setWorkspace(ws); setDrawing(drawing); setOffset(0); setSection("results"); }
+  if (!project) return <main className="state-page">{error ? <><p role="alert">{error}</p><button onClick={() => setRevision(n => n + 1)}>重试</button></> : "正在读取项目索引…"}</main>;
+  return <div className="workbench-app"><AppHeader project={project} /><main className="workbench-grid real-workbench" style={{ "--left-width": `${left}px`, "--right-width": `${right}px` } as CSSProperties}>
+    <ProjectTree project={project} projects={projects} selectedWorkspaceId={workspaceId} selectedDrawingId={drawingId} stageProgress={stages} uploadedFilename={project.sourceFilename || null} simulationEnabled onSelectWorkspace={selectWorkspace} onSelectDrawing={selectDrawing} />
+    <div className="panel-resizer" role="separator" aria-label="调整项目树宽度" aria-orientation="vertical" tabIndex={0} onPointerDown={e => resize(e, "left")} onKeyDown={e => { if (e.key === "ArrowRight") setLeft(w => Math.min(600, w + 20)); if (e.key === "ArrowLeft") setLeft(w => Math.max(200, w - 20)); }} />
+    <section className="project-main"><div className="project-context-bar"><Link to="/projects">项目目录</Link><nav className="project-resource-nav"><button type="button" className={section === "results" ? "active" : ""} onClick={() => setSection("results")}><FileSpreadsheet size={15} />线表工作区</button><button type="button" className={section === "drawings" ? "active" : ""} onClick={() => setSection("drawings")}><FileText size={15} />图纸库</button><button type="button" className={section === "rules" ? "active" : ""} onClick={() => setSection("rules")}><RefreshCw size={15} />规则库</button></nav><input ref={pdfInput} className="visually-hidden" type="file" accept="application/pdf" onChange={e => { if (e.target.files?.[0]) void onUpload(e.target.files[0]); }} /><button type="button" className="secondary-button" disabled={running} onClick={() => pdfInput.current?.click()}><Upload size={15} />上传 PDF</button></div>
+    <header className="project-overview"><div><h1>{project.name}</h1><p>{project.sourceFilename}</p><div className="project-meta"><span>Profile <strong>{project.profile}</strong></span><span>结果 <strong>{project.resultVersion}</strong></span><span>{project.workspaceCount} 工作区 · {project.drawingCount} 图纸</span></div></div></header>
+    {error || notice ? <div className="inline-error" role="alert">{error || notice}<button type="button" onClick={() => { setRevision(n => n + 1); setNotice(""); }}>刷新</button></div> : null}
+    {section === "rules" ? <RuleLibraryPanel items={rules} onChanged={async () => { setRules(await projectApi.listRuleLibrary()); }} /> : section === "drawings" ? <><DrawingLibraryPanel items={projects.map(p => ({ id: p.id, projectId: p.id, name: p.name, folder: p.name, drawingCount: p.id === id ? project.drawingCount : p.drawingCount, updatedAt: p.updatedAt, status: p.status }))} activeProjectId={id} /><section className="drawing-index">{project.workspaces.map(w => <div key={w.id}><h3>{w.code}</h3>{w.drawings.map(d => <button type="button" key={d.id} onClick={() => { setSection("results"); selectDrawing(w.id, d.id); }}>业务页 {d.drawingPage} · PDF {d.pdfPage}</button>)}</div>)}</section></> : <>
+    <section className="results-section"><div className="table-toolbar"><div><h2>线表结果</h2><span>页码 / 线号按组首显示 · 当前页 {page.items.length} 条</span></div><label className="library-search"><Search size={16} /><input aria-label="搜索线表" value={query} onChange={e => { setQuery(e.target.value); setOffset(0); }} placeholder="搜索端子、原理号或描述" /></label><button type="button" disabled={!page.result_version_id || tableLoading || deleting} onClick={() => setCreating(true)}>新增端子</button><button type="button" onClick={() => { setWorkspace(null); setDrawing(null); setOffset(0); }}>全部工作区</button></div>{tableLoading ? <p role="status">正在读取线表…</p> : <ResultTable rows={page.items} onOpenDrawing={d => void openSource(d)} onOpenTarget={row => void openTarget(row)} onHoverTarget={setHighlight} highlightedRowId={highlight} onEdit={setEditing} onDelete={deleting ? undefined : row => void deleteTerminal(row)} />}<footer className="table-footer"><span>第 {offset / 100 + 1} 页 · r{page.result_revision ?? "-"}</span><div><button type="button" disabled={offset === 0 || tableLoading} onClick={() => setOffset(o => o - 100)}>上一页</button><button type="button" disabled={!page.has_more || tableLoading} onClick={() => setOffset(o => o + 100)}>下一页</button></div></footer></section>
+    <section className={`below-previews ${target ? "with-target" : ""}`}><DrawingPreview key={source?.id ?? "source"} project={project} drawing={source} />{target ? <DrawingPreview key={target.id} project={project} drawing={target} targetTerminal={targetTerminal} /> : null}</section></>}
+    </section><div className="panel-resizer" role="separator" aria-label="调整 Agent 面板宽度" aria-orientation="vertical" tabIndex={0} onPointerDown={e => resize(e, "right")} onKeyDown={e => { if (e.key === "ArrowLeft") setRight(w => Math.min(600, w + 20)); if (e.key === "ArrowRight") setRight(w => Math.max(200, w - 20)); }} />
+    <AiPanel events={events} stageProgress={stages} isRunning={running} hasPendingUpload={false} simulationEnabled onReconnect={currentRun.current ? () => { abort.current = new AbortController(); void consume(watchRun(currentRun.current!, abort.current.signal)); } : undefined} onSimulationToggle={() => { conversation.current = crypto.randomUUID(); currentRun.current = null; sessionStorage.removeItem(`run:${id}`); sessionStorage.setItem(`conversation:${id}`, conversation.current); setEvents([]); setStages([]); setHint({}); }} onRunRepair={m => void send(m)} />
+    </main>{editing ? <ConnectionEditor key={editing.id} row={editing} page={page} onClose={() => setEditing(null)} onSaved={() => setRevision(n => n + 1)} /> : null}{creating ? <ConnectionCreator project={project} page={page} onClose={() => setCreating(false)} onSaved={() => setRevision(n => n + 1)} /> : null}</div>;
 }

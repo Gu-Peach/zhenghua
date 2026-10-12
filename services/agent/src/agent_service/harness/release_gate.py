@@ -23,6 +23,46 @@ class ReleaseGate:
         metrics = report.candidate
         baseline = report.baseline
         reasons: list[str] = []
+        if not report.baseline_results or not report.candidate_results or metrics.total_cases == 0:
+            reasons.append("evaluation report is empty")
+        if report.candidate_checksum:
+            from ..domain.enums import AgentStage, EvalCaseKind
+            from .eval_runner import EvalRunner
+
+            if report.baseline != EvalRunner.metrics(
+                report.baseline_results
+            ) or metrics != EvalRunner.metrics(report.candidate_results):
+                reasons.append("reported metrics do not match actual case results")
+            if [item.case_id for item in report.baseline_results] != [
+                item.case_id for item in report.candidate_results
+            ]:
+                reasons.append("baseline and candidate case inventories differ")
+            if len({item.case_id for item in report.candidate_results}) != len(report.candidate_results):
+                reasons.append("evaluation case IDs are duplicated")
+            if any(
+                base.kind != proposed.kind or base.expected != proposed.expected
+                for base, proposed in zip(report.baseline_results, report.candidate_results, strict=False)
+            ):
+                reasons.append("baseline and candidate expected fields differ")
+            if {item.kind for item in report.candidate_results} != {
+                EvalCaseKind.TARGET,
+                EvalCaseKind.PROTECTED,
+                EvalCaseKind.NEGATIVE,
+            }:
+                reasons.append("target/protected/negative coverage is incomplete")
+            if set(report.evaluated_stages) != {
+                AgentStage.PAGE_CLASSIFICATION,
+                AgentStage.PAGE_SCAN,
+                AgentStage.CROSS_PAGE_COMPLETION,
+            }:
+                reasons.append("three-stage regression coverage is incomplete")
+            if not report.dataset_checksum or not report.baseline_profile:
+                reasons.append("frozen dataset/Profile identity is missing")
+            if any(
+                item.kind == EvalCaseKind.NEGATIVE and not EvalRunner._passes(item)
+                for item in report.candidate_results
+            ):
+                reasons.append("negative regression cases failed")
         if metrics.target_pass_rate < 1.0:
             reasons.append("target cases did not all pass")
         if metrics.protected_regressions:
@@ -35,7 +75,9 @@ class ReleaseGate:
             reasons.append("field precision decreased")
         if metrics.field_recall < baseline.field_recall:
             reasons.append("field recall decreased")
-        if _exceeds_ratio(metrics.total_cost, baseline.total_cost, self.thresholds.max_cost_ratio):
+        if (not report.candidate_checksum or report.cost_reported) and _exceeds_ratio(
+            metrics.total_cost, baseline.total_cost, self.thresholds.max_cost_ratio
+        ):
             reasons.append("cost exceeds configured threshold")
         if _exceeds_ratio(
             metrics.p95_duration_seconds,

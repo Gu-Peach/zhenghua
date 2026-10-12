@@ -161,6 +161,11 @@ class EvalReport(StrictModel):
     candidate: EvalMetrics
     baseline_results: list[EvalCaseResult]
     candidate_results: list[EvalCaseResult]
+    candidate_checksum: str | None = None
+    baseline_profile: ProfileRef | None = None
+    dataset_checksum: str | None = None
+    cost_reported: bool = False
+    evaluated_stages: list[AgentStage] = Field(default_factory=list)
     generated_at: datetime = Field(default_factory=utc_now)
 
 

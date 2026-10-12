@@ -10,8 +10,8 @@ export const router = createBrowserRouter([
     path: "/",
     element: <AppLayout />,
     children: [
-      { index: true, element: <Navigate to="/projects/peru-tpp-1-sts" replace /> },
-      { path: "projects", element: <Navigate to="/projects/peru-tpp-1-sts" replace /> },
+      { index: true, element: <Navigate to="/projects" replace /> },
+      { path: "projects", element: <ProjectView /> },
       { path: "projects/:projectId", element: <ProjectView /> },
     ],
   },

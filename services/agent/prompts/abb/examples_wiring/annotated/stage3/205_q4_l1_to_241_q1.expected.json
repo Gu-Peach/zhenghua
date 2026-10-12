@@ -1,0 +1,22 @@
+{
+  "task_id": "205_q4_l1_to_241_q1",
+  "end": {
+    "part": null,
+    "location": "+EH.Q21",
+    "device": "-Q1",
+    "name": "Main power Lighting/heating",
+    "terminal_board": "Q1",
+    "terminal_code": null,
+    "terminal_strip": null,
+    "terminal": "2"
+  },
+  "intermediate_points": [],
+  "current": null,
+  "current_basis": null,
+  "current_source_text": null,
+  "status": "resolved",
+  "needs_review": false,
+  "confidence": 0.98,
+  "source_note": "目标 LV12/241 的 =LV11-Q4 L1 与回指 /205.3D 直接追至 Q1:2；不把地址列号当端子，不修改源起点",
+  "warnings": []
+}

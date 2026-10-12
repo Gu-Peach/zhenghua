@@ -6,7 +6,7 @@ from pathlib import Path
 
 from agent_service.agents.profile_router import ProfileRouterAgent
 from agent_service.application.profile_assignment import ProfileAssignmentService
-from agent_service.domain.enums import ProfileDetectionStatus
+from agent_service.domain.enums import ProfileDetectionStatus, ProfileStatus
 from agent_service.harness import FakeModelGateway
 from agent_service.profiles import ProfileRegistry
 from agent_service.tools.pdf_first_page import FirstPageImage
@@ -83,7 +83,11 @@ def test_active_zh_is_selected_and_bound_automatically() -> None:
         assert assignment.binding.rules.extraction.output_contract == "wiring_connection_v1"
         assert "page_scan_prompt" in assignment.binding.resolved_resources
         assert gateway.calls[0].metadata["pdf_page_number"] == 1
-        assert gateway.calls[0].metadata["candidate_profiles"] == ["abb", "zh"]
+        assert gateway.calls[0].metadata["candidate_profiles"] == [
+            snapshot.manifest.key
+            for snapshot in profile_registry.list_profiles()
+            if snapshot.manifest.status in {ProfileStatus.ACTIVE, ProfileStatus.EXPERIMENTAL}
+        ]
 
     asyncio.run(run())
 
@@ -91,6 +95,12 @@ def test_active_zh_is_selected_and_bound_automatically() -> None:
 def test_experimental_abb_waits_for_user_then_binds_confirmed_profile() -> None:
     async def run() -> None:
         profile_registry = registry()
+        abb = profile_registry.resolve("abb", allow_experimental=True)
+        profile_registry.register_snapshot(
+            abb.model_copy(
+                update={"manifest": abb.manifest.model_copy(update={"status": ProfileStatus.EXPERIMENTAL})}
+            )
+        )
         router = ProfileRouterAgent(
             gateway=FakeModelGateway([model_output(recognized=True, selected="abb", confidence=0.99)]),
             registry=profile_registry,

@@ -122,6 +122,7 @@ class AgentSettings:
     profile_auto_select_threshold: float = 0.85
     profile_max_pdf_bytes: int = 200 * 1024 * 1024
     enable_improvement: bool = False
+    allow_real_evaluation: bool = False
     inline_worker: bool = False
     workspace_root: Path = repository_root()
 
@@ -284,6 +285,7 @@ class AgentSettings:
                 ),
             ),
             enable_improvement=_as_bool(os.getenv("AGENT_ENABLE_IMPROVEMENT"), False),
+            allow_real_evaluation=_as_bool(os.getenv("AGENT_ALLOW_REAL_EVALUATION"), False),
             inline_worker=_as_bool(os.getenv("AGENT_INLINE_WORKER"), False),
             workspace_root=root,
         )

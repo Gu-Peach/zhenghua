@@ -40,6 +40,8 @@ class RunOptions(StrictModel):
     model_override: str | None = None
     profile_confirmation: ProfileConfirmation | None = None
     correction_feedback_ids: list[str] = Field(default_factory=list, max_length=100)
+    profile_candidate_id: str | None = None
+    real_evaluation_authorized: bool = False
 
 
 class ProfileConfirmation(StrictModel):

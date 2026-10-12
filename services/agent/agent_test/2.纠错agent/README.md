@@ -1,6 +1,50 @@
 # 混合纠错终端验收：第一个脚本
 
-`run_acceptance.py` 验收直接答案＋同页重识别＋跨页重识别的混合输入，预期归因后规则无问题。不创建第二个规则问题脚本，本轮也不替用户构造规则缺陷。
+已有候选无需再注错或重新执行纠错；接续评测/审核/发布使用下方 `run_rule_release.py`。
+
+`run_acceptance.py` 验收直接答案＋同页重识别＋跨页重识别的混合输入；默认预期归因后规则无问题。规则问题可用既有 `--expect-rule-issue`，候选生成后再进入下方发布验收，不重复提交已经修正的数据。
+
+## 从已有规则候选接续评测、审核和发布
+
+服务需加载新代码。在启动服务/Worker 的终端设置（独立 Worker 时两个进程均设置）：
+
+```powershell
+$env:AGENT_PERSISTENCE_BACKEND="supabase"
+$env:AGENT_PROFILE_PACKAGES_ENABLED="true"
+$env:AGENT_ALLOW_REAL_EVALUATION="true"
+$env:AGENT_INLINE_WORKER="true"
+.\.venv\Scripts\python.exe -m uvicorn agent_service.main:app `
+  --app-dir services/agent/src --host 127.0.0.1 --port 8100
+```
+
+另开终端，运行纯 HTTP 脚本。候选及用户 UUID 取现有任务值：
+
+```powershell
+$env:AGENT_ACCEPTANCE_ALLOW_REAL_MODEL="true"
+$env:AGENT_ACCEPTANCE_USER_ID="<候选来源用户 UUID>"
+# 如服务配置内部 token，此终端设置相同 AGENT_INTERNAL_TOKEN。
+.\.venv\Scripts\python.exe "services/agent/agent_test/2.纠错agent/run_rule_release.py" `
+  --candidate-id "<已有 candidate_id>" `
+  --base-url "http://127.0.0.1:8100"
+```
+
+1. 输入“开始评测”：冻结基线/候选包以及同一套图片、人工 expected，分别实际运行三个阶段。当前 ZH 固定集 7 案例，另加 candidate 的已接受纠错目标；同页目标 Stage 2，跨页目标 Stage 2→3。不修改线表。
+2. 终端持续显示模型公开结构化输出、逐案例 expected/actual、耗时和最终 gate/EvaluationJudge 报告，保存到忽略提交的 `runs/`。不展示模型私有推理链；费用未上报明确标记未知。
+3. gate 未通过则停止发布。通过后阅读报告和候选 operations，输入“确认审核”进入 CANARY（已审核待发布）。其他输入/退出均不审核。
+4. 单独输入“确认发布”：将这份候选不可变包设置 active 并刷新 registry；新任务使用新版本，旧项目继续冻结旧版本。不重绑 test0、不改本地生产 ZH。
+
+中断后用同一命令追加 `--evaluation-run-id "<终端打印的评测 run UUID>"`，监看既有报告后继续人工步骤，不重新纠错。若评测 run FAILED 且错误可重试，先由用户显式恢复，再使用该参数：
+
+```powershell
+$headers = @{}
+if ($env:AGENT_INTERNAL_TOKEN) { $headers.Authorization = "Bearer $env:AGENT_INTERNAL_TOKEN" }
+Invoke-RestMethod -Method Post -Headers $headers `
+  -Uri "http://127.0.0.1:8100/v1/runs/<评测 run UUID>/resume"
+```
+
+如果 `/publish` 网络失败，先查 candidate audit 和资源包 active；候选可能已 ACTIVE 而包发布尚未成功。可引用同一 evaluation_run_id 再确认发布来补齐，不重新生成候选。旧 `/evaluate` 客户端提交报告及 `/canary-assessment` 计数接口现返回 409。
+
+完整接口/限制见 [候选发布契约](../../../../docs/service/agent/candidate-release-plan.md)。内部 HTTP 使用服务 token；`reviewer_id` 是已认证业务调用者传入的用户标识，不等同用户 JWT。发布前真实评测仍需人工验收。
 
 脚本仅调用 Agent HTTP 接口和读取输入文件，不导入 Agent/Graph/tool，不访问 Supabase、不读取服务端 `.env`、不注入错误、不选择 Stage 执行路径、不伪造记忆或判断结果。目标定位、批次拆分、识别、落库和归因均由服务执行。
 

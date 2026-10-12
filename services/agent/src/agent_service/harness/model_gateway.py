@@ -256,9 +256,16 @@ class OpenAICompatibleModelGateway:
 
     @staticmethod
     def _load_json(content: str) -> Any:
-        fenced = re.search(r"```(?:json)?\s*(.*?)\s*```", content, re.IGNORECASE | re.DOTALL)
-        raw = fenced.group(1) if fenced else content
-        raw = raw.strip()
+        # A complete JSON response may contain Markdown fences inside a file string.
+        # Never treat those embedded prompt examples as the provider response wrapper.
+        raw = content.strip()
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            pass
+        fenced = re.fullmatch(r"```(?:json)?\s*(.*?)\s*```", raw, re.IGNORECASE | re.DOTALL)
+        if fenced:
+            raw = fenced.group(1).strip()
         try:
             return json.loads(raw)
         except json.JSONDecodeError:

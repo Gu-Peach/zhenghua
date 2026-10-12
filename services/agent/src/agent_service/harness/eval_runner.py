@@ -68,7 +68,9 @@ class EvalRunner:
             expected += len(expected_fields)
             predicted += len(actual_fields)
             true_positive += sum(
-                1 for key, value in actual_fields.items() if expected_fields.get(key) == value
+                1
+                for key, value in actual_fields.items()
+                if key in expected_fields and expected_fields[key] == value
             )
         durations = sorted(item.duration_seconds for item in results)
         p95_index = max(0, math.ceil(len(durations) * 0.95) - 1)
