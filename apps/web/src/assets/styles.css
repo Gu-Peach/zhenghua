@@ -123,9 +123,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .tree-search input { min-width: 0; flex: 1; border: 0; outline: 0; background: transparent; font-size: 11px; }
 .project-tree { min-height: 0; overflow: auto; padding: 0 8px 12px; }
 .project-node + .project-node { margin-top: 4px; }
-.project-row { width: 100%; min-height: 45px; display: flex; align-items: center; gap: 7px; border: 1px solid transparent; border-radius: 6px; padding: 7px 8px; background: transparent; color: #526074; text-align: left; }
-.project-row > svg { flex: none; }
-.project-open-link { display: block; padding: 10px; color: var(--teal); font-size: 12px; }
+.project-row { width: 100%; min-height: 45px; display: flex; align-items: center; gap: 3px; border: 1px solid transparent; border-radius: 6px; padding: 0 4px; background: transparent; color: #526074; text-align: left; }
+.project-folder-toggle { width: 27px; height: 34px; flex: none; display: grid; place-items: center; padding: 0; border: 0; border-radius: 4px; background: transparent; color: var(--muted); }
+.project-folder-link { min-width: 0; flex: 1; min-height: 43px; display: flex; align-items: center; gap: 7px; padding: 7px 4px; border-radius: 4px; }
+.project-folder-link > svg { flex: none; }
 .project-row:hover { background: var(--surface-subtle); }
 .project-row.active { border-color: #a7d3d2; background: var(--teal-soft); color: var(--teal); }
 .tree-row-copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; color: var(--text); }
@@ -523,6 +524,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .state-page strong, .not-found h1 { margin: 0; color: var(--text); }
 .state-page p, .not-found p { margin: 0; }
 .state-page button, .not-found a { border: 1px solid var(--teal); border-radius: 5px; padding: 8px 12px; background: var(--teal); color: white; }
+.project-data-loading { min-height: 220px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 24px; color: var(--muted); font-size: 13px; }
 
 /* Floating assistant stays mounted when hidden so the draft and progress survive. */
 .floating-agent-panel { position: fixed; z-index: 50; right: 24px; bottom: 92px; width: min(420px, calc(100vw - 32px)); height: min(640px, calc(100vh - 112px)); height: min(640px, calc(100dvh - 112px)); display: flex; border: 1px solid var(--border); border-radius: 14px; background: white; box-shadow: 0 16px 48px #15253a30; overflow: hidden; }
@@ -581,7 +583,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .drawing-folder > summary strong, .drawing-file > summary strong { flex: 1; }
   .drawing-folder > summary span, .drawing-file > summary span { width: 100%; padding-left: 42px; }
   .directory-preview { margin: 0 5px 12px; }
-  .workbench-grid.real-workbench { grid-template-columns: 1fr; }
+  .workbench-grid.real-workbench { grid-template-columns: 1fr; align-content: start; background: var(--surface); }
   .real-workbench .panel-resizer { display: none; }
   .below-previews.with-target, .edit-grid, .sample-grid { grid-template-columns: 1fr; }
   .login-page { grid-template-columns: 1fr; }

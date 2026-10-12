@@ -17,6 +17,7 @@
 - 规则库新建/删除：`GET /api/v1/rule-library` 向所有已登录用户返回每个 key 的最新可用手工规则包；`POST` 基于任一未停用模板克隆新 key，确认后立即注册；`DELETE /{id}?confirmed=true` 仅创建者可执行。删除为停用，历史 checksum 保留；Improvement 隔离候选不进入规则库。共享契约见 [ADR-0012](../../docs/adr/0012-shared-ready-rule-library.md)。
 - Supabase Auth 登录、JWT 在线校验、HttpOnly refresh cookie、续期与退出。
 - 项目列表/创建/重命名/删除，发布后项目树，业务页/PDF 页独立。
+- 项目目录按 `created_at.asc,id.asc` 固定顺序展示，选择或更新时间变化不置顶；切换时 Web 原位更新摘要，不重复拉取整个目录。
 - 线表服务端分页、工作区/图纸/文字过滤、线号与原理号独立返回。
 - 手工表格修改调用既有原位 RPC；before/after、record_version/revision 和幂等 receipt 保留。电压等级/端子排是同线号共享字段；页码/线号是只读索引。
 - 单条端子新增/删除已接入既有表的 Server PostgreSQL 原子事务（ADR-0011）。新增归入现有线号并指定来源/跨页目标；删除归档完整记录及证据。保留空单元、其他 ID/线号/排序及结果代次，revision 递增；权限/过期拒绝/重放审计不绕过。

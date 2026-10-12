@@ -81,6 +81,52 @@ test("规则包创建注册、冲突重试与删除确认", async ({ page }) => 
   expect(attempts).toBe(2); expect(deletes).toBe(1);
 });
 
+test("切换项目保留框架和目录顺序，不重拉目录；箭头仅折叠当前数据", async ({ page }) => {
+  const other = "10000000-0000-4000-8000-000000000070";
+  const second = { ...detail, id: other, name: "第二项目", updated_at: "2030-01-01T00:00:00Z" };
+  let listReads = 0;
+  let releaseDetails: () => void = () => {};
+  const detailsReady = new Promise<void>(resolve => { releaseDetails = resolve; });
+  await page.route("**/api/v1/projects", route => { listReads++; return route.fulfill({ json: [detail, second] }); });
+  await page.route(`**/api/v1/projects/${other}`, async route => { await detailsReady; await route.fulfill({ json: second }); });
+  await page.route(`**/api/v1/projects/${other}/connections?**`, route => route.fulfill({ json: { items: rows.map(row => ({ ...row, project_id: other, start_terminal: "SECOND:1" })), offset: 0, limit: 100, has_more: false, result_version_id: result, result_revision: 1, result_version: 1 } }));
+  await page.goto(`/projects/${project}`);
+  const sidebar = page.locator(".project-sidebar");
+  await expect(sidebar.getByRole("link", { name: "第二项目", exact: true })).toBeVisible();
+  const originalReads = listReads;
+  const originalOrder = await sidebar.locator(".project-folder-link").allTextContents();
+  await sidebar.getByRole("link", { name: "第二项目", exact: true }).click();
+  await expect(page).toHaveURL(`/projects/${other}`);
+  await expect(page.locator(".project-context-bar")).toContainText("第二项目");
+  await expect(sidebar).toBeVisible();
+  await expect(page.locator(".state-page")).toHaveCount(0);
+  await expect(page.locator(".project-main").getByRole("status")).toContainText("正在读取项目数据");
+  await expect(page.locator(".result-table")).toHaveCount(0);
+  expect(await sidebar.locator(".project-folder-link").allTextContents()).toEqual(originalOrder);
+  await page.screenshot({ path: "../../.runtime/web-tests/project-switch-loading-desktop.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(sidebar).toBeVisible();
+  await page.screenshot({ path: "../../.runtime/web-tests/project-switch-loading-mobile.png", fullPage: true });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(392);
+  await page.setViewportSize({ width: 1280, height: 720 });
+  releaseDetails();
+  await expect(page.locator(".result-table tbody tr").first()).toContainText("SECOND:1");
+  expect(listReads).toBe(originalReads);
+  expect(await sidebar.locator(".project-folder-link").allTextContents()).toEqual(originalOrder);
+  await expect(sidebar.getByText("打开项目", { exact: true })).toHaveCount(0);
+  await sidebar.getByRole("button", { name: "收起项目 第二项目" }).click();
+  await expect(sidebar.locator(".workspace-row")).toHaveCount(0);
+  await expect(page).toHaveURL(`/projects/${other}`);
+  await expect(page.locator(".result-table tbody tr").first()).toContainText("SECOND:1");
+  await sidebar.getByRole("button", { name: "展开项目 第二项目" }).click();
+  await expect(sidebar.locator(".workspace-row")).toBeVisible();
+  await sidebar.getByRole("link", { name: "验收工程", exact: true }).click();
+  await expect(page).toHaveURL(`/projects/${project}`);
+  await expect(page.locator(".result-table tbody tr").first()).toContainText("XD3:1");
+  expect(listReads).toBe(originalReads);
+  expect(await sidebar.locator(".project-folder-link").allTextContents()).toEqual(originalOrder);
+});
+
 test("图纸库按项目和工作区展开图片，原地预览", async ({ page }) => {
   await page.goto(`/projects/${project}`);
   await page.getByRole("button", { name: "图纸库", exact: true }).click();

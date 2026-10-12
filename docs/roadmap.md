@@ -3,6 +3,10 @@
 > 最后更新：2026-10-12
 > 状态含义：`planned`、`in progress`、`blocked`、`done`
 
+2026-10-13 稳定项目切换完成：目录按创建时间固定排序，选择不置顶；保留框架并局部加载，不重复拉目录。17 项浏览器、29 项 Server 默认测试和 Web 检查通过，见 [记录](./apps/web/changelog/2026-10-13-stable-project-switch.md)。
+
+2026-10-13 项目目录单击导航已完成：名称/文件夹直接切换项目，当前项目箭头控制折叠，移除二次打开入口；17 项浏览器夹具及 Web typecheck/lint/build 通过。见 [记录](./apps/web/changelog/2026-10-13-project-folder-navigation.md)。
+
 2026-10-13 展示更新：图纸库改为项目→工作区→图片原地展开和预览；真实工作台采用左侧导航+中间内容，聊天为右下角按钮切换的悬浮窗口。13 项浏览器夹具及前端检查通过，见 [前端交付](./apps/web/changelog/2026-10-13-directory-floating-chat.md)。
 
 同日工作台精简已完成：导航显示项目名称、删除重复概览、端子新增为最右加号、移除全部工作区按钮、左侧项目可折叠且去掉 PDF 中间节点、聊天去掉当前阶段卡片。13 项浏览器回归和前端检查通过，见 [精简交付](./apps/web/changelog/2026-10-13-workbench-cleanup.md)。

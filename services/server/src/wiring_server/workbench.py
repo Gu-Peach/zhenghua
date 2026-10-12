@@ -15,7 +15,7 @@ class WorkbenchService:
 
     async def projects(self, token: str) -> list[dict[str, Any]]:
         projects = await self.db.all_rows(
-            "projects", {"order": "updated_at.desc,id.asc"}, token=token
+            "projects", {"order": "created_at.asc,id.asc"}, token=token
         )
         if not projects:
             return []

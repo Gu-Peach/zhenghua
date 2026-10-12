@@ -4,6 +4,10 @@
 
 ## 进行中
 
+- [x] 项目切换使用已知摘要保留 Header/目录/导航，仅中间加载数据；目录不随点击重拉，Server 按 created_at/id 固定顺序，详情更新只原位合并状态。17 项浏览器夹具、29 项 Server 默认测试、Web typecheck/lint/build 与加载中桌面/窄屏截图检查通过。Server 排序需用户重载服务，未停止现有服务。
+
+- [x] 左侧项目目录单击文件夹/名称直接切换项目数据，当前项目箭头独立折叠，非当前项目箭头直接进入该项目；移除二次“打开项目”入口。17 项浏览器夹具及 typecheck/lint/build 通过，桌面/窄屏截图检查完成。
+
 - [x] 2026-10-13 导航/搜索按容器水平居中；线表双击或行按钮原位编辑，Enter/行保存、Esc/行取消，冻结版本基线，失败保留草稿/幂等标识；原 PATCH/审计语义不变。16 项 HTTP fixture 浏览器回归、typecheck/lint/build 和桌面/窄屏截图检查通过。见 docs/apps/web/changelog/2026-10-13-centered-inline-edit.md。
 
 - [x] 2026-10-13 工作台精简：新增端子换为最右加号；移除全部工作区按钮、项目概览及结果统计副标题；导航显示当前项目名；左侧项目可折叠且移除 PDF 中间行/文件名副标题；聊天移除当前阶段卡片。13 项 HTTP fixture 浏览器回归、typecheck/lint/build 和桌面/窄屏截图检查通过。见 docs/apps/web/changelog/2026-10-13-workbench-cleanup.md。

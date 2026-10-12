@@ -8,6 +8,10 @@ archived under `docs/service/`.
 
 ## 2026-10-13
 
+- 项目切换改为保留框架、局部加载，目录不随选择重拉；Server 项目列表按创建时间/ID 固定排序，更新/选择不置顶。17 项浏览器回归、29 项 Server 默认测试及 Web 检查通过，见 [Web 记录](../apps/web/changelog/2026-10-13-stable-project-switch.md) 和 [Server 记录](../service/server/changelog/2026-10-13-stable-project-order.md)。
+
+- 左侧项目目录点击名称/文件夹直接切换项目，箭头控制当前项目折叠，移除二次“打开项目”入口。17 项浏览器夹具及 Web 检查通过，见 [记录](../apps/web/changelog/2026-10-13-project-folder-navigation.md)。
+
 - 导航和搜索按容器水平居中，线表记录改为原位编辑，复用既有 PATCH/版本锁/幂等和审计，取消编辑弹窗；16 项浏览器夹具、Web typecheck/lint/build 与桌面/窄屏截图检查通过。见 [Web 记录](../apps/web/changelog/2026-10-13-centered-inline-edit.md)。
 
 - 工作台精简：新增端子改为最右侧加号，移除全部工作区按钮和重复项目概览；导航显示当前项目名，左侧项目可折叠并移除 PDF 中间节点；聊天去掉独立当前阶段卡片。13 项浏览器回归、Web typecheck/lint/build 和截图检查通过，见 [Web 记录](../apps/web/changelog/2026-10-13-workbench-cleanup.md)。

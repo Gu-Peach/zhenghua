@@ -1,11 +1,12 @@
 import { ChevronDown, ChevronRight, FileImage, Folder, FolderOpen, Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import type { AgentStageProgress } from "@/apis/agent";
 import type { EntityStatus, ProjectDetail, ProjectSummary } from "@/apis/types";
 
 interface ProjectTreeProps {
   project: ProjectDetail;
+  loading?: boolean;
   projects: ProjectSummary[];
   selectedWorkspaceId: string | null;
   selectedDrawingId: string | null;
@@ -16,7 +17,8 @@ interface ProjectTreeProps {
   onSelectDrawing: (workspaceId: string, drawingId: string) => void;
 }
 
-export function ProjectTree({ project, projects, selectedWorkspaceId, selectedDrawingId, stageProgress, uploadedFilename, simulationEnabled, onSelectWorkspace, onSelectDrawing }: ProjectTreeProps) {
+export function ProjectTree({ project, projects, loading = false, selectedWorkspaceId, selectedDrawingId, stageProgress, uploadedFilename, simulationEnabled, onSelectWorkspace, onSelectDrawing }: ProjectTreeProps) {
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<string[]>([]);
   const [expandedProjects, setExpandedProjects] = useState<string[]>([project.id]);
@@ -30,6 +32,11 @@ export function ProjectTree({ project, projects, selectedWorkspaceId, selectedDr
     setCollapsed((current) => current.includes(workspaceId) ? current.filter((id) => id !== workspaceId) : [...current, workspaceId]);
   }
 
+  function toggleProject(projectId: string) {
+    if (projectId !== project.id) { navigate(`/projects/${projectId}`); return; }
+    setExpandedProjects(ids => ids.includes(projectId) ? ids.filter(id => id !== projectId) : [...ids, projectId]);
+  }
+
   return (
     <aside className="project-sidebar">
       <div className="sidebar-heading"><div><span className="section-kicker">PROJECT LIBRARY</span><h2>项目目录</h2></div><span className="count-badge">{projects.length}</span></div>
@@ -41,13 +48,16 @@ export function ProjectTree({ project, projects, selectedWorkspaceId, selectedDr
           const childrenId = `project-children-${item.id}`;
           return (
             <div className="project-node" key={item.id}>
-                  <button type="button" className={`project-row ${active ? "active" : ""}`} aria-expanded={expanded} aria-controls={childrenId} aria-label={`${expanded ? "收起" : "展开"}项目 ${item.name}`} onClick={() => setExpandedProjects(ids => ids.includes(item.id) ? ids.filter(id => id !== item.id) : [...ids, item.id])}>
-                    {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+                  <div className={`project-row ${active ? "active" : ""}`}>
+                    <button type="button" className="project-folder-toggle" aria-expanded={expanded} aria-controls={childrenId} aria-label={`${expanded ? "收起" : "展开"}项目 ${item.name}`} onClick={() => toggleProject(item.id)}>{expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}</button>
+                    <Link to={`/projects/${item.id}`} className="project-folder-link" aria-label={item.name} aria-current={active ? "page" : undefined} onClick={() => { if (active && !expanded) setExpandedProjects(ids => [...ids, item.id]); }}>
                     {expanded ? <FolderOpen size={18} /> : <Folder size={18} />}
                     <span className="tree-row-copy"><strong title={item.name}>{item.name}</strong></span>
                     <StatusDot status={item.status} />
-                  </button>
-                  {expanded ? <div id={childrenId} className="workspace-tree">{!active ? <Link to={`/projects/${item.id}`} className="project-open-link">打开项目</Link> : <>
+                    </Link>
+                  </div>
+                  {active && expanded ? <div id={childrenId} className="workspace-tree">
+                  {loading ? <p className="tree-empty">正在读取工作区…</p> : null}
                   {uploadedFilename && !hasWorkspaceIndex ? <p className="tree-empty">{simulationEnabled ? "等待 Agent 分类并发布图纸索引" : "等待处理"}</p> : null}
                   {hasWorkspaceIndex && project.workspaces.length === 0 ? <p className="tree-empty">Stage 1 正在识别工作区</p> : null}
                   {hasWorkspaceIndex ? project.workspaces.map((workspace) => {
@@ -72,7 +82,7 @@ export function ProjectTree({ project, projects, selectedWorkspaceId, selectedDr
                       </div>
                     );
                   }) : null}
-                </>}</div> : null}
+                </div> : null}
             </div>
           );
         })}

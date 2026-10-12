@@ -1,5 +1,5 @@
 import { FileSpreadsheet, FileText, Loader2, Plus, RefreshCw, Search, Upload } from "lucide-react";
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { runArtifacts, streamSupervisorRun, watchRun, type AgentStageProgress, type AgentStreamUpdate } from "@/apis/agent";
 import { projectApi, type ResultPage } from "@/apis/projects";
@@ -21,10 +21,13 @@ export function ProjectView() {
   const { projectId } = useParams(); const navigate = useNavigate();
   const [projects, setProjects] = useState<ProjectSummary[]>([]); const [error, setError] = useState("");
   const [loading, setLoading] = useState(true); const [retry, setRetry] = useState(0);
-  useEffect(() => { let active = true; projectApi.list().then(list => { if (active) { setProjects(list); setLoading(false); } }).catch(e => { if (active) { setError(String(e)); setLoading(false); } }); return () => { active = false; }; }, [projectId, retry]);
+  useEffect(() => { let active = true; projectApi.list().then(list => { if (active) { setProjects(list); setLoading(false); } }).catch(e => { if (active) { setError(String(e)); setLoading(false); } }); return () => { active = false; }; }, [retry]);
+  const projectLoaded = useCallback((loaded: ProjectDetail) => {
+    setProjects(previous => previous.some(item => item.id === loaded.id) ? previous.map(item => item.id === loaded.id ? loaded : item) : [...previous, loaded]);
+  }, []);
   async function upload(file: File) {
     setLoading(true); setError("");
-    try { const conversationId = crypto.randomUUID(); const imported = await projectApi.upload(file, conversationId); navigate(`/projects/${imported.project_id}`, { state: { imported: { ...imported, conversationId } } }); }
+    try { const conversationId = crypto.randomUUID(); const imported = await projectApi.upload(file, conversationId); setRetry(n => n + 1); navigate(`/projects/${imported.project_id}`, { state: { imported: { ...imported, conversationId } } }); }
     catch (e) { setError(String(e)); }
     finally { setLoading(false); }
   }
@@ -40,16 +43,22 @@ export function ProjectView() {
   if (loading) return <main className="state-page"><Loader2 className="spin" /><p>正在加载真实项目…</p></main>;
   if (error) return <main className="state-page"><p role="alert">{error}</p><button type="button" onClick={() => { setError(""); setRetry(x => x + 1); }}>重试</button></main>;
   if (!projectId) return <main className="project-list-page"><h1>项目目录</h1><p>选择已有项目，或上传一份 PDF 开始新的 Agent 任务。</p><label className="primary-button"><Upload size={16} />上传 PDF<input type="file" accept="application/pdf" className="visually-hidden" onChange={e => { if (e.target.files?.[0]) void upload(e.target.files[0]); }} /></label>{projects.map(p => <div key={p.id} className="project-list-item"><Link to={`/projects/${p.id}`}>{p.name}</Link><span>{p.updatedAt}</span><div><button type="button" onClick={() => void rename(p)}>重命名</button><button type="button" onClick={() => void remove(p)}>删除</button></div></div>)}{!projects.length ? <p>暂无项目，上传后自动创建项目。</p> : null}</main>;
-  return <ProjectWorkspace key={projectId} id={projectId} projects={projects} onUpload={upload} />;
+  return <ProjectWorkspace key={projectId} id={projectId} projects={projects} onUpload={upload} onProjectLoaded={projectLoaded} />;
 }
 
-function ProjectWorkspace({ id, projects, onUpload }: { id: string; projects: ProjectSummary[]; onUpload: (file: File) => Promise<void> }) {
+function ProjectWorkspace({ id, projects, onUpload, onProjectLoaded }: { id: string; projects: ProjectSummary[]; onUpload: (file: File) => Promise<void>; onProjectLoaded: (project: ProjectDetail) => void }) {
   const location = useLocation();
   const imported = (location.state as { imported?: Imported } | null)?.imported;
-  const [project, setProject] = useState<ProjectDetail | null>(null); const [rules, setRules] = useState<RuleLibraryItem[]>([]);
+  const [project, setProject] = useState<ProjectDetail | null>(() => {
+    const summary = projects.find(item => item.id === id);
+    return summary ? { ...summary, sourceFilename: "", projectNo: id, resultVersion: "", workspaces: [] } : null;
+  });
+  const [projectPending, setProjectPending] = useState(true);
+  const [rules, setRules] = useState<RuleLibraryItem[]>([]);
+  const [rulePending, setRulePending] = useState(true); const [ruleError, setRuleError] = useState("");
   const [page, setPage] = useState<ResultPage>(emptyPage); const [error, setError] = useState(""); const [notice, setNotice] = useState("");
   const [workspaceId, setWorkspace] = useState<string | null>(null); const [drawingId, setDrawing] = useState<string | null>(null);
-  const [offset, setOffset] = useState(0); const [query, setQuery] = useState(""); const [revision, setRevision] = useState(0); const [tableLoading, setTableLoading] = useState(false);
+  const [offset, setOffset] = useState(0); const [query, setQuery] = useState(""); const [revision, setRevision] = useState(0); const [tableLoading, setTableLoading] = useState(true);
   const [section, setSection] = useState<"results" | "drawings" | "rules">("results");
   const [source, setSource] = useState<Drawing | null>(null); const [target, setTarget] = useState<Drawing | null>(null); const [targetTerminal, setTargetTerminal] = useState("");
   const [highlight, setHighlight] = useState<string | null>(null);
@@ -63,7 +72,8 @@ function ProjectWorkspace({ id, projects, onUpload }: { id: string; projects: Pr
   const pdfInput = useRef<HTMLInputElement>(null);
   const previewRequest = useRef(0);
 
-  useEffect(() => { let active = true; Promise.all([projectApi.get(id), projectApi.listRuleLibrary()]).then(([p, r]) => { if (active) { setProject(p); setRules(r); setError(""); } }).catch(e => { if (active) setError(String(e)); }); return () => { active = false; }; }, [id, revision]);
+  useEffect(() => { let active = true; projectApi.get(id).then(p => { if (active) { setProject(p); onProjectLoaded(p); setError(""); } }).catch(e => { if (active) setError(String(e)); }).finally(() => { if (active) setProjectPending(false); }); return () => { active = false; }; }, [id, revision, onProjectLoaded]);
+  useEffect(() => { let active = true; projectApi.listRuleLibrary().then(r => { if (active) { setRules(r); setRuleError(""); } }).catch(e => { if (active) setRuleError(String(e)); }).finally(() => { if (active) setRulePending(false); }); return () => { active = false; }; }, [id, revision]);
   useEffect(() => { let active = true; const timer = window.setTimeout(() => { setTableLoading(true); projectApi.connections(id, { workspaceId, drawingId, offset, search: query }).then(result => { if (active) { setPage(result); setError(""); } }).catch(e => { if (active) setError(String(e)); }).finally(() => { if (active) setTableLoading(false); }); }, 250); return () => { active = false; clearTimeout(timer); }; }, [id, workspaceId, drawingId, offset, query, revision]);
   const defaultDrawing = drawingId ?? page.items[0]?.drawingId;
   useEffect(() => { let active = true; const token = ++previewRequest.current; if (defaultDrawing) projectApi.drawing(defaultDrawing).then(d => { if (active && token === previewRequest.current) { setSource(d); setTarget(null); } }).catch(e => { if (active && token === previewRequest.current) setNotice(String(e)); }); return () => { active = false; }; }, [defaultDrawing]);
@@ -149,11 +159,11 @@ function ProjectWorkspace({ id, projects, onUpload }: { id: string; projects: Pr
   function selectDrawing(ws: string, drawing: string) { setWorkspace(ws); setDrawing(drawing); setOffset(0); setSection("results"); }
   if (!project) return <main className="state-page">{error ? <><p role="alert">{error}</p><button onClick={() => setRevision(n => n + 1)}>重试</button></> : "正在读取项目索引…"}</main>;
   return <div className="workbench-app"><AppHeader project={project} /><main className="workbench-grid real-workbench" style={{ "--left-width": `${left}px` } as CSSProperties}>
-    <ProjectTree project={project} projects={projects} selectedWorkspaceId={workspaceId} selectedDrawingId={drawingId} stageProgress={stages} uploadedFilename={project.sourceFilename || null} simulationEnabled onSelectWorkspace={selectWorkspace} onSelectDrawing={selectDrawing} />
+    <ProjectTree project={project} projects={projects} loading={projectPending} selectedWorkspaceId={workspaceId} selectedDrawingId={drawingId} stageProgress={stages} uploadedFilename={project.sourceFilename || null} simulationEnabled onSelectWorkspace={selectWorkspace} onSelectDrawing={selectDrawing} />
     <div className="panel-resizer" role="separator" aria-label="调整项目树宽度" aria-orientation="vertical" tabIndex={0} onPointerDown={resize} onKeyDown={e => { if (e.key === "ArrowRight") setLeft(w => Math.min(600, w + 20)); if (e.key === "ArrowLeft") setLeft(w => Math.max(200, w - 20)); }} />
     <section className="project-main"><div className="project-context-bar"><h1 className="context-project-name" title={project.name}>{project.name}</h1><nav className="project-resource-nav"><button type="button" className={section === "results" ? "active" : ""} onClick={() => setSection("results")}><FileSpreadsheet size={15} />线表工作区</button><button type="button" className={section === "drawings" ? "active" : ""} onClick={() => setSection("drawings")}><FileText size={15} />图纸库</button><button type="button" className={section === "rules" ? "active" : ""} onClick={() => setSection("rules")}><RefreshCw size={15} />规则库</button></nav><input ref={pdfInput} className="visually-hidden" type="file" accept="application/pdf" onChange={e => { if (e.target.files?.[0]) void onUpload(e.target.files[0]); }} /><button type="button" className="secondary-button" disabled={running} onClick={() => pdfInput.current?.click()}><Upload size={15} />上传 PDF</button></div>
     {error || notice ? <div className="inline-error" role="alert">{error || notice}<button type="button" onClick={() => { setRevision(n => n + 1); setNotice(""); }}>刷新</button></div> : null}
-    {section === "rules" ? <RuleLibraryPanel items={rules} onChanged={async () => { setRules(await projectApi.listRuleLibrary()); }} /> : section === "drawings" ? <DrawingDirectory project={project} /> : <>
+    {projectPending ? <div className="project-data-loading" role="status"><Loader2 size={20} className="spin" />正在读取项目数据…</div> : section === "rules" ? rulePending ? <div className="project-data-loading" role="status">正在读取规则库…</div> : ruleError ? <div className="inline-error" role="alert">{ruleError}<button type="button" onClick={() => setRevision(n => n + 1)}>重试读取规则库</button></div> : <RuleLibraryPanel items={rules} onChanged={async () => { setRules(await projectApi.listRuleLibrary()); }} /> : section === "drawings" ? <DrawingDirectory project={project} /> : <>
     <section className="results-section"><div className="table-toolbar"><h2>线表结果</h2><label className="library-search"><Search size={16} /><input aria-label="搜索线表" value={query} onChange={e => { setQuery(e.target.value); setOffset(0); }} placeholder="搜索端子、原理号或描述" /></label><button type="button" className="add-terminal-button" aria-label="新增端子" title="新增端子" disabled={!page.result_version_id || tableLoading || deleting} onClick={() => setCreating(true)}><Plus size={19} /></button></div>{tableLoading ? <p role="status">正在读取线表…</p> : null}<div hidden={tableLoading && !page.items.length}><ResultTable key={`${workspaceId ?? "all"}:${drawingId ?? "all"}:${offset}:${query}`} rows={page.items} onOpenDrawing={d => void openSource(d)} onOpenTarget={row => void openTarget(row)} onHoverTarget={setHighlight} highlightedRowId={highlight} onSave={!tableLoading && page.result_version_id && page.result_revision ? async (row, changes, key) => { await projectApi.edit(row, page, changes, key); setRevision(n => n + 1); } : undefined} onRefresh={() => setRevision(n => n + 1)} onDelete={deleting || tableLoading ? undefined : row => void deleteTerminal(row)} /></div><footer className="table-footer"><span>第 {offset / 100 + 1} 页 · r{page.result_revision ?? "-"}</span><div><button type="button" disabled={offset === 0 || tableLoading} onClick={() => setOffset(o => o - 100)}>上一页</button><button type="button" disabled={!page.has_more || tableLoading} onClick={() => setOffset(o => o + 100)}>下一页</button></div></footer></section>
     <section className={`below-previews ${target ? "with-target" : ""}`}><DrawingPreview key={source?.id ?? "source"} project={project} drawing={source} />{target ? <DrawingPreview key={target.id} project={project} drawing={target} targetTerminal={targetTerminal} /> : null}</section></>}
     </section></main>
