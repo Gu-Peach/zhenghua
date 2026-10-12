@@ -4,7 +4,9 @@
 
 ## 进行中
 
-- [ ] 2026-10-13 工作台精简：新增端子换为最右加号；移除全部工作区按钮和项目概览；导航显示当前项目名；左侧项目可折叠且移除 PDF 中间行；聊天移除当前阶段卡片，复用原订阅/确认链路。
+- [x] 2026-10-13 导航/搜索按容器水平居中；线表双击或行按钮原位编辑，Enter/行保存、Esc/行取消，冻结版本基线，失败保留草稿/幂等标识；原 PATCH/审计语义不变。16 项 HTTP fixture 浏览器回归、typecheck/lint/build 和桌面/窄屏截图检查通过。见 docs/apps/web/changelog/2026-10-13-centered-inline-edit.md。
+
+- [x] 2026-10-13 工作台精简：新增端子换为最右加号；移除全部工作区按钮、项目概览及结果统计副标题；导航显示当前项目名；左侧项目可折叠且移除 PDF 中间行/文件名副标题；聊天移除当前阶段卡片。13 项 HTTP fixture 浏览器回归、typecheck/lint/build 和桌面/窄屏截图检查通过。见 docs/apps/web/changelog/2026-10-13-workbench-cleanup.md。
 
 - [x] 2026-10-13 前端目录/悬浮聊天：图纸库项目→工作区→图片原地展开及懒加载预览；右下角按钮切换非模态悬浮聊天，隐藏后保留草稿/订阅、重新打开不重复任务。13 项 HTTP fixture 浏览器回归、typecheck/lint/build 和桌面/窄屏截图检查通过；未调用真实模型或修改数据库。见 docs/apps/web/changelog/2026-10-13-directory-floating-chat.md。
 

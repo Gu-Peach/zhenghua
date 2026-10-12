@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, FileImage, FileText, Folder, FolderOpen, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, FileImage, Folder, FolderOpen, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import type { AgentStageProgress } from "@/apis/agent";
@@ -19,10 +19,10 @@ interface ProjectTreeProps {
 export function ProjectTree({ project, projects, selectedWorkspaceId, selectedDrawingId, stageProgress, uploadedFilename, simulationEnabled, onSelectWorkspace, onSelectDrawing }: ProjectTreeProps) {
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<string[]>([]);
+  const [expandedProjects, setExpandedProjects] = useState<string[]>([project.id]);
   const visibleProjects = useMemo(() => projects.filter((item) => `${item.name} ${item.company}`.toLowerCase().includes(query.toLowerCase())), [projects, query]);
   const stage1 = stageProgress.find((stage) => stage.stage === "Stage 1");
   const stage1Complete = stage1?.status === "done";
-  const uploadedFileStatus: EntityStatus = stage1?.status === "done" || project.workspaces.length > 0 ? "completed" : stage1?.status === "failed" ? "failed" : stage1?.status === "processing" ? "processing" : "queued";
   const stage2 = stageProgress.find((stage) => stage.stage === "Stage 2");
   const hasWorkspaceIndex = project.workspaces.length > 0 || stage1Complete || stageProgress.some((stage) => stage.stage === "数据库查询");
 
@@ -37,16 +37,17 @@ export function ProjectTree({ project, projects, selectedWorkspaceId, selectedDr
       <nav className="project-tree" aria-label="项目、工作区和图纸">
         {visibleProjects.map((item) => {
           const active = item.id === project.id;
+          const expanded = expandedProjects.includes(item.id);
+          const childrenId = `project-children-${item.id}`;
           return (
             <div className="project-node" key={item.id}>
-                  <Link to={`/projects/${item.id}`} className={`project-row ${active ? "active" : ""}`}>
-                    {active ? <FolderOpen size={18} /> : <Folder size={18} />}
-                    <span className="tree-row-copy"><strong>{item.name}</strong><small>{active ? uploadedFilename ? `原始文件 · ${uploadedFilename}` : "项目文件夹" : `${item.company} · ${item.drawingCount} 张图纸`}</small></span>
+                  <button type="button" className={`project-row ${active ? "active" : ""}`} aria-expanded={expanded} aria-controls={childrenId} aria-label={`${expanded ? "收起" : "展开"}项目 ${item.name}`} onClick={() => setExpandedProjects(ids => ids.includes(item.id) ? ids.filter(id => id !== item.id) : [...ids, item.id])}>
+                    {expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+                    {expanded ? <FolderOpen size={18} /> : <Folder size={18} />}
+                    <span className="tree-row-copy"><strong title={item.name}>{item.name}</strong></span>
                     <StatusDot status={item.status} />
-                  </Link>
-                  {active && (uploadedFilename || hasWorkspaceIndex) ? (
-                    <div className="workspace-tree">
-                  {uploadedFilename ? <div className="uploaded-file-row"><FileText size={15} /><span>{uploadedFilename}</span><StatusDot status={uploadedFileStatus} /></div> : null}
+                  </button>
+                  {expanded ? <div id={childrenId} className="workspace-tree">{!active ? <Link to={`/projects/${item.id}`} className="project-open-link">打开项目</Link> : <>
                   {uploadedFilename && !hasWorkspaceIndex ? <p className="tree-empty">{simulationEnabled ? "等待 Agent 分类并发布图纸索引" : "等待处理"}</p> : null}
                   {hasWorkspaceIndex && project.workspaces.length === 0 ? <p className="tree-empty">Stage 1 正在识别工作区</p> : null}
                   {hasWorkspaceIndex ? project.workspaces.map((workspace) => {
@@ -71,8 +72,7 @@ export function ProjectTree({ project, projects, selectedWorkspaceId, selectedDr
                       </div>
                     );
                   }) : null}
-                </div>
-              ) : null}
+                </>}</div> : null}
             </div>
           );
         })}

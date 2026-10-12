@@ -8,6 +8,10 @@ archived under `docs/service/`.
 
 ## 2026-10-13
 
+- 导航和搜索按容器水平居中，线表记录改为原位编辑，复用既有 PATCH/版本锁/幂等和审计，取消编辑弹窗；16 项浏览器夹具、Web typecheck/lint/build 与桌面/窄屏截图检查通过。见 [Web 记录](../apps/web/changelog/2026-10-13-centered-inline-edit.md)。
+
+- 工作台精简：新增端子改为最右侧加号，移除全部工作区按钮和重复项目概览；导航显示当前项目名，左侧项目可折叠并移除 PDF 中间节点；聊天去掉独立当前阶段卡片。13 项浏览器回归、Web typecheck/lint/build 和截图检查通过，见 [Web 记录](../apps/web/changelog/2026-10-13-workbench-cleanup.md)。
+
 - 图纸库改为项目→工作区→图片原地展开和预览，替代平铺点击切换线表。聊天从固定右栏改为右下角按钮控制的悬浮窗口，保留草稿、任务订阅及人工确认；13 项浏览器夹具、前端 typecheck/lint/build 和桌面/窄屏截图检查通过。见 [Web 记录](../apps/web/changelog/2026-10-13-directory-floating-chat.md)。
 
 ## 2026-10-12

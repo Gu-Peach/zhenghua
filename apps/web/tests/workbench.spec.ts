@@ -170,6 +170,8 @@ test("悬浮聊天开关和 Escape 保留草稿且不挤占工作区", async ({ 
   await page.getByRole("button", { name: "打开 AI 聊天面板" }).click();
   const panel = page.getByRole("dialog", { name: "AI 助手" });
   await expect(panel).toBeVisible();
+  await expect(panel.locator(".agent-current-stage")).toHaveCount(0);
+  await expect(panel.getByText("当前阶段", { exact: true })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "关闭 AI 聊天面板" })).toHaveAttribute("aria-expanded", "true");
   await page.getByRole("textbox", { name: "向主 Agent 提出自然语言需求" }).fill("尚未发送的纠错需求");
   await page.getByRole("button", { name: "收起聊天窗口" }).click();
@@ -232,9 +234,29 @@ test("规则模板加载失败可重试，空库禁止创建", async ({ page }) 
 test("真实接口适配：页/线号组首、跨页下方预览、编辑和三阶段资源", async ({ page }) => {
   await page.goto(`/projects/${project}`);
   await expect(page.getByRole("heading", { name: "验收工程" })).toBeVisible();
+  await expect(page.locator(".project-context-bar").getByRole("heading", { name: "验收工程" })).toBeVisible();
+  await expect(page.locator(".project-overview")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "全部工作区", exact: true })).toHaveCount(0);
+  const sidebar = page.locator(".project-sidebar");
+  await expect(sidebar.getByText("fixture.pdf", { exact: true })).toHaveCount(0);
+  await expect(sidebar.getByText("原始文件 · fixture.pdf", { exact: true })).toHaveCount(0);
+  await sidebar.getByRole("button", { name: "收起项目 验收工程" }).click();
+  await expect(sidebar.locator(".workspace-row")).toHaveCount(0);
+  await sidebar.getByRole("button", { name: "展开项目 验收工程" }).click();
+  await expect(sidebar.locator(".workspace-row")).toBeVisible();
   await expect(page.getByRole("columnheader", { name: "线号", exact: true })).toBeVisible();
   const bodyRows = page.locator(".result-table tbody tr");
   await expect(bodyRows).toHaveCount(2);
+  const add = page.getByRole("button", { name: "新增端子", exact: true });
+  await expect(add).toBeEnabled();
+  expect(await add.textContent()).toBe("");
+  const toolbarBox = await page.locator(".table-toolbar").boundingBox();
+  const addBox = await add.boundingBox();
+  expect(toolbarBox!.x + toolbarBox!.width - addBox!.x - addBox!.width).toBeLessThanOrEqual(20);
+  await page.route("**/api/v1/projects/*/wiring-units", route => route.fulfill({ json: [] }));
+  await add.click();
+  await expect(page.getByRole("dialog", { name: "新增端子", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "关闭新增端子" }).click();
   await expect(bodyRows.nth(0).getByRole("button", { name: "002.C / 1" })).toBeVisible();
   await expect(bodyRows.nth(1).getByRole("button", { name: "002.C / 1" })).toHaveCount(0);
   await page.getByRole("button", { name: "X3:1", exact: true }).click();
@@ -244,7 +266,7 @@ test("真实接口适配：页/线号组首、跨页下方预览、编辑和三�
   await page.getByRole("button", { name: "编辑 XD3:1" }).click();
   await page.getByLabel("终点端子", { exact: true }).fill("X3:99");
   const saving = page.waitForRequest(r => r.method() === "PATCH" && r.url().includes("/connections/"));
-  await page.getByRole("button", { name: "确认保存" }).click();
+  await page.getByRole("button", { name: "保存本行修改" }).click();
   const req = await saving;
   expect(req.postDataJSON().changes.end_terminal).toBe("X3:99");
   expect(req.postDataJSON().record_version).toBe(1);
@@ -274,6 +296,110 @@ test("登录页与失败/空态", async ({ page }) => {
   await page.route("**/api/v1/projects/*/connections?**", route => route.fulfill({ json: { items: [], offset: 0, limit: 100, has_more: false } }));
   await page.goto(`/projects/${project}`);
   await expect(page.getByText("当前范围没有线表记录")).toBeVisible();
+});
+
+test("导航和搜索按容器居中，单元格 Enter 保存及 Esc 取消", async ({ page }) => {
+  let endpoint = "X3:2";
+  let revision = 1;
+  const writes: Array<Record<string, unknown>> = [];
+  await page.route("**/api/v1/projects/*/connections?**", route => route.fulfill({ json: { items: rows.map((row, index) => ({ ...row, end_terminal: index === 1 ? endpoint : row.end_terminal, record_version: revision })), offset: 0, limit: 100, has_more: false, result_version_id: result, result_revision: revision, result_version: 1 } }));
+  await page.route("**/api/v1/connections/*", route => {
+    const body = route.request().postDataJSON();
+    writes.push(body); endpoint = body.changes.end_terminal; revision++;
+    return route.fulfill({ json: { result_revision: revision } });
+  });
+  await page.goto(`/projects/${project}`);
+  const tableRows = page.locator(".result-table tbody tr");
+  await expect(tableRows).toHaveCount(2);
+  for (const [container, child] of [[".project-context-bar", ".project-resource-nav"], [".table-toolbar", ".library-search"]]) {
+    const outer = await page.locator(container).boundingBox();
+    const inner = await page.locator(`${container} ${child}`).boundingBox();
+    expect(Math.abs(outer!.x + outer!.width / 2 - inner!.x - inner!.width / 2)).toBeLessThanOrEqual(1);
+  }
+  await tableRows.nth(1).locator("td").nth(1).dblclick();
+  await expect(page.locator(".editing-cell input")).toHaveCount(0);
+  await tableRows.nth(1).locator("td").nth(10).dblclick();
+  const end = page.getByRole("textbox", { name: "终点端子", exact: true });
+  await expect(end).toBeFocused();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await end.fill("X3:99");
+  await page.screenshot({ path: "../../.runtime/web-tests/inline-edit-desktop.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await end.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "../../.runtime/web-tests/inline-edit-mobile.png", fullPage: true });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(392);
+  await end.press("Enter");
+  await expect(page.locator(".editing-cell input")).toHaveCount(0);
+  await expect(tableRows.nth(1).locator("td").nth(10)).toHaveText("X3:99");
+  expect(writes[0]).toMatchObject({ result_version_id: result, result_revision: 1, record_version: 1, changes: { end_terminal: "X3:99" } });
+  expect(Object.keys(writes[0].changes as object)).toEqual(["end_terminal"]);
+  await tableRows.nth(1).locator("td").nth(2).dblclick();
+  const principle = page.getByRole("textbox", { name: "原理号", exact: true });
+  await expect(principle).toBeFocused();
+  await principle.press("Tab");
+  const voltage = page.getByRole("textbox", { name: "电压等级", exact: true });
+  await expect(voltage).toBeFocused();
+  await voltage.fill("220V");
+  await voltage.press("Escape");
+  await expect(page.locator(".editing-cell input")).toHaveCount(0);
+  expect(writes).toHaveLength(1);
+});
+
+test("行内保存失败保留草稿，重试复用幂等标识，空值映射为 null", async ({ page }) => {
+  const keys: string[] = [];
+  const bodies: Array<Record<string, unknown>> = [];
+  await page.route("**/api/v1/connections/*", route => {
+    keys.push(route.request().headers()["idempotency-key"]);
+    bodies.push(route.request().postDataJSON());
+    return keys.length === 1 ? route.fulfill({ status: 503, json: { detail: { message: "保存暂不可用" } } }) : route.fulfill({ json: { result_revision: 2 } });
+  });
+  await page.goto(`/projects/${project}`);
+  await expect(page.locator(".result-table tbody tr")).toHaveCount(2);
+  await page.getByRole("button", { name: "编辑 XD3:2", exact: true }).click();
+  await page.getByRole("textbox", { name: "终点端子", exact: true }).fill("");
+  await page.getByRole("textbox", { name: "电压等级", exact: true }).fill("220V");
+  await page.getByRole("button", { name: "保存本行修改" }).click();
+  await expect(page.getByRole("alert")).toContainText("保存暂不可用");
+  await expect(page.getByRole("textbox", { name: "电压等级", exact: true })).toHaveValue("220V");
+  await expect(page.getByRole("textbox", { name: "终点端子", exact: true })).toHaveValue("");
+  await page.getByRole("textbox", { name: "电压等级", exact: true }).press("Enter");
+  await expect(page.locator(".editing-cell input")).toHaveCount(0);
+  expect(keys).toHaveLength(2);
+  expect(keys[0]).toBeTruthy();
+  expect(keys[0]).toBe(keys[1]);
+  expect(bodies[0]).toEqual(bodies[1]);
+  expect(bodies[0].changes).toEqual({ voltage_level: "220V", end_terminal: null });
+});
+
+test("后台刷新不替换编辑基线，版本冲突留住草稿并可取消刷新", async ({ page }) => {
+  let revision = 1;
+  let endpoint = "X3:2";
+  let submitted: Record<string, unknown> | null = null;
+  await page.route("**/api/v1/projects/*/connections?**", route => route.fulfill({ json: { items: rows.map((row, index) => ({ ...row, end_terminal: index === 1 ? endpoint : row.end_terminal, record_version: revision })), offset: 0, limit: 100, has_more: false, result_version_id: result, result_revision: revision, result_version: 1 } }));
+  await page.route("**/api/v1/supervisor/turns/stream", route => route.fulfill({ contentType: "text/event-stream", body: `event: response\ndata: ${JSON.stringify({ receipt: null, user_event: { user_message: "状态已刷新" } })}\n\n` }));
+  await page.route("**/api/v1/connections/*", route => {
+    submitted = route.request().postDataJSON();
+    return route.fulfill({ status: 409, json: { detail: { message: "数据已变更，请刷新后重试" } } });
+  });
+  await page.goto(`/projects/${project}`);
+  await expect(page.locator(".result-table tbody tr")).toHaveCount(2);
+  await page.getByRole("button", { name: "编辑 XD3:2", exact: true }).click();
+  await page.getByRole("textbox", { name: "终点端子", exact: true }).fill("我的草稿");
+  revision = 2; endpoint = "其他人已改";
+  await page.getByRole("button", { name: "打开 AI 聊天面板" }).click();
+  await page.getByRole("textbox", { name: "向主 Agent 提出自然语言需求" }).fill("查询状态");
+  await page.getByRole("button", { name: "发送给主 Agent" }).click();
+  await expect(page.locator(".table-footer")).toContainText("r2");
+  await page.getByRole("button", { name: "收起聊天窗口" }).click();
+  const end = page.getByRole("textbox", { name: "终点端子", exact: true });
+  await expect(end).toHaveValue("我的草稿");
+  await end.press("Enter");
+  await expect(page.getByRole("alert")).toContainText("数据已变更");
+  await expect(end).toHaveValue("我的草稿");
+  expect(submitted).toMatchObject({ result_revision: 1, record_version: 1 });
+  await page.getByRole("button", { name: "取消编辑并刷新" }).click();
+  await expect(page.locator(".editing-cell input")).toHaveCount(0);
+  await expect(page.locator(".result-table tbody tr").nth(1).locator("td").nth(10)).toHaveText("其他人已改");
 });
 
 test("上传触发真实接口、人工类型确认与三阶段事件卡片", async ({ page }) => {
