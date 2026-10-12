@@ -81,22 +81,37 @@ test("规则包创建注册、冲突重试与删除确认", async ({ page }) => 
   expect(attempts).toBe(2); expect(deletes).toBe(1);
 });
 
-test("图纸库只显示图纸目录，不显示项目或工作区文件夹", async ({ page }) => {
+test("图纸库按项目和工作区展开图片，原地预览", async ({ page }) => {
   await page.goto(`/projects/${project}`);
   await page.getByRole("button", { name: "图纸库", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "图纸目录" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "图纸 1 · PDF 1" })).toBeVisible();
-  await expect(page.getByRole("button", { name: "图纸 2 · PDF 2" })).toBeVisible();
-  await expect(page.getByRole("list", { name: "项目图纸文件夹" })).toHaveCount(0);
-  await expect(page.getByRole("heading", { name: "002.C" })).toHaveCount(0);
+  const directory = page.getByRole("region", { name: "图纸目录", exact: true });
+  await expect(directory.locator(".library-project > summary")).toContainText("验收工程");
+  await expect(directory.locator(".library-workspace > summary")).not.toBeVisible();
+  await directory.locator(".library-project > summary").click();
+  await directory.locator(".library-workspace > summary").click();
+  await expect(directory.locator(".drawing-file > summary").first()).toContainText("图纸 1.png");
+  await directory.locator(".drawing-file > summary").first().click();
+  await expect(directory.locator(".drawing-preview img")).toBeVisible();
+  await expect(page.getByRole("button", { name: "图纸库", exact: true })).toHaveClass("active");
+  await expect(page).toHaveURL(`/projects/${project}`);
   await page.screenshot({ path: "../../.runtime/web-tests/drawing-library-desktop.png", fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({ path: "../../.runtime/web-tests/drawing-library-mobile.png", fullPage: true });
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(392);
 });
 
-test("图纸目录跨工作区平铺，点击保留正确工作区定位", async ({ page }) => {
+test("跨工作区的图片按需读取，展开不改变线表过滤", async ({ page }) => {
   const otherWorkspace = "10000000-0000-4000-8000-000000000008";
+  const filters: Array<{ workspace: string | null; drawing: string | null }> = [];
+  let targetReads = 0;
+  page.on("request", request => {
+    const url = new URL(request.url());
+    if (url.pathname.endsWith("/connections")) filters.push({ workspace: url.searchParams.get("workspace_id"), drawing: url.searchParams.get("drawing_id") });
+  });
+  await page.route(`**/api/v1/drawings/${target}`, route => {
+    targetReads++;
+    return route.fulfill({ json: { ...drawing(target, "2"), workspace_id: otherWorkspace } });
+  });
   await page.route(`**/api/v1/projects/${project}`, route => route.fulfill({ json: {
     ...detail, workspaces: [
       { ...detail.workspaces[0], drawings: [drawing(source, "1")] },
@@ -106,22 +121,75 @@ test("图纸目录跨工作区平铺，点击保留正确工作区定位", async
   await page.goto(`/projects/${project}`);
   await page.getByRole("button", { name: "图纸库", exact: true }).click();
   const directory = page.getByRole("region", { name: "图纸目录", exact: true });
-  await expect(directory.getByRole("button")).toHaveCount(2);
-  await expect(directory.getByText("006.M", { exact: true })).toHaveCount(0);
-  const loaded = page.waitForRequest(request => {
-    const url = new URL(request.url());
-    return url.pathname.endsWith("/connections") && url.searchParams.get("drawing_id") === target && url.searchParams.get("workspace_id") === otherWorkspace;
-  });
-  await directory.getByRole("button", { name: "图纸 2 · PDF 2", exact: true }).click();
-  await loaded;
-  await expect(page.getByRole("heading", { name: "线表结果" })).toBeVisible();
+  await directory.locator(".library-project > summary").click();
+  const folder = directory.locator(".library-workspace").filter({ has: page.locator("summary strong", { hasText: "006.M" }) });
+  await folder.locator(":scope > summary").click();
+  expect(targetReads).toBe(0);
+  await folder.locator(".drawing-file > summary").click();
+  await expect(folder.locator(".drawing-preview img")).toHaveAttribute("alt", "验收工程 / 业务页 2 / PDF 2");
+  expect(targetReads).toBeGreaterThanOrEqual(1);
+  expect(filters.every(filter => filter.workspace === null && filter.drawing === null)).toBe(true);
+  await expect(page.getByRole("button", { name: "图纸库", exact: true })).toHaveClass("active");
+  await directory.locator(".library-project > summary").click();
+  await expect(folder).not.toBeVisible();
 });
 
 test("没有已发布分类的项目显示图纸目录空态", async ({ page }) => {
   await page.route(`**/api/v1/projects/${project}`, route => route.fulfill({ json: { ...detail, workspaces: [] } }));
   await page.goto(`/projects/${project}`);
   await page.getByRole("button", { name: "图纸库", exact: true }).click();
-  await expect(page.getByRole("status")).toContainText("暂无图纸，页面分类完成后会显示图纸目录。");
+  await page.locator(".library-project > summary").click();
+  await expect(page.getByRole("status")).toContainText("暂无图纸，页面分类完成后会显示工作区和图片。");
+});
+
+test("图纸目录内展示权限失败并允许重试", async ({ page }) => {
+  let reads = 0;
+  let permitted = false;
+  await page.route(`**/api/v1/drawings/${target}`, route => {
+    reads++;
+    return !permitted ? route.fulfill({ status: 403, json: { detail: "权限不足" } }) : route.fulfill({ json: drawing(target, "2") });
+  });
+  await page.goto(`/projects/${project}`);
+  await page.getByRole("button", { name: "图纸库", exact: true }).click();
+  await page.locator(".library-project > summary").click();
+  await page.locator(".library-workspace > summary").click();
+  const file = page.locator(".drawing-file").nth(1);
+  await file.locator(":scope > summary").click();
+  await expect(file.getByRole("alert")).toContainText("无权访问此图纸。");
+  const deniedReads = reads;
+  permitted = true;
+  await file.getByRole("button", { name: "重试读取图纸" }).click();
+  await expect(file.locator(".drawing-preview img")).toBeVisible();
+  expect(reads).toBeGreaterThan(deniedReads);
+});
+
+test("悬浮聊天开关和 Escape 保留草稿且不挤占工作区", async ({ page }) => {
+  await page.goto(`/projects/${project}`);
+  await expect(page.getByRole("dialog", { name: "AI 助手" })).toHaveCount(0);
+  const before = await page.locator(".project-main").boundingBox();
+  await page.getByRole("button", { name: "打开 AI 聊天面板" }).click();
+  const panel = page.getByRole("dialog", { name: "AI 助手" });
+  await expect(panel).toBeVisible();
+  await expect(page.getByRole("button", { name: "关闭 AI 聊天面板" })).toHaveAttribute("aria-expanded", "true");
+  await page.getByRole("textbox", { name: "向主 Agent 提出自然语言需求" }).fill("尚未发送的纠错需求");
+  await page.getByRole("button", { name: "收起聊天窗口" }).click();
+  await expect(page.getByRole("button", { name: "打开 AI 聊天面板" })).toBeFocused();
+  await page.getByRole("button", { name: "打开 AI 聊天面板" }).click();
+  await expect(page.getByRole("textbox", { name: "向主 Agent 提出自然语言需求" })).toHaveValue("尚未发送的纠错需求");
+  const after = await page.locator(".project-main").boundingBox();
+  expect(after!.width).toBe(before!.width);
+  await expect(panel).toHaveCSS("position", "fixed");
+  await page.screenshot({ path: "../../.runtime/web-tests/floating-chat-desktop.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.getByRole("button", { name: "发送给主 Agent" })).toBeVisible();
+  const mobile = await panel.boundingBox();
+  expect(mobile!.x).toBeGreaterThanOrEqual(0);
+  expect(mobile!.x + mobile!.width).toBeLessThanOrEqual(390);
+  expect(mobile!.y + mobile!.height).toBeLessThanOrEqual(844);
+  await page.screenshot({ path: "../../.runtime/web-tests/floating-chat-mobile.png", fullPage: true });
+  await panel.press("Escape");
+  await expect(panel).not.toBeVisible();
+  await expect(page.getByRole("button", { name: "打开 AI 聊天面板" })).toBeFocused();
 });
 
 test("规则库将旧 ABB draft 响应按可用规则展示", async ({ page }) => {
@@ -236,16 +304,15 @@ test("上传触发真实接口、人工类型确认与三阶段事件卡片", as
   const panel = await page.locator(".ai-panel").textContent();
   expect(panel).toContain("Stage 1"); expect(panel).toContain("Stage 2"); expect(panel).toContain("Stage 3");
   await expect(page.locator(".agent-event-stage")).toHaveCount(3);
-  await page.getByRole("separator", { name: "调整 Agent 面板宽度" }).focus();
-  const before = await page.locator(".ai-panel").boundingBox();
-  await page.keyboard.press("ArrowLeft");
-  const after = await page.locator(".ai-panel").boundingBox();
-  expect(after!.width).toBeGreaterThan(before!.width);
+  await expect(page.getByRole("dialog", { name: "AI 助手" })).toHaveCSS("position", "fixed");
+  await expect(page.getByRole("separator", { name: "调整 Agent 面板宽度" })).toHaveCount(0);
 });
 
-test("断线续传使用已收到序号，不重复发起任务", async ({ page }) => {
+test("聊天关闭期间继续订阅进度，重开不重复发起任务", async ({ page }) => {
   const runId = "10000000-0000-4000-8000-000000000098";
   let turns = 0; const cursors: string[] = [];
+  let finishStage: () => void = () => {};
+  const finish = new Promise<void>(resolve => { finishStage = resolve; });
   await page.route("**/api/v1/supervisor/turns/stream", async route => {
     turns++;
     await route.fulfill({ contentType: "text/event-stream", body: `event: response\ndata: ${JSON.stringify({ receipt: { agent_run_id: runId }, user_event: { user_message: "已开始当前页重识别。" } })}\n\n` });
@@ -253,14 +320,22 @@ test("断线续传使用已收到序号，不重复发起任务", async ({ page 
   await page.route(`**/api/v1/runs/${runId}/events/stream?**`, async route => {
     const cursor = new URL(route.request().url()).searchParams.get("after_seq")!;
     cursors.push(cursor);
+    if (cursor !== "-1") await finish;
     const e = cursor === "-1" ? { seq: 0, event_type: "STAGE_STARTED", stage: "PAGE_SCAN", message: "扫描开始" } : { seq: 1, event_type: "STAGE_COMPLETED", stage: "PAGE_SCAN", message: "扫描已完成" };
     await route.fulfill({ contentType: "text/event-stream", body: `event: ${e.event_type}\ndata: ${JSON.stringify({ ...e, agent_run_id: runId, occurred_at: "2026-10-12" })}\n\n` });
   });
   await page.route(`**/api/v1/runs/${runId}`, route => route.fulfill({ json: { run: { status: cursors.length > 1 ? "SUCCEEDED" : "RUNNING" } } }));
   await page.route(`**/api/v1/runs/${runId}/artifacts`, route => route.fulfill({ json: { items: [] } }));
   await page.goto(`/projects/${project}`);
+  await page.getByRole("button", { name: "打开 AI 聊天面板" }).click();
   await page.getByRole("textbox", { name: "向主 Agent 提出自然语言需求" }).fill("重新识别当前连接");
   await page.getByRole("button", { name: "发送给主 Agent" }).click();
+  await expect(page.locator(".agent-event-stage")).toContainText("扫描开始");
+  await page.getByRole("button", { name: "收起聊天窗口" }).click();
+  await expect(page.getByRole("dialog", { name: "AI 助手" })).toHaveCount(0);
+  finishStage();
+  await expect(page.getByRole("button", { name: "打开 AI 聊天面板" }).locator(".agent-launcher-badge")).toBeVisible();
+  await page.getByRole("button", { name: "打开 AI 聊天面板" }).click();
   await expect(page.locator(".agent-event-stage")).toContainText("扫描已完成");
   await expect(page.locator(".agent-event-stage")).toHaveCount(1);
   expect(cursors).toEqual(["-1", "0"]);
@@ -288,6 +363,7 @@ test("纠错阶段卡片、人工确认后刷新真实结果及归因说明", as
   await page.route(`**/api/v1/runs/${improvement}/artifacts`, route => route.fulfill({ json: { items: [{ kind: "improvement_diagnosis", candidate_recommended: false, diagnoses: [{ category: "MODEL_PERCEPTION_ERROR", explanation: "规则无问题，模型读取了相邻线路。" }] }] } }));
   await page.route("**/api/v1/proposals/**", route => route.fulfill({ json: { feedback_id: "feedback-fixture", operations: [{ target_id: rows[0].connection_id, before: { end_terminal: "X3:1" }, after: { end_terminal: "X3:9" } }], committed_result_version_id: null } }));
   await page.goto(`/projects/${project}`);
+  await page.getByRole("button", { name: "打开 AI 聊天面板" }).click();
   await page.getByRole("textbox", { name: "向主 Agent 提出自然语言需求" }).fill("重新识别 XD3:1 的终点端子");
   await page.getByRole("button", { name: "发送给主 Agent" }).click();
   await expect(page.locator(".agent-step-pending")).toContainText("待确认修订");

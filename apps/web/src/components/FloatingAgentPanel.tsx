@@ -9,7 +9,7 @@ export function FloatingAgentPanel({ initiallyOpen = false, ...props }: AiPanelP
   const panel = useRef<HTMLElement>(null);
   const panelId = useId();
   const unread = open ? 0 : Math.max(0, props.events.length - seenCount);
-  const pending = props.events.some(event => event.status === "pending");
+  const pending = props.events[props.events.length - 1]?.status === "pending";
 
   useEffect(() => { if (open) panel.current?.focus({ preventScroll: true }); }, [open]);
   function close() {

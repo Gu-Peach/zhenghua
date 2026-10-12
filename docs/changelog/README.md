@@ -6,6 +6,10 @@ archived under `docs/service/`.
 
 详细变更见 [CHANGELOG.md](./CHANGELOG.md)。
 
+## 2026-10-13
+
+- 图纸库改为项目→工作区→图片原地展开和预览，替代平铺点击切换线表。聊天从固定右栏改为右下角按钮控制的悬浮窗口，保留草稿、任务订阅及人工确认；13 项浏览器夹具、前端 typecheck/lint/build 和桌面/窄屏截图检查通过。见 [Web 记录](../apps/web/changelog/2026-10-13-directory-floating-chat.md)。
+
 ## 2026-10-12
 
 - 规则库取消手工包草稿门槛：所有登录用户共享读取，写入后直接可用；同 key 新任务选择最新 active 版本，历史 checksum 保留，Improvement 隔离候选及其精确回滚仍受审核范围保护。三个 additive migration 已应用并通过非创建者 RLS、空库/旧数据重放。ABB 1.1.2 已接入独立三阶段 adapter/policy、上传并读回校验，当前可执行但真实模型字段准确率仍待验收。见 [ADR-0012](../adr/0012-shared-ready-rule-library.md)、[Server 记录](../service/server/changelog/2026-10-12-shared-rule-library.md) 和 [Agent 记录](../service/agent/changelog/2026-10-12-abb-ready-profile.md)。

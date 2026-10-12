@@ -5,11 +5,12 @@ import { runArtifacts, streamSupervisorRun, watchRun, type AgentStageProgress, t
 import { projectApi, type ResultPage } from "@/apis/projects";
 import { request } from "@/apis/client";
 import type { AgentEvent, Drawing, ProjectDetail, ProjectSummary, RuleLibraryItem, WiringRow } from "@/apis/types";
-import { AiPanel } from "@/components/AiPanel";
+import { FloatingAgentPanel } from "@/components/FloatingAgentPanel";
 import { AppHeader } from "@/components/AppHeader";
 import { ConnectionEditor } from "@/components/ConnectionEditor";
 import { ConnectionCreator } from "@/components/ConnectionCreator";
 import { DrawingPreview } from "@/components/DrawingPreview";
+import { DrawingDirectory } from "@/components/DrawingDirectory";
 import { RuleLibraryPanel } from "@/components/LibraryPanel";
 import { ProjectTree } from "@/components/ProjectTree";
 import { ResultTable } from "@/components/ResultTable";
@@ -57,7 +58,7 @@ function ProjectWorkspace({ id, projects, onUpload }: { id: string; projects: Pr
   const deletionKeys = useRef(new Map<string, string>());
   const [events, setEvents] = useState<AgentEvent[]>([]); const [stages, setStages] = useState<AgentStageProgress[]>([]); const [running, setRunning] = useState(false);
   const [hint, setHint] = useState<Record<string, string>>({});
-  const [left, setLeft] = useState(260); const [right, setRight] = useState(330);
+  const [left, setLeft] = useState(260);
   const conversation = useRef(imported?.conversationId ?? sessionStorage.getItem(`conversation:${id}`) ?? crypto.randomUUID());
   const currentRun = useRef<string | null>(null); const abort = useRef<AbortController | null>(null); const started = useRef(false);
   const pdfInput = useRef<HTMLInputElement>(null);
@@ -129,10 +130,10 @@ function ProjectWorkspace({ id, projects, onUpload }: { id: string; projects: Pr
 
   async function openSource(drawing: string) { const token = ++previewRequest.current; try { const image = await projectApi.drawing(drawing); if (token === previewRequest.current) { setSource(image); setTarget(null); } } catch (e) { if (token === previewRequest.current) setNotice(String(e)); } }
   async function openTarget(row: WiringRow) { const token = ++previewRequest.current; setHighlight(row.id); try { const [s, t] = await Promise.all([projectApi.drawing(row.drawingId), projectApi.target(row)]); if (token === previewRequest.current) { setSource(s); setTarget(t); setTargetTerminal(row.endTerminal); setNotice(""); } } catch (e) { if (token === previewRequest.current) setNotice(String(e)); } }
-  function resize(e: PointerEvent<HTMLDivElement>, side: "left" | "right") {
-    e.currentTarget.setPointerCapture(e.pointerId); const start = e.clientX; const width = side === "left" ? left : right;
+  function resize(e: PointerEvent<HTMLDivElement>) {
+    e.currentTarget.setPointerCapture(e.pointerId); const start = e.clientX; const width = left;
     const node = e.currentTarget;
-    function move(event: globalThis.PointerEvent) { const value = Math.max(200, Math.min(600, width + (event.clientX - start) * (side === "left" ? 1 : -1))); if (side === "left") setLeft(value); else setRight(value); }
+    function move(event: globalThis.PointerEvent) { setLeft(Math.max(200, Math.min(600, width + event.clientX - start))); }
     function stop() { node.removeEventListener("pointermove", move); node.removeEventListener("pointerup", stop); node.removeEventListener("pointercancel", stop); }
     node.addEventListener("pointermove", move); node.addEventListener("pointerup", stop); node.addEventListener("pointercancel", stop);
   }
@@ -148,17 +149,16 @@ function ProjectWorkspace({ id, projects, onUpload }: { id: string; projects: Pr
   }
   function selectDrawing(ws: string, drawing: string) { setWorkspace(ws); setDrawing(drawing); setOffset(0); setSection("results"); }
   if (!project) return <main className="state-page">{error ? <><p role="alert">{error}</p><button onClick={() => setRevision(n => n + 1)}>重试</button></> : "正在读取项目索引…"}</main>;
-  const drawingEntries = project.workspaces.flatMap(w => w.drawings.map(d => ({ workspaceId: w.id, drawing: d })));
-  return <div className="workbench-app"><AppHeader project={project} /><main className="workbench-grid real-workbench" style={{ "--left-width": `${left}px`, "--right-width": `${right}px` } as CSSProperties}>
+  return <div className="workbench-app"><AppHeader project={project} /><main className="workbench-grid real-workbench" style={{ "--left-width": `${left}px` } as CSSProperties}>
     <ProjectTree project={project} projects={projects} selectedWorkspaceId={workspaceId} selectedDrawingId={drawingId} stageProgress={stages} uploadedFilename={project.sourceFilename || null} simulationEnabled onSelectWorkspace={selectWorkspace} onSelectDrawing={selectDrawing} />
-    <div className="panel-resizer" role="separator" aria-label="调整项目树宽度" aria-orientation="vertical" tabIndex={0} onPointerDown={e => resize(e, "left")} onKeyDown={e => { if (e.key === "ArrowRight") setLeft(w => Math.min(600, w + 20)); if (e.key === "ArrowLeft") setLeft(w => Math.max(200, w - 20)); }} />
+    <div className="panel-resizer" role="separator" aria-label="调整项目树宽度" aria-orientation="vertical" tabIndex={0} onPointerDown={resize} onKeyDown={e => { if (e.key === "ArrowRight") setLeft(w => Math.min(600, w + 20)); if (e.key === "ArrowLeft") setLeft(w => Math.max(200, w - 20)); }} />
     <section className="project-main"><div className="project-context-bar"><Link to="/projects">项目目录</Link><nav className="project-resource-nav"><button type="button" className={section === "results" ? "active" : ""} onClick={() => setSection("results")}><FileSpreadsheet size={15} />线表工作区</button><button type="button" className={section === "drawings" ? "active" : ""} onClick={() => setSection("drawings")}><FileText size={15} />图纸库</button><button type="button" className={section === "rules" ? "active" : ""} onClick={() => setSection("rules")}><RefreshCw size={15} />规则库</button></nav><input ref={pdfInput} className="visually-hidden" type="file" accept="application/pdf" onChange={e => { if (e.target.files?.[0]) void onUpload(e.target.files[0]); }} /><button type="button" className="secondary-button" disabled={running} onClick={() => pdfInput.current?.click()}><Upload size={15} />上传 PDF</button></div>
     <header className="project-overview"><div><h1>{project.name}</h1><p>{project.sourceFilename}</p><div className="project-meta"><span>Profile <strong>{project.profile}</strong></span><span>结果 <strong>{project.resultVersion}</strong></span><span>{project.workspaceCount} 工作区 · {project.drawingCount} 图纸</span></div></div></header>
     {error || notice ? <div className="inline-error" role="alert">{error || notice}<button type="button" onClick={() => { setRevision(n => n + 1); setNotice(""); }}>刷新</button></div> : null}
-    {section === "rules" ? <RuleLibraryPanel items={rules} onChanged={async () => { setRules(await projectApi.listRuleLibrary()); }} /> : section === "drawings" ? <section className="drawing-index" aria-label="图纸目录"><h2>图纸目录</h2><div className="drawing-index-list">{drawingEntries.map(({ workspaceId, drawing: d }) => <button type="button" key={d.id} onClick={() => selectDrawing(workspaceId, d.id)}>图纸 {d.drawingPage} · PDF {d.pdfPage}</button>)}</div>{!drawingEntries.length ? <p role="status">暂无图纸，页面分类完成后会显示图纸目录。</p> : null}</section> : <>
+    {section === "rules" ? <RuleLibraryPanel items={rules} onChanged={async () => { setRules(await projectApi.listRuleLibrary()); }} /> : section === "drawings" ? <DrawingDirectory project={project} /> : <>
     <section className="results-section"><div className="table-toolbar"><div><h2>线表结果</h2><span>页码 / 线号按组首显示 · 当前页 {page.items.length} 条</span></div><label className="library-search"><Search size={16} /><input aria-label="搜索线表" value={query} onChange={e => { setQuery(e.target.value); setOffset(0); }} placeholder="搜索端子、原理号或描述" /></label><button type="button" disabled={!page.result_version_id || tableLoading || deleting} onClick={() => setCreating(true)}>新增端子</button><button type="button" onClick={() => { setWorkspace(null); setDrawing(null); setOffset(0); }}>全部工作区</button></div>{tableLoading ? <p role="status">正在读取线表…</p> : <ResultTable rows={page.items} onOpenDrawing={d => void openSource(d)} onOpenTarget={row => void openTarget(row)} onHoverTarget={setHighlight} highlightedRowId={highlight} onEdit={setEditing} onDelete={deleting ? undefined : row => void deleteTerminal(row)} />}<footer className="table-footer"><span>第 {offset / 100 + 1} 页 · r{page.result_revision ?? "-"}</span><div><button type="button" disabled={offset === 0 || tableLoading} onClick={() => setOffset(o => o - 100)}>上一页</button><button type="button" disabled={!page.has_more || tableLoading} onClick={() => setOffset(o => o + 100)}>下一页</button></div></footer></section>
     <section className={`below-previews ${target ? "with-target" : ""}`}><DrawingPreview key={source?.id ?? "source"} project={project} drawing={source} />{target ? <DrawingPreview key={target.id} project={project} drawing={target} targetTerminal={targetTerminal} /> : null}</section></>}
-    </section><div className="panel-resizer" role="separator" aria-label="调整 Agent 面板宽度" aria-orientation="vertical" tabIndex={0} onPointerDown={e => resize(e, "right")} onKeyDown={e => { if (e.key === "ArrowLeft") setRight(w => Math.min(600, w + 20)); if (e.key === "ArrowRight") setRight(w => Math.max(200, w - 20)); }} />
-    <AiPanel events={events} stageProgress={stages} isRunning={running} hasPendingUpload={false} simulationEnabled onReconnect={currentRun.current ? () => { abort.current = new AbortController(); void consume(watchRun(currentRun.current!, abort.current.signal)); } : undefined} onSimulationToggle={() => { conversation.current = crypto.randomUUID(); currentRun.current = null; sessionStorage.removeItem(`run:${id}`); sessionStorage.setItem(`conversation:${id}`, conversation.current); setEvents([]); setStages([]); setHint({}); }} onRunRepair={m => void send(m)} />
-    </main>{editing ? <ConnectionEditor key={editing.id} row={editing} page={page} onClose={() => setEditing(null)} onSaved={() => setRevision(n => n + 1)} /> : null}{creating ? <ConnectionCreator project={project} page={page} onClose={() => setCreating(false)} onSaved={() => setRevision(n => n + 1)} /> : null}</div>;
+    </section></main>
+    <FloatingAgentPanel initiallyOpen={!!imported} events={events} stageProgress={stages} isRunning={running} hasPendingUpload={false} simulationEnabled onReconnect={currentRun.current ? () => { abort.current = new AbortController(); void consume(watchRun(currentRun.current!, abort.current.signal)); } : undefined} onSimulationToggle={() => { conversation.current = crypto.randomUUID(); currentRun.current = null; sessionStorage.removeItem(`run:${id}`); sessionStorage.setItem(`conversation:${id}`, conversation.current); setEvents([]); setStages([]); setHint({}); }} onRunRepair={m => void send(m)} />
+    {editing ? <ConnectionEditor key={editing.id} row={editing} page={page} onClose={() => setEditing(null)} onSaved={() => setRevision(n => n + 1)} /> : null}{creating ? <ConnectionCreator project={project} page={page} onClose={() => setCreating(false)} onSaved={() => setRevision(n => n + 1)} /> : null}</div>;
 }
