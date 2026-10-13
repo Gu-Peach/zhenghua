@@ -3,6 +3,10 @@
 > 最后更新：2026-10-12
 > 状态含义：`planned`、`in progress`、`blocked`、`done`
 
+2026-10-13 本地启动文档已补齐：Web 5174、Server/API 8000、Agent 8100，含依赖/配置准备、开发 Worker 和健康检查。仅静态核对命令及入口，未启动服务；各开发阶段状态保持不变。
+
+2026-10-13 ZH本地2.0.1完成原图核对后的规则/校验修正及40项冒烟、7项接口/兼容回归。旧2.0.0结果保留，真实模型质量未复验，Phase 4仍in progress；见[记录](./service/agent/changelog/2026-10-13-zh-stage2-quality.md)。
+
 2026-10-13 大车卷盘规则资源本地初稿完成：`zh_gantry_reel@0.1.0` experimental，25页 SH.NO. 索引，分类/初扫/内部补全各两案例；5项离线资源/接口回归通过。工程确认、真实模型字段级固定回归与发布未执行，Phase 4仍 in progress。见 [核对说明](./service/agent/zh-gantry-reel-review.md)。
 
 2026-10-13 本地 Stage 2 分组脚本与实际 002.C/002.M 试跑完成：12 页/121 条、标准 12 列 XLSX（色标空）、31 条待复核，14 项离线冒烟通过。数据库/远端包未变，固定字段准确率仍未验收，Phase 4 保持 in progress；见 [记录](./service/agent/changelog/2026-10-13-local-stage2-groups.md)。

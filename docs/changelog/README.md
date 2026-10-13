@@ -8,6 +8,10 @@ archived under `docs/service/`.
 
 ## 2026-10-13
 
+- 补齐 [Web](../../apps/web/README.md#启动)、[Server](../../services/server/README.md#启动)、[API](../../apps/api/README.md#本地启动) 和 [Agent](../../services/agent/README.md#启动) 的本地启动说明，统一仓库根目录执行方式、端口及启动顺序，明确 Agent 开发 Worker 与 Server 事务连接。仅文档更新，启动命令语法/入口静态核对通过，未安装依赖、启动服务或操作数据库。
+
+- 根据002.C/002.M原图核对修正本地ZH2.0.1：方向缺失不再默认确认起点，原始引用优先解析，同源分支在补全前保留，端子身份/证据不足降级复核。40项冒烟与7项接口/兼容边界回归；不写数据库、不发布、不重跑真实模型，旧结果保留。见[Agent记录](../service/agent/changelog/2026-10-13-zh-stage2-quality.md)。
+
 - 本地新增 ZH 大车卷盘 SH.NO. 网格模板 experimental Profile，独立页标/引用适配、三类模型 Prompt 各两组真实图像样例；明确 XLSX 业务分类/别名与原理图事实的区别，既有 ZH/ABB 不变。未上传/写数据库/发布，真实字段质量待确认。见 [ADR-0015](../adr/0015-zh-gantry-reel-profile.md) 与 [核对记录](../service/agent/zh-gantry-reel-review.md)。
 
 - 新增本地 Stage 2 分组测试与标准 12 列 XLSX 导出，色标留空；真实 002.C/002.M 共 12 页、121 条，31 条待复核，14 项离线冒烟通过。仅本地内存与文件，无数据库/Storage/规则发布；页码 0 占位兼容保持严格合法编号校验。见 [Agent 执行记录](../service/agent/changelog/2026-10-13-local-stage2-groups.md)。

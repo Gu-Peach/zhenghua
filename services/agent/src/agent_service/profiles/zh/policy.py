@@ -56,7 +56,7 @@ class ZhExtractionPolicy:
             return connection, False
         if not (connection.direction_basis or "").strip():
             connection.endpoint_role = "unknown"
-        issues = []
+        issues: list[str] = []
         for side in ("start", "end"):
             endpoint = getattr(connection, side)
             if endpoint is not None:

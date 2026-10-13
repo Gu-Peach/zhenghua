@@ -4,13 +4,42 @@
 
 ## 启动
 
-仓库根目录：
+以下命令使用 Windows PowerShell，从仓库根目录执行；克隆路径不同时调整 `Set-Location`。业务 HTTP 入口是 `apps/api/src/main.py`，默认端口 `8000`。完整联调先启动 [Agent](../agent/README.md#启动)，再启动本服务，最后启动 [Web](../../apps/web/README.md#启动)，各用独立终端。
+
+首次准备 Python 3.10+ 虚拟环境、依赖和配置（已有环境和配置时保留）：
 
 ```powershell
+Set-Location E:\project\zhenghua_test
+if (-not (Test-Path .venv\Scripts\python.exe)) { python -m venv .venv }
+.\.venv\Scripts\python.exe -m pip install -e services/server
+if (-not (Test-Path services\server\.env)) { Copy-Item services\server\.env.example services\server\.env }
+```
+
+编辑 `services/server/.env`，填写 `SERVER_SUPABASE_URL`、`SERVER_SUPABASE_SERVICE_ROLE_KEY`，确认 `SERVER_AGENT_URL=http://127.0.0.1:8100`。`AGENT_INTERNAL_TOKEN` 必须与 Agent 使用的值一致。端子新增/删除还需要 `SERVER_DATABASE_URL`；使用本地 Docker Supabase 时也可以采用下方的容器启动命令。
+
+常规启动：
+
+```powershell
+Set-Location E:\project\zhenghua_test
 .\.venv\Scripts\python.exe -m uvicorn main:app --app-dir apps/api/src --host 127.0.0.1 --port 8000
 ```
 
-本地可复用 `services/agent/.env` 中的 Supabase URL/service-role 和内部 Agent Token；`services/server/.env` 与进程变量优先覆盖。配置模板见 `.env.example`。生产环境单独配置，不将 service-role 或内部 Token 提供给 Web。
+本地 Docker Supabase 已启动、需要完整端子增删事务能力时，使用以下命令替代上面的 Uvicorn 命令；容器名按实际环境调整：
+
+```powershell
+Set-Location E:\project\zhenghua_test
+.\.venv\Scripts\python.exe services/server/scripts/run_local_api.py --supabase-container supabase_db_zhenghua_test --port 8000
+```
+
+该脚本读取容器连接配置并在内存中传给 Server，不把数据库密码写入文件。两种启动方式选一种，同一端口只运行一个实例。访问 `http://127.0.0.1:8000/docs` 查看接口；健康检查：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/health
+```
+
+`/health` 是进程探活，不代表数据库和 Agent 已可用；开发服务可在所属终端按 `Ctrl+C` 停止。
+
+本地可复用 `services/agent/.env` 中的 `SUPABASE_URL`、`SUPABASE_SERVICE_ROLE_KEY` 和内部 Agent Token；Server 不读取 `AGENT_SUPABASE_*` 别名，仅配置这类别名时需要填写上述 `SERVER_SUPABASE_*`。`services/server/.env` 可覆盖同名文件配置，进程变量优先于同名文件值。配置模板见 `.env.example`。生产环境单独配置，不将 service-role 或内部 Token 提供给 Web。
 
 ## 能力与边界
 

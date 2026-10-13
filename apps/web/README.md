@@ -60,14 +60,24 @@ VITE_API_BASE_URL=
 
 ## 启动
 
-在仓库根目录执行：
+以下命令使用 Windows PowerShell。首次安装需要 Node.js 和 Corepack；所有命令从仓库根目录执行，克隆路径不同时调整 `Set-Location`。完整本地联调按 Agent → Server → Web 的顺序启动，每个服务使用独立终端。
+
+首次安装依赖（已有依赖时跳过）：
 
 ```powershell
+Set-Location E:\project\zhenghua_test
 corepack pnpm install
+if (-not (Test-Path apps\web\.env.local)) { Copy-Item apps\web\.env.example apps\web\.env.local }
+```
+
+启动前端开发服务：
+
+```powershell
+Set-Location E:\project\zhenghua_test
 corepack pnpm dev:web
 ```
 
-访问 `http://127.0.0.1:5174`。
+访问 `http://127.0.0.1:5174`，登录页为 `/login`。`VITE_API_BASE_URL` 默认留空，`/api` 由 Vite 代理到 `http://127.0.0.1:8000`；后端启动见 [Server README](../../services/server/README.md)，AI 服务启动见 [Agent README](../../services/agent/README.md#启动)。端口被占用时 Vite 会报错，不会自动切换端口；开发服务可在所属终端按 `Ctrl+C` 停止。
 
 质量检查：
 

@@ -141,7 +141,7 @@ class NativeVlmStageTests(unittest.TestCase):
             )
 
             stage2_examples = _example_image_parts(gateway.calls[1].messages)
-            self.assertEqual(len(stage2_examples), 2)
+            self.assertEqual(len(stage2_examples), 4)
             self.assertTrue(all(max(_png_dimensions(part)) <= 1800 for part in stage2_examples))
             stage2_input = gateway.calls[1].messages[-1]["content"][-1]
             self.assertEqual(_decode_image_part(stage2_input), b"source image")
@@ -161,7 +161,7 @@ class NativeVlmStageTests(unittest.TestCase):
                     for part in message["content"]
                     if isinstance(part, dict) and part.get("type") == "image_url"
                 ),
-                2,
+                3,
             )
             self.assertEqual(
                 [_decode_image_part(part) for part in gateway.calls[2].messages[-1]["content"][1:]],

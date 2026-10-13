@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import httpx
 import pytest
+
 from agent_service.application.page_workflow_extraction import run_page_workflow_extraction
 from agent_service.application.stage_persistence import STAGES, DurableExtractionSession
 from agent_service.config import AgentSettings

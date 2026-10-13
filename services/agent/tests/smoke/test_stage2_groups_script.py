@@ -10,6 +10,7 @@ from zipfile import ZipFile
 
 import httpx
 import pytest
+
 from agent_service.config import AgentSettings
 from agent_service.domain.models.extraction_stages import (
     CrossPageCompletionData,

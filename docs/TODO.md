@@ -4,7 +4,9 @@
 
 ## 进行中
 
-- [ ] 基于本地 002.C/002.M 人工核对优化 ZH 2.0.1：补全方向输出契约与缺失方向降级、按原始引用解析页码、端子身份校验、同页/分支/器件定义引用规则与实际图片 Few-shot；运行离线冒烟和字段级固定样例回归。保留旧试跑结果，不写数据库、不发布、不调用真实模型。计划见 `docs/service/agent/zh-stage2-quality-plan.md`。
+- [x] 补充 Web、Server/API、Agent README 的 Windows PowerShell 本地启动指令、依赖/配置准备、端口、健康检查和同进程 Worker；启动命令语法与入口路径静态核对通过。只改文档，未安装依赖、启动服务或写数据库。
+
+- [x] 基于本地002.C/002.M原图核对完成ZH2.0.1：方向契约/缺失降级、原始引用解析、端子身份/同页/分支/器件定义规则与实际图片Few-shot；40项冒烟、7项接口/兼容边界回归、Ruff与8文件strict mypy通过，公共Schema不变。保留旧结果，不写数据库、不发布、不调用真实模型；真实效果尚未复验。见 `docs/service/agent/changelog/2026-10-13-zh-stage2-quality.md`。
 
 - [x] 核对1002001693大车卷盘25页PDF与XLSX，新增本地 `zh_gantry_reel@0.1.0` experimental Profile/三类Prompt各两组图像样例、可逆页标/引用适配及字段级代表差异；5项离线资源/接口回归通过。未上传/写数据库/改既有ZH或ABB/调用真实模型，expected仍待工程确认。计划见 `docs/service/agent/zh-gantry-reel-profile-plan.md`，说明见 `zh-gantry-reel-review.md`。
 

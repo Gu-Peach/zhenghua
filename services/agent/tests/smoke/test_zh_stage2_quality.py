@@ -3,19 +3,24 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import httpx
 import pytest
 
 from agent_service.agents.page_scanner import PageScannerAgent
+from agent_service.application.page_workflow_extraction import run_page_workflow_extraction
 from agent_service.config import AgentSettings
 from agent_service.domain.models.extraction_stages import (
     CrossPageCompletionData,
     DrawingPageInput,
+    PageClassificationData,
     PageScanData,
     PageScanRequest,
+    ScannedWireUnit,
 )
 from agent_service.domain.models.wiring import WireConnection
 from agent_service.graphs.document_extraction.cross_page import _apply_terminal_task_results
@@ -244,6 +249,93 @@ def test_multiple_literal_addresses_do_not_choose_first_target() -> None:
     assert result["target_pdf_page"] is None and result["external"]
 
 
+def test_fan_out_survives_full_page_graph_and_saved_resume(tmp_path: Path) -> None:
+    import pymupdf
+
+    class Stages:
+        def __init__(self):
+            self.calls = []
+
+        async def classify_page(self, request):
+            return PageClassificationData(
+                plant_function="002.C", drawing_page_number=request.page.pdf_page_number
+            )
+
+        async def scan_page(self, request):
+            number = request.page.pdf_page_number
+            self.calls.append(f"scan:{number}")
+            if number != 1:
+                return PageScanData()
+            return PageScanData(
+                units=[
+                    ScannedWireUnit(
+                        unit_id="branches",
+                        connections=[
+                            WireConnection(
+                                local_connection_id=f"branch-{page}",
+                                line_number="003G0121",
+                                endpoint_role="source",
+                                direction_basis="each branch arrow leaves XD3:16",
+                                start={"device": "-XD3", "terminal": "XD3:16"},
+                                references=[
+                                    {
+                                        "raw": f"{page}.1 / branch",
+                                        "target_drawing_page": page,
+                                        "target_function": "002.C",
+                                    }
+                                ],
+                                status="needs_reference",
+                            )
+                            for page in (2, 3)
+                        ],
+                    )
+                ]
+            )
+
+        async def resolve_cross_page(self, request):
+            page = request.target_page.pdf_page_number
+            self.calls.append(f"complete:{page}")
+            return CrossPageCompletionData(
+                end={"device": "-TA1" if page == 2 else "-TA2", "terminal": "X1:6"},
+                status="resolved",
+                source_note="matched branch along wire to X1:6",
+            )
+
+    async def check() -> None:
+        pdf = tmp_path / "source.pdf"
+        document = pymupdf.open()
+        for number in (1, 2, 3):
+            document.new_page().insert_text((30, 50), f"Plant Function: 002.C\nPage Number: {number}")
+        document.save(pdf)
+        document.close()
+        stages = Stages()
+        kwargs = dict(
+            pdf_path=pdf,
+            output_dir=tmp_path / "run",
+            profile=binding(),
+            settings=AgentSettings(workspace_root=ROOT),
+            run_id="fan-out",
+            project_id="offline",
+        )
+        with patch(
+            "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
+            return_value=stages,
+        ):
+            run = await run_page_workflow_extraction(**kwargs)
+            records = [r for rows in run.execution.state["wiring_records"].values() for r in rows]
+            assert [(r.start_terminal, r.end_device, r.end_terminal) for r in records] == [
+                ("XD3:16", "-TA1", "X1:6"),
+                ("XD3:16", "-TA2", "X1:6"),
+            ]
+            assert all(r.status == "resolved" for r in records)
+            assert len({r.connection_id for r in records}) == 2
+            assert stages.calls == ["scan:1", "complete:2", "complete:3", "scan:2", "scan:3"]
+            await run_page_workflow_extraction(**kwargs)
+            assert len(stages.calls) == 5  # Completed pages restore both branches without new calls.
+
+    asyncio.run(check())
+
+
 def test_fixed_actual_image_cases_validate_fields_and_manifest_paths() -> None:
     manifest = json.loads((ASSETS / "manifest.json").read_text(encoding="utf-8"))
     for section in ("stage2_cases", "stage3_cases", "regression_cases"):
@@ -287,3 +379,42 @@ def test_fixed_actual_image_cases_validate_fields_and_manifest_paths() -> None:
         json.loads((ASSETS / "completion/w1_fo2_to_tf41.expected.json").read_text(encoding="utf-8"))
     )
     assert (optical.end.device, optical.end.terminal) == ("-TF41", "1R")
+
+
+def test_quality_asset_and_validator_checksums() -> None:
+    provenance = json.loads((ASSETS / "quality-provenance.json").read_text(encoding="utf-8"))
+    assert provenance["version"] == binding().profile.version == "2.0.1"
+    for section, directory in [("assets", ASSETS), ("policy_sources", ROOT)]:
+        for entry in provenance[section]:
+            assert (
+                "sha256:" + hashlib.sha256((directory / entry["path"]).read_bytes()).hexdigest()
+                == entry["checksum"]
+            )
+
+
+def test_fixed_cases_survive_fake_adapter_without_field_loss() -> None:
+    async def check() -> None:
+        manifest = json.loads((ASSETS / "manifest.json").read_text(encoding="utf-8"))
+        cases = manifest["stage2_cases"] + manifest["regression_cases"]
+        for case in cases:
+            response = (ASSETS / case["expected"]).read_text(encoding="utf-8")
+            gold = PageScanData.model_validate_json(response)
+            gateway = FakeModelGateway([response])
+            result = await PageScannerAgent(
+                stages=ZhVlmExtractionStageAdapter(
+                    AgentSettings(default_model="fake"),
+                    gateway,
+                )
+            ).run(
+                PageScanRequest(
+                    run_id="fixed-regression",
+                    project_id="offline",
+                    profile=binding(),
+                    page=DrawingPageInput(pdf_page_number=1, image_path=ASSETS / case["images"][0]["path"]),
+                )
+            )
+            assert [c.model_dump(mode="json") for u in result.units for c in u.connections] == [
+                c.model_dump(mode="json") for u in gold.units for c in u.connections
+            ], case["id"]
+
+    asyncio.run(check())

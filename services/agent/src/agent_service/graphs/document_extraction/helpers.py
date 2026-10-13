@@ -228,9 +228,12 @@ def _wire_record_from_connection(
     if source_drawing_pages:
         page_note += f"；图纸页{','.join(source_drawing_pages)}"
     source_note = f"{source_note}；{page_note}" if source_note else page_note
+    direction_metadata: dict[str, Any] = {
+        "endpoint_role": connection.endpoint_role,
+        "direction_basis": connection.direction_basis,
+    }
     return WireRecord(
-        endpoint_role=connection.endpoint_role,
-        direction_basis=connection.direction_basis,
+        **direction_metadata,
         wire_number=unit.wire_number,
         attribute=unit.attribute,
         model=unit.model,

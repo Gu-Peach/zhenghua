@@ -1,5 +1,7 @@
 # Agent Service
 
+2026-10-13 本地ZH2.0.1：方向缺失降级、原始引用解析、分支保留与端子身份校验；40项冒烟及7项接口/兼容回归通过。旧结果保留，尚未重跑真实模型，数据库与远端规则未变。见[变更记录](../../docs/service/agent/changelog/2026-10-13-zh-stage2-quality.md)。
+
 本地 002.C/002.M 测试入口：`scripts/run_stage2_groups.py`，仅本地图/索引、内存执行，导出与 `1641.xlsx` 同顺序的 12 列线表，色标留空。默认预检，真实模型须 `--allow-real-model`；无数据库/Storage 上传。命令和产物见 [测试说明](../../docs/service/agent/local-stage2-group-test.md)。
 
 2026-10-13 分支更新：提取改为 Stage 1 分类 + Stage 2 独立逐页 LangGraph，扫描/双图补全/保存形成闭环，删除独立 Stage 3 Agent 和全局补全阶段。实现见 [ADR-0014](../../docs/adr/0014-stage2-page-extraction-workflow.md) 与 [交付记录](../../docs/service/agent/changelog/2026-10-13-stage2-page-workflow.md)。本轮仅离线冒烟，不写真实数据库、不发布远端包、不重启服务；旧持久 run 只读，新 run 使用冻结 `page_extraction_v2` 工作流，真实库运行前需要未部署的新 migration。以下早期实施状态作为历史上下文。
@@ -53,12 +55,18 @@ ABB Profile 1.1.2 使用独立三阶段 Prompt，各阶段仅一案例：Stage 1
 
 ## 启动
 
-从仓库根目录安装 Agent 包及其运行依赖。首次使用时复制配置模板到 `services/agent/.env`，并填写模型连接参数。`AGENT_MODEL_BASE_URL` 填服务根地址（通常以 `/v1` 结尾），也可以直接填写完整的 Chat Completions 地址到 `AGENT_MODEL_CHAT_COMPLETIONS_URL`。
+以下命令使用 Windows PowerShell，从仓库根目录执行；克隆路径不同时调整 `Set-Location`。需要 Python 3.10+。完整本地联调按 Agent（8100）→ [Server/API（8000）](../server/README.md#启动) → [Web（5174）](../../apps/web/README.md#启动) 的顺序，在独立终端启动。
+
+首次准备虚拟环境、Agent 包及其运行/开发依赖，已有环境和配置时保留：
 
 ```powershell
+Set-Location E:\project\zhenghua_test
+if (-not (Test-Path .venv\Scripts\python.exe)) { python -m venv .venv }
 .\.venv\Scripts\python.exe -m pip install -e "services/agent[dev]"
 if (-not (Test-Path services\agent\.env)) { Copy-Item services\agent\.env.example services\agent\.env }
 ```
+
+编辑 `services/agent/.env`，填写模型地址、`AGENT_MODEL_API_KEY` 和 `AGENT_DEFAULT_MODEL`，确认 `AGENT_INTERNAL_TOKEN` 与 Server 一致。`AGENT_MODEL_BASE_URL` 填服务根地址（通常以 `/v1` 结尾），也可以直接填写完整的 Chat Completions 地址到 `AGENT_MODEL_CHAT_COMPLETIONS_URL`。
 
 Agent 只读取 `services/agent/.env`，不会加载仓库根目录或 `backend/.env`。运行进程中显式设置的环境变量优先；模型配置兼容旧 `VLM_*`，Supabase 凭据兼容旧 `SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY`。旧 `SUPABASE_STORAGE_BUCKET=images` 不会被继承，Agent 新链路默认使用私有 `project-assets`。`AGENT_INLINE_WORKER` 只适用于同进程开发测试。
 
@@ -74,14 +82,27 @@ AGENT_SUPABASE_STORAGE_BUCKET=project-assets
 
 不要沿用旧公开 `images` Bucket。新链路的原始 PDF、页面图片和阶段产物必须写入 migration 创建的私有 `project-assets`；service-role key 只允许存在于 Server/Agent 进程环境中。
 
-启动 Agent API（探活、Profile、阶段 0/1 HTTP 验收与 run 控制；CLI 为不落库的单独测试入口）：
+启动 Agent API 和本地同进程 Worker：
 
 ```powershell
-$env:PYTHONPATH="services/agent/src;."
+Set-Location E:\project\zhenghua_test
+$env:AGENT_INLINE_WORKER="true"
 .\.venv\Scripts\python.exe -m uvicorn agent_service.main:app `
-  --host 0.0.0.0 `
+  --app-dir services/agent/src `
+  --host 127.0.0.1 `
   --port 8100
 ```
+
+`AGENT_INLINE_WORKER` 默认是 `false`；上面的进程环境变量开启本地开发 Worker，否则只启动 HTTP API，排队任务需要其他 Worker 消费。使用 `memory` 队列时 API 与 Worker 必须在同一进程；真实工作台上传和持久提取需要上面的 Supabase 配置、已应用的所需 migration 和可用私有 Bucket。该开发命令沿用 `.env` 中的持久化配置，不会将 Supabase 模式切换为内存模式。仅本地图纸、不落库的测试请使用下方独立 CLI 或[分组测试说明](../../docs/service/agent/local-stage2-group-test.md)。
+
+接口文档为 `http://127.0.0.1:8100/docs`。启动后可在另一终端检查：
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8100/health/live
+Invoke-RestMethod http://127.0.0.1:8100/health/ready
+```
+
+停止当前开发服务使用 `Ctrl+C`。处理任务期间避免启用自动 reload，以免中断模型调用及进程内会话。
 
 未配置模型时，`/health/live` 仍返回 `200`，`/health/ready` 返回 `503` 并列出未就绪项。
 

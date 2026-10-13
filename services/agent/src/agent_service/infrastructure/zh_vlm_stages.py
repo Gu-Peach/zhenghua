@@ -181,7 +181,10 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             connection_schema["required"] = list(
                 dict.fromkeys([*connection_schema.get("required", []), "endpoint_role", "direction_basis"])
             )
-        system_prompt = prompt + "\n输出 JSON Schema：\n" + json.dumps(contract)
+        system_prompt = (
+            prompt + "\n输出 JSON Schema：\n" + json.dumps(contract)
+            if self.enforce_evidence_contract else prompt
+        )
         messages = [
             {"role": "system", "content": system_prompt},
             *prefix,
@@ -597,7 +600,7 @@ def _normalize_cross_page(
         end = normalized.get("end")
         if (
             not isinstance(end, dict)
-            or not end.get("terminal")
+            or end.get("terminal") in (None, "")
             or not str(normalized.get("source_note") or "").strip()
         ):
             normalized["status"] = "needs_review"

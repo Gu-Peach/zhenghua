@@ -118,11 +118,11 @@ class ZhGantryReelPolicy(ZhExtractionPolicy):
             )
             return reference
         if match and 1 <= int(match["column"]) <= 48:
-            function, number = encode_sheet(match["sheet"])
+            parsed_function, parsed_number = encode_sheet(match["sheet"])
             reference.update(
-                target_function=function,
-                target_drawing_page=number,
-                target_internal_page=number,
+                target_function=parsed_function,
+                target_drawing_page=parsed_number,
+                target_internal_page=parsed_number,
                 target_column=int(match["column"]),
             )
             reference["reason"] = f"SH.NO.={match['sheet']}; column={match['column']}; row={match['row']}"
