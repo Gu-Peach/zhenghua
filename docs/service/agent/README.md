@@ -1,5 +1,11 @@
 # Agent 服务设计索引
 
+2026-10-13 本地新增大车卷盘 `zh_gantry_reel@0.1.0` experimental 资源：SH.NO. 网格页标/引用，分类、初扫、内部补全各两组实际图片；仅离线资源/接口回归，不上传、不调用真实模型。资料差异与范围见 [核对说明](./zh-gantry-reel-review.md)，规范索引设计见 [ADR-0015](../../adr/0015-zh-gantry-reel-profile.md)。
+
+本地 002.C/002.M 测试脚本与真实执行完成：内存运行、12 页/121 条、12 列 XLSX 色标留空；14 项离线冒烟通过，31 条待复核，不写数据库/上传对象。见 [说明](./local-stage2-group-test.md) 和 [执行记录](./changelog/2026-10-13-local-stage2-groups.md)。
+
+2026-10-13 分支提取改造：Stage 2 逐页 LangGraph 内部扫描/双图补全/保存，独立 Stage 3 Agent/Graph 删除；ZH 2.0.0 放线标记与箭头规则替代端子白名单。10 项离线冒烟通过，真实数据库/模型/远端发布未执行。新入口及兼容边界见 [交付记录](./changelog/2026-10-13-stage2-page-workflow.md) 与 [ADR-0014](../../adr/0014-stage2-page-extraction-workflow.md)。下文旧三阶段记录保留为历史基线。
+
 ABB 独立三阶段资源演进见 [初版记录](./changelog/2026-10-12-abb-resource-draft.md)、[1.1.1 精简记录](./changelog/2026-10-12-abb-resource-compact.md) 和 [1.1.2 可用实现](./changelog/2026-10-12-abb-ready-profile.md)。当前各阶段一案例、图片 1/1/2 张；独立 `abb_native` adapter/policy 和 Bucket 可用包已完成，真实模型字段级回归仍待人工验收。
 
 规则库人工创建/删除与动态注册见 [实施记录](../server/changelog/2026-10-12-shared-rule-library.md)：所有登录用户共享手工规则包，存储后直接可用，同 key 新任务选择最新 active 版本；停用后精确历史绑定仍可读取。AI 规则修改按 [ADR-0013](../../adr/0013-confirmed-rule-update-without-evaluation.md) 经一次用户确认后直接启用。

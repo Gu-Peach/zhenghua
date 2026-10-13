@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from ..domain.models.extraction_stages import (
     CrossPageCompletionRequest,
+    DrawingPageInput,
     PageClassificationRequest,
     PageScanRequest,
 )
@@ -10,6 +11,12 @@ from .zh_vlm_stages import ZhVlmExtractionStageAdapter
 
 class AbbVlmExtractionStageAdapter(ZhVlmExtractionStageAdapter):
     """ABB-only instructions with the package-bound ABB Prompt and Few-shot."""
+
+    enforce_evidence_contract = False
+
+    def completion_images(self, request: CrossPageCompletionRequest) -> list[DrawingPageInput]:
+        # Preserve ABB's existing single-target-page query contract in this ZH change.
+        return [request.target_page]
 
     def classification_instruction(self, request: PageClassificationRequest) -> str:
         return (

@@ -1,0 +1,12 @@
+{
+  "task_id": "002c01-w1-l1-to-q1",
+  "end": {
+    "location": "+02",
+    "device": "-Q1",
+    "name": "HIGH VOLTAGE SWITCHBOARD INCOMING FEEDER",
+    "terminal": "L1"
+  },
+  "status": "resolved",
+  "needs_review": false,
+  "source_note": "来源页 002C0101 的 GCR_L1 引用与目标页回指 1.1 匹配，实际接入 Q1 L1"
+}

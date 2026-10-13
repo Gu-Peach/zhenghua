@@ -1,37 +1,121 @@
 {
-  "version": 1,
-  "description": "Shared image-backed wiring extraction case. Stage 2 and Stage 3 use canonical images with stage-specific inputs and expected outputs. Stage 3 sends only the target-page image.",
+  "version": 3,
+  "description": "ZH 2.0.1 evidence contract, per-wire references, fan-out, local PLC and optical target regression. stage3_cases is a historical loader key only.",
   "images": {
     "002c03": "images/002c03.png",
     "002c06": "images/002c06.png",
     "002c11": "images/002c11.png",
     "002c21": "images/002c21.png",
-    "003c20": "images/003c20.png"
+    "003c20": "images/003c20.png",
+    "002c01": "images/002c01.png",
+    "c03_receivers": "images/c03_receivers.png",
+    "002c02": "images/002c02.png",
+    "002c05": "images/002c05.png",
+    "002m01": "images/002m01.png",
+    "002m03": "images/002m03.png",
+    "098m25": "images/098m25.png"
   },
   "stage2_cases": [
     {
-      "id": "002c11_xa_breaker_current",
-      "title": "002.C/11：XA 全量扫描、同页断路器与 Ir 电流",
-      "expected": "stage2/002c11.expected.json",
+      "id": "002c01_visible_sources",
+      "title": "002.C/1：非 XD 白名单端点、实际局部连接与离开端子的跨页箭头",
+      "expected": "stage2/002c01.expected.json",
       "images": [
         {
-          "path": "images/002c11.png",
+          "path": "images/002c01.png",
           "role": "source_page",
-          "note": "识别 XA:1-7；FC1 三相 Ir=400A，FC2 三相 Ir=125A；N/PE 不填电流。"
+          "note": "16 条 XD1-W1 本页段保留方向不确定；6 条 W1 出线按明确箭头输出。不得凭业务标准补 MV 代号、X6 或颜色。"
+        }
+      ]
+    },
+    {
+      "id": "c03_receivers_only",
+      "title": "C03 局部负例：箭头指向 X9:2/X9:4，只有接收端，不创建起点记录",
+      "expected": "stage2/c03_receivers.expected.json",
+      "images": [
+        {
+          "path": "images/c03_receivers.png",
+          "role": "source_page"
+        }
+      ]
+    },
+    {
+      "id": "002c02_sources_only",
+      "title": "C02完整页：只输出下方K2/K3两组8条来源，排除上方Q1接收组；分别绑定5.x/6.x引用",
+      "expected": "stage2/002c02.expected.json",
+      "images": [
+        {
+          "path": "images/002c02.png",
+          "role": "source_page"
+        }
+      ]
+    },
+    {
+      "id": "002m03_fan_out",
+      "title": "M03完整页：XD3:16两条离页分支分别输出；下方103-108跨页接收段不反向输出",
+      "expected": "stage2/002m03_branches.expected.json",
+      "images": [
+        {
+          "path": "images/002m03.png",
+          "role": "source_page"
         }
       ]
     }
   ],
   "stage3_cases": [
     {
-      "id": "002c11_xa1_to_002c06_ta2_u2",
-      "title": "002.C/11 XA:1 跨页补全到 002.C/6 TA2:U2",
-      "input": "stage3/xa1_to_ta2_u2.task.json",
-      "expected": "stage3/xa1_to_ta2_u2.expected.json",
+      "id": "002c01_w1_l1_to_002c02_q1",
+      "title": "Stage 2 内部节点：C01 W1:L1 定向补全到 C02 Q1:L1",
+      "input": "completion/w1_l1_to_q1.task.json",
+      "expected": "completion/w1_l1_to_q1.expected.json",
       "images": [
         {
-          "path": "images/002c06.png",
+          "path": "images/002c01.png",
+          "role": "source_page"
+        },
+        {
+          "path": "images/002c02.png",
           "role": "target_page"
+        }
+      ]
+    },
+    {
+      "id": "w1_fo2_to_tf41",
+      "title": "定向双图补全FO2到TF41:1R，排除数字误推2R",
+      "input": "completion/w1_fo2_to_tf41.task.json",
+      "expected": "completion/w1_fo2_to_tf41.expected.json",
+      "images": [
+        {
+          "path": "images/002c01.png",
+          "role": "source_page"
+        },
+        {
+          "path": "images/098m25.png",
+          "role": "target_page"
+        }
+      ]
+    }
+  ],
+  "regression_cases": [
+    {
+      "id": "c05_secondary",
+      "title": "局部字段回归：仅TA1二次侧三根相线，其余连接不在本例expected范围",
+      "expected": "regression/002c05_secondary.expected.json",
+      "images": [
+        {
+          "path": "images/002c05.png",
+          "role": "source_page"
+        }
+      ]
+    },
+    {
+      "id": "m01_local_plc",
+      "title": "局部字段回归：本页ID:2-9与PLC针脚21-28；来源资格不在本例范围，无箭头保留unknown",
+      "expected": "regression/002m01_local_plc.expected.json",
+      "images": [
+        {
+          "path": "images/002m01.png",
+          "role": "source_page"
         }
       ]
     }

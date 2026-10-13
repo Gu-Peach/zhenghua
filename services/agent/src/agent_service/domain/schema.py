@@ -97,7 +97,7 @@ CONTRACT_MODELS = (
 
 def contract_schema_bundle() -> dict[str, Any]:
     return {
-        "contract_version": "4",
+        "contract_version": "5",
         "schemas": {model.__name__: model.model_json_schema() for model in CONTRACT_MODELS},
     }
 

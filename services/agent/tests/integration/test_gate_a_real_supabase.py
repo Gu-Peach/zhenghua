@@ -13,7 +13,6 @@ from uuid import uuid4
 
 import httpx
 import pytest
-
 from agent_service.application.extraction_run_executor import FullExtractionRunExecutor
 from agent_service.application.run_control import RunControlService
 from agent_service.application.worker import AgentWorker
@@ -360,7 +359,7 @@ def test_gate_a_database_fake_model_pipeline(tmp_path: Path, scenario: str) -> N
 
                 with (
                     patch(
-                        "agent_service.application.three_stage_extraction.build_extraction_stage_dispatcher",
+                        "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
                         return_value=fake,
                     ),
                     patch.object(stages, "seal", side_effect=crash_after_classification),
@@ -372,7 +371,7 @@ def test_gate_a_database_fake_model_pipeline(tmp_path: Path, scenario: str) -> N
                 assert not await client.select("drawings", params={"project_id": f"eq.{project_id}"})
                 await control.cancel(saved.agent_run_id)
                 with patch(
-                    "agent_service.application.three_stage_extraction.build_extraction_stage_dispatcher",
+                    "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
                     return_value=FakeStages(),
                 ):
                     assert await worker.run_once()
@@ -402,7 +401,7 @@ def test_gate_a_database_fake_model_pipeline(tmp_path: Path, scenario: str) -> N
 
             with (
                 patch(
-                    "agent_service.application.three_stage_extraction.build_extraction_stage_dispatcher",
+                    "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
                     return_value=fake,
                 ),
                 patch.object(stages, "claim", side_effect=capture_claim),
@@ -495,7 +494,7 @@ def test_gate_a_database_fake_model_pipeline(tmp_path: Path, scenario: str) -> N
                     )
                     successor.register(RunType.FULL_EXTRACTION, fresh_executor)
                     with patch(
-                        "agent_service.application.three_stage_extraction.build_extraction_stage_dispatcher",
+                        "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
                         return_value=successor_fake,
                     ):
                         assert await successor._run_durable(lease)

@@ -6,6 +6,10 @@
 
 ## 1. 重构结论
 
+2026-10-13 本地新增 ZH 大车卷盘网格页标 experimental Profile，采用独立页标/引用策略及可逆接口映射，不上传或修改生产资源；见 [ADR-0015](./adr/0015-zh-gantry-reel-profile.md)。
+
+2026-10-13 提取链路调整实施见 [ADR-0014](./adr/0014-stage2-page-extraction-workflow.md)：Stage 2 独立逐页 LangGraph 内部执行扫描、双图定向补全与完成页持久化，新运行取消独立 Stage 3；历史兼容和最终业务版本边界见 ADR。
+
 2026-10-13 规则变更契约由用户调整：[ADR-0013](./adr/0013-confirmed-rule-update-without-evaluation.md) 替代下文历史方案中的评测/审核门禁。当前链路为归因建议→一次用户确认→构建并直接启用不可变规则版本。新增受控 RPC 原子启用包/候选并留确认审计，不伪造评测报告；保留旧项目版本和并发/权限/完整性校验。旧评测实现只兼容已入队任务，停止新评测启动。
 
 采用渐进式 monorepo 重构，不重写已经验证过的 PDF 渲染和 LangGraph 提取代码。第一阶段先建立新目录、数据库领域模型、认证和项目树；随后将现有 Agent 包装为独立 Worker，并按图纸 Profile 拆出振华、ABB 等模板规则。

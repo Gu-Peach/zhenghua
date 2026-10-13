@@ -60,7 +60,14 @@ def _drawing_index_from_dict(value: Mapping[str, Any]) -> Any:
 
 
 def _is_fatal_model_request_error(exc: Exception) -> bool:
-    return getattr(exc, "code", None) in {ErrorCode.INVALID_REQUEST, ErrorCode.RUN_CANCELLED}
+    return getattr(exc, "code", None) in {
+        ErrorCode.INVALID_REQUEST,
+        ErrorCode.RUN_CANCELLED,
+        ErrorCode.PROFILE_INVALID,
+        ErrorCode.UNAUTHORIZED_SERVICE,
+        ErrorCode.PERSISTENCE_UNAVAILABLE,
+        ErrorCode.CHECKPOINT_CONFLICT,
+    }
 
 
 def _page_scan_context(
@@ -99,7 +106,7 @@ def _find_or_create_unit_id(
                 continue
             return existing_id
     raw_key = (
-        f"{project}|{wire_number or 'missing'}|{context or 'none'}"
+        f"{project}|page:{page_number}|{wire_number or 'missing'}|{context or 'none'}"
         if wire_number
         else f"{project}|{prefix}|page:{page_number}|local:{local_unit_index}"
     )
@@ -167,7 +174,7 @@ def _merge_scanned_unit(
             if isinstance(raw_connection, WireConnection)
             else WireConnection.model_validate(raw_connection)
         )
-        connection_id = f"{unit_id}:p{page_number}:c{connection_index}"
+        connection_id = f"{unit_id}:p{page_number}:u{unit_index}:c{connection_index}"
         connection_dict = connection.model_dump(mode="json", exclude_none=False)
         connection_dict["connection_id"] = connection_id
         connection_dict["unit_id"] = unit_id
@@ -222,6 +229,8 @@ def _wire_record_from_connection(
         page_note += f"；图纸页{','.join(source_drawing_pages)}"
     source_note = f"{source_note}；{page_note}" if source_note else page_note
     return WireRecord(
+        endpoint_role=connection.endpoint_role,
+        direction_basis=connection.direction_basis,
         wire_number=unit.wire_number,
         attribute=unit.attribute,
         model=unit.model,
@@ -280,9 +289,24 @@ def _connection_identity(unit_id: str, connection: WireConnection) -> str:
     start = _endpoint_signature(connection.start)
     end = _endpoint_signature(connection.end)
     points = tuple(_endpoint_signature(point) for point in connection.intermediate_points)
+    # Unresolved fan-out branches share a source and line number but have distinct
+    # wire references. Keep them separate until their concrete ends are known.
+    branch_references = (
+        sorted(
+            {
+                json.dumps(
+                    [ref.raw, ref.target_function, ref.target_drawing_page, ref.target_column],
+                    ensure_ascii=False,
+                )
+                for ref in connection.references
+            }
+        )
+        if connection.end is None or connection.end.terminal in (None, "")
+        else []
+    )
     if connection.line_number or connection.core_number or start != "" or end != "":
         return json.dumps(
-            [unit_id, connection.core_number, connection.line_number, start, end, points],
+            [unit_id, connection.core_number, connection.line_number, start, end, points, branch_references],
             ensure_ascii=False,
             sort_keys=True,
         )

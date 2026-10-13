@@ -10,7 +10,6 @@ from agent_service.domain.models.wiring import (
 )
 from agent_service.infrastructure.document.json_response import _loads_json
 from agent_service.profiles.zh.terminal_strips import (
-    ALLOWED_TERMINAL_CODES,
     normalize_terminal_strip,
 )
 from agent_service.profiles.zh.terminal_strips import (
@@ -68,28 +67,37 @@ def normalize_wire_record(
         record.remark = record.remark or "SPARE"
         return record
     if line_number and line_number.upper() == "PE":
-        record.terminal_strip = record.start_terminal_strip = record.end_terminal_strip = None
-        record.start_terminal = record.end_terminal = "PE"
-        record.color = record.color or "黄绿"
-        record.remark = record.remark or "PE"
-        return record
+        record.start_terminal = record.start_terminal or "PE"
+        # An unresolved PE endpoint must stay null.
     record.start_terminal = _normalize_terminal(record.start_device, record.start_terminal, force_prefix=True)
     record.end_terminal = _normalize_terminal(record.end_device, record.end_terminal, force_prefix=False)
-    record.start_terminal_code = _normalize_terminal_code(record.start_terminal_code)
-    record.end_terminal_code = _normalize_terminal_code(record.end_terminal_code)
-    start_strip = _terminal_strip(record.start_device, terminal_strip_mapping)
-    record.terminal_strip = start_strip or normalize_terminal_strip(
-        record.terminal_strip, terminal_strip_mapping
-    )
-    record.start_terminal_strip = start_strip or normalize_terminal_strip(
-        record.start_terminal_strip or record.terminal_strip, terminal_strip_mapping
-    )
-    record.end_terminal_strip = _terminal_strip(
-        record.end_device, terminal_strip_mapping
-    ) or normalize_terminal_strip(record.end_terminal_strip, terminal_strip_mapping)
+    # Observed endpoint fields are facts, not a closed vocabulary.
+    start_strip = _mapped_endpoint_strip(record, "start", terminal_strip_mapping)
+    end_strip = _mapped_endpoint_strip(record, "end", terminal_strip_mapping)
+    record.start_terminal_strip = _text(record.start_terminal_strip) or start_strip
+    record.end_terminal_strip = _text(record.end_terminal_strip) or end_strip
+    explicit = _text(record.terminal_strip)
+    if explicit:
+        record.terminal_strip = explicit
+    elif start_strip and end_strip and start_strip != end_strip:
+        record.terminal_strip = None
+        record.status = "needs_review"
+        record.source_note = (record.source_note or "") + "; conflicting terminal strip mappings"
+    else:
+        record.terminal_strip = start_strip or end_strip
     return record
 
 
+def _mapped_endpoint_strip(record: WireRecord, side: str, mapping: Mapping[str, str] | None) -> str | None:
+    for value in (
+        getattr(record, f"{side}_terminal_board"),
+        getattr(record, f"{side}_device"),
+        str(getattr(record, f"{side}_terminal") or "").split(":", 1)[0],
+    ):
+        result = _terminal_strip(value, mapping)
+        if result:
+            return result
+    return None
 
 
 def _normalize_connection(value: dict[str, Any], index: int) -> dict[str, Any]:
@@ -150,13 +158,6 @@ def _terminal_strip(device: Any, mapping: Mapping[str, str] | None) -> str | Non
     if mapping:
         return normalize_terminal_strip(mapping.get(code), mapping)
     return configured_terminal_strip_for_device(device)
-
-
-def _normalize_terminal_code(value: Any) -> str | None:
-    normalized = str(value).strip().upper() if value is not None else ""
-    return normalized if normalized in ALLOWED_TERMINAL_CODES else None
-
-
 
 
 def _text(value: Any) -> str | None:

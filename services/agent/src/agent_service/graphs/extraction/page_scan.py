@@ -5,7 +5,12 @@ from typing import Any, TypedDict
 from langgraph.graph import END, START, StateGraph
 
 from ...agents.page_scanner import PageScannerAgent
-from ...domain.models.extraction_stages import PageScanRequest, PageScanResult
+from ...domain.models.extraction_stages import (
+    CrossPageCompletionRequest,
+    CrossPageCompletionResult,
+    PageScanRequest,
+    PageScanResult,
+)
 
 
 class PageScanState(TypedDict, total=False):
@@ -27,3 +32,12 @@ def build_page_scan_graph(agent: PageScannerAgent) -> Any:
 async def run_page_scan(*, agent: PageScannerAgent, request: PageScanRequest) -> PageScanResult:
     final_state = await build_page_scan_graph(agent).ainvoke({"request": request})
     return PageScanResult.model_validate(final_state["result"])
+
+
+async def complete_page_connection(
+    *,
+    agent: PageScannerAgent,
+    request: CrossPageCompletionRequest,
+) -> CrossPageCompletionResult:
+    """Internal Stage 2 operation, not an independently scheduled Agent stage."""
+    return await agent.complete(request)

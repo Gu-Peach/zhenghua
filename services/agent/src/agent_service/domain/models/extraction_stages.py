@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field
 
@@ -43,6 +44,7 @@ class PageScanRequest(ExtractionStageRequest):
 
 class CrossPageCompletionRequest(ExtractionStageRequest):
     task_id: str = Field(min_length=1)
+    source_page: DrawingPageInput | None = None
     target_page: DrawingPageInput
     task_context: str = Field(min_length=1)
 
@@ -81,6 +83,8 @@ class DrawingReference(StrictModel):
 
 
 class ScannedConnection(StrictModel):
+    endpoint_role: Literal["source", "receiver", "unknown"] = "source"
+    direction_basis: str | None = None
     connection_id: str | None = None
     local_connection_id: str | None = None
     unit_id: str | None = None

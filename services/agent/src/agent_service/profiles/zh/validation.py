@@ -5,39 +5,23 @@ from collections.abc import Mapping
 from typing import Any
 
 from agent_service.domain.models.wiring import (
-    Endpoint,
-    WireConnection,
     WireRecord,
 )
-from agent_service.profiles.zh.terminal_strips import (
-    ALLOWED_TERMINAL_STRIPS,
-    allowed_start_terminal_code,
-    normalize_terminal_strip,
-    terminal_strip_for_device,
-)
 
 
-def _orient_allowed_start_terminal(
-    connection: WireConnection,
-) -> tuple[WireConnection | None, bool]:
-    start_code = _endpoint_allowed_start_code(connection.start)
-    end_code = _endpoint_allowed_start_code(connection.end)
-    if start_code:
-        return connection, False
-    if end_code and connection.end is not None:
-        connection.start, connection.end = connection.end, connection.start
-        return connection, True
-    return None, False
-
-
-def _endpoint_allowed_start_code(endpoint: Endpoint | None) -> str | None:
-    if endpoint is None:
-        return None
-    return allowed_start_terminal_code(
-        endpoint.terminal_board,
-        endpoint.device,
-        endpoint.terminal,
-    )
+def endpoint_identity_warnings(terminal: Any, device: Any, board: Any) -> list[str]:
+    """Check endpoint identity without restricting terminal families."""
+    warnings: list[str] = []
+    value = str(terminal if terminal is not None else "").strip()
+    if not value:
+        warnings.append("missing physical terminal")
+    elif re.fullmatch(r"[IQ]\d+\.\d+", value, re.IGNORECASE):
+        warnings.append("PLC address is not a physical terminal")
+    elif re.search(r"(?:^|:)\w+_(?:L\d?|N|PE|\+|-)(?:\.\d+)?$", value, re.IGNORECASE):
+        warnings.append("potential label is not a physical terminal")
+    if not str(device or board or "").strip() and ":" not in value and value.upper() != "N-BAR":
+        warnings.append("missing device or terminal board identity")
+    return warnings
 
 
 def _validated_breaker_current(
@@ -65,31 +49,32 @@ def _validated_breaker_current(
 def _collect_consistency_warnings(
     record: WireRecord,
     mapping: Mapping[str, str],
+    *,
+    require_endpoint_identity: bool = False,
 ) -> list[str]:
     warnings: list[str] = []
+    if require_endpoint_identity:
+        for side in ("start", "end"):
+            warnings.extend(
+                f"{side}: {warning}"
+                for warning in endpoint_identity_warnings(
+                    getattr(record, f"{side}_terminal"),
+                    getattr(record, f"{side}_device"),
+                    getattr(record, f"{side}_terminal_board"),
+                )
+            )
     line_number = (record.line_number or "").strip().upper()
     if line_number == "SPARE":
         if record.start_terminal not in (None, "*") or record.end_terminal not in (None, "*"):
             warnings.append("SPARE record has a non-* terminal")
         return warnings
     if line_number == "PE":
-        if record.start_terminal not in (None, "PE") or record.end_terminal not in (None, "PE"):
+        if any(
+            value and str(value).rsplit(":", 1)[-1].upper() != "PE"
+            for value in (record.start_terminal, record.end_terminal)
+        ):
             warnings.append("PE record has a non-PE terminal")
         return warnings
-    for field_name in ("terminal_strip", "start_terminal_strip", "end_terminal_strip"):
-        value = getattr(record, field_name)
-        if value not in (None, "") and normalize_terminal_strip(value, mapping) is None:
-            warnings.append(
-                f"{record.source_image or 'record'} {field_name}={value!r} is outside the allowed "
-                f"terminal strips: {', '.join(ALLOWED_TERMINAL_STRIPS)}",
-            )
-
-    expected_strip = terminal_strip_for_device(record.start_device, mapping)
-    if expected_strip and record.terminal_strip not in (None, expected_strip):
-        warnings.append(
-            f"{record.source_image or 'record'} start device {record.start_device} "
-            f"maps to {expected_strip}, got {record.terminal_strip}",
-        )
     if record.start_device and record.start_terminal is None:
         warnings.append(f"{record.source_image or 'record'} has a start device but no start terminal")
     return warnings

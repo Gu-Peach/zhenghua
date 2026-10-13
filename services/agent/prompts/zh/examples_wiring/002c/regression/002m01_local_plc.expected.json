@@ -1,0 +1,204 @@
+{
+  "drawing_function": "002.M",
+  "drawing_page_number": 1,
+  "needs_review": true,
+  "units": [
+    {
+      "unit_id": "002.M-1-evidence",
+      "connections": [
+        {
+          "local_connection_id": "m01-id-2",
+          "line_number": "002M0151",
+          "endpoint_role": "unknown",
+          "direction_basis": "无方向箭头，按ID到Digital Input的本页实线记录端点，方向待复核；PLC模块定义引用不作为导线跨页，I92.x不是针脚",
+          "start": {
+            "device": "-ID",
+            "terminal": "2",
+            "location": "+01F11.3",
+            "terminal_board": null,
+            "name": null
+          },
+          "end": {
+            "device": "-KP1-8",
+            "terminal": "21",
+            "location": "+01F11.3",
+            "terminal_board": null,
+            "name": null
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "needs_review",
+          "source_note": "无方向箭头，按ID到Digital Input的本页实线记录端点，方向待复核；PLC模块定义引用不作为导线跨页，I92.x不是针脚"
+        },
+        {
+          "local_connection_id": "m01-id-3",
+          "line_number": "002M0152",
+          "endpoint_role": "unknown",
+          "direction_basis": "无方向箭头，按ID到Digital Input的本页实线记录端点，方向待复核；PLC模块定义引用不作为导线跨页，I92.x不是针脚",
+          "start": {
+            "device": "-ID",
+            "terminal": "3",
+            "location": "+01F11.3",
+            "terminal_board": null,
+            "name": null
+          },
+          "end": {
+            "device": "-KP1-8",
+            "terminal": "22",
+            "location": "+01F11.3",
+            "terminal_board": null,
+            "name": null
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "needs_review",
+          "source_note": "无方向箭头，按ID到Digital Input的本页实线记录端点，方向待复核；PLC模块定义引用不作为导线跨页，I92.x不是针脚"
+        },
+        {
+          "local_connection_id": "m01-id-4",
+          "line_number": "002M0153",
+          "endpoint_role": "unknown",
+          "direction_basis": "无方向箭头，按ID到Digital Input的本页实线记录端点，方向待复核；PLC模块定义引用不作为导线跨页，I92.x不是针脚",
+          "start": {
+            "device": "-ID",
+            "terminal": "4",
+            "location": "+01F11.3",
+            "terminal_board": null,
+            "name": null
+          },
+          "end": {
+            "device": "-KP1-8",
+            "terminal": "23",
+            "location": "+01F11.3",
+            "terminal_board": null,
+            "name": null
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "needs_review",
+          "source_note": "无方向箭头，按ID到Digital Input的本页实线记录端点，方向待复核；PLC模块定义引用不作为导线跨页，I92.x不是针脚"
+        },
+        {
+          "local_connection_id": "m01-id-5",
+          "line_number": "002M0154",
+          "endpoint_role": "unknown",
+          "direction_basis": "无方向箭头，按ID到Digital Input的本页实线记录端点，方向待复核；PLC模块定义引用不作为导线跨页，I92.x不是针脚",
+          "start": {
+            "device": "-ID",
+            "terminal": "5",
+            "location": "+01F11.3",
+            "terminal_board": null,
+            "name": null
+          },
+          "end": {
+            "device": "-KP1-8",
+            "terminal": "24",
+            "location": "+01F11.3",
+            "terminal_board": null,
+            "name": null
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "needs_review",
+          "source_note": "无方向箭头，按ID到Digital Input的本页实线记录端点，方向待复核；PLC模块定义引用不作为导线跨页，I92.x不是针脚"
+        },
+        {
+          "local_connection_id": "m01-id-6",
+          "line_number": "002M0155",
+          "endpoint_role": "unknown",
+          "direction_basis": "无方向箭头，按ID到Digital Input的本页实线记录端点，方向待复核；PLC模块定义引用不作为导线跨页，I92.x不是针脚",
+          "start": {
+            "device": "-ID",
+            "terminal": "6",
+            "location": "+01F11.3",
+            "terminal_board": null,
+            "name": null
+          },
+          "end": {
+            "device": "-KP1-8",
+            "terminal": "25",
+            "location": "+01F11.3",
+            "terminal_board": null,
+            "name": null
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "needs_review",
+          "source_note": "无方向箭头，按ID到Digital Input的本页实线记录端点，方向待复核；PLC模块定义引用不作为导线跨页，I92.x不是针脚"
+        },
+        {
+          "local_connection_id": "m01-id-7",
+          "line_number": "002M0156",
+          "endpoint_role": "unknown",
+          "direction_basis": "无方向箭头，按ID到Digital Input的本页实线记录端点，方向待复核；PLC模块定义引用不作为导线跨页，I92.x不是针脚",
+          "start": {
+            "device": "-ID",
+            "terminal": "7",
+            "location": "+01F11.3",
+            "terminal_board": null,
+            "name": null
+          },
+          "end": {
+            "device": "-KP1-8",
+            "terminal": "26",
+            "location": "+01F11.3",
+            "terminal_board": null,
+            "name": null
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "needs_review",
+          "source_note": "无方向箭头，按ID到Digital Input的本页实线记录端点，方向待复核；PLC模块定义引用不作为导线跨页，I92.x不是针脚"
+        },
+        {
+          "local_connection_id": "m01-id-8",
+          "line_number": "002M0157",
+          "endpoint_role": "unknown",
+          "direction_basis": "无方向箭头，按ID到Digital Input的本页实线记录端点，方向待复核；PLC模块定义引用不作为导线跨页，I92.x不是针脚",
+          "start": {
+            "device": "-ID",
+            "terminal": "8",
+            "location": "+01F11.3",
+            "terminal_board": null,
+            "name": null
+          },
+          "end": {
+            "device": "-KP1-8",
+            "terminal": "27",
+            "location": "+01F11.3",
+            "terminal_board": null,
+            "name": null
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "needs_review",
+          "source_note": "无方向箭头，按ID到Digital Input的本页实线记录端点，方向待复核；PLC模块定义引用不作为导线跨页，I92.x不是针脚"
+        },
+        {
+          "local_connection_id": "m01-id-9",
+          "line_number": "002M0158",
+          "endpoint_role": "unknown",
+          "direction_basis": "无方向箭头，按ID到Digital Input的本页实线记录端点，方向待复核；PLC模块定义引用不作为导线跨页，I92.x不是针脚",
+          "start": {
+            "device": "-ID",
+            "terminal": "9",
+            "location": "+01F11.3",
+            "terminal_board": null,
+            "name": null
+          },
+          "end": {
+            "device": "-KP1-8",
+            "terminal": "28",
+            "location": "+01F11.3",
+            "terminal_board": null,
+            "name": null
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "needs_review",
+          "source_note": "无方向箭头，按ID到Digital Input的本页实线记录端点，方向待复核；PLC模块定义引用不作为导线跨页，I92.x不是针脚"
+        }
+      ]
+    }
+  ]
+}

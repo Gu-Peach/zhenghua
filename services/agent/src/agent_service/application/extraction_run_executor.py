@@ -19,9 +19,9 @@ from ..infrastructure.supabase_stage_repository import SupabaseStageRepository
 from ..profiles import ProfileRegistry
 from ..tools.profile_detection import ProfileDetectionTool
 from ..tools.result_proposal import build_extraction_result_proposal
+from .page_workflow_extraction import run_page_workflow_extraction
 from .run_control import RunEventPublisher
 from .stage_persistence import DurableExtractionSession
-from .three_stage_extraction import run_three_stage_extraction
 from .worker import RunExecutionOutcome
 
 
@@ -221,51 +221,22 @@ class FullExtractionRunExecutor:
                         ("page-classifications.json", "drawing_index.json", "plant-function-groups.json"),
                     )
                     await start_stage(AgentStage.PAGE_SCAN)
-                elif message.startswith("page_scan: PDF page"):
+                elif message.startswith("page_extraction: persisted PDF page"):
                     pages_completed += 1
                     await self._publisher.publish(
                         run,
                         EventType.ITEM_COMPLETED,
                         stage=AgentStage.PAGE_SCAN,
-                        message="page scan item completed",
+                        message="page extraction persisted",
                         metrics={"processed": pages_completed, "total": page_total},
                     )
-                elif message.startswith("build_cross_page_tasks:"):
+                elif message.startswith("assemble_table:"):
                     await complete_stage(
                         AgentStage.PAGE_SCAN,
                         "stage_artifacts",
-                        (
-                            "page-scan-results.json",
-                            "wire-units.json",
-                            "page-scan-checkpoint.json",
-                            "wire-units-checkpoint.json",
-                        ),
-                    )
-                    await start_stage(AgentStage.BUILD_CROSS_PAGE_TASKS)
-                    await complete_stage(
-                        AgentStage.BUILD_CROSS_PAGE_TASKS,
-                        "stage_artifacts",
-                        ("cross-page-tasks.json", "stage2-table.json"),
-                    )
-                    await start_stage(AgentStage.CROSS_PAGE_COMPLETION)
-                elif message.startswith("resolve_cross_page: completed"):
-                    await complete_stage(
-                        AgentStage.CROSS_PAGE_COMPLETION,
-                        "stage_artifacts",
-                        ("cross-page-results.json", "cross-page-checkpoint.json", "table.json"),
+                        ("page-scan-results.json", "wire-units.json", "cross-page-results.json"),
                     )
                     await start_stage(AgentStage.VALIDATION)
-                elif message.startswith("assemble_xlsx:"):
-                    cross_page_artifact = (
-                        f"{run.agent_run_id}:{AgentStage.CROSS_PAGE_COMPLETION.value.lower()}"
-                    )
-                    if cross_page_artifact not in artifact_ids:
-                        await complete_stage(
-                            AgentStage.CROSS_PAGE_COMPLETION,
-                            "stage_artifacts",
-                            ("cross-page-results.json", "cross-page-checkpoint.json", "table.json"),
-                        )
-                        await start_stage(AgentStage.VALIDATION)
                     await complete_stage(AgentStage.VALIDATION, "final_workbook", ("table.json",))
 
         def report_progress(message: str) -> None:
@@ -274,7 +245,7 @@ class FullExtractionRunExecutor:
         await start_stage(AgentStage.RENDER)
         progress_task = asyncio.create_task(consume_progress())
         try:
-            result = await run_three_stage_extraction(
+            result = await run_page_workflow_extraction(
                 pdf_path=access.local_path,
                 output_dir=output_dir,
                 profile=profile,
@@ -305,16 +276,6 @@ class FullExtractionRunExecutor:
                     "page-scan-checkpoint.json",
                     "wire-units-checkpoint.json",
                 ),
-            ),
-            (
-                AgentStage.BUILD_CROSS_PAGE_TASKS,
-                "stage_artifacts",
-                ("cross-page-tasks.json", "stage2-table.json"),
-            ),
-            (
-                AgentStage.CROSS_PAGE_COMPLETION,
-                "stage_artifacts",
-                ("cross-page-results.json", "cross-page-checkpoint.json", "table.json"),
             ),
             (AgentStage.VALIDATION, "final_workbook", ("table.json",)),
         ):
@@ -392,6 +353,7 @@ class FullExtractionRunExecutor:
                 profile=profile.profile,
                 page_count=await asyncio.to_thread(page_count),
                 configuration={
+                    "workflow": "page_extraction_v2",
                     "model": run.options.model_override or self._settings.default_model,
                     "render_dpi": self._settings.extraction_render_dpi,
                     "max_tokens": self._settings.model_max_tokens,
@@ -403,6 +365,8 @@ class FullExtractionRunExecutor:
             )
         if inputs.source_checksum != checksum or inputs.profile != profile.profile:
             raise ValueError("Source or frozen Profile changed.")
+        if inputs.configuration.get("workflow") != "page_extraction_v2":
+            raise ValueError("Legacy three-stage run is read-only; submit a new extraction run.")
         await repository.initialize(inputs)
         output_dir = self._runtime_root / run.agent_run_id
         session = DurableExtractionSession(repository, inputs, output_dir, pdf_path)
@@ -416,7 +380,7 @@ class FullExtractionRunExecutor:
             model_fewshot_max_image_side=inputs.configuration["fewshot_max_image_side"],
             supabase_storage_bucket=inputs.configuration["bucket"],
         )
-        result = await run_three_stage_extraction(
+        result = await run_page_workflow_extraction(
             pdf_path=pdf_path,
             output_dir=output_dir,
             profile=profile,

@@ -1,0 +1,64 @@
+{
+  "drawing_function": "002.M",
+  "drawing_page_number": 3,
+  "needs_review": false,
+  "units": [
+    {
+      "unit_id": "002.M-3-evidence",
+      "connections": [
+        {
+          "local_connection_id": "m03-16-ta1",
+          "line_number": "003G0121",
+          "endpoint_role": "source",
+          "direction_basis": "XD3:16分支沿实线到TA1离页箭头；上方电源接收段跳过，下方103-108跨页接收段跳过",
+          "start": {
+            "device": "-XD3",
+            "terminal": "XD3:16",
+            "location": "+01F11.3",
+            "terminal_board": "XD3",
+            "name": null
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "=.C+00/5.3",
+              "target_function": "002.C",
+              "target_drawing_page": 5,
+              "target_column": 3,
+              "target_object": "+00"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "source_note": "XD3:16分支沿实线到TA1离页箭头；上方电源接收段跳过，下方103-108跨页接收段跳过"
+        },
+        {
+          "local_connection_id": "m03-16-ta2",
+          "line_number": "003G0121",
+          "endpoint_role": "source",
+          "direction_basis": "XD3:16分支沿实线到TA2离页箭头；上方电源接收段跳过，下方103-108跨页接收段跳过",
+          "start": {
+            "device": "-XD3",
+            "terminal": "XD3:16",
+            "location": "+01F11.3",
+            "terminal_board": "XD3",
+            "name": null
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "=.C+00/6.3",
+              "target_function": "002.C",
+              "target_drawing_page": 6,
+              "target_column": 3,
+              "target_object": "+00"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "source_note": "XD3:16分支沿实线到TA2离页箭头；上方电源接收段跳过，下方103-108跨页接收段跳过"
+        }
+      ]
+    }
+  ]
+}

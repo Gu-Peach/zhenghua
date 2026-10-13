@@ -26,7 +26,7 @@ from agent_service.infrastructure.document.excel import (
 TABLE_HEADERS = [
     "页码",
     "原理号",
-    "电压等级",
+    "端子排",
     "起点代号",
     "起点描述",
     "起点端子",
@@ -64,7 +64,8 @@ def _assemble_table_node(state: GraphState, runtime: GraphRuntime) -> dict[str, 
             ordered_rows.append((_table_record_page_sort_key(record), row_sequence, row))
             row_sequence += 1
 
-    all_rows = [row for _, _, row in sorted(ordered_rows, key=lambda item: (item[0], item[1]))]
+    # Preserve source-page processing order and the model's within-page visual order.
+    all_rows = [row for _, _, row in ordered_rows]
 
     output_root = Path(state["output_path"])
     if runtime.output_mode == "library" or output_root.is_dir():
@@ -97,7 +98,10 @@ def _assemble_table_node(state: GraphState, runtime: GraphRuntime) -> dict[str, 
                 encoding="utf-8",
             )
 
-    _write_agent_diagnostics(state, runtime)
+    try:
+        _write_agent_diagnostics(state, runtime)
+    except OSError as exc:
+        runtime.log(f"optional extraction diagnostics unavailable: {type(exc).__name__}")
     runtime.log(
         f"assemble_table: units={len(normalized)}, records={sum(len(items) for items in normalized.values())}"
     )
@@ -117,7 +121,7 @@ def _record_to_table_row(record: WireRecord) -> list[Any]:
     return [
         drawing_page,
         record.line_number or record.wire_number,
-        None,
+        record.terminal_strip,
         record.start_location or record.start_device,
         record.start_name or record.start_part,
         start_terminal,
@@ -199,18 +203,17 @@ def _write_agent_diagnostics(
         encoding="utf-8",
     )
     stage2_table_path = diagnostics_dir / "stage2-table.json"
-    if not stage2_table_path.is_file():
-        stage2_table_path.write_text(
-            json.dumps(
-                {
-                    "headers": state.get("table_headers", TABLE_HEADERS),
-                    "rows_by_unit": state.get("table_rows_by_unit", {}),
-                },
-                ensure_ascii=False,
-                indent=2,
-            ),
-            encoding="utf-8",
-        )
+    stage2_table_path.write_text(
+        json.dumps(
+            {
+                "headers": state.get("table_headers", TABLE_HEADERS),
+                "rows_by_unit": state.get("table_rows_by_unit", {}),
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
     (diagnostics_dir / "plant-function-groups.json").write_text(
         json.dumps(state.get("plant_function_groups", {}), ensure_ascii=False, indent=2),
         encoding="utf-8",

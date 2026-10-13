@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "profile_key": "zh_gantry_reel",
+  "display_name": "振华大车卷盘（SH.NO. 网格页标）",
+  "detection": {
+    "summary": "ZPMC 卷盘图纸的 SH.NO. / CONT.ON.SH 网格模板，当前实验样本 1002001693。",
+    "strong_signals": [
+      "ZPMC 公司标志",
+      "SH.NO. 与 CONT.ON.SH 图框",
+      "GANTRY CABLE REEL 或 SPREADER CABLE REEL，柜名 +GCR"
+    ],
+    "supporting_signals": [
+      "数字列01～48与字母行A～V",
+      "页标1A/1B/3A及端子图表TD",
+      "SINAMICS/SIMATIC 器件仅作为辅助信号"
+    ],
+    "exclusion_signals": [
+      "只有通用 SIEMENS 设备标识不能判为本模板",
+      "Plant Function=002.C、Page Number 整数的旧图框应使用原 zh Profile"
+    ],
+    "guidance": "图框页标体系是核心信号。experimental 必须人工选择，不将封面 Spreader/Gantry 字样差异当作确定业务映射。"
+  },
+  "extraction": {
+    "workflow": [
+      "page_classification",
+      "page_extraction",
+      "deterministic_validation"
+    ],
+    "dynamic_resources": {
+      "page_classification": [
+        "classification_prompt",
+        "classification_examples",
+        "sheet_index"
+      ],
+      "page_scan": [
+        "page_scan_prompt",
+        "wiring_examples",
+        "field_rules"
+      ],
+      "page_completion": [
+        "cross_page_prompt",
+        "wiring_examples",
+        "sheet_index"
+      ]
+    },
+    "business_rules": [
+      "SH.NO. 原标完整保存，可逆索引不等于 PDF物理页号或印刷 Plant Function",
+      "只把扫描器绑定到实际连接的续接地址作为引用，不全量解析相同格式的原理号",
+      "端子图表为核对资料，不重复输出连接",
+      "真实端子/设备/位置优先，不照 XLSX 补外部柜或业务别名",
+      "当前 Stage 2 内部定向补全，未知针脚填空并复核",
+      "不同端子/芯/分支即使同一原理号仍分别保存"
+    ],
+    "output_contract": "wiring_connection_v1"
+  }
+}

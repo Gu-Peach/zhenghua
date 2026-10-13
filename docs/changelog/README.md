@@ -8,6 +8,12 @@ archived under `docs/service/`.
 
 ## 2026-10-13
 
+- 本地新增 ZH 大车卷盘 SH.NO. 网格模板 experimental Profile，独立页标/引用适配、三类模型 Prompt 各两组真实图像样例；明确 XLSX 业务分类/别名与原理图事实的区别，既有 ZH/ABB 不变。未上传/写数据库/发布，真实字段质量待确认。见 [ADR-0015](../adr/0015-zh-gantry-reel-profile.md) 与 [核对记录](../service/agent/zh-gantry-reel-review.md)。
+
+- 新增本地 Stage 2 分组测试与标准 12 列 XLSX 导出，色标留空；真实 002.C/002.M 共 12 页、121 条，31 条待复核，14 项离线冒烟通过。仅本地内存与文件，无数据库/Storage/规则发布；页码 0 占位兼容保持严格合法编号校验。见 [Agent 执行记录](../service/agent/changelog/2026-10-13-local-stage2-groups.md)。
+
+- 分支提取改为 Stage 1 分类 + Stage 2 逐页闭环，删除独立 Stage 3，内部双图补全后保存再推进；ZH 放线/箭头替代端子白名单，保留实际端子与可追溯分类。10 项离线冒烟通过，本轮不连接/写入数据库、部署 migration 或发布规则；业务版本仍最终原子提交。见 [ADR-0014](../adr/0014-stage2-page-extraction-workflow.md) 与 [Agent 记录](../service/agent/changelog/2026-10-13-stage2-page-workflow.md)。
+
 - 按用户决策，规则归因建议经一次确认后直接构建并启用新包，取消模型评测/二次审核门禁；保留旧版本、权限/冲突保护及原子审计，已有项目不重绑。Agent/HTTP/聊天/终端同步，详见 [ADR-0013](../adr/0013-confirmed-rule-update-without-evaluation.md) 和 [实施记录](../service/agent/changelog/2026-10-13-confirmed-rules.md)。
 
 - 项目切换改为保留框架、局部加载，目录不随选择重拉；Server 项目列表按创建时间/ID 固定排序，更新/选择不置顶。17 项浏览器回归、29 项 Server 默认测试及 Web 检查通过，见 [Web 记录](../apps/web/changelog/2026-10-13-stable-project-switch.md) 和 [Server 记录](../service/server/changelog/2026-10-13-stable-project-order.md)。

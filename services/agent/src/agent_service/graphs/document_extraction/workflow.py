@@ -25,19 +25,15 @@ from agent_service.application.document_extraction.settings import (
 from agent_service.domain.models.image_payload import (
     ImagePayload,
 )
-from agent_service.graphs.document_extraction.cross_page import (
-    _build_cross_page_tasks_node,
-    _resolve_cross_page_node,
-)
 from agent_service.graphs.document_extraction.exports import (
     _assemble_table_node,
 )
 from agent_service.graphs.document_extraction.normalization import (
     _normalize_and_deduplicate_node,
 )
+from agent_service.graphs.document_extraction.page_extraction import _page_extraction_loop_node
 from agent_service.graphs.document_extraction.pages import (
     _classify_pages_node,
-    _page_scan_loop_node,
     _pdf_to_images_node,
 )
 from agent_service.graphs.document_extraction.state import (
@@ -53,7 +49,7 @@ ProgressCallback = Callable[[str], None]
 TABLE_HEADERS = [
     "页码",
     "原理号",
-    "电压等级",
+    "端子排",
     "起点代号",
     "起点描述",
     "起点端子",
@@ -116,16 +112,10 @@ def build_document_graph(
         graph_type = _FallbackStateGraph
 
     async def page_scan_node(state: GraphState) -> dict[str, Any]:
-        result = await _page_scan_loop_node(state, runtime)
+        result = await _page_extraction_loop_node(state, runtime)
         if runtime.durable:
             result.update(_normalize_and_deduplicate_node(cast(GraphState, {**state, **result}), runtime))
         return result
-
-    async def build_cross_page_tasks_node(state: GraphState) -> dict[str, Any]:
-        return _build_cross_page_tasks_node(state, runtime)
-
-    async def resolve_cross_page_node(state: GraphState) -> dict[str, Any]:
-        return await _resolve_cross_page_node(state, runtime)
 
     async def classify_pages_node(state: GraphState) -> dict[str, Any]:
         return await _classify_pages_node(state, runtime)
@@ -153,23 +143,13 @@ def build_document_graph(
         return _pdf_to_images_node(state, runtime)
 
     graph = graph_type(GraphState)
-    graph.add_node(
-        "pdf_to_images", fenced(AgentStage.RENDER, render_pages)
-    )
+    graph.add_node("pdf_to_images", fenced(AgentStage.RENDER, render_pages))
 
     graph.add_node("build_page_index", lambda _state: {})
     graph.add_node("classify_pages", fenced(AgentStage.PAGE_CLASSIFICATION, classify_pages_node))
     graph.add_node("page_scan_loop", fenced(AgentStage.PAGE_SCAN, page_scan_node))
     graph.add_node(
         "normalize_and_deduplicate",
-        lambda state: {} if runtime.durable else _normalize_and_deduplicate_node(state, runtime),
-    )
-    graph.add_node(
-        "build_cross_page_tasks", fenced(AgentStage.BUILD_CROSS_PAGE_TASKS, build_cross_page_tasks_node)
-    )
-    graph.add_node("resolve_cross_page", fenced(AgentStage.CROSS_PAGE_COMPLETION, resolve_cross_page_node))
-    graph.add_node(
-        "normalize_after_cross_page",
         lambda state: {} if runtime.durable else _normalize_and_deduplicate_node(state, runtime),
     )
     graph.add_node("assemble_table", fenced(AgentStage.VALIDATION, assemble_table_node))
@@ -180,9 +160,6 @@ def build_document_graph(
         "classify_pages",
         "page_scan_loop",
         "normalize_and_deduplicate",
-        "build_cross_page_tasks",
-        "resolve_cross_page",
-        "normalize_after_cross_page",
         "assemble_table",
         END,
     ]
@@ -267,6 +244,7 @@ async def run_document_stages_2_3(
     progress: ProgressCallback | None = None,
     extraction_client: VLMClient | None = None,
     policy: ExtractionPolicy,
+    assemble_output: bool = True,
 ) -> AgentRunResult:
     """Run page scanning and cross-page completion from classified page images."""
 
@@ -323,14 +301,10 @@ async def run_document_stages_2_3(
         "cross_page_results": {},
     }
     runtime.log(f"stage2_scope: selected {len(selected)} source page(s): {sorted(selected)}")
-    for node in (
-        _page_scan_loop_node,
-        _normalize_and_deduplicate_node,
-        _build_cross_page_tasks_node,
-        _resolve_cross_page_node,
-        _normalize_and_deduplicate_node,
-        _assemble_table_node,
-    ):
+    nodes = [_page_extraction_loop_node, _normalize_and_deduplicate_node]
+    if assemble_output:
+        nodes.append(_assemble_table_node)
+    for node in nodes:
         update = node(state, runtime)
         if inspect.isawaitable(update):
             update = await update

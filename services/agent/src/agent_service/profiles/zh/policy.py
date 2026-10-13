@@ -12,15 +12,16 @@ from .export_fields import ZhExportFields
 from .normalization import normalize_wire_record
 from .validation import (
     _collect_consistency_warnings,
-    _orient_allowed_start_terminal,
     _validated_breaker_current,
+    endpoint_identity_warnings,
 )
 
 
 class ZhExtractionPolicy:
-    """ZH rules retained unchanged while the document Graph is migrated."""
+    """ZH evidence-driven page extraction policy."""
 
     export_fields = ZhExportFields()
+    enforce_evidence_contract = True
 
     def project_identity(self, text: str) -> tuple[str | None, str | None]:
         compact = " ".join(text.split())
@@ -43,15 +44,47 @@ class ZhExtractionPolicy:
 
     def normalize_record(self, record: WireRecord, mapping: Mapping[str, str]) -> WireRecord:
         record = normalize_wire_record(record, mapping)
-        # Diagnostic table semantics retained; DB unit mapping is independent.
-        record.terminal_strip = None
         return record
 
     def orient_connection(self, connection: WireConnection) -> tuple[WireConnection | None, bool]:
-        return _orient_allowed_start_terminal(connection)
+        # Direction is established by page evidence, never a terminal prefix.
+        if connection.endpoint_role == "receiver":
+            return None, False
+        if not self.enforce_evidence_contract:
+            if connection.endpoint_role == "unknown" or connection.start is None:
+                connection.status = "needs_review"
+            return connection, False
+        if not (connection.direction_basis or "").strip():
+            connection.endpoint_role = "unknown"
+        issues = []
+        for side in ("start", "end"):
+            endpoint = getattr(connection, side)
+            if endpoint is not None:
+                endpoint_issues = endpoint_identity_warnings(
+                    endpoint.terminal, endpoint.device, endpoint.terminal_board
+                )
+                issues.extend(f"{side}: {warning}" for warning in endpoint_issues)
+                if any("not a physical terminal" in warning for warning in endpoint_issues):
+                    issues.append(f"{side}: rejected terminal label {endpoint.terminal}")
+                    endpoint.terminal = None
+        if connection.endpoint_role == "unknown":
+            issues.append("direction unconfirmed")
+        if connection.start is None:
+            issues.append("missing source endpoint")
+        if issues:
+            connection.status = "needs_review"
+            connection.source_note = "; ".join(
+                dict.fromkeys(filter(None, [connection.source_note, *issues]))
+            )
+        return connection, False
 
     def validated_current(self, value: Any, basis: str | None, source_text: str | None) -> str | None:
         return _validated_breaker_current(value, basis, source_text)
 
     def validate_record(self, record: WireRecord, mapping: Mapping[str, str]) -> list[str]:
-        return _collect_consistency_warnings(record, mapping)
+        warnings = _collect_consistency_warnings(
+            record, mapping, require_endpoint_identity=self.enforce_evidence_contract
+        )
+        if warnings and self.enforce_evidence_contract:
+            record.status = "needs_review"
+        return warnings

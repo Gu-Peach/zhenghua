@@ -1,0 +1,68 @@
+{
+  "version": 1,
+  "profile_version": "0.1.0",
+  "description": "Two scans and two internal Stage 2 completion cases; stage3_cases is a legacy asset-loader key only.",
+  "review_status": "source_checked_draft_pending_engineer_confirmation",
+  "images": {
+    "1e_sources": "images/pdf06_1E.png",
+    "td_3a_non_wiring": "images/pdf25_TD_3a.png"
+  },
+  "stage2_cases": [
+    {
+      "id": "1e_sources",
+      "title": "1E：实际 X0 电机放线、相同原理号不合并、CLIQ 跨页占位",
+      "expected": "stage2/1e_sources.expected.json",
+      "images": [
+        {
+          "path": "images/pdf06_1E.png",
+          "role": "source_page"
+        }
+      ]
+    },
+    {
+      "id": "td_3a_non_wiring",
+      "title": "TD 3.a：端子报告负例，不重复创建连接",
+      "expected": "stage2/td_3a_non_wiring.expected.json",
+      "images": [
+        {
+          "path": "images/pdf25_TD_3a.png",
+          "role": "source_page"
+        }
+      ]
+    }
+  ],
+  "stage3_cases": [
+    {
+      "id": "cliq3",
+      "title": "正例：1E INV:X201 → 1G SMC:X500",
+      "input": "completion/cliq3.task.json",
+      "expected": "completion/cliq3.expected.json",
+      "images": [
+        {
+          "path": "images/pdf06_1E.png",
+          "role": "source_page"
+        },
+        {
+          "path": "images/pdf08_1G.png",
+          "role": "target_page"
+        }
+      ]
+    },
+    {
+      "id": "abs_power",
+      "title": "负例：1B X3:33 → 2A 电源接点，电位名不能冒充针脚",
+      "input": "completion/abs_power.task.json",
+      "expected": "completion/abs_power.expected.json",
+      "images": [
+        {
+          "path": "images/pdf03_1B.png",
+          "role": "source_page"
+        },
+        {
+          "path": "images/pdf10_2A.png",
+          "role": "target_page"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,300 @@
+{
+  "pdf_page_number": 6,
+  "drawing_function": "GCR.1",
+  "drawing_page_number": 5,
+  "drawing_object_location": "+GCR",
+  "blank": false,
+  "needs_review": false,
+  "units": [
+    {
+      "unit_id": "1e-m1",
+      "wire_number": null,
+      "unit_identity_confidence": "low",
+      "connections": [
+        {
+          "local_connection_id": "1e-m1-1",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头；按 X0 放线斜杠与实际电缆路径从柜端记录至电机端",
+          "line_number": "1E09R",
+          "core_number": null,
+          "color": null,
+          "current": null,
+          "start": {
+            "location": "+GCR",
+            "device": "-X0",
+            "terminal_board": "X0",
+            "terminal_strip": "X0",
+            "terminal": "X0:1"
+          },
+          "end": {
+            "location": "+U1",
+            "device": "-M1",
+            "terminal": "U1"
+          },
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_drawing_pages": [
+            "1E"
+          ]
+        },
+        {
+          "local_connection_id": "1e-m1-2",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头；按 X0 放线斜杠与实际电缆路径从柜端记录至电机端",
+          "line_number": "1E09R",
+          "core_number": null,
+          "color": null,
+          "current": null,
+          "start": {
+            "location": "+GCR",
+            "device": "-X0",
+            "terminal_board": "X0",
+            "terminal_strip": "X0",
+            "terminal": "X0:2"
+          },
+          "end": {
+            "location": "+U1",
+            "device": "-M1",
+            "terminal": "V1"
+          },
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_drawing_pages": [
+            "1E"
+          ]
+        },
+        {
+          "local_connection_id": "1e-m1-3",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头；按 X0 放线斜杠与实际电缆路径从柜端记录至电机端",
+          "line_number": "1E10R",
+          "core_number": null,
+          "color": null,
+          "current": null,
+          "start": {
+            "location": "+GCR",
+            "device": "-X0",
+            "terminal_board": "X0",
+            "terminal_strip": "X0",
+            "terminal": "X0:3"
+          },
+          "end": {
+            "location": "+U1",
+            "device": "-M1",
+            "terminal": "W1"
+          },
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_drawing_pages": [
+            "1E"
+          ]
+        },
+        {
+          "local_connection_id": "1e-m1-pe",
+          "endpoint_role": "source",
+          "direction_basis": "PE 实际导线和接地点可见，不按 XLSX 扩增多条 PE 芯",
+          "line_number": "PE",
+          "start": {
+            "location": "+GCR",
+            "device": "-X0",
+            "terminal_board": "X0",
+            "terminal_strip": "X0",
+            "terminal": "PE"
+          },
+          "end": {
+            "location": "+U1",
+            "device": "-M1",
+            "terminal": "PE"
+          },
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_drawing_pages": [
+            "1E"
+          ]
+        }
+      ],
+      "source_drawing_pages": [
+        "1E"
+      ]
+    },
+    {
+      "unit_id": "1e-m2",
+      "wire_number": null,
+      "unit_identity_confidence": "low",
+      "connections": [
+        {
+          "local_connection_id": "1e-m2-1",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头；按 X0 放线斜杠与实际电缆路径从柜端记录至电机端",
+          "line_number": "1E24R",
+          "core_number": null,
+          "color": null,
+          "current": null,
+          "start": {
+            "location": "+GCR",
+            "device": "-X0",
+            "terminal_board": "X0",
+            "terminal_strip": "X0",
+            "terminal": "X0:5"
+          },
+          "end": {
+            "location": "+U2",
+            "device": "-M2",
+            "terminal": "U1"
+          },
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_drawing_pages": [
+            "1E"
+          ]
+        },
+        {
+          "local_connection_id": "1e-m2-2",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头；按 X0 放线斜杠与实际电缆路径从柜端记录至电机端",
+          "line_number": "1E25R",
+          "core_number": null,
+          "color": null,
+          "current": null,
+          "start": {
+            "location": "+GCR",
+            "device": "-X0",
+            "terminal_board": "X0",
+            "terminal_strip": "X0",
+            "terminal": "X0:6"
+          },
+          "end": {
+            "location": "+U2",
+            "device": "-M2",
+            "terminal": "V1"
+          },
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_drawing_pages": [
+            "1E"
+          ]
+        },
+        {
+          "local_connection_id": "1e-m2-3",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头；按 X0 放线斜杠与实际电缆路径从柜端记录至电机端",
+          "line_number": "1E26R",
+          "core_number": null,
+          "color": null,
+          "current": null,
+          "start": {
+            "location": "+GCR",
+            "device": "-X0",
+            "terminal_board": "X0",
+            "terminal_strip": "X0",
+            "terminal": "X0:7"
+          },
+          "end": {
+            "location": "+U2",
+            "device": "-M2",
+            "terminal": "W1"
+          },
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_drawing_pages": [
+            "1E"
+          ]
+        },
+        {
+          "local_connection_id": "1e-m2-pe",
+          "endpoint_role": "source",
+          "direction_basis": "PE 实际导线和接地点可见，不按 XLSX 扩增多条 PE 芯",
+          "line_number": "PE",
+          "start": {
+            "location": "+GCR",
+            "device": "-X0",
+            "terminal_board": "X0",
+            "terminal_strip": "X0",
+            "terminal": "PE"
+          },
+          "end": {
+            "location": "+U2",
+            "device": "-M2",
+            "terminal": "PE"
+          },
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_drawing_pages": [
+            "1E"
+          ]
+        }
+      ],
+      "source_drawing_pages": [
+        "1E"
+      ]
+    },
+    {
+      "unit_id": "1e-drive-cliq",
+      "wire_number": null,
+      "unit_identity_confidence": "low",
+      "connections": [
+        {
+          "local_connection_id": "1e-cliq3",
+          "endpoint_role": "source",
+          "direction_basis": "DRIVE-CLiQ 插口旁续接箭头沿线离开 INV",
+          "line_number": "CLIQ3",
+          "start": {
+            "location": "+GCR",
+            "device": "-INV",
+            "name": "SINAMICS S120 SINGLE MOTOR MODULE",
+            "terminal_code": "X201",
+            "terminal": "X201"
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "CLIQ3 / 1G45H",
+              "target_function": "GCR.1",
+              "target_drawing_page": 7,
+              "target_column": 45,
+              "reason": "原始目标页 1G；字母行 H 保留在 raw"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "source_drawing_pages": [
+            "1E"
+          ]
+        },
+        {
+          "local_connection_id": "1e-cliq4",
+          "endpoint_role": "source",
+          "direction_basis": "DRIVE-CLiQ 插口旁续接箭头沿线离开 INV",
+          "line_number": "CLIQ4",
+          "start": {
+            "location": "+GCR",
+            "device": "-INV",
+            "name": "SINAMICS S120 SINGLE MOTOR MODULE",
+            "terminal_code": "X202",
+            "terminal": "X202"
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "CLIQ4 / 1H44H",
+              "target_function": "GCR.1",
+              "target_drawing_page": 8,
+              "target_column": 44,
+              "reason": "原始目标页 1H；字母行 H 保留在 raw"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "source_drawing_pages": [
+            "1E"
+          ]
+        }
+      ],
+      "source_drawing_pages": [
+        "1E"
+      ]
+    }
+  ],
+  "page_references": [],
+  "warnings": []
+}

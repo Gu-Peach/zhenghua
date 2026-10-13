@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "profile_version": "0.1.0",
+  "source_workbook": "1002001693-大车卷盘放线表.xlsx",
+  "sheet": "放线表",
+  "detail_rows": 105,
+  "cable_groups": 23,
+  "unique_wire_numbers": 19,
+  "coverage": "structural review of all rows; anchored field checks are representative, not full accuracy audit",
+  "checks": [
+    {
+      "id": "motor1_phase1_mark",
+      "pdf_page": 6,
+      "raw_sheet": "1E",
+      "xlsx_range": "I18",
+      "field": "line_number",
+      "drawing_value": "1E09R",
+      "xlsx_value": "1E08R",
+      "status": "difference",
+      "explanation": "原理图 X0:1 段文字为1E09R，不按坐标反算或以XLSX覆盖。"
+    },
+    {
+      "id": "motor2_phase1_terminal",
+      "pdf_page": 6,
+      "raw_sheet": "1E",
+      "xlsx_range": "N26",
+      "field": "start_terminal",
+      "drawing_value": "X0:5",
+      "xlsx_value": "X0:4",
+      "status": "difference",
+      "explanation": "原理图第二组起点显示5；TD报告也有差异，需工程确认，保留原理图读值。"
+    },
+    {
+      "id": "manual_select_switch",
+      "pdf_page": 11,
+      "raw_sheet": "3A",
+      "xlsx_range": "R111",
+      "field": "end_terminal",
+      "drawing_value": "S11:14",
+      "xlsx_value": "SF2:14",
+      "status": "alias_or_revision_required",
+      "explanation": "标准表别名无法从当前图直接推出。"
+    },
+    {
+      "id": "manual_up_switch",
+      "pdf_page": 11,
+      "raw_sheet": "3A",
+      "xlsx_range": "R112",
+      "field": "end_terminal",
+      "drawing_value": "S12:14",
+      "xlsx_value": "SF3:14",
+      "status": "alias_or_revision_required"
+    },
+    {
+      "id": "motor2_encoder_mark",
+      "pdf_page": 9,
+      "raw_sheet": "1H",
+      "xlsx_range": "I62:I65",
+      "field": "line_number",
+      "drawing_value": [
+        "1F25N",
+        "1F26N",
+        "1F27N",
+        "1F28N"
+      ],
+      "xlsx_value": [
+        "1H25N",
+        "1H26N",
+        "1H27N",
+        "1H28N"
+      ],
+      "status": "difference",
+      "explanation": "图中仍印1F前缀；不根据当前页1H自动重编号，可能是供方复制/版次差异。"
+    },
+    {
+      "id": "encoder_board_vs_cable_class",
+      "pdf_page": 8,
+      "raw_sheet": "1G",
+      "xlsx_range": "J50:N55",
+      "field": "terminal_strip",
+      "drawing_value": "X3",
+      "xlsx_value": "X4",
+      "status": "different_semantics",
+      "explanation": "N列实际X3端子，J列是业务电缆类别，不是原理图板号。"
+    },
+    {
+      "id": "abs_pin_unlabelled",
+      "pdf_page": 10,
+      "raw_sheet": "2A",
+      "xlsx_range": "R104",
+      "field": "end_terminal",
+      "drawing_value": null,
+      "xlsx_value": "+",
+      "status": "not_shown",
+      "explanation": "图中24VDC电位接点无明确针脚编号，不能把功能名当针脚。"
+    },
+    {
+      "id": "motor1_phase2_pin",
+      "pdf_page": 6,
+      "raw_sheet": "1E",
+      "xlsx_range": "N19:R19",
+      "field": "terminal_pair",
+      "drawing_value": [
+        "X0:2",
+        "V1"
+      ],
+      "xlsx_value": [
+        "X0:2",
+        "V1"
+      ],
+      "status": "matched"
+    },
+    {
+      "id": "guider_left_pair",
+      "pdf_page": 11,
+      "raw_sheet": "3A",
+      "xlsx_range": "N120:R120",
+      "field": "terminal_pair",
+      "drawing_value": [
+        "X3:15",
+        "JB1:5"
+      ],
+      "xlsx_value": [
+        "X3:15",
+        "JB1:5"
+      ],
+      "status": "matched"
+    },
+    {
+      "id": "external_supply",
+      "pdf_page": 2,
+      "raw_sheet": "1A",
+      "xlsx_range": "L3:N5",
+      "field": "external_start",
+      "drawing_value": null,
+      "xlsx_value": [
+        "+01F11.1",
+        "XD10:13",
+        "XD10:14",
+        "XD10:15"
+      ],
+      "status": "outside_supplied_atlas"
+    },
+    {
+      "id": "duplicate_cable_ids",
+      "xlsx_range": "B34:B85",
+      "field": "wire_number",
+      "drawing_value": null,
+      "xlsx_value": [
+        "2403",
+        "2404",
+        "2407",
+        "2408"
+      ],
+      "status": "group_id_not_unique",
+      "explanation": "这些编号各对应两个元件组，不可只按线号合并。"
+    }
+  ]
+}

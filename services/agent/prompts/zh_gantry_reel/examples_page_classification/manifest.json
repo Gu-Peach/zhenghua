@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "profile_version": "0.1.0",
+  "review_status": "source_checked_draft_pending_engineer_confirmation",
+  "cases": [
+    {
+      "id": "sh_1a",
+      "title": "分类正例：SH.NO.1A，不读取接续页1B",
+      "expected": "sh_1a/expected.json",
+      "images": [
+        {
+          "path": "images/pdf02_1A.png",
+          "role": "source_page"
+        }
+      ]
+    },
+    {
+      "id": "td_3a",
+      "title": "分类负例：TD 3.a，端子图表不重复提取",
+      "expected": "td_3a/expected.json",
+      "images": [
+        {
+          "path": "images/pdf25_TD_3a.png",
+          "role": "source_page"
+        }
+      ]
+    }
+  ]
+}

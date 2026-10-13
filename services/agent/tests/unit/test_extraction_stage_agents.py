@@ -4,8 +4,6 @@ import asyncio
 from pathlib import Path
 
 import pytest
-
-from agent_service.agents.cross_page_resolver import CrossPageResolverAgent
 from agent_service.agents.page_classifier import PageClassifierAgent
 from agent_service.agents.page_scanner import PageScannerAgent
 from agent_service.application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
@@ -21,10 +19,10 @@ from agent_service.domain.models.extraction_stages import (
     PageScanRequest,
 )
 from agent_service.graphs.extraction import (
-    run_cross_page_completion,
     run_page_classification,
     run_page_scan,
 )
+from agent_service.graphs.extraction.page_scan import complete_page_connection
 from agent_service.harness.model_gateway import FakeModelGateway
 from agent_service.infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
 from agent_service.profiles import ProfileRegistry
@@ -72,7 +70,15 @@ class FakeStages:
         self.scan_requests.append(request)
         return PageScanData(
             pdf_page_number=999,
-            units=[{"unit_id": "unit-1", "wire_number": "0272", "connections": []}],
+            units=[
+                {
+                    "unit_id": "unit-1",
+                    "wire_number": "0272",
+                    "connections": [
+                        {"start": {"device": "-XD1", "terminal": "L1"}, "end": {"terminal": "L1"}}
+                    ],
+                }
+            ],
         )
 
     async def resolve_cross_page(
@@ -166,8 +172,8 @@ def test_blank_or_non_wiring_scan_skips_adapter() -> None:
 def test_cross_page_graph_scopes_one_task_and_cannot_return_start() -> None:
     async def run() -> None:
         stages = FakeStages()
-        result = await run_cross_page_completion(
-            agent=CrossPageResolverAgent(stages=stages),
+        result = await complete_page_connection(
+            agent=PageScannerAgent(stages=stages),
             request=CrossPageCompletionRequest(
                 run_id="run-1",
                 project_id="project-1",
@@ -189,7 +195,7 @@ def test_cross_page_graph_scopes_one_task_and_cannot_return_start() -> None:
 def test_blank_cross_page_targets_degrade_to_review() -> None:
     async def run() -> None:
         stages = FakeStages()
-        result = await CrossPageResolverAgent(stages=stages).run(
+        result = await PageScannerAgent(stages=stages).complete(
             CrossPageCompletionRequest(
                 run_id="run-1",
                 project_id="project-1",

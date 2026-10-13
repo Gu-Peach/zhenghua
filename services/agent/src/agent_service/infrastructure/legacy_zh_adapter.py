@@ -22,9 +22,9 @@ class LegacyZhExtractionAdapter:
         progress: ProgressCallback | None = None,
     ) -> ExtractionExecutionResult:
         self._validate_profile(request.profile)
-        from ..application.three_stage_extraction import run_three_stage_extraction
+        from ..application.page_workflow_extraction import run_page_workflow_extraction
 
-        result = await run_three_stage_extraction(
+        result = await run_page_workflow_extraction(
             pdf_path=request.pdf_path,
             output_dir=request.output_path,
             profile=request.profile,

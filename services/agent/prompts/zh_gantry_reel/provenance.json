@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "profile_version": "0.1.0",
+  "source_files": [
+    {
+      "name": "1002001693大车卷盘图纸.pdf",
+      "checksum": "sha256:8af5ec52d07586da1a85da0c403876be8a00b1055bfcd22b18d6c231e74ee70f"
+    },
+    {
+      "name": "1002001693-大车卷盘放线表.xlsx",
+      "checksum": "sha256:ff3f5a74468e85574889aa13a8a20986e4e07ce671a69e65eee17ac79b90d51e"
+    }
+  ],
+  "source_pdf_pages": 25,
+  "source_sheet": "放线表",
+  "read_only": true,
+  "review_status": "source_checked_draft_pending_engineer_confirmation",
+  "assets": [
+    {
+      "path": "baseline-review.json",
+      "checksum": "sha256:903417b05928f7d18c18e3c7ae0510390ee9c53393a51de330028a088209f3b8",
+      "size_bytes": 4316
+    },
+    {
+      "path": "CHANGELOG.md",
+      "checksum": "sha256:214b8ac008c57a3720076431d89e4725e1745560b2abb040acc1fbc6367da7e9",
+      "size_bytes": 711
+    },
+    {
+      "path": "examples_page_classification/images/pdf02_1A.png",
+      "checksum": "sha256:25136092263d80af509568759377693f404923c848c8a85d95112e99fcd8f32f",
+      "size_bytes": 248828
+    },
+    {
+      "path": "examples_page_classification/images/pdf25_TD_3a.png",
+      "checksum": "sha256:893958ba5970f3d4d5bc418abd05b9c0fa08ef07ef23b98f9ecdef52d0aa06c8",
+      "size_bytes": 206320
+    },
+    {
+      "path": "examples_page_classification/manifest.json",
+      "checksum": "sha256:1d13b7cb88f47c62ad09ba220e705d47dac930ac7ee4769fcba36a9fde9db4d6",
+      "size_bytes": 694
+    },
+    {
+      "path": "examples_page_classification/sh_1a/expected.json",
+      "checksum": "sha256:ea761f6f867104cdbc403b8dc5b7d637185f4b918b1f454de28f4dc63e056f1f",
+      "size_bytes": 246
+    },
+    {
+      "path": "examples_page_classification/td_3a/expected.json",
+      "checksum": "sha256:788080da16b21cb7136defdc46b608d27107e183cd85fba161c448e1c007f64b",
+      "size_bytes": 252
+    },
+    {
+      "path": "examples_wiring/completion/abs_power.expected.json",
+      "checksum": "sha256:eb346a47e0d28e25120395f6a4be30343b9ab0ab058ac9d32eabeeef185342c1",
+      "size_bytes": 513
+    },
+    {
+      "path": "examples_wiring/completion/abs_power.task.json",
+      "checksum": "sha256:ed591deb51fc0ad04ede69810a9a50e1c380db22ab19a1e15ec838764c6c911b",
+      "size_bytes": 584
+    },
+    {
+      "path": "examples_wiring/completion/cliq3.expected.json",
+      "checksum": "sha256:ae1b04ebf2088651656aeeacd99b66ed663c8b9333f1ed103571a94cf5b326bf",
+      "size_bytes": 408
+    },
+    {
+      "path": "examples_wiring/completion/cliq3.task.json",
+      "checksum": "sha256:bf446805cf366513657c20aaec321b12f484e318ccc9ad2a8fac2f216b824add",
+      "size_bytes": 585
+    },
+    {
+      "path": "examples_wiring/images/pdf03_1B.png",
+      "checksum": "sha256:09048041e2081b28d220581c6e3ad16040dee93adf3abbd14a61ae84f1124279",
+      "size_bytes": 385073
+    },
+    {
+      "path": "examples_wiring/images/pdf06_1E.png",
+      "checksum": "sha256:314c925258b16bfa436bcc071b65c312c26cd471a01f171b8a5b26d0f7a079f0",
+      "size_bytes": 319553
+    },
+    {
+      "path": "examples_wiring/images/pdf08_1G.png",
+      "checksum": "sha256:57bb75d637a522a3ca323c7c008862a0ece2d84f4c8f001f73d9490c0944002a",
+      "size_bytes": 230337
+    },
+    {
+      "path": "examples_wiring/images/pdf10_2A.png",
+      "checksum": "sha256:55572e06f377e4179085551012136c4bb0ddd52ccda27f35b310cf942aa943fc",
+      "size_bytes": 372250
+    },
+    {
+      "path": "examples_wiring/images/pdf25_TD_3a.png",
+      "checksum": "sha256:893958ba5970f3d4d5bc418abd05b9c0fa08ef07ef23b98f9ecdef52d0aa06c8",
+      "size_bytes": 206320
+    },
+    {
+      "path": "examples_wiring/manifest.json",
+      "checksum": "sha256:2d8c78bd7d156b018748c3b917e2db9541476f141780705ceb7bc554710067a9",
+      "size_bytes": 1909
+    },
+    {
+      "path": "examples_wiring/stage2/1e_sources.expected.json",
+      "checksum": "sha256:ef4b858d2cc657ab21fd18a90803000c2bf6eb8664b5fefa0491942b05b92e26",
+      "size_bytes": 9045
+    },
+    {
+      "path": "examples_wiring/stage2/td_3a_non_wiring.expected.json",
+      "checksum": "sha256:370b85108e75b34d81a30877a4f62875b2b138e80d271eedda01d6cee875f387",
+      "size_bytes": 239
+    },
+    {
+      "path": "field-rules.json",
+      "checksum": "sha256:6223c69d98e4436c5decb3131da521043078a28bc1711925aca32d1d29fe1855",
+      "size_bytes": 2208
+    },
+    {
+      "path": "page_classification.md",
+      "checksum": "sha256:b9a072c505cc39aba3fd501cbb0e0643dc2e7a56098b87246e487c23317d5dcd",
+      "size_bytes": 1599
+    },
+    {
+      "path": "page_connection_completion.md",
+      "checksum": "sha256:ef4ae725f1c0e9b2f9c714bfb701434723aa8cc4f5b1e5b04b95a1567e8c95e3",
+      "size_bytes": 1720
+    },
+    {
+      "path": "page_scan_index.md",
+      "checksum": "sha256:76c52d69e6ce07cde74d29bb036122b82a70f86fc53e2b5b03b4a54042e780dc",
+      "size_bytes": 3412
+    },
+    {
+      "path": "README.md",
+      "checksum": "sha256:af41ebd879094e547d7647eeed34d5e1ece0001a132fa10dcd9ec9f361f24663",
+      "size_bytes": 3107
+    },
+    {
+      "path": "schema.json",
+      "checksum": "sha256:1541f300644501b465fb6dc22b20b331442bf8fed65d477cb8c07dd1dde464ab",
+      "size_bytes": 24863
+    },
+    {
+      "path": "sheet-index.json",
+      "checksum": "sha256:c1d35ffb530da90df100747435cd9c1dc5d2caf9b068c89e2cdaa90463609cc3",
+      "size_bytes": 4312
+    },
+    {
+      "path": "title-block-evidence.json",
+      "checksum": "sha256:a752dbc7dda14ff9e85d7d6d0e81ba8ed8c4c7e528b696e265a7a5a6d1589a43",
+      "size_bytes": 3087
+    }
+  ],
+  "note": "Source assets and baselines are not production truth; no model/database execution. Engineering confirmation pending."
+}

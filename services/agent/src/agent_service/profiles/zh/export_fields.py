@@ -3,12 +3,11 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from .terminal_strips import normalize_terminal_strip, terminal_strip_for_device
-
 
 class ZhExportFields:
     def terminal_strip(self, device: Any, value: Any, mapping: Mapping[str, str] | None) -> str | None:
-        return terminal_strip_for_device(device, mapping) or normalize_terminal_strip(value, mapping)
+        # Keep observed/inferred page-workflow output before any legacy device fallback.
+        return str(value).strip() if value not in (None, "") else None
 
     def terminal(self, device: Any, value: Any) -> str | None:
         if value is None:

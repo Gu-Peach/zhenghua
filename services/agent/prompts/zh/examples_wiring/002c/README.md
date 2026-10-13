@@ -1,22 +1,9 @@
-# 002.C shared wiring example
+# ZH 2.0.0 Stage 2 图像样例
 
-This directory is the active image-backed Few-shot package for Stage 2 and Stage 3.
+`manifest.json` version 2 是当前入口；所有引用路径由离线冒烟检查。`stage2_cases` 包含 C01 正例和 C03 接收端局部负例；历史名称 `stage3_cases` 现在指 Stage 2 内部补全样例，不是独立阶段。
 
-- `images/` contains the five canonical drawings once.
-- `stage2/*.expected.json` contains single-page `PageScanResult` answers.
-- `stage3/*.task.json` is the exact Stage 3 `task_context` input.
-- `stage3/*.expected.json` contains the matching `CrossPageCompletion` answer.
-- `manifest.json` exposes `stage2_cases` and `stage3_cases` to their respective loaders.
-- Stage 3 selects one relevant case per terminal task; each example contains one target page image and a JSON task context with the source-page metadata.
+- C01：无箭头的 XD1-W1 连接保留实际端点、方向待复核；W1 离开端子的六条跨页连接保留原理号与引用。FO3～FO12 本页连接也保留，不虚构分类/颜色/业务元件。
+- C03 接收端局部图：箭头进入 X9:2/X9:4，不创建本页起点记录。
+- C01→C02：来源 W1:L1 的 002C0101/GCR_L1 与目标回指 1.1 匹配，终点 Q1:L1。输入是来源/目标两图，冻结来源不换向。
 
-Stage 2 coverage:
-
-- `002.C/3`: allowed starts and same-page endpoints; device location references are not cross-page wire references.
-- `002.C/6`: negative source-page example; it is a valid Stage 3 target but has no allowed Stage 2 start terminal.
-- `002.C/11`: XA completeness and breaker `Ir` current evidence.
-- `002.C/21`: true cross-Plant-Function references.
-
-Stage 3 coverage:
-
-- `002.C/11 -> 002.C/6`: same-function cross-page completion.
-- Stage 3 的当前案例验证：来源页已有 `Ir=400A` 时，目标页只补全终点，不能覆盖已有电流。
+`legacy_stage2/` 和 `stage3/` 保存旧白名单/起点排序资产供历史审阅，不作为当前初扫基线。新 expected 基于本轮人工目视核对与约定顺序，未运行真实 VLM 或字段级固定回归，仍需工程人员确认；不能当作标准业务表的逐字段答案。

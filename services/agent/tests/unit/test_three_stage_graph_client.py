@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from agent_service.application.three_stage_extraction import ExtractionStageGraphClient
+from agent_service.application.page_workflow_extraction import ExtractionStageGraphClient
 from agent_service.domain.models.extraction_stages import (
     CrossPageCompletionData,
     DrawingEndpoint,
@@ -16,7 +16,6 @@ from agent_service.domain.models.extraction_stages import (
 )
 from agent_service.domain.models.profiles import ProfileBinding
 from agent_service.profiles import ProfileRegistry
-
 
 ROOT = Path(__file__).resolve().parents[4]
 
@@ -32,7 +31,15 @@ class FakeStages:
     async def scan_page(self, request):
         return PageScanData(
             pdf_page_number=request.page.pdf_page_number,
-            units=[{"unit_id": "unit-1", "wire_number": "0272", "connections": []}],
+            units=[
+                {
+                    "unit_id": "unit-1",
+                    "wire_number": "0272",
+                    "connections": [
+                        {"start": {"device": "-XD1", "terminal": "L1"}, "end": {"terminal": "L1"}}
+                    ],
+                }
+            ],
         )
 
     async def resolve_cross_page(self, request):

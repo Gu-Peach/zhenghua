@@ -7,9 +7,7 @@ from io import BytesIO
 from pathlib import Path
 from unittest.mock import patch
 
-from openpyxl import load_workbook
-
-from agent_service.application.three_stage_extraction import run_three_stage_extraction
+from agent_service.application.page_workflow_extraction import run_page_workflow_extraction
 from agent_service.config import AgentSettings
 from agent_service.domain.enums import CrossPageState
 from agent_service.domain.models.extraction_stages import (
@@ -26,6 +24,7 @@ from agent_service.domain.models.extraction_stages import (
 )
 from agent_service.profiles import ProfileRegistry
 from agent_service.profiles.extraction_policy import default_extraction_policies
+from openpyxl import load_workbook
 
 ROOT = Path(__file__).resolve().parents[4]
 SOURCE = ROOT / "services/agent/src/agent_service"
@@ -124,15 +123,15 @@ def test_nonempty_pdf_preserves_fields_and_resumes_without_model_calls(tmp_path:
             project_id="migration-project",
         )
         with patch(
-            "agent_service.application.three_stage_extraction.build_extraction_stage_dispatcher",
+            "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
             return_value=stages,
         ):
-            first = await run_three_stage_extraction(**kwargs)
+            first = await run_page_workflow_extraction(**kwargs)
             records = [
                 record for records in first.execution.state["wiring_records"].values() for record in records
             ]
             rows = {record.line_number: record for record in records}
-            assert set(rows) == {"003G01", "003G02"}
+            assert set(rows) == {"003G01", "003G02", "REJECTED"}
             cross = rows["003G01"]
             assert (cross.start_device, cross.start_terminal, cross.end_device, cross.end_terminal) == (
                 "-XD3",
@@ -143,7 +142,7 @@ def test_nonempty_pdf_preserves_fields_and_resumes_without_model_calls(tmp_path:
             assert cross.current == "400A"
             assert cross.source_pages == [1, 2]
             assert cross.is_cross_page == CrossPageState.CROSS_PAGE
-            assert (rows["003G02"].start_device, rows["003G02"].end_device) == ("-XD4", "-MOTOR")
+            assert (rows["003G02"].start_device, rows["003G02"].end_device) == ("-MOTOR", "-XD4")
             before = json.loads((tmp_path / "run/table.json").read_text(encoding="utf-8"))
             workbook = load_workbook(first.final_xlsx, read_only=True)
             sheet = workbook.active
@@ -154,7 +153,7 @@ def test_nonempty_pdf_preserves_fields_and_resumes_without_model_calls(tmp_path:
             assert stages.classifications == [1, 2]
             assert stages.scans == [1, 2]
             assert stages.targets == [2]
-            second = await run_three_stage_extraction(**kwargs)
+            second = await run_page_workflow_extraction(**kwargs)
             after = json.loads((tmp_path / "run/table.json").read_text(encoding="utf-8"))
             assert before == after
             assert stages.classifications == [1, 2]
@@ -209,7 +208,6 @@ def test_retired_batch_modules_and_exports_are_unavailable() -> None:
     import importlib.util
 
     import pytest
-
     from agent_service.graphs.document_extraction import workflow
 
     for module in (

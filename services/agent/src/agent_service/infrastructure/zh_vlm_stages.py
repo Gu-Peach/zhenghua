@@ -31,7 +31,9 @@ T = TypeVar("T", bound=BaseModel)
 
 
 class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
-    """Native multimodal adapter for the three ZH extraction subgraphs."""
+    """Native multimodal adapter for ZH page extraction operations."""
+
+    enforce_evidence_contract = True
 
     def __init__(self, settings: AgentSettings, gateway: ModelGateway) -> None:
         self._settings = settings
@@ -84,20 +86,25 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             images=[request.page],
             user_text=user_text,
             output_model=PageScanData,
-            normalize=lambda value: _normalize_page_scan(value, request.page.pdf_page_number),
+            normalize=lambda value: _normalize_page_scan(
+                value, request.page.pdf_page_number, require_direction=self.enforce_evidence_contract
+            ),
             item_id=f"pdf-page:{request.page.pdf_page_number}",
         )
 
     def scan_instruction(self, request: PageScanRequest) -> str:
         return (
             "当前是第二阶段逐页扫描，只把当前图片当作来源页；未明确提供目标图时，不要补全跨页终点。\n"
-            "只提取当前来源页发出的、具有允许起点端子的连接。同页可确认的终点填写 end；"
+            "按放线标记和实际路径提取当前来源页发出的连接，不按端子类型排除。"
+            "箭头指向本页端子为接收端，不输出；离开本页端子为起点；无箭头根据本页证据判断。"
+            "endpoint_role 写 source/receiver/unknown，direction_basis 保留判断依据。"
+            "同页可确认的终点填写 end；"
             "跨页引用绑定到对应 connection，end=null，status=needs_reference。\n"
             "必须沿当前端子实际连接的导线追踪，并读取该导线旁、断线处或箭头处的放线标记；"
             "不能按端子/设备邻近关系配对，也不能借用相邻导线标记。\n"
             "同一 wire_number 下不同芯、起点、终点或路径分别输出 connection；"
             "相同 line_number 不代表可合并。\n"
-            "起点端子只能是 XD0、XA、XD10、XD11、XD12、XD21、XD23、XD22、XD24、XD3、XD5、XD4、XH。\n"
+            "实际端子排原样保留；没有明确分类时按两端已知端子映射推测，无依据填 null。\n"
             "current 只填图上明确可见的电流或额定电流值，不得推算，看不清填 null。\n"
             "批注框、箭头只用于指示检查位置，不是图纸字段。\n"
             f"当前页上下文：{request.page_context or '无'}\n"
@@ -111,24 +118,27 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
     ) -> CrossPageCompletionData:
         user_text = self.cross_page_instruction(request)
         return await self._invoke_stage(
-            stage="cross_page_completion",
+            stage="page_scan",
             request_id=request.run_id,
             profile=request.profile,
             prompt_resource="cross_page_prompt",
             example_resource="wiring_examples",
             example_section="stage3_cases",
             input_json=request.task_context,
-            images=[request.target_page],
+            images=self.completion_images(request),
             user_text=user_text,
             output_model=CrossPageCompletionData,
-            normalize=lambda value: _normalize_cross_page(value, request.task_id),
+            normalize=lambda value: _normalize_cross_page(
+                value, request.task_id, require_evidence=self.enforce_evidence_contract
+            ),
             item_id=request.task_id,
         )
 
     def cross_page_instruction(self, request: CrossPageCompletionRequest) -> str:
         return (
-            "当前是第三阶段跨页补全。本次只提供一张图片，即引用定位到的唯一目标页。\n"
-            "来源页不作为图片输入；起点、线号、芯号、来源页和引用信息全部以 task_context 为准。\n"
+            "当前是 Stage 2 内部的定向跨页补全节点。提供来源图和唯一引用目标图。"
+            "若旧任务无来源图，则仅提供目标图。\n"
+            "起点已根据来源页方向确认；不得交换或改写起点。来源图片用于核对冻结连接。\n"
             "只处理 task_context 指定的这一条 connection，不要提取目标页其他线路。"
             "沿放线标记和 Plant Function + Page Number + Column 引用，在目标页实际追线确认终点。\n"
             "只有图中明确确认后才填写 end；无法确认时 end=null、status=needs_review，不能猜测。\n"
@@ -138,6 +148,9 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             f"目标 PDF 物理页：{request.target_page.pdf_page_number}\n"
             "严格输出 CrossPageCompletionData JSON。"
         )
+
+    def completion_images(self, request: CrossPageCompletionRequest) -> list[DrawingPageInput]:
+        return ([request.source_page] if request.source_page else []) + [request.target_page]
 
     async def _invoke_stage(
         self,
@@ -162,8 +175,15 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             section=example_section,
             input_json=input_json,
         )
+        contract = output_model.model_json_schema()
+        if self.enforce_evidence_contract and output_model is PageScanData:
+            connection_schema = contract["$defs"]["ScannedConnection"]
+            connection_schema["required"] = list(
+                dict.fromkeys([*connection_schema.get("required", []), "endpoint_role", "direction_basis"])
+            )
+        system_prompt = prompt + "\n输出 JSON Schema：\n" + json.dumps(contract)
         messages = [
-            {"role": "system", "content": prompt},
+            {"role": "system", "content": system_prompt},
             *prefix,
             {"role": "user", "content": _multimodal_content(user_text, images)},
         ]
@@ -193,7 +213,9 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
                             "profile": profile.profile.key,
                             "profile_version": profile.profile.version,
                             "profile_checksum": profile.profile.checksum,
-                            "prompt_checksum": f"sha256:{hashlib.sha256(prompt.encode('utf-8')).hexdigest()}",
+                            "prompt_checksum": (
+                                f"sha256:{hashlib.sha256(system_prompt.encode('utf-8')).hexdigest()}"
+                            ),
                             "input_pdf_pages": [image.pdf_page_number for image in images],
                             "item_id": item_id,
                             "stage": stage,
@@ -365,16 +387,12 @@ def _stage3_task_features(task: Mapping[str, Any]) -> dict[str, Any]:
     source_function = str(source_record.get("drawing_function") or "").strip().upper()
     target_function = str(first_reference.get("target_function") or "").strip().upper()
     return {
-        "line_number": str(task.get("line_number") or source_record.get("line_number") or "")
-        .strip()
-        .upper(),
+        "line_number": str(task.get("line_number") or source_record.get("line_number") or "").strip().upper(),
         "start_terminal": start_terminal,
         "start_code": start_code,
         "source_function": source_function,
         "target_function": target_function,
-        "cross_function": bool(
-            source_function and target_function and source_function != target_function
-        ),
+        "cross_function": bool(source_function and target_function and source_function != target_function),
     }
 
 
@@ -444,7 +462,9 @@ def _normalize_classification(payload: Any) -> dict[str, Any]:
     return normalized
 
 
-def _normalize_page_scan(payload: Any, page_number: int) -> dict[str, Any]:
+def _normalize_page_scan(
+    payload: Any, page_number: int, *, require_direction: bool = False
+) -> dict[str, Any]:
     if isinstance(payload, list):
         payload = {"units": [{"unit_id": "page-unit-1", "connections": payload}]}
     if isinstance(payload, dict) and isinstance(payload.get("result"), dict):
@@ -488,6 +508,16 @@ def _normalize_page_scan(payload: Any, page_number: int) -> dict[str, Any]:
         for connection in unit["connections"]:
             if not isinstance(connection, dict):
                 continue
+            if require_direction and connection.get("endpoint_role") != "receiver":
+                if (
+                    not connection.get("endpoint_role")
+                    or not str(connection.get("direction_basis") or "").strip()
+                ):
+                    connection["endpoint_role"] = "unknown"
+                    connection["status"] = "needs_review"
+                    normalized["needs_review"] = True
+                    note = "missing endpoint role or direction evidence; source is unconfirmed"
+                    connection["source_note"] = "; ".join(filter(None, [connection.get("source_note"), note]))
             values = connection.get("source_drawing_pages")
             if isinstance(values, list):
                 connection["source_drawing_pages"] = [
@@ -524,6 +554,15 @@ def _normalize_page_scan(payload: Any, page_number: int) -> dict[str, Any]:
                     connection.pop(f"{side}_{name}", None)
             refs = connection.get("references") or []
             connection["references"] = [{"raw": ref} if isinstance(ref, str) else ref for ref in refs]
+            for reference in connection["references"]:
+                if not isinstance(reference, dict):
+                    continue
+                # Drawing/physical page 0 is not a page; VLMs use it as an unknown sentinel.
+                # Columns are deliberately excluded because EPLAN can use column zero.
+                for field in ("target_drawing_page", "target_internal_page", "target_pdf_page"):
+                    value = reference.get(field)
+                    if type(value) is int and value == 0 or isinstance(value, str) and value == "0":
+                        reference[field] = None
             if refs:
                 connection["is_cross_page"] = "cross_page"
             elif isinstance(connection.get("end"), dict) and connection["end"]:
@@ -535,7 +574,9 @@ def _normalize_page_scan(payload: Any, page_number: int) -> dict[str, Any]:
     return normalized
 
 
-def _normalize_cross_page(payload: Any, task_id: str) -> dict[str, Any]:
+def _normalize_cross_page(
+    payload: Any, task_id: str, *, require_evidence: bool = False
+) -> dict[str, Any]:
     if isinstance(payload, dict):
         payload = payload.get("completion") or payload.get("result") or payload
     if not isinstance(payload, dict):
@@ -552,6 +593,16 @@ def _normalize_cross_page(payload: Any, task_id: str) -> dict[str, Any]:
         if key.startswith("end_"):
             normalized.pop(key, None)
     normalized.setdefault("intermediate_points", [])
+    if require_evidence:
+        end = normalized.get("end")
+        if (
+            not isinstance(end, dict)
+            or not end.get("terminal")
+            or not str(normalized.get("source_note") or "").strip()
+        ):
+            normalized["status"] = "needs_review"
+            normalized["needs_review"] = True
+            normalized.setdefault("warnings", []).append("missing endpoint or target path evidence")
     return normalized
 
 

@@ -358,7 +358,12 @@ async def _classify_pages_node(state: GraphState, runtime: GraphRuntime) -> dict
     }
 
 
-async def _page_scan_loop_node(state: GraphState, runtime: GraphRuntime) -> dict[str, Any]:
+async def _page_scan_loop_node(
+    state: GraphState,
+    runtime: GraphRuntime,
+    *,
+    use_checkpoint: bool = True,
+) -> dict[str, Any]:
     """Scan each physical page once and build logical wire units incrementally."""
 
     diagnostics_dir = _diagnostics_dir(Path(state["output_path"]), runtime.output_mode)
@@ -366,7 +371,7 @@ async def _page_scan_loop_node(state: GraphState, runtime: GraphRuntime) -> dict
     page_checkpoint = diagnostics_dir / "page-scan-checkpoint.json"
     unit_checkpoint = diagnostics_dir / "wire-units-checkpoint.json"
 
-    saved_pages = _read_json_object(page_checkpoint)
+    saved_pages = _read_json_object(page_checkpoint) if use_checkpoint else {}
     if saved_pages.get("version") != 3:
         saved_pages = {}
     page_scan_results: dict[str, dict[str, Any]] = dict(state.get("page_scan_results") or {})
@@ -374,7 +379,7 @@ async def _page_scan_loop_node(state: GraphState, runtime: GraphRuntime) -> dict
     processed_pages = {int(value) for value in saved_pages.get("processed_pages", []) if str(value).isdigit()}
     processed_pages.update(int(value) for value in state.get("processed_pages", []) if str(value).isdigit())
 
-    saved_units = _read_json_object(unit_checkpoint)
+    saved_units = _read_json_object(unit_checkpoint) if use_checkpoint else {}
     if saved_units.get("version") != 3:
         saved_units = {}
     wire_units: dict[str, dict[str, Any]] = dict(state.get("wire_units") or {})
@@ -487,15 +492,17 @@ async def _page_scan_loop_node(state: GraphState, runtime: GraphRuntime) -> dict
                     page_number=page_number,
                     unit_index=unit_index,
                 )
-                _write_wire_units_checkpoint(unit_checkpoint, wire_units)
+                if use_checkpoint:
+                    _write_wire_units_checkpoint(unit_checkpoint, wire_units)
 
         processed_pages.add(page_number)
-        _write_page_scan_checkpoint(
-            page_checkpoint,
-            processed_pages=sorted(processed_pages),
-            page_scan_results=page_scan_results,
-        )
-        _write_wire_units_checkpoint(unit_checkpoint, wire_units)
+        if use_checkpoint:
+            _write_page_scan_checkpoint(
+                page_checkpoint,
+                processed_pages=sorted(processed_pages),
+                page_scan_results=page_scan_results,
+            )
+            _write_wire_units_checkpoint(unit_checkpoint, wire_units)
         reference_count = sum(
             len(connection.references) for unit in result.units for connection in unit.connections
         )

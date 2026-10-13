@@ -25,8 +25,6 @@ STAGES = (
     AgentStage.RENDER,
     AgentStage.PAGE_CLASSIFICATION,
     AgentStage.PAGE_SCAN,
-    AgentStage.BUILD_CROSS_PAGE_TASKS,
-    AgentStage.CROSS_PAGE_COMPLETION,
     AgentStage.VALIDATION,
 )
 
@@ -39,6 +37,30 @@ class DurableExtractionSession:
     ) -> None:
         self.repository, self.inputs, self.output_dir = repository, inputs, output_dir
         self.pdf_path = pdf_path
+
+    async def load_page(self, number: int) -> dict[str, Any] | None:
+        item = await self.repository.load_item(self.inputs.run_id, AgentStage.PAGE_SCAN, f"pdf-page:{number}")
+        return item.result if item else None
+
+    async def commit_page(self, number: int, state: GraphState) -> None:
+        """Commit completed page facts separately from raw model-response caches."""
+        from ..graphs.document_extraction.page_extraction import page_result
+
+        snapshot = await self._snapshot(AgentStage.PAGE_SCAN, state)
+        result = page_result(cast(GraphState, snapshot), number)
+        scan = result.get("scan") or {}
+        page = result["page"]
+        await self.repository.commit_item(
+            StageItem(
+                run_id=self.inputs.run_id,
+                stage=AgentStage.PAGE_SCAN,
+                item_id=f"pdf-page:{number}",
+                input_fingerprint=await self._fingerprint(AgentStage.PAGE_SCAN, f"pdf-page:{number}"),
+                result=result,
+                needs_review=bool(scan.get("needs_review")),
+                status="skipped" if page.get("blank") or page.get("is_non_wiring") else "completed",
+            )
+        )
 
     async def model_result(
         self, stage: AgentStage, item_id: str, model: type[T], invoke: Callable[[], Awaitable[T]]
@@ -213,6 +235,9 @@ class DurableExtractionSession:
         return snapshot
 
     async def _commit_items(self, stage: AgentStage, snapshot: dict[str, Any]) -> None:
+        if stage == AgentStage.PAGE_SCAN:
+            # Page workflow commits immediately, before it advances to the next page.
+            return
         items: list[tuple[str, dict[str, Any], bool]] = []
         if stage in {AgentStage.RENDER, AgentStage.PAGE_CLASSIFICATION, AgentStage.PAGE_SCAN}:
             for page in snapshot["pages"]:

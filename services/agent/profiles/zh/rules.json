@@ -23,22 +23,34 @@
   "extraction": {
     "workflow": [
       "page_classification",
-      "page_scan",
-      "build_cross_page_tasks",
-      "cross_page_completion",
+      "page_extraction",
       "deterministic_validation"
     ],
     "dynamic_resources": {
-      "page_classification": ["classification_prompt", "classification_examples"],
-      "page_scan": ["page_scan_prompt", "wiring_examples"],
-      "cross_page_completion": ["cross_page_prompt", "wiring_examples"]
+      "page_classification": [
+        "classification_prompt",
+        "classification_examples"
+      ],
+      "page_scan": [
+        "page_scan_prompt",
+        "wiring_examples"
+      ],
+      "page_completion": [
+        "cross_page_prompt",
+        "wiring_examples"
+      ]
     },
     "business_rules": [
       "使用 Plant Function + Page Number 建立图纸业务索引",
-      "端子、方向、电流和跨页引用由 ZH Profile 的确定性规则校验",
-      "Stage 3 只能补全任务指定连接，不能修改已确认起点"
+      "每页仅识别来源起点，箭头方向按相对端子的位置判断；无箭头保留模型证据",
+      "Stage 2 内部双图定向补全，不交换起点、不全量扫描目标页",
+      "未知引用/端点留空并复核，完成页保存后才继续下一页",
+      "端子排实际值优先，无明确值时使用已知端子映射，无依据留空",
+      "ZH 2.0.1：每条连接必须保留来源角色与方向证据，缺失不能默认确认来源",
+      "一条明确可见分支对应独立connection；同页PLC模块定义引用不是导线跨页",
+      "原始离页地址优先解析，局部页码继承当前功能，柜体号不推导功能",
+      "真实针脚与PLC地址/电位名分离；设备或端子排身份不完整必须复核"
     ],
     "output_contract": "wiring_connection_v1"
   }
 }
-

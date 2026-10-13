@@ -1,0 +1,25 @@
+{
+  "task_id": "1e-cliq3-to-1g-smc",
+  "unit_id": "1e-drive-cliq",
+  "connection_id": "1e-cliq3",
+  "source_pdf_page": 6,
+  "target_pdf_page": 8,
+  "line_number": "CLIQ3",
+  "source_record": {
+    "drawing_function": "GCR.1",
+    "drawing_page_number": 5,
+    "drawing_page": "1E",
+    "start_location": "+GCR",
+    "start_device": "-INV",
+    "start_terminal": "X201",
+    "line_number": "CLIQ3"
+  },
+  "references": [
+    {
+      "raw": "CLIQ3 / 1G45H",
+      "target_function": "GCR.1",
+      "target_drawing_page": 7,
+      "target_column": 45
+    }
+  ]
+}

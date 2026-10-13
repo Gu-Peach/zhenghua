@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+from ..domain.enums import ErrorCode
+from ..domain.errors import AgentServiceError
 from ..domain.models.extraction_stages import (
+    CrossPageCompletionRequest,
+    CrossPageCompletionResult,
     PageScanData,
     PageScanRequest,
     PageScanResult,
@@ -10,7 +14,7 @@ from ._extraction_stage import require_stage_resources
 
 
 class PageScannerAgent:
-    """Stage 2: scan one source page; target-page images are not accepted here."""
+    """Stage 2 model operations used by the page extraction workflow."""
 
     def __init__(self, *, stages: ExtractionStageAdapter) -> None:
         self._stages = stages
@@ -28,6 +32,13 @@ class PageScannerAgent:
             )
         else:
             result = await self._stages.scan_page(request)
+        for unit in result.units:
+            unit.connections = [item for item in unit.connections if item.endpoint_role != "receiver"]
+            for item in unit.connections:
+                if item.endpoint_role == "unknown":
+                    item.status = "needs_review"
+                    result.needs_review = True
+        result.units = [unit for unit in result.units if unit.connections]
         return PageScanResult(
             run_id=request.run_id,
             project_id=request.project_id,
@@ -41,4 +52,44 @@ class PageScannerAgent:
             units=[] if result.blank else result.units,
             page_references=result.page_references,
             warnings=result.warnings,
+        )
+
+    async def complete(self, request: CrossPageCompletionRequest) -> CrossPageCompletionResult:
+        """Complete only the frozen connection, using its source and target images."""
+        resources = request.profile.rules.extraction.dynamic_resources
+        try:
+            require_stage_resources(
+                request.profile,
+                "page_completion" if "page_completion" in resources else "cross_page_completion",
+            )
+        except ValueError as exc:
+            raise AgentServiceError(
+                ErrorCode.PROFILE_INVALID, "Stage 2 completion resources are invalid."
+            ) from exc
+        if request.target_page.blank or request.target_page.non_wiring:
+            from ..domain.models.extraction_stages import CrossPageCompletionData
+
+            result = CrossPageCompletionData(
+                task_id=request.task_id,
+                needs_review=True,
+                warnings=["indexed target page is blank or unavailable"],
+            )
+        else:
+            result = await self._stages.resolve_cross_page(request)
+        needs_review = (
+            result.needs_review
+            or result.end is None
+            or result.end.terminal in (None, "")
+            or result.status != "resolved"
+        )
+        return CrossPageCompletionResult(
+            run_id=request.run_id,
+            project_id=request.project_id,
+            profile=request.profile.profile,
+            **{
+                **result.model_dump(mode="python"),
+                "task_id": request.task_id,
+                "needs_review": needs_review,
+                "status": "needs_review" if needs_review else "resolved",
+            },
         )

@@ -14,5 +14,6 @@ class DocumentStageClient(Protocol):
         self,
         target_image: ImagePayload,
         *,
+        source_image: ImagePayload | None = None,
         task_context: str = "",
     ) -> Any: ...

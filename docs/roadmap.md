@@ -3,6 +3,12 @@
 > 最后更新：2026-10-12
 > 状态含义：`planned`、`in progress`、`blocked`、`done`
 
+2026-10-13 大车卷盘规则资源本地初稿完成：`zh_gantry_reel@0.1.0` experimental，25页 SH.NO. 索引，分类/初扫/内部补全各两案例；5项离线资源/接口回归通过。工程确认、真实模型字段级固定回归与发布未执行，Phase 4仍 in progress。见 [核对说明](./service/agent/zh-gantry-reel-review.md)。
+
+2026-10-13 本地 Stage 2 分组脚本与实际 002.C/002.M 试跑完成：12 页/121 条、标准 12 列 XLSX（色标空）、31 条待复核，14 项离线冒烟通过。数据库/远端包未变，固定字段准确率仍未验收，Phase 4 保持 in progress；见 [记录](./service/agent/changelog/2026-10-13-local-stage2-groups.md)。
+
+2026-10-13 Stage 2 逐页工作流分支代码完成：扫描/双图补全/校验/完成页保存闭环，独立 Stage 3 移除，ZH 2.0.0 与纠错调用同步。10 项离线冒烟通过。数据库迁移、远端包发布和真实字段级验收未运行，Phase 4 保持 in progress；见 [记录](./service/agent/changelog/2026-10-13-stage2-page-workflow.md)。
+
 2026-10-13 规则确认直接发布完成（用户新决策）：取消在线改进链路的模型评测/二次审核，保留不可变版本、权限/完整性/冲突检查和原子审计；新评测入口关闭，旧入队任务兼容。默认/Fake、18 项浏览器回归、28 migration 两类数据库验证通过，真实候选发布待用户重载验收。见 [记录](./service/agent/changelog/2026-10-13-confirmed-rules.md)。
 
 2026-10-13 稳定项目切换完成：目录按创建时间固定排序，选择不置顶；保留框架并局部加载，不重复拉目录。17 项浏览器、29 项 Server 默认测试和 Web 检查通过，见 [记录](./apps/web/changelog/2026-10-13-stable-project-switch.md)。

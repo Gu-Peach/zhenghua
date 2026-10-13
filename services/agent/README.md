@@ -1,5 +1,10 @@
 # Agent Service
 
+本地 002.C/002.M 测试入口：`scripts/run_stage2_groups.py`，仅本地图/索引、内存执行，导出与 `1641.xlsx` 同顺序的 12 列线表，色标留空。默认预检，真实模型须 `--allow-real-model`；无数据库/Storage 上传。命令和产物见 [测试说明](../../docs/service/agent/local-stage2-group-test.md)。
+
+2026-10-13 分支更新：提取改为 Stage 1 分类 + Stage 2 独立逐页 LangGraph，扫描/双图补全/保存形成闭环，删除独立 Stage 3 Agent 和全局补全阶段。实现见 [ADR-0014](../../docs/adr/0014-stage2-page-extraction-workflow.md) 与 [交付记录](../../docs/service/agent/changelog/2026-10-13-stage2-page-workflow.md)。本轮仅离线冒烟，不写真实数据库、不发布远端包、不重启服务；旧持久 run 只读，新 run 使用冻结 `page_extraction_v2` 工作流，真实库运行前需要未部署的新 migration。以下早期实施状态作为历史上下文。
+
+
 规则库支持人工基于可用模板创建新 key，封存到私有 Bucket 后立即注册；所有登录用户共享读取，创建者确认删除后停用。要求 `AGENT_PROFILE_PACKAGES_ENABLED=true` 和既有 Supabase 配置。Profile API/新任务入口/首页检测刷新远端 active 集合并为同 key 选择最新版本；已冻结任务仍使用原 checksum。首次使用新增 adapter 需重载服务以加载新代码。见 [ADR-0012](../../docs/adr/0012-shared-ready-rule-library.md)。
 
 2026-10-13 起，规则修改取消评测/二次审核：[ADR-0013](../../docs/adr/0013-confirmed-rule-update-without-evaluation.md)。聊天归因建议经一次“确认规则修改”后直接构建并启用包。已有候选由 `run_rule_release.py --candidate-id ... --user-id ...` 接续，输入“确认规则修改”即可；不调用模型评测，不需要 `AGENT_ALLOW_REAL_EVALUATION` 或脚本真实模型开关。需应用 migration `20261013000000` 并重载 API/Worker（不自动停止现有任务）。详见 [`纠错验收说明`](./agent_test/2.纠错agent/README.md)。
@@ -23,10 +28,10 @@ Gate B 内部上传/确认/Worker/SSE 链路已接通，见 [阶段 1 HTTP 验�
 - Model Gateway、Tool Registry、Context、Checkpoint 和 Trace 最小 Harness；
 - Profile Registry、版本化 ZH Profile 和动态资源绑定；
 - 只读取 PDF 物理首页的 Profile Router、人工确认和动态 ProfileBinding。
-- Stage 1 `PageClassifierAgent`、Stage 2 `PageScannerAgent`、Stage 3 `CrossPageResolverAgent`，各自有独立 Pydantic 契约和 LangGraph 子图；
-- ZH `ZhVlmExtractionStageAdapter` 通过 Agent 自己的 OpenAI-compatible Model Gateway 调用模型，三阶段调用都发送真实图片 Few-shot；
+- Stage 1 `PageClassifierAgent` 与 Stage 2 页工作流；`PageScannerAgent` 提供初扫及内部补全操作，保持 Pydantic 契约；
+- ZH `ZhVlmExtractionStageAdapter` 通过 Agent 自己的 OpenAI-compatible Model Gateway 调用模型，分类、初扫和内部补全都发送真实图片 Few-shot；
 - 文档 Graph 位于 `graphs/document_extraction`；PDF/checkpoint/JSON/XLS(X) 位于 `infrastructure/document`；端子、方向、电流、引用解析和导出字段通过 `profiles/zh` 策略注入；`zh_workflow` 兼容目录已删除；
-- `scripts/run_three_stage_extraction.py` 串联三个新 LangGraph 子图与迁入的确定性工作流，输出三阶段 JSON 和标准 XLSX，不写数据库；
+- `scripts/run_page_workflow_extraction.py` 执行分类及逐页闭环提取，输出两阶段 JSON、完成页 checkpoint 和 XLSX，不写数据库；
 - Supervisor 意图 Graph、Workflow Registry、首页 Profile Detection 内部工具，以及按项目/工作区/业务页码/线号/端子检索的受控结果工具；
 - 三态 `is_cross_page` 纠错路由、Correction proposal、用户确认后的 Supabase 原子版本提交和 accepted-feedback Improvement 触发；
 - Improvement Diagnoser 的脱敏原因/建议事件、显式授权后的 Profile Patch Builder、Evaluation Judge、离线 Eval Runner、Profile Sandbox 与确定性 Release Gate。
@@ -133,58 +138,28 @@ $env:PYTHONPATH="services/agent/src;."
 
 Stage 2/3 会保留 manifest 中的图像 Few-shot，但发送给模型前会将最长边超过 `AGENT_MODEL_FEWSHOT_MAX_IMAGE_SIDE` 的样例图按 2 的幂次缩小，默认最长边不超过 1800 像素。磁盘中的案例图片和待提取原图不变；该配置只控制 Few-shot 请求图像大小。
 
-三个子图供 Extraction Workflow 或本地测试调用，目前尚未暴露为单独 HTTP API：
+Stage 2 的完整入口为 `graphs/document_extraction/page_extraction.py` 中的 `run_page_extraction`，可包装为主 Agent 的工具/子 Agent；初扫模型节点 `run_page_scan` 不是完整提取入口。文档级入口为 `application/page_workflow_extraction.py::run_page_workflow_extraction`。
 
-| 子图 | 输入范围 | 结果 |
-| --- | --- | --- |
-| `run_page_classification` | 单页图像、已锁定 Profile、已知页面上下文 | Plant Function 与图纸业务页号，保留 PDF 物理页号 |
-| `run_page_scan` | 单张当前来源页 | 同页连接和跨页引用占位，不接收目标页图片 |
-| `run_cross_page_completion` | 单个端子连接任务、Stage 2 端子元数据、索引确定的一张目标页 | 只输出该端子的终点补全，不含可修改起点的字段 |
+流程：分类全部页并建立索引 → 本页初扫起点 → 内部引用规划 → 来源图/唯一目标图定向补全 → 校验 → 保存完成页 → 下一页。不扫描目标页其他连接，不递归扩张引用。跨页无法确认时终点 null、needs_review；配置/权限/持久化失败仍停止，不把写入失败当作完成。
 
-ZH 阶段通过 `build_extraction_stage_dispatcher(AgentSettings.from_env())` 注册 `zh_native` adapter。三个子图分别执行图纸归类、当前页扫描和跨页补全；`run_three_stage_extraction` 直接调用公共 `run_document_extraction`，文档 Graph 按阶段调用子 Agent，Profile 策略负责模板算法。Stage 3 按端子连接拆分并串行处理；每次 VLM 请求严格只包含一张目标图，来源页信息通过 Stage 2 元数据传入。同一端子若存在多个候选目标页，会拆成多个独立任务，结果一致时合并，结果冲突时标记 `needs_review`，不会把多张目标页放进一次请求。
+ZH 2.0.0 取消 XA/XD 白名单与强制换向，按实际放线标记/路径和箭头判断来源；无箭头保留模型证据，方向不确定待复核。实际端子标识保留，端子排明确值优先，否则按已知端子映射，无法映射留空。PE 不自动填颜色/未确认终点，业务代号不凭常识转换。新样例有 C01 正例、C03 接收端局部负例、C01→C02 双图补全；旧白名单 expected 归档为 legacy，真实模型与人工基线验收尚未完成。
 
-模块迁移见 [ADR-0005](../../docs/adr/0005-retire-zh-workflow-runtime.md)。`zh_workflow` 兼容目录已删除，`agent_service.zh_workflow.*` import 不再受支持；所有调用直接使用当前 Graph、domain、基础设施和 Profile 模块。阶段 JSON、checkpoint 文件名与版本、11 列诊断 XLSX 和 Proposal/数据库提交契约保持兼容。严格类型检查使用本包配置：`python -m mypy --config-file services/agent/pyproject.toml services/agent/src/agent_service`；PDF 与 Excel 第三方库的无存根边界在基础设施适配器及 mypy override 中显式处理。
+本地完成页存于 `agent/completed-pages/<physical-page>.json`，输入/Profile/图片指纹变化会拒绝旧缓存；恢复跳过完成页。数据库模式初扫/补全模型缓存与完成页 StageItem 分离，最终业务版本仍通过 Server 原子提交。`supabase/migrations/20261013010000_stage2_page_workflow.sql` 只新增冻结工作流前驱/完成页事实校验，未执行；没有修改已应用迁移。已有旧 run 不续跑混合阶段，应新建 run；既有项目不重绑 Profile。
 
-旧相邻页分段和批量提取已删除，包括 segment decider、batch client、batch checkpoint、旧批次合并及关联配置。新运行不再产生旧 `merge_decisions.json` / `extraction_batches.json`，现有三阶段 checkpoint 和结果契约不变。`AGENT_CLASSIFICATION_CONCURRENCY`（旧分段并发别名）、`AGENT_MAX_SEGMENT_PAGES`、`VLM_SEGMENT_CONCURRENCY`、`VLM_MAX_SEGMENT_PAGES` 不再参与配置。旧 import 转发也已删除，原 CLI 命令无需改变。
-
-ZH Stage 3 当前资源位置：
-
-- Prompt：`services/agent/prompts/zh/page_cross_page_completion.md`
-- Few-shot 清单：`services/agent/prompts/zh/examples_wiring/002c/manifest.json` 的 `stage3_cases`
-- Few-shot 图片：`services/agent/prompts/zh/examples_wiring/002c/images/`
-- 任务输入与期望结果：`services/agent/prompts/zh/examples_wiring/002c/stage3/*.task.json`、`*.expected.json`
-
-每个 Stage 3 请求只动态选择一个最相关的图片 Few-shot，即一张目标页样例图片，避免无关样例和来源页占用视觉 patch 预算。
-
-全链路脚本只使用新 Agent 子图、Agent Model Gateway 和已迁入 Agent 包的工作流代码，不从旧 `backend` 导入模块。分类、单页扫描、跨页补全的每一次模型调用都会经过对应的 LangGraph 子图，并在多模态消息中附带 manifest 指定的图像 Few-shot；脚本不写 Supabase 或数据库。
+离线冒烟（禁止网络请求，不调用模型/数据库）：
 
 ```powershell
-$env:PYTHONPATH="services/agent/src;."
-.\.venv\Scripts\python.exe services\agent\scripts\run_three_stage_extraction.py `
-  "backend\cases\test.pdf" `
-  --output-dir "backend\cases\test\agent-run-001" `
-  --max-pdf-pages 0
+.\.venv\Scripts\python.exe -m pytest services/agent/tests/smoke/test_stage2_page_workflow.py -q
 ```
 
-产物目录中 `01_page_classification` 存放分页归类 JSON，`02_page_scan` 存放逐页扫描/线单元 JSON，`03_cross_page_completion` 存放跨页任务、补全 JSON 和表格 JSON；标准预览工作簿为 `03_cross_page_completion/table.xlsx`，根目录也会保留一份 `table.xlsx`。若配置了原有导入模板，还会另外生成模板格式的 `wiring-table-import.xlsx`。
-
-桥接测试不调用真实 VLM：
+真实模型 CLI 需要显式授权开关，以下命令不属于本轮验证：
 
 ```powershell
-$env:PYTHONPATH="services/agent/src;."
-.\.venv\Scripts\python.exe -m unittest discover `
-  -s services\agent\tests\unit `
-  -p "test_three_stage_graph_client.py"
+.\.venv\Scripts\python.exe services/agent/scripts/run_page_workflow_extraction.py `
+  "case/example.pdf" --output-dir "runs/page-extraction" --allow-real-model
 ```
 
-未安装 pytest 时仍可做导入和语法检查：
-
-```powershell
-$env:PYTHONPATH="services/agent/src;."
-.\.venv\Scripts\python.exe -m compileall services/agent/src
-```
-
-真实 ZH 全链路需要模型配置，会实际调用模型并产生费用；执行方式见上方脚本命令。不要把固定案例结果与 Fake VLM 测试混为一谈。
+`01_page_classification` 保存分类/索引，`02_page_scan` 保存扫描/内部补全/最终表格，最终预览为 `02_page_scan/table.xlsx` 和根目录 `table.xlsx`，不再创建 `03_cross_page_completion`。历史阶段枚举、CorrectionAction、`cross_page_prompt` / `stage3_cases` 资源标识保留用于读取旧数据，不代表新运行有独立 Stage 3。ABB Prompt 未调整，内部操作保持其原单目标查询图片契约。
 
 ## M4 Profile 首页识别
 

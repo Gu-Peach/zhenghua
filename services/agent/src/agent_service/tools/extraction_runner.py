@@ -6,7 +6,6 @@ from copy import deepcopy
 from functools import partial
 from typing import Any, TypeVar
 
-from ..agents.cross_page_resolver import CrossPageResolverAgent
 from ..agents.page_classifier import PageClassifierAgent
 from ..agents.page_scanner import PageScannerAgent
 from ..application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
@@ -24,7 +23,8 @@ from ..domain.models.extraction_stages import (
 )
 from ..domain.models.runs import AgentRun
 from ..domain.ports import ArtifactRepository
-from ..graphs.extraction import run_cross_page_completion, run_page_classification, run_page_scan
+from ..graphs.extraction import run_page_classification, run_page_scan
+from ..graphs.extraction.page_scan import complete_page_connection
 from ..harness.stores import CancellationToken
 
 T = TypeVar("T", bound=StrictModel)
@@ -41,7 +41,6 @@ class ScopedExtractionRunner:
     ) -> None:
         self._classifier = PageClassifierAgent(stages=stages)
         self._scanner = PageScannerAgent(stages=stages)
-        self._resolver = CrossPageResolverAgent(stages=stages)
         self._artifacts = artifacts
         self._publisher = publisher
         self._materialize = materialize
@@ -158,7 +157,11 @@ class ScopedExtractionRunner:
             records = _replace_scoped(
                 records, scanned, allowed_ids, bundle.context.constraints.allowed_fields
             )
-        if plan.action in {CorrectionAction.RERUN_STAGE_1, CorrectionAction.RERUN_STAGE_2_AND_3}:
+        if plan.action in {
+            CorrectionAction.RERUN_STAGE_1,
+            CorrectionAction.RERUN_STAGE_2,
+            CorrectionAction.RERUN_STAGE_2_AND_3,
+        }:
             allowed_ids = bundle.context.constraints.allowed_connection_ids or [plan.target.id]
             cross_page_ids = {
                 _id(record)
@@ -243,8 +246,24 @@ class ScopedExtractionRunner:
                     )
                 if target_id not in cross_page_ids:
                     continue
+                record = next(item for item in records if _id(item) == target_id)
+                source = cross_page_request.source_page
+                if source is None:
+                    candidates = [
+                        request.page
+                        for request in bundle.page_scan_requests
+                        if request.page.pdf_page_number == record.get("origin_pdf_page")
+                        or request.page.drawing_id == record.get("drawing_id")
+                        and request.page.drawing_id is not None
+                    ]
+                    if not candidates and len(bundle.page_scan_requests) == 1:
+                        candidates = [bundle.page_scan_requests[0].page]
+                    source = candidates[0] if len(candidates) == 1 else None
+                if source is not None and self._materialize:
+                    source = await self._materialize(source)
                 cross_page_request = cross_page_request.model_copy(
                     update={
+                        "source_page": source,
                         "run_id": run.agent_run_id if run else cross_page_request.run_id,
                         "task_context": json.dumps(
                             {
@@ -259,11 +278,11 @@ class ScopedExtractionRunner:
                 )
                 completion_result = await self._step(
                     run,
-                    AgentStage.CROSS_PAGE_COMPLETION,
-                    cross_page_request.task_id,
+                    AgentStage.PAGE_SCAN,
+                    f"complete:{cross_page_request.task_id}",
                     cross_page_request,
                     CrossPageCompletionResult,
-                    partial(run_cross_page_completion, agent=self._resolver, request=cross_page_request),
+                    partial(complete_page_connection, agent=self._scanner, request=cross_page_request),
                     cancellation,
                 )
                 target = next((item for item in records if _id(item) == target_id), None)

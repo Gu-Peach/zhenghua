@@ -28,8 +28,6 @@ class CorrectionRoutePlanner:
             )
         if facts.issue_kind == CorrectionIssueKind.PAGE_CLASSIFICATION_ERROR:
             stages = [AgentStage.PAGE_CLASSIFICATION, AgentStage.PAGE_SCAN]
-            if facts.is_cross_page != CrossPageState.SAME_PAGE:
-                stages.extend([AgentStage.BUILD_CROSS_PAGE_TASKS, AgentStage.CROSS_PAGE_COMPLETION])
             stages.extend([AgentStage.VALIDATION, AgentStage.PROPOSAL])
             return self._plan(
                 facts,
@@ -41,11 +39,9 @@ class CorrectionRoutePlanner:
         if facts.is_cross_page == CrossPageState.CROSS_PAGE:
             return self._plan(
                 facts,
-                CorrectionAction.RERUN_STAGE_2_AND_3,
+                CorrectionAction.RERUN_STAGE_2,
                 [
                     AgentStage.PAGE_SCAN,
-                    AgentStage.BUILD_CROSS_PAGE_TASKS,
-                    AgentStage.CROSS_PAGE_COMPLETION,
                     AgentStage.VALIDATION,
                     AgentStage.PROPOSAL,
                 ],
@@ -55,16 +51,14 @@ class CorrectionRoutePlanner:
         if facts.is_cross_page == CrossPageState.UNKNOWN:
             return self._plan(
                 facts,
-                CorrectionAction.RERUN_STAGE_2_AND_3,
+                CorrectionAction.RERUN_STAGE_2,
                 [
                     AgentStage.PAGE_SCAN,
-                    AgentStage.BUILD_CROSS_PAGE_TASKS,
-                    AgentStage.CROSS_PAGE_COMPLETION,
                     AgentStage.VALIDATION,
                     AgentStage.PROPOSAL,
                 ],
                 2,
-                "跨页状态未知，先由 Stage 2 重新判断；仅在确认跨页后定向运行 Stage 3。",
+                "跨页状态未知，由 Stage 2 重新判断，并在内部按引用定向补全。",
             )
         return self._plan(
             facts,

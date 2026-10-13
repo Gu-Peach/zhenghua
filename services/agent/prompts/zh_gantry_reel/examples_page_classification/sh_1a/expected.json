@@ -1,0 +1,8 @@
+{
+  "plant_function": "GCR.1",
+  "drawing_page_number": 1,
+  "blank": false,
+  "non_wiring": false,
+  "needs_review": false,
+  "reason": "原始 SH.NO.=1A，CONT.ON.SH=1B；接口索引 GCR.1/1，不使用 PDF物理页2当业务页。"
+}

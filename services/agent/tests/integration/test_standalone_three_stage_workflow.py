@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from agent_service.application.three_stage_extraction import run_three_stage_extraction
+from agent_service.application.page_workflow_extraction import run_page_workflow_extraction
 from agent_service.config import AgentSettings
 from agent_service.domain.models.extraction_stages import (
     CrossPageCompletionData,
@@ -66,10 +66,10 @@ class StandaloneWorkflowTests(unittest.TestCase):
                 document.close()
 
                 with patch(
-                    "agent_service.application.three_stage_extraction.build_extraction_stage_dispatcher",
+                    "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
                     return_value=FakeStages(),
                 ):
-                    result = await run_three_stage_extraction(
+                    result = await run_page_workflow_extraction(
                         pdf_path=pdf_path,
                         output_dir=temp / "run",
                         profile=profile,
@@ -83,8 +83,8 @@ class StandaloneWorkflowTests(unittest.TestCase):
                 self.assertTrue((result.stage_1_dir / "drawing_index.json").is_file())
                 self.assertTrue((result.stage_2_dir / "page-scan-results.json").is_file())
                 self.assertTrue((result.stage_2_dir / "wire-units.json").is_file())
-                self.assertTrue((result.stage_3_dir / "cross-page-tasks.json").is_file())
-                self.assertTrue((result.stage_3_dir / "table.json").is_file())
+                self.assertTrue((result.stage_2_dir / "cross-page-tasks.json").is_file())
+                self.assertTrue((result.stage_2_dir / "table.json").is_file())
                 self.assertTrue(result.final_xlsx.is_file())
                 self.assertTrue((temp / "run" / "pages" / "002.C" / "1.png").is_file())
 

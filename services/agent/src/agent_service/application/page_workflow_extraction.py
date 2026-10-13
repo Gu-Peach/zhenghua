@@ -8,7 +8,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ..agents.cross_page_resolver import CrossPageResolverAgent
 from ..agents.page_classifier import PageClassifierAgent
 from ..agents.page_scanner import PageScannerAgent
 from ..config import AgentSettings
@@ -37,10 +36,10 @@ from ..domain.models.wiring import (
 )
 from ..graphs.document_extraction.workflow import run_document_extraction
 from ..graphs.extraction import (
-    run_cross_page_completion,
     run_page_classification,
     run_page_scan,
 )
+from ..graphs.extraction.page_scan import complete_page_connection
 from ..harness.stores import CancellationToken
 from ..profiles.extraction_policy import default_extraction_policies
 from .document_extraction.settings import Settings as DocumentExtractionSettings
@@ -51,14 +50,13 @@ ProgressCallback = Callable[[str], None]
 
 
 @dataclass(frozen=True, slots=True)
-class ThreeStageRunResult:
+class PageWorkflowRunResult:
     """Document output; a supplied durable session owns stage persistence."""
 
     execution: ExtractionExecutionResult
     output_dir: Path
     stage_1_dir: Path
     stage_2_dir: Path
-    stage_3_dir: Path
     final_xlsx: Path
 
 
@@ -75,7 +73,7 @@ _STAGE_FILES: dict[str, tuple[str, ...]] = {
         "page-scan-checkpoint.json",
         "wire-units-checkpoint.json",
     ),
-    "03_cross_page_completion": (
+    "02_page_completion": (
         "cross-page-tasks.json",
         "cross-page-results.json",
         "cross-page-checkpoint.json",
@@ -85,7 +83,7 @@ _STAGE_FILES: dict[str, tuple[str, ...]] = {
 
 
 class ExtractionStageGraphClient:
-    """Bridge the migrated document workflow to the three Agent stage subgraphs."""
+    """Bridge page workflows to classification and Stage 2 model operations."""
 
     def __init__(
         self,
@@ -107,7 +105,13 @@ class ExtractionStageGraphClient:
         self._classified_page_paths: dict[int, Path] = {}
         self._classifier = PageClassifierAgent(stages=stages)
         self._scanner = PageScannerAgent(stages=stages)
-        self._resolver = CrossPageResolverAgent(stages=stages)
+
+    @property
+    def workflow_fingerprint(self) -> dict[str, Any]:
+        return {"run_id": self._run_id, "profile": self._profile.profile.model_dump(mode="json")}
+
+    def check_cancelled(self) -> None:
+        self._raise_if_cancelled()
 
     async def classify_page(self, image: Any, *, context_text: str = "") -> Any:
         self._raise_if_cancelled()
@@ -158,7 +162,7 @@ class ExtractionStageGraphClient:
         result = (
             await self._durable.model_result(
                 AgentStage.PAGE_SCAN,
-                f"pdf-page:{request.page.pdf_page_number}",
+                f"scan:pdf-page:{request.page.pdf_page_number}",
                 ScanAgentResult,
                 invoke,
             )
@@ -173,6 +177,7 @@ class ExtractionStageGraphClient:
         self,
         target_image: Any,
         *,
+        source_image: Any | None = None,
         task_context: str = "",
     ) -> Any:
         self._raise_if_cancelled()
@@ -181,17 +186,18 @@ class ExtractionStageGraphClient:
             project_id=self._project_id,
             profile=self._profile,
             task_id=_task_id(task_context),
+            source_page=self._page(source_image) if source_image is not None else None,
             target_page=self._page(target_image),
             task_context=task_context or "indexed cross-page reference",
         )
 
         async def invoke() -> CompletionAgentResult:
-            return await run_cross_page_completion(agent=self._resolver, request=request)
+            return await complete_page_connection(agent=self._scanner, request=request)
 
         result = (
             await self._durable.model_result(
-                AgentStage.CROSS_PAGE_COMPLETION,
-                request.task_id,
+                AgentStage.PAGE_SCAN,
+                f"complete:{request.task_id}",
                 CompletionAgentResult,
                 invoke,
             )
@@ -276,7 +282,7 @@ def _task_id(task_context: str) -> str:
     return "cross-page-task"
 
 
-async def run_three_stage_extraction(
+async def run_page_workflow_extraction(
     *,
     pdf_path: Path,
     output_dir: Path,
@@ -288,8 +294,8 @@ async def run_three_stage_extraction(
     progress: ProgressCallback | None = None,
     cancellation: CancellationToken | None = None,
     durable: DurableExtractionSession | None = None,
-) -> ThreeStageRunResult:
-    """Run the document workflow through the Agent's three extraction subgraphs.
+) -> PageWorkflowRunResult:
+    """Run classification followed by the Agent's Stage 2 page workflow.
 
     PDF rendering, drawing indexing, task construction, deterministic validation,
     and workbook assembly live in the document Graph and infrastructure. Every VLM call
@@ -324,7 +330,7 @@ async def run_three_stage_extraction(
         durable=durable,
     )
 
-    report("starting PDF rendering and three-stage LangGraph extraction")
+    report("starting PDF rendering and Stage 2 page extraction workflow")
     graph_result = await run_document_extraction(
         pdf_path=pdf_path,
         output_path=output_dir,
@@ -340,19 +346,18 @@ async def run_three_stage_extraction(
         state=dict(graph_result.state),
         extraction_errors=dict(graph_result.extraction_errors),
         validation_warnings=list(graph_result.validation_warnings),
-        adapter="langgraph_three_stage",
+        adapter="langgraph_page_extraction",
     )
 
     agent_dir = output_dir / "agent"
     stage_1_dir = output_dir / "01_page_classification"
     stage_2_dir = output_dir / "02_page_scan"
-    stage_3_dir = output_dir / "03_cross_page_completion"
-    for directory in (stage_1_dir, stage_2_dir, stage_3_dir):
+    for directory in (stage_1_dir, stage_2_dir):
         directory.mkdir(parents=True, exist_ok=True)
 
     _copy_stage_files(agent_dir, stage_1_dir, _STAGE_FILES["01_page_classification"])
     _copy_stage_files(agent_dir, stage_2_dir, _STAGE_FILES["02_page_scan"])
-    _copy_stage_files(agent_dir, stage_3_dir, _STAGE_FILES["03_cross_page_completion"])
+    _copy_stage_files(agent_dir, stage_2_dir, _STAGE_FILES["02_page_completion"])
 
     # Keep one final standard OOXML workbook at a predictable location. The
     # page-agent graph writes table.xlsx; the fallback name supports older runs.
@@ -360,14 +365,14 @@ async def run_three_stage_extraction(
         output_dir / "table.xlsx",
         output_dir / "wiring-table-import.xlsx",
         output_dir / "wiring-table.xlsx",
-        stage_3_dir / "table.xlsx",
+        stage_2_dir / "table.xlsx",
     )
     if generated_xlsx is None:
         raise RuntimeError(
             "The extraction graph completed without generating table.xlsx. "
             f"Inspect diagnostics under {agent_dir}."
         )
-    final_xlsx = stage_3_dir / "table.xlsx"
+    final_xlsx = stage_2_dir / "table.xlsx"
     if generated_xlsx.resolve() != final_xlsx.resolve():
         shutil.copy2(generated_xlsx, final_xlsx)
     root_xlsx = output_dir / "table.xlsx"
@@ -382,7 +387,7 @@ async def run_three_stage_extraction(
         "output_dir": str(output_dir),
         "stage_1": str(stage_1_dir),
         "stage_2": str(stage_2_dir),
-        "stage_3": str(stage_3_dir),
+        "workflow": "page_extraction_v2",
         "final_xlsx": str(final_xlsx),
         "extraction_errors": execution.extraction_errors,
         "validation_warnings": execution.validation_warnings,
@@ -393,16 +398,15 @@ async def run_three_stage_extraction(
     )
     _copy_stage_files(
         output_dir,
-        stage_3_dir,
+        stage_2_dir,
         ("wiring-table-import.xlsx", "wiring-table-import.xls"),
     )
     report(f"completed; final xlsx={final_xlsx}")
-    return ThreeStageRunResult(
+    return PageWorkflowRunResult(
         execution=execution,
         output_dir=output_dir,
         stage_1_dir=stage_1_dir,
         stage_2_dir=stage_2_dir,
-        stage_3_dir=stage_3_dir,
         final_xlsx=final_xlsx,
     )
 

@@ -88,7 +88,7 @@ async def main() -> int:
     fake = FakeStages(args.crash)
     exit_code = 0
     with patch(
-        "agent_service.application.three_stage_extraction.build_extraction_stage_dispatcher",
+        "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
         return_value=fake,
     ):
         try:

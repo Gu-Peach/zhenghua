@@ -115,7 +115,7 @@ class ExtractionWorkerTests(unittest.TestCase):
                 )
                 created = await control.create(request, "extraction-worker")
                 with patch(
-                    "agent_service.application.three_stage_extraction.build_extraction_stage_dispatcher",
+                    "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
                     return_value=FakeStages(),
                 ):
                     self.assertTrue(await worker.run_once())

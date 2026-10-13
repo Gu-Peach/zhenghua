@@ -4,6 +4,16 @@
 
 ## 进行中
 
+- [ ] 基于本地 002.C/002.M 人工核对优化 ZH 2.0.1：补全方向输出契约与缺失方向降级、按原始引用解析页码、端子身份校验、同页/分支/器件定义引用规则与实际图片 Few-shot；运行离线冒烟和字段级固定样例回归。保留旧试跑结果，不写数据库、不发布、不调用真实模型。计划见 `docs/service/agent/zh-stage2-quality-plan.md`。
+
+- [x] 核对1002001693大车卷盘25页PDF与XLSX，新增本地 `zh_gantry_reel@0.1.0` experimental Profile/三类Prompt各两组图像样例、可逆页标/引用适配及字段级代表差异；5项离线资源/接口回归通过。未上传/写数据库/改既有ZH或ABB/调用真实模型，expected仍待工程确认。计划见 `docs/service/agent/zh-gantry-reel-profile-plan.md`，说明见 `zh-gantry-reel-review.md`。
+
+- [x] 大车卷盘规则及配套代码已定向同步回 E 盘项目；保留分支/既有测试脚本/未提交改动，15项离线测试通过，不写数据库、不发布规则。
+
+- [x] 完成本地 `run_stage2_groups.py` 及标准 12 列 XLSX 导出（色标空）：真实 002.C/002.M 12 页/121 条、31 条待复核，结果位于忽略的 `docs/test/run_stage2`；14 项离线冒烟、Ruff 与 XLSX 结构/视觉检查通过。模型准确标识覆盖、双图请求缩图与未知页 0→null 兼容已处理；未连接/写数据库、上传/发布/改 `.env`/重启服务。字段级准确率未验收，见 Agent 执行记录。
+
+- [x] 在 `codex/stage2-page-workflow` 完成 Stage 2 独立逐页 LangGraph、内部双图补全/完成页保存、移除独立 Stage 3、ZH 2.0.0 规则和纠错/契约迁移；10 项离线冒烟、修改文件 Ruff/语法检查通过。未写真实数据库/部署 migration/发布规则/重启服务，真实字段质量未验收。计划见 `docs/service/agent/stage2-page-workflow-plan.md`，交付见 Agent changelog。
+
 - [x] 修复 Stage 2 页码类型兼容：统一将模型返回的 unit/connection `source_drawing_pages` 数字转换为字符串，保留非法结构校验；新增回归测试，4 项跨页状态测试与 Ruff 通过。旧失败 run 不重试，用户重载 Agent 后重新提交新图纸。
 
 - [ ] 兼容规则候选确认的重复 `/resume`：当旧客户端或 Supervisor 将“确认规则修改”误判为通用人工输入时，依据已有候选 artifact 强制走幂等直接发布分支，避免已确认 run 被错误标记失败；补回归测试并由用户重载 Agent 验收。

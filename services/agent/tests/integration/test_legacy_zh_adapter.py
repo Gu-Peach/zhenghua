@@ -38,7 +38,7 @@ def test_compatibility_adapter_delegates_to_native_agent_workflow(tmp_path: Path
         )
         adapter = LegacyZhExtractionAdapter(AgentSettings())
         with patch(
-            "agent_service.application.three_stage_extraction.run_three_stage_extraction",
+            "agent_service.application.page_workflow_extraction.run_page_workflow_extraction",
             new=AsyncMock(return_value=SimpleNamespace(execution=execution)),
         ) as workflow:
             result = await adapter.run_full(request)

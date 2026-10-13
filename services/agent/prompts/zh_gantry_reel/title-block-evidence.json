@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "source": "embedded PDF footer streams",
+  "pages": [
+    {
+      "pdf_page_number": 1,
+      "title_block_text": "CONT.ON.SH\nDescription\n0A\n +GCR/1A"
+    },
+    {
+      "pdf_page_number": 2,
+      "title_block_text": "CONT.ON.SH\nELECTRICAL CONNECTION WITH\n CRANE\n1A\n 1B GCR"
+    },
+    {
+      "pdf_page_number": 3,
+      "title_block_text": "CONT.ON.SH\nBRAKE AND CONTROL POWER\n1B\n 1C GCR"
+    },
+    {
+      "pdf_page_number": 4,
+      "title_block_text": "CONT.ON.SH\nBRAKE AND CONTROL POWER\n1C\n 1D GCR"
+    },
+    {
+      "pdf_page_number": 5,
+      "title_block_text": "CONT.ON.SH\nSMART LINE MODULE\n1D\n 1E GCR"
+    },
+    {
+      "pdf_page_number": 6,
+      "title_block_text": "CONT.ON.SH\nSINGLE MOTOR MODULE\n1E\n 1F GCR"
+    },
+    {
+      "pdf_page_number": 7,
+      "title_block_text": "CONT.ON.SH\nCONTROL UNIT CU320-2 PN\n1F\n 1G GCR"
+    },
+    {
+      "pdf_page_number": 8,
+      "title_block_text": "CONT.ON.SH\nSENSOR MODULE SMC30\n1G\n 1H GCR"
+    },
+    {
+      "pdf_page_number": 9,
+      "title_block_text": "CONT.ON.SH\nSENSOR MODULE SMC30\n1H\n 2A GCR"
+    },
+    {
+      "pdf_page_number": 10,
+      "title_block_text": "CONT.ON.SH\nPLC CONNECTION\n2A\n 3A GCR"
+    },
+    {
+      "pdf_page_number": 11,
+      "title_block_text": "CONT.ON.SH\nDIGITAL INPUT MODULE\n3A\n 3B GCR"
+    },
+    {
+      "pdf_page_number": 12,
+      "title_block_text": "CONT.ON.SH\nDIGITAL INPUT MODULE\n3B\n 3C GCR"
+    },
+    {
+      "pdf_page_number": 13,
+      "title_block_text": "CONT.ON.SH\nDIGITAL INPUT MODULE\n3C\n 3D GCR"
+    },
+    {
+      "pdf_page_number": 14,
+      "title_block_text": "CONT.ON.SH\nDIGITAL INPUT MODULE\n3D\n 3E GCR"
+    },
+    {
+      "pdf_page_number": 15,
+      "title_block_text": "CONT.ON.SH\nDIGITAL INPUT MODULE\n3E\n 3F GCR"
+    },
+    {
+      "pdf_page_number": 16,
+      "title_block_text": "CONT.ON.SH\nDIGITAL INPUT MODULE\n3F\n 4A GCR"
+    },
+    {
+      "pdf_page_number": 17,
+      "title_block_text": "CONT.ON.SH\nDIGITAL OUTPUT MODULE\n4A\n 4B GCR"
+    },
+    {
+      "pdf_page_number": 18,
+      "title_block_text": "CONT.ON.SH\nDIGITAL OUTPUT MODULE\n4B\n 5A GCR"
+    },
+    {
+      "pdf_page_number": 19,
+      "title_block_text": "CONT.ON.SH\nAUX.EQUIPMENT CONNECTION\n5A\n +TD/1 GCR"
+    },
+    {
+      "pdf_page_number": 20,
+      "title_block_text": "CONT.ON.SH\n端子图表 =+GCR-X0\n1\n 2 TD"
+    },
+    {
+      "pdf_page_number": 21,
+      "title_block_text": "CONT.ON.SH\n端子图表 =+GCR-X1\n2\n 3 TD"
+    },
+    {
+      "pdf_page_number": 22,
+      "title_block_text": "CONT.ON.SH\n端子图表 =+GCR-X3\n3\n 4 TD"
+    },
+    {
+      "pdf_page_number": 23,
+      "title_block_text": "CONT.ON.SH\n端子图表 =+GCR-X21\n4\n 5 TD"
+    },
+    {
+      "pdf_page_number": 24,
+      "title_block_text": "CONT.ON.SH\n端子图表 =+GCR-X22\n5\n 3.a TD"
+    },
+    {
+      "pdf_page_number": 25,
+      "title_block_text": "CONT.ON.SH\n端子图表 =+GCR-X3\n3.a\n TD"
+    }
+  ]
+}

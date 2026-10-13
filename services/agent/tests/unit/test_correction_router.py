@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from agent_service.domain.enums import (
     AgentStage,
     CorrectionAction,
@@ -40,7 +39,7 @@ def facts(
         (CorrectionIssueKind.DIRECT_VALUE_CHANGE, False, CorrectionAction.DIRECT_PATCH, 0),
         (CorrectionIssueKind.FORMAT_OR_ORDER, False, CorrectionAction.DETERMINISTIC_ONLY, 0),
         (CorrectionIssueKind.RECOGNITION_ERROR, False, CorrectionAction.RERUN_STAGE_2, 1),
-        (CorrectionIssueKind.RECOGNITION_ERROR, True, CorrectionAction.RERUN_STAGE_2_AND_3, 2),
+        (CorrectionIssueKind.RECOGNITION_ERROR, True, CorrectionAction.RERUN_STAGE_2, 2),
         (CorrectionIssueKind.SOURCE_INSUFFICIENT, False, CorrectionAction.NO_ACTION, 0),
     ],
 )
@@ -59,8 +58,8 @@ def test_cross_page_route_reviews_reference_before_stage_3() -> None:
     plan = CorrectionRoutePlanner().plan(facts(CorrectionIssueKind.RECOGNITION_ERROR, cross_page=True))
     assert plan.stages[:3] == [
         AgentStage.PAGE_SCAN,
-        AgentStage.BUILD_CROSS_PAGE_TASKS,
-        AgentStage.CROSS_PAGE_COMPLETION,
+        AgentStage.VALIDATION,
+        AgentStage.PROPOSAL,
     ]
 
 
@@ -68,9 +67,9 @@ def test_unknown_cross_page_state_starts_with_stage_2_and_keeps_stage_3_conditio
     value = facts(CorrectionIssueKind.RECOGNITION_ERROR)
     value.is_cross_page = CrossPageState.UNKNOWN
     plan = CorrectionRoutePlanner().plan(value)
-    assert plan.action == CorrectionAction.RERUN_STAGE_2_AND_3
+    assert plan.action == CorrectionAction.RERUN_STAGE_2
     assert plan.stages[:3] == [
         AgentStage.PAGE_SCAN,
-        AgentStage.BUILD_CROSS_PAGE_TASKS,
-        AgentStage.CROSS_PAGE_COMPLETION,
+        AgentStage.VALIDATION,
+        AgentStage.PROPOSAL,
     ]

@@ -1,0 +1,8 @@
+{
+  "plant_function": "GCR.TD",
+  "drawing_page_number": 301,
+  "blank": false,
+  "non_wiring": true,
+  "needs_review": false,
+  "reason": "原始 SH.NO.=3.a，TD 端子图表 =+GCR-X3；规范键 TD:3.a/GCR.TD/301，与原理图3A不同。"
+}

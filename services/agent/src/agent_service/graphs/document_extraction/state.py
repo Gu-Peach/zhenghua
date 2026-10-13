@@ -39,6 +39,7 @@ class CrossPageTask(TypedDict, total=False):
 
 
 class GraphState(TypedDict, total=False):
+    page_workflow_fingerprint: str
     planning_sources: dict[str, Any]
     pdf_path: str
     pages: list[PageMeta]

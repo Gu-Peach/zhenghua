@@ -3,7 +3,6 @@ from __future__ import annotations
 import inspect
 import json
 from collections.abc import Mapping, Sequence
-from pathlib import Path
 from typing import Any
 
 from agent_service.application.document_extraction.runtime import (
@@ -25,7 +24,6 @@ from agent_service.graphs.document_extraction.state import (
 )
 from agent_service.infrastructure.document.checkpoint import (
     _cross_page_checkpoint_path,
-    _diagnostics_dir,
     _load_cross_page_checkpoint,
     _write_cross_page_checkpoint,
 )
@@ -33,7 +31,7 @@ from agent_service.infrastructure.document.checkpoint import (
 TABLE_HEADERS = [
     "页码",
     "原理号",
-    "电压等级",
+    "端子排",
     "起点代号",
     "起点描述",
     "起点端子",
@@ -46,7 +44,7 @@ TABLE_HEADERS = [
 
 
 def _build_cross_page_tasks_node(state: GraphState, runtime: GraphRuntime) -> dict[str, Any]:
-    """Resolve row-level references after stage two and create stage-three tasks."""
+    """Plan scoped cross-page work inside the current Stage 2 page workflow."""
 
     page_by_number = {int(page["page_number"]): page for page in state.get("pages", [])}
     raw_units: dict[str, dict[str, Any]] = dict(state.get("wire_units") or {})
@@ -80,10 +78,18 @@ def _build_cross_page_tasks_node(state: GraphState, runtime: GraphRuntime) -> di
                 for reference in connection.references
             ]
             raw_connection["references"] = prepared_references
+            for reference in prepared_references:
+                if reference.get("target_pdf_page") == source_pdf_page:
+                    reference["external"] = True
+                    reference["reason"] = "self-reference or unresolved same-page continuation"
             references_by_target: dict[int, list[dict[str, Any]]] = {}
             for reference in prepared_references:
                 target_pdf_page = reference.get("target_pdf_page")
-                if target_pdf_page is None or int(target_pdf_page) == source_pdf_page:
+                if (
+                    reference.get("external")
+                    or target_pdf_page is None
+                    or int(target_pdf_page) == source_pdf_page
+                ):
                     continue
                 references_by_target.setdefault(int(target_pdf_page), []).append(reference)
             has_end = bool(connection.end and connection.end.terminal not in (None, ""))
@@ -162,20 +168,6 @@ def _build_cross_page_tasks_node(state: GraphState, runtime: GraphRuntime) -> di
                     f"cross-page task {connection_id} has no resolved target PDF page"
                 )
 
-    diagnostics_dir = _diagnostics_dir(Path(state["output_path"]), runtime.output_mode)
-    diagnostics_dir.mkdir(parents=True, exist_ok=True)
-    (diagnostics_dir / "cross-page-tasks.json").write_text(
-        json.dumps(tasks, ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
-    (diagnostics_dir / "stage2-table.json").write_text(
-        json.dumps(
-            {"headers": TABLE_HEADERS, "rows_by_unit": state.get("table_rows_by_unit", {})},
-            ensure_ascii=False,
-            indent=2,
-        ),
-        encoding="utf-8",
-    )
     row_count = sum(len(rows) for rows in state.get("table_rows_by_unit", {}).values())
     runtime.log(f"build_cross_page_tasks: rows={row_count} terminal_tasks={len(tasks)}")
     return {"wire_units": raw_units, "cross_page_tasks": tasks}
@@ -208,8 +200,14 @@ def _apply_cross_page_completion(
             }
         )
     else:
+        raw_connection["end"] = None
         raw_connection["status"] = "needs_review"
         raw_connection["external_source_required"] = True
+        reasons = list(result.get("warnings") or []) + [
+            str(reference["reason"]) for reference in task.get("references", []) if reference.get("reason")
+        ]
+        if reasons:
+            raw_connection["source_note"] = "; ".join(dict.fromkeys(reasons))
     for field in ("current", "current_basis", "current_source_text", "confidence", "source_note"):
         if result.get(field) not in (None, ""):
             raw_connection[field] = result[field]
@@ -281,8 +279,13 @@ def _unique_task_references(
     return references
 
 
-async def _resolve_cross_page_node(state: GraphState, runtime: GraphRuntime) -> dict[str, Any]:
-    """Run stage three for each row whose endpoint is still unresolved."""
+async def _resolve_cross_page_node(
+    state: GraphState,
+    runtime: GraphRuntime,
+    *,
+    use_checkpoint: bool = True,
+) -> dict[str, Any]:
+    """Complete current-page connections, never scan target pages in full."""
 
     tasks = list(state.get("cross_page_tasks") or [])
     if not tasks:
@@ -292,7 +295,10 @@ async def _resolve_cross_page_node(state: GraphState, runtime: GraphRuntime) -> 
 
     page_by_number = {int(page["page_number"]): page for page in state.get("pages", [])}
     checkpoint_path = _cross_page_checkpoint_path(state, runtime)
-    completed = _load_cross_page_checkpoint(checkpoint_path, tasks)
+    # Durable input comes exclusively from the model/item repository.
+    completed = (
+        {} if runtime.durable or not use_checkpoint else _load_cross_page_checkpoint(checkpoint_path, tasks)
+    )
     resolver = getattr(runtime.extraction_client, "resolve_cross_page", None)
 
     async def resolve_one(task: Mapping[str, Any]) -> tuple[str, dict[str, Any]]:
@@ -323,9 +329,12 @@ async def _resolve_cross_page_node(state: GraphState, runtime: GraphRuntime) -> 
             completed[task_id] = result
             return task_id, result
         target_image = runtime.payload_for(target_page["image_path"])
+        source_page = page_by_number[int(task["source_pdf_page"])]
+        source_image = runtime.payload_for(source_page["image_path"])
         try:
             pending = resolver(
                 target_image,
+                source_image=source_image,
                 task_context=json.dumps(dict(task), ensure_ascii=False, default=str),
             )
             if inspect.isawaitable(pending):
@@ -351,16 +360,11 @@ async def _resolve_cross_page_node(state: GraphState, runtime: GraphRuntime) -> 
                 "end": None,
                 "warnings": [str(exc)],
             }
-            assert runtime.extraction_errors is not None
-            runtime.extraction_errors[task_id] = str(exc)
+            # Unclear model endpoints are empty facts, not a barrier for later pages.
             runtime.validation_warnings.append(f"cross-page task {task_id} failed: {exc}")
         completed[task_id] = result
-        _write_cross_page_checkpoint(
-            checkpoint_path,
-            tasks,
-            completed,
-            runtime.extraction_errors or {},
-        )
+        if use_checkpoint and not runtime.durable:
+            _write_cross_page_checkpoint(checkpoint_path, tasks, completed, runtime.extraction_errors or {})
         return task_id, result
 
     pairs = []
@@ -369,6 +373,7 @@ async def _resolve_cross_page_node(state: GraphState, runtime: GraphRuntime) -> 
     results = {task_id: result for task_id, result in pairs}
     wire_units = dict(state.get("wire_units") or {})
     _apply_terminal_task_results(wire_units, tasks, results)
-    _write_cross_page_checkpoint(checkpoint_path, tasks, results, runtime.extraction_errors or {})
+    if use_checkpoint and not runtime.durable:
+        _write_cross_page_checkpoint(checkpoint_path, tasks, results, runtime.extraction_errors or {})
     runtime.log(f"resolve_cross_page: completed tasks={len(tasks)}")
     return {"cross_page_results": results, "wire_units": wire_units}

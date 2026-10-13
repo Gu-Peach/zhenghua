@@ -30,7 +30,10 @@ def proposal_to_normalized_units(
             )
         record = dict(operation.after)
         source_pages = _source_pages(record)
-        primary = next((drawing_by_pdf[page] for page in source_pages if page in drawing_by_pdf), None)
+        origin = record.get("origin_pdf_page") or record.get("pdf_page_number")
+        primary = drawing_by_pdf.get(int(origin)) if origin else None
+        if primary is None:
+            primary = next((drawing_by_pdf[page] for page in source_pages if page in drawing_by_pdf), None)
         if primary is None and len(drawings) == 1:
             primary = drawings[0]
         if primary is None:
@@ -55,7 +58,9 @@ def proposal_to_normalized_units(
                 "The extracted drawing workspace is missing.",
                 retryable=False,
             )
-        terminal_strip = _text(record.get("terminal_strip") or record.get("start_terminal_strip"))
+        terminal_strip = _text(
+            record.get("terminal_strip") if "terminal_strip" in record else record.get("start_terminal_strip")
+        )
         logical_key = (
             terminal_strip
             or _text(record.get("unit_id"))
@@ -206,12 +211,12 @@ def _evidence_rows(
 ) -> list[dict[str, Any]]:
     pages = _source_pages(record)
     rows: list[dict[str, Any]] = []
-    for index, page in enumerate(pages):
+    for page in pages:
         drawing = drawing_by_pdf.get(page)
         if drawing is None:
             continue
         kind = "source"
-        if index > 0 and str(record.get("is_cross_page")) == "cross_page":
+        if str(drawing["id"]) != str(primary["id"]) and str(record.get("is_cross_page")) == "cross_page":
             kind = "target"
         rows.append(
             {
