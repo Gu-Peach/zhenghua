@@ -2,6 +2,10 @@
 
 ## 2026-10-14
 
+- 本地ZH测试脚本隔离其他模板缺失资源导致的ProfileRegistryError，ZH自身仍校验，终端/失败产物显示具体原因。只读资源绑定确认当前ZH可用，未运行提取/模型或写库。见[Agent记录](../service/agent/changelog/2026-10-14-local-profile-isolation.md)。
+
+- 明确ZH初扫以放线斜杠为搜索起点，找到最近端子/跨页箭头后按同段箭头定向；原理号和端子文字仅用于读取/匹配。仅本地规则/调用指令修改，未运行测试/模型或写库，准确率待用户复测。见[Agent记录](../service/agent/changelog/2026-10-14-zh-marker-first.md)。
+
 - 按用户新目录集中提取实现到src/agent/extraction_agent，共享包名src及入口/资源引用同步；61份源码只移动/改引用，254份Python静态AST对照保持非引用实现不变。未运行业务测试、模型或写库。见[ADR-0017](../adr/0017-extraction-agent-directory.md)及[Agent记录](../service/agent/changelog/2026-10-14-extraction-agent-directory.md)。
 
 - 同步ZH实际提取样例与Prompt：C01完整端子/排号、C02元件描述、FO2设备/实际排号分离，manifest v6/资源摘要更新；不运行测试/模型或写库。见[Agent记录](../service/agent/changelog/2026-10-14-zh-expected-alignment.md)。

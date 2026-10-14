@@ -4,6 +4,10 @@
 
 ## 进行中
 
+- [x] 修复本地ZH测试脚本被无关Profile缺失资源阻塞：选定ZH仍校验，其他无效模板告警后跳过，失败日志显示具体Profile原因。只读资源绑定确认ZH2.0.2及当前Prompt有效；新增两类回归但按用户要求未运行pytest/提取/真实模型，不写库或覆盖结果。见Agent本地Profile隔离记录。
+
+- [x] 明确ZH初扫顺序：先定位放线标记，再沿两侧寻找最近端子/跨页箭头，最后按同段箭头判断方向；Prompt、调用指令、规则/checksum与变更记录同步。按用户要求未运行测试或模型，实际效果待用户复测；不写数据库、不覆盖结果。
+
 - [x] Stage2测试脚本默认页面目录改docs/test/pages，索引改实际位置docs/test/pages/agent/drawing_index.json；说明和模块记录同步，未运行测试/模型、不覆盖结果。
 
 - [x] 迁移61份两阶段提取源码到`services/agent/src/agent/extraction_agent`，只调整导入/patch目标、资源/入口/包引用；共享包按用户布局改为src。254份Python静态AST比对无非引用实现差异，116份资源字节不变，3份路径/校验和元数据同步；.env仅改AGENT_PROFILE_ROOT目录引用。未运行业务测试/模型/数据库/服务，不覆盖旧结果。见ADR-0017和Agent迁移记录。

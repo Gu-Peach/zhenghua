@@ -141,6 +141,54 @@ def test_only_requested_groups_are_scanned_and_database_construction_is_forbidde
     assert all(len(row) == 12 and row[10] is None for row in table["rows"])
 
 
+@pytest.mark.parametrize("invalid_key", ["other", "zh"])
+def test_local_zh_binding_isolated_from_invalid_profiles(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    invalid_key: str,
+) -> None:
+    profile_root = tmp_path / "profiles"
+    for key in ["zh", "other"]:
+        folder = profile_root / key
+        folder.mkdir(parents=True)
+        rules = json.loads(
+            (ROOT / "services/agent/src/agent/extraction_agent/profiles/zh/rules.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        rules["profile_key"] = key
+        rules["extraction"]["dynamic_resources"] = {"page_scan": ["prompt"]}
+        (folder / "rules.json").write_text(json.dumps(rules), encoding="utf-8")
+        if key != invalid_key:
+            (folder / "prompt.md").write_text("Local prompt", encoding="utf-8")
+        (folder / "profile.json").write_text(
+            json.dumps(
+                {
+                    "key": key,
+                    "version": "1.0.0",
+                    "display_name": key,
+                    "status": "active",
+                    "adapter": "zh_native",
+                    "resource_mode": "packaged",
+                    "resources": {"prompt": "prompt.md", "routing_rules": "rules.json"},
+                }
+            ),
+            encoding="utf-8",
+        )
+    monkeypatch.setattr(runner, "ROOT", tmp_path)
+    settings = AgentSettings(profile_root=profile_root)
+    if invalid_key == "other":
+        assert runner.load_local_zh_profile(settings).profile.key == "zh"
+        assert str(profile_root / "other" / "prompt.md") in capsys.readouterr().err
+    else:
+        with pytest.raises(runner.ProfileRegistryError) as caught:
+            runner.load_local_zh_profile(settings)
+        report = runner.failure_report(caught.value)
+        assert any(str(profile_root / "zh" / "prompt.md") in error for error in report["profile_errors"])
+        assert report["database_upload"] is False
+
+
 def test_missing_requested_image_fails_preflight(tmp_path: Path) -> None:
     args = inputs(tmp_path)
     (args.pages_dir / "002.M/1.png").unlink()

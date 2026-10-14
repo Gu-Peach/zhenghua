@@ -1,5 +1,9 @@
 # Agent 服务设计索引
 
+2026-10-14本地ZH测试脚本隔离无关模板资源错误并显示具体失败原因，ZH绑定只读检查通过，未运行提取或真实模型。见[记录](./changelog/2026-10-14-local-profile-isolation.md)。
+
+2026-10-14按用户确认明确ZH初扫顺序：先定位放线斜杠，再沿两侧找端子/跨页箭头，最后按同段箭头定向；Prompt、调用指令和规则同步。未运行测试/模型，不写库，效果待用户复测。见[记录](./changelog/2026-10-14-zh-marker-first.md)。
+
 2026-10-14用户移动拆分页后，本地Stage2脚本默认输入改docs/test/pages，索引改docs/test/pages/agent/drawing_index.json；未执行测试或模型。见[路径更新记录](./changelog/2026-10-14-local-pages-path.md)。
 
 2026-10-14独立提取代码迁至services/agent/src/agent/extraction_agent，共享源包按用户布局改为src。61份源码仅移动/改引用，254份Python静态比对无非引用实现差异；Prompt/expected字节保持，不跑业务测试/模型。见[迁移记录](./changelog/2026-10-14-extraction-agent-directory.md)与[模块入口](../../../services/agent/src/agent/extraction_agent/README.md)。

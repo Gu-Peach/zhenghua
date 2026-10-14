@@ -32,6 +32,7 @@ from src.agent.extraction_agent.application.page_workflow_extraction import (  #
     ExtractionStageGraphClient,
 )
 from src.config import AgentSettings  # noqa: E402
+from src.domain.models.profiles import ProfileBinding  # noqa: E402
 from src.agent.extraction_agent.domain.models.extraction_stages import DrawingPageInput  # noqa: E402
 from src.agent.extraction_agent.graphs.document_extraction.state import PageMeta  # noqa: E402
 from src.agent.extraction_agent.graphs.document_extraction.workflow import (  # noqa: E402
@@ -46,7 +47,7 @@ from src.harness.model_gateway import (  # noqa: E402
 from src.harness.retry import RetryPolicy  # noqa: E402
 from src.agent.extraction_agent.infrastructure.document.checkpoint import _write_json_atomic  # noqa: E402
 from src.agent.extraction_agent.infrastructure.zh_vlm_stages import _prepare_few_shot_image  # noqa: E402
-from src.profiles import ProfileRegistry  # noqa: E402
+from src.profiles import ProfileRegistry, ProfileRegistryError  # noqa: E402
 from src.agent.extraction_agent.profiles.zh.policy import ZhExtractionPolicy  # noqa: E402
 
 HEADERS = [
@@ -409,6 +410,38 @@ def export_xlsx(output: Path, template: Path, *, node: Path, modules: Path) -> P
     return output / "result.xlsx"
 
 
+def load_local_zh_profile(settings: AgentSettings) -> ProfileBinding:
+    """Require a valid ZH binding without blocking on unrelated local profiles."""
+    registry = ProfileRegistry(
+        profile_root=settings.profile_root, workspace_root=ROOT, allow_legacy_references=True
+    )
+    registry.load_all(strict=False)
+    try:
+        profile = registry.bind("zh")
+    except ProfileRegistryError as exc:
+        raise ProfileRegistryError(
+            exc.message, details={"errors": list(registry.errors)}
+        ) from exc
+    for error in registry.errors:
+        print(f"跳过无效的其他Profile（本次仅使用ZH）：{error}", file=sys.stderr, flush=True)
+    return profile
+
+
+def failure_report(exc: Exception) -> dict[str, Any]:
+    """Expose registry resource errors while keeping other exception text private."""
+    report: dict[str, Any] = {
+        "status": "FAILED",
+        "error_type": type(exc).__name__,
+        "error_code": getattr(exc, "code", None),
+        "database_upload": False,
+        "storage_upload": False,
+    }
+    if isinstance(exc, ProfileRegistryError):
+        report["message"] = exc.message
+        report["profile_errors"] = list(exc.details.get("errors", []))
+    return report
+
+
 async def execute(args: argparse.Namespace, *, stages: Any | None = None) -> dict[str, Any]:
     output = args.output_dir.resolve()
     if (output / "result.xlsx").resolve() == args.template.resolve():
@@ -445,11 +478,7 @@ async def execute(args: argparse.Namespace, *, stages: Any | None = None) -> dic
         settings = memory_settings(AgentSettings.from_env())
         if getattr(args, "model", None):
             settings = replace(settings, default_model=args.model)
-        registry = ProfileRegistry(
-            profile_root=settings.profile_root, workspace_root=ROOT, allow_legacy_references=True
-        )
-        registry.load_all()
-        profile = registry.bind("zh")
+        profile = load_local_zh_profile(settings)
         if stages is None:
             if not settings.model_configured:
                 raise ValueError("Configure the model in services/agent/.env before a real test.")
@@ -588,15 +617,14 @@ if __name__ == "__main__":
     try:
         asyncio.run(execute(arguments))
     except Exception as exc:
+        report = failure_report(exc)
         _write_json_atomic(
             arguments.output_dir / "failure.json",
-            {
-                "status": "FAILED",
-                "error_type": type(exc).__name__,
-                "error_code": getattr(exc, "code", None),
-                "database_upload": False,
-                "storage_upload": False,
-            },
+            report,
         )
+        if report.get("message"):
+            print(f"Profile加载失败：{report['message']}", file=sys.stderr)
+        for error in report.get("profile_errors", []):
+            print(f"  {error}", file=sys.stderr)
         print(f"测试失败：{type(exc).__name__}；已完成页仍保留，可在同目录恢复。", file=sys.stderr)
         raise SystemExit(2) from None

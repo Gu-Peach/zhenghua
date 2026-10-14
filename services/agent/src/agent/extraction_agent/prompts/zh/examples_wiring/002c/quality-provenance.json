@@ -78,7 +78,7 @@
     },
     {
       "path": "services/agent/src/agent/extraction_agent/infrastructure/zh_vlm_stages.py",
-      "checksum": "sha256:21b505d01a682cc6d2dafd952e051d63b47bbe0c73f427fed09c096e783f13eb"
+      "checksum": "sha256:bb43e7bf214ece6aab6710b029319ca17a5802cb15afde44e2dae377bf388e77"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/graphs/document_extraction/helpers.py",

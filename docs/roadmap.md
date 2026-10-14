@@ -3,6 +3,10 @@
 > 最后更新：2026-10-12
 > 状态含义：`planned`、`in progress`、`blocked`、`done`
 
+2026-10-14本地ZH测试脚本不再因无关模板资源缺失而失败，ZH自身仍校验，失败显示具体资源原因；只读资源绑定通过，新增回归未运行，真实提取待用户复测，阶段状态不变。见[记录](./service/agent/changelog/2026-10-14-local-profile-isolation.md)。
+
+2026-10-14 ZH初扫放线标记优先步骤文件修改完成，Prompt/调用指令/规则同步；未运行测试或模型，实际效果待用户复测，Phase 4仍in progress。见[记录](./service/agent/changelog/2026-10-14-zh-marker-first.md)。
+
 2026-10-14本地Stage2脚本页面/索引默认路径已跟随用户移动到docs/test/pages，提取范围和实现不变，未运行测试/模型；验收状态不变。见[记录](./service/agent/changelog/2026-10-14-local-pages-path.md)。
 
 2026-10-14独立提取目录迁移文件完成：61份源码移动/引用修正、254份Python静态对照无非引用逻辑差异，资源原文保留；不运行业务测试/模型/数据库，实际运行待用户验收，Phase 4仍in progress。见[记录](./service/agent/changelog/2026-10-14-extraction-agent-directory.md)。

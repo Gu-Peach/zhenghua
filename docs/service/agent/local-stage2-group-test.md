@@ -2,6 +2,8 @@
 
 入口：`services/agent/scripts/run_stage2_groups.py`。读取已有拆分页和图纸索引，不调用 Stage 1、不重新渲染 PDF、不创建项目、数据库客户端、队列或 Storage 上传。
 
+该脚本只绑定本地ZH Profile。其他模板资源缺失时显示具体告警并跳过，不阻塞ZH；ZH自身缺失或无效仍停止，终端和failure.json保留具体资源原因。服务主入口的严格Profile加载不变，见[修复记录](./changelog/2026-10-14-local-profile-isolation.md)。
+
 默认来源目录`docs/test/pages`，索引`docs/test/pages/agent/drawing_index.json`，已按用户移动后的实际位置更新。只扫描002.C的7页和002.M的5页，跨页可读取其他本地目标页。当前本地ZH为2.0.2；旧run_stage2产物来自2.0.0，run_stage2_v201来自2.0.1，不查询远端规则包。最新[规则记录](./changelog/2026-10-14-zh-direct-terminals.md)以直接端子段及程序分类为准。
 
 ## 命令
