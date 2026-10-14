@@ -9,14 +9,14 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from agent_service.agents.supervisor import SupervisorAgent
-from agent_service.application.correction_workflow import CorrectionWorkflowExecutor
-from agent_service.application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
-from agent_service.application.run_control import RunControlService
-from agent_service.application.worker import AgentWorker, RunExecutionOutcome
-from agent_service.application.workflow_registry import WorkflowDispatchReceipt, WorkflowRegistry
-from agent_service.config import AgentSettings
-from agent_service.domain.enums import (
+from src.agents.supervisor import SupervisorAgent
+from src.application.correction_workflow import CorrectionWorkflowExecutor
+from src.agent.extraction_agent.application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
+from src.application.run_control import RunControlService
+from src.application.worker import AgentWorker, RunExecutionOutcome
+from src.application.workflow_registry import WorkflowDispatchReceipt, WorkflowRegistry
+from src.config import AgentSettings
+from src.domain.enums import (
     AgentStage,
     EvalCaseKind,
     EventType,
@@ -29,14 +29,14 @@ from agent_service.domain.enums import (
     SupervisorIntent,
     WorkflowKind,
 )
-from agent_service.domain.models.correction import (
+from src.domain.models.correction import (
     CorrectionConstraints,
     CorrectionContext,
     CorrectionEvidenceBundle,
     CorrectionFacts,
     FeedbackTarget,
 )
-from agent_service.domain.models.improvement import (
+from src.domain.models.improvement import (
     AffectedScope,
     CandidatePatchOperation,
     Diagnosis,
@@ -44,10 +44,10 @@ from agent_service.domain.models.improvement import (
     EvalReport,
     ProfileCandidate,
 )
-from agent_service.domain.models.runs import AgentEvent, AgentRun, CreateRunRequest, ProfileRef, RunScope
-from agent_service.domain.models.supervisor import ConversationTurn
-from agent_service.graphs.supervisor import run_supervisor_graph
-from agent_service.harness import (
+from src.domain.models.runs import AgentEvent, AgentRun, CreateRunRequest, ProfileRef, RunScope
+from src.domain.models.supervisor import ConversationTurn
+from src.graphs.supervisor import run_supervisor_graph
+from src.harness import (
     FakeModelGateway,
     InMemoryArtifactRepository,
     InMemoryCandidateRepository,
@@ -57,13 +57,13 @@ from agent_service.harness import (
     ProfileSandbox,
     ReleaseGate,
 )
-from agent_service.harness.eval_runner import EvalRunner
-from agent_service.infrastructure.correction_data import InMemoryCorrectionDataProvider
-from agent_service.infrastructure.queue import InMemoryRunQueue
-from agent_service.main import create_app
-from agent_service.profiles import ProfileRegistry
-from agent_service.tools.event_presenter import SupervisorEventPresenter
-from agent_service.tools.extraction_runner import ScopedExtractionRunner
+from src.harness.eval_runner import EvalRunner
+from src.infrastructure.correction_data import InMemoryCorrectionDataProvider
+from src.infrastructure.queue import InMemoryRunQueue
+from src.main import create_app
+from src.profiles import ProfileRegistry
+from src.tools.event_presenter import SupervisorEventPresenter
+from src.agent.extraction_agent.tools.extraction_runner import ScopedExtractionRunner
 
 ROOT = Path(__file__).resolve().parents[4]
 
@@ -178,7 +178,7 @@ class RemainingAgentsTests(unittest.TestCase):
     def test_event_stream_replays_events_and_closes_for_completed_runs(self) -> None:
         settings = AgentSettings(
             workspace_root=ROOT,
-            profile_root=ROOT / "services" / "agent" / "profiles",
+            profile_root=ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles",
             internal_token="stream-token",
         )
         app = create_app(settings=settings)
@@ -215,7 +215,7 @@ class RemainingAgentsTests(unittest.TestCase):
             )
             agent = SupervisorAgent(
                 gateway=FakeModelGateway([response]),
-                prompt_path=ROOT / "services" / "agent" / "prompts" / "supervisor.md",
+                prompt_path=ROOT / "services" / "agent" / "src/agent/extraction_agent/prompts" / "supervisor.md",
             )
             workflows = WorkflowRegistry()
             workflows.register(WorkflowKind.PROFILE_DETECTION, CapturingHandler())
@@ -312,7 +312,7 @@ class RemainingAgentsTests(unittest.TestCase):
     def test_supervisor_event_api_resolves_and_sanitizes_diagnosis_artifact(self) -> None:
         settings = AgentSettings(
             workspace_root=ROOT,
-            profile_root=ROOT / "services" / "agent" / "profiles",
+            profile_root=ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles",
             internal_token="event-token",
         )
         app = create_app(settings=settings)
@@ -370,7 +370,7 @@ class RemainingAgentsTests(unittest.TestCase):
     def test_direct_correction_builds_scoped_patch_without_vlm(self) -> None:
         async def run() -> None:
             registry = ProfileRegistry(
-                profile_root=ROOT / "services" / "agent" / "profiles",
+                profile_root=ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles",
                 workspace_root=ROOT,
                 allow_legacy_references=True,
             )
@@ -429,7 +429,7 @@ class RemainingAgentsTests(unittest.TestCase):
             outcome = await executor.execute(
                 AgentRun.from_request(request, "correction-key"),
                 cancellation=__import__(
-                    "agent_service.harness.stores", fromlist=["CancellationToken"]
+                    "src.harness.stores", fromlist=["CancellationToken"]
                 ).CancellationToken(),
             )
             self.assertEqual(len(outcome.proposal.operations), 1)  # type: ignore[union-attr]
@@ -542,7 +542,7 @@ class RemainingAgentsTests(unittest.TestCase):
     def test_run_api_requires_internal_token_when_configured(self) -> None:
         settings = AgentSettings(
             workspace_root=ROOT,
-            profile_root=ROOT / "services" / "agent" / "profiles",
+            profile_root=ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles",
             internal_token="secret-token",
         )
         with TestClient(create_app(settings=settings)) as client:

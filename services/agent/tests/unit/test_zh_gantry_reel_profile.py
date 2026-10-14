@@ -10,9 +10,9 @@ from pathlib import Path
 import httpx
 import pytest
 
-from agent_service.application.extraction_stage_factory import build_extraction_stage_dispatcher
-from agent_service.config import AgentSettings
-from agent_service.domain.models.extraction_stages import (
+from src.agent.extraction_agent.application.extraction_stage_factory import build_extraction_stage_dispatcher
+from src.config import AgentSettings
+from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
     CrossPageCompletionRequest,
     DrawingPageInput,
@@ -21,11 +21,11 @@ from agent_service.domain.models.extraction_stages import (
     PageScanData,
     PageScanRequest,
 )
-from agent_service.domain.models.wiring import WireRecord
-from agent_service.harness.model_gateway import FakeModelGateway
-from agent_service.profiles import ProfileRegistry
-from agent_service.profiles.extraction_policy import default_extraction_policies
-from agent_service.profiles.zh_gantry_reel.policy import (
+from src.agent.extraction_agent.domain.models.wiring import WireRecord
+from src.harness.model_gateway import FakeModelGateway
+from src.profiles import ProfileRegistry
+from src.agent.extraction_agent.profiles.extraction_policy import default_extraction_policies
+from src.agent.extraction_agent.profiles.zh_gantry_reel.policy import (
     ZhGantryReelPolicy,
     decode_sheet,
     encode_sheet,
@@ -33,7 +33,7 @@ from agent_service.profiles.zh_gantry_reel.policy import (
 )
 
 ROOT = Path(__file__).resolve().parents[4]
-ASSETS = ROOT / "services/agent/prompts/zh_gantry_reel"
+ASSETS = ROOT / "services/agent/src/agent/extraction_agent/prompts/zh_gantry_reel"
 
 
 def read(path: Path) -> dict:
@@ -42,7 +42,7 @@ def read(path: Path) -> dict:
 
 def registry() -> ProfileRegistry:
     value = ProfileRegistry(
-        profile_root=ROOT / "services/agent/profiles", workspace_root=ROOT, allow_legacy_references=True
+        profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles", workspace_root=ROOT, allow_legacy_references=True
     )
     value.load_all()
     return value
@@ -93,7 +93,7 @@ def test_manifest_counts_schemas_and_every_asset_checksum() -> None:
                 total += 1
     assert total == 6
     rules = read(ASSETS / "field-rules.json")
-    policy = ROOT / "services/agent/src/agent_service/profiles/zh_gantry_reel/policy.py"
+    policy = ROOT / "services/agent/src/agent/extraction_agent/profiles/zh_gantry_reel/policy.py"
     assert rules["policy_version"] == "0.1.0"
     assert rules["policy_checksum"] == "sha256:" + hashlib.sha256(policy.read_bytes()).hexdigest()
     for asset in read(ASSETS / "provenance.json")["assets"]:

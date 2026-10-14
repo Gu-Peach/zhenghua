@@ -7,16 +7,16 @@ from uuid import uuid4
 import httpx
 import pytest
 
-from agent_service.domain.enums import EventType
-from agent_service.domain.errors import AgentServiceError
-from agent_service.domain.models.runs import AgentEvent
-from agent_service.infrastructure.storage_paths import (
+from src.domain.enums import EventType
+from src.domain.errors import AgentServiceError
+from src.domain.models.runs import AgentEvent
+from src.infrastructure.storage_paths import (
     drawing_image_path,
     project_source_pdf_path,
     run_artifact_path,
 )
-from agent_service.infrastructure.supabase_client import SupabaseClient
-from agent_service.infrastructure.supabase_repositories import (
+from src.infrastructure.supabase_client import SupabaseClient
+from src.infrastructure.supabase_repositories import (
     SupabaseEventRepository,
     SupabaseRunQueue,
 )

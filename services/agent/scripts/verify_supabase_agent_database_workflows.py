@@ -10,7 +10,7 @@ from uuid import uuid4
 
 import httpx
 
-from agent_service.domain.enums import (
+from src.domain.enums import (
     AgentStage,
     CorrectionIssueKind,
     EvalCaseKind,
@@ -20,7 +20,7 @@ from agent_service.domain.enums import (
     RunType,
     ScopeType,
 )
-from agent_service.domain.models.improvement import (
+from src.domain.models.improvement import (
     AffectedScope,
     CandidatePatchOperation,
     Diagnosis,
@@ -30,29 +30,29 @@ from agent_service.domain.models.improvement import (
     ProfileCandidate,
     ReleaseDecision,
 )
-from agent_service.domain.models.proposals import (
+from src.domain.models.proposals import (
     ProposalOperation,
     ProposalValidation,
     ResultPatchProposal,
     ResultProposal,
 )
-from agent_service.domain.models.result_data import ConnectionSearchQuery, PrepareCorrectionRequest
-from agent_service.domain.models.runs import CreateRunRequest, ModelRef, RunScope
-from agent_service.infrastructure.correction_data import SupabaseCorrectionDataRepository
-from agent_service.infrastructure.project_assets import SupabaseProjectAssetStore
-from agent_service.infrastructure.supabase_client import SupabaseClient
-from agent_service.infrastructure.supabase_improvement import (
+from src.domain.models.result_data import ConnectionSearchQuery, PrepareCorrectionRequest
+from src.domain.models.runs import CreateRunRequest, ModelRef, RunScope
+from src.infrastructure.correction_data import SupabaseCorrectionDataRepository
+from src.infrastructure.project_assets import SupabaseProjectAssetStore
+from src.infrastructure.supabase_client import SupabaseClient
+from src.infrastructure.supabase_improvement import (
     SupabaseCandidateRepository,
     SupabaseEvalRepository,
 )
-from agent_service.infrastructure.supabase_repositories import (
+from src.infrastructure.supabase_repositories import (
     SupabaseProposalRepository,
     SupabaseRunRepository,
     SupabaseTraceStore,
 )
-from agent_service.infrastructure.supabase_result_data import SupabaseResultDataRepository
-from agent_service.profiles import ProfileRegistry
-from agent_service.tools.result_data import ControlledResultDataTool
+from src.infrastructure.supabase_result_data import SupabaseResultDataRepository
+from src.profiles import ProfileRegistry
+from src.tools.result_data import ControlledResultDataTool
 
 PNG_1X1 = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
@@ -100,7 +100,7 @@ async def main() -> int:
         )
         assets = SupabaseProjectAssetStore(client, bucket=bucket)
         registry = ProfileRegistry(
-            profile_root=WORKSPACE_ROOT / "services" / "agent" / "profiles",
+            profile_root=WORKSPACE_ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles",
             workspace_root=WORKSPACE_ROOT,
             allow_legacy_references=True,
         )

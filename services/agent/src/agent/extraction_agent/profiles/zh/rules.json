@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "profile_key": "zh",
+  "display_name": "振华电气图纸",
+  "detection": {
+    "summary": "上海振华重工/ZPMC 体系的电气原理图与项目图册。",
+    "strong_signals": [
+      "首页出现 ZPMC 标志或文字",
+      "首页出现 上海振华重工 或 SHANGHAI ZPMC ELECTRIC COMPANY LIMITED",
+      "标题栏责任部门或客户字段明确出现 ZPMC"
+    ],
+    "supporting_signals": [
+      "标题栏包含 Project.NR、Plant Function、Page Number",
+      "图号常包含 DQ 加项目号前缀",
+      "封面使用 DIAGRAMS AND CHARTS、PLANT CIRCUIT DIAGRAM 等描述"
+    ],
+    "exclusion_signals": [
+      "只有通用 IEC/EPLAN 图框但没有任何 ZPMC 或振华标识，不能据此判定为 ZH",
+      "标题栏明确标注其他制造商时不能判定为 ZH"
+    ],
+    "guidance": "优先依据首页可见的公司名称和 Logo；项目号、Plant Function 只作为辅助信号。"
+  },
+  "extraction": {
+    "workflow": [
+      "page_classification",
+      "page_extraction",
+      "deterministic_validation"
+    ],
+    "dynamic_resources": {
+      "page_classification": [
+        "classification_prompt",
+        "classification_examples"
+      ],
+      "page_scan": [
+        "page_scan_prompt",
+        "wiring_examples"
+      ],
+      "page_completion": [
+        "cross_page_prompt",
+        "wiring_examples"
+      ]
+    },
+    "business_rules": [
+      "使用Plant Function和Page Number定位原始图纸",
+      "围绕放线标记读取两侧直接端子，遇端子停止，不穿过端子追到PLC",
+      "根据箭头或实际接线判断起终点，跨页接收段不重复创建连接，本页独立段仍提取",
+      "同排附近明确X/XD标识与数字组成完整实际端子，元件及位置按图读取",
+      "terminal_strip不由VLM读取或推测，仅后处理按两端XA/XD/XH已知映射，先起点再终点，无映射为空",
+      "Stage2内部定向双图补全，完成页保存后继续下一页",
+      "电流仍按每条连接的三相断路器对应相线及Ir/单一In/Ie证据读取，N/PE/控制/通信/光纤为空",
+      "未知字段保留空值和复核状态，不补外部业务别名"
+    ],
+    "output_contract": "wiring_connection_v1"
+  }
+}

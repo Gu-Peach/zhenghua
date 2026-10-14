@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from agent_service.config import AgentSettings, load_agent_env, repository_root
+from src.config import AgentSettings, load_agent_env, repository_root
 
 
 class AgentSettingsTests(unittest.TestCase):
@@ -20,7 +20,7 @@ class AgentSettingsTests(unittest.TestCase):
             agent_env.parent.mkdir(parents=True)
             agent_env.write_text("AGENT_DEFAULT_MODEL=agent-model\n", encoding="utf-8")
 
-            with patch("agent_service.config.repository_root", return_value=root):
+            with patch("src.config.repository_root", return_value=root):
                 with patch.dict(os.environ, {}, clear=True):
                     load_agent_env()
                     self.assertEqual(os.environ.get("AGENT_DEFAULT_MODEL"), "agent-model")
@@ -31,7 +31,7 @@ class AgentSettingsTests(unittest.TestCase):
             "AGENT_MODEL_CHAT_COMPLETIONS_URL": "http://model.local/v1/chat/completions",
             "AGENT_DEFAULT_MODEL": "test-vlm",
         }
-        with patch("agent_service.config.load_agent_env"), patch.dict(os.environ, values, clear=True):
+        with patch("src.config.load_agent_env"), patch.dict(os.environ, values, clear=True):
             settings = AgentSettings.from_env()
 
         self.assertIsNone(settings.model_base_url)
@@ -60,7 +60,7 @@ class AgentSettingsTests(unittest.TestCase):
             "VLM_OUTPUT_MODE": "single_xlsx",
             "VLM_IMPORT_XLS_TEMPLATE_PATH": "case/template.xls",
         }
-        with patch("agent_service.config.load_agent_env"), patch.dict(os.environ, values, clear=True):
+        with patch("src.config.load_agent_env"), patch.dict(os.environ, values, clear=True):
             settings = AgentSettings.from_env()
 
         self.assertEqual(settings.model_base_url, "http://model.local/v1")
@@ -94,7 +94,7 @@ class AgentSettingsTests(unittest.TestCase):
             "AGENT_SUPABASE_SERVICE_ROLE_KEY": "service-role-test",
             "AGENT_SUPABASE_STORAGE_BUCKET": "project-assets",
         }
-        with patch("agent_service.config.load_agent_env"), patch.dict(os.environ, values, clear=True):
+        with patch("src.config.load_agent_env"), patch.dict(os.environ, values, clear=True):
             settings = AgentSettings.from_env()
 
         self.assertEqual(settings.persistence_backend, "supabase")
@@ -109,7 +109,7 @@ class AgentSettingsTests(unittest.TestCase):
             "SUPABASE_SERVICE_ROLE_KEY": "service-role-test",
             "SUPABASE_STORAGE_BUCKET": "images",
         }
-        with patch("agent_service.config.load_agent_env"), patch.dict(os.environ, values, clear=True):
+        with patch("src.config.load_agent_env"), patch.dict(os.environ, values, clear=True):
             settings = AgentSettings.from_env()
 
         self.assertEqual(settings.persistence_backend, "supabase")

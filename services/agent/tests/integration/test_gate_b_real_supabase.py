@@ -12,11 +12,11 @@ from uuid import uuid4
 
 import httpx
 import pytest
-from agent_service.config import AgentSettings
-from agent_service.harness.model_gateway import FakeModelGateway
-from agent_service.infrastructure.document.pdf_runtime import load_pdf_module
-from agent_service.infrastructure.supabase_client import SupabaseClient
-from agent_service.main import create_app
+from src.config import AgentSettings
+from src.harness.model_gateway import FakeModelGateway
+from src.agent.extraction_agent.infrastructure.document.pdf_runtime import load_pdf_module
+from src.infrastructure.supabase_client import SupabaseClient
+from src.main import create_app
 from fastapi.testclient import TestClient
 
 from services.agent.tests.integration.test_detection_conversation_api import detection, intent
@@ -72,7 +72,7 @@ def test_gate_b_http_upload_confirmation_persistence_and_restart(tmp_path: Path,
             ]
         )
         fake = FakeStages()
-        with patch("agent_service.main.OpenAICompatibleModelGateway", return_value=gateway):
+        with patch("src.main.OpenAICompatibleModelGateway", return_value=gateway):
             app = create_app(settings=settings)
         with load_pdf_module().open() as document:
             for number in (1, 2):
@@ -140,7 +140,7 @@ def test_gate_b_http_upload_confirmation_persistence_and_restart(tmp_path: Path,
             assert turn("确认 ZH", confirm_id)["receipt"]["agent_run_id"] == run_id
             assert http.portal.call(app.state.run_control.queue.size) == 1
             with patch(
-                "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
+                "src.agent.extraction_agent.application.page_workflow_extraction.build_extraction_stage_dispatcher",
                 return_value=fake,
             ):
                 assert http.portal.call(app.state.agent_worker.run_once)
@@ -179,7 +179,7 @@ def test_gate_b_http_upload_confirmation_persistence_and_restart(tmp_path: Path,
             )
         # Fresh HTTP service has no conversation memory; persisted run/tree/result still work.
         replay_gateway = FakeModelGateway([intent("PROCESS_DOCUMENT"), detection(), intent("CONFIRM_INPUT")])
-        with patch("agent_service.main.OpenAICompatibleModelGateway", return_value=replay_gateway):
+        with patch("src.main.OpenAICompatibleModelGateway", return_value=replay_gateway):
             restarted = create_app(settings=settings)
         with TestClient(restarted, headers=headers) as http:
             assert http.get(f"/v1/runs/{run_id}/summary", params={"user_id": user}).json() == summary

@@ -6,25 +6,25 @@ from pathlib import Path
 
 import pytest
 
-from agent_service.agents.supervisor import SupervisorAgent
-from agent_service.application.workflow_registry import (
+from src.agents.supervisor import SupervisorAgent
+from src.application.workflow_registry import (
     WorkflowDispatchReceipt,
     WorkflowRegistry,
 )
-from agent_service.domain.enums import (
+from src.domain.enums import (
     SupervisorIntent,
     SupervisorTurnStatus,
     WorkflowKind,
 )
-from agent_service.domain.models.supervisor import (
+from src.domain.models.supervisor import (
     ConversationTurn,
     SupervisorModelOutput,
     SupervisorTargetHint,
 )
-from agent_service.harness import FakeModelGateway
+from src.harness import FakeModelGateway
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
-PROMPT = REPOSITORY_ROOT / "services" / "agent" / "prompts" / "supervisor.md"
+PROMPT = REPOSITORY_ROOT / "services" / "agent" / "src/agent/extraction_agent/prompts" / "supervisor.md"
 
 
 def test_real_case_a_output_accepts_numeric_page_and_directional_terminal() -> None:

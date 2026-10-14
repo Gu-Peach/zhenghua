@@ -16,23 +16,23 @@ from fastapi.testclient import TestClient
 from services.agent.tests.integration.test_detection_conversation_api import detection, intent
 from services.agent.tests.integration.test_gate_a_real_supabase import FakeStages
 
-from agent_service.agents.supervisor import SupervisorAgent
-from agent_service.application.extraction_run_executor import FullExtractionRunExecutor
-from agent_service.application.profile_detection import create_profile_detection_runtime
-from agent_service.application.supervisor_conversation import SupervisorConversationService
-from agent_service.application.workflow_registry import WorkflowRegistry
-from agent_service.config import AgentSettings
-from agent_service.domain.enums import EventType, RunStatus, RunType
-from agent_service.domain.models.runs import AgentEvent
-from agent_service.harness.model_gateway import FakeModelGateway
-from agent_service.infrastructure.business_imports import SupabaseBusinessImports
-from agent_service.infrastructure.conversation_memory import ShortTermConversationStore
-from agent_service.infrastructure.document.pdf_runtime import load_pdf_module
-from agent_service.infrastructure.project_assets import SupabaseSourceDocumentProvider
-from agent_service.infrastructure.supabase_client import SupabaseClient
-from agent_service.main import create_app
-from agent_service.profiles import ProfileRegistry
-from agent_service.tools.profile_detection import ProfileDetectionTool
+from src.agents.supervisor import SupervisorAgent
+from src.agent.extraction_agent.application.extraction_run_executor import FullExtractionRunExecutor
+from src.application.profile_detection import create_profile_detection_runtime
+from src.application.supervisor_conversation import SupervisorConversationService
+from src.application.workflow_registry import WorkflowRegistry
+from src.config import AgentSettings
+from src.domain.enums import EventType, RunStatus, RunType
+from src.domain.models.runs import AgentEvent
+from src.harness.model_gateway import FakeModelGateway
+from src.infrastructure.business_imports import SupabaseBusinessImports
+from src.infrastructure.conversation_memory import ShortTermConversationStore
+from src.agent.extraction_agent.infrastructure.document.pdf_runtime import load_pdf_module
+from src.infrastructure.project_assets import SupabaseSourceDocumentProvider
+from src.infrastructure.supabase_client import SupabaseClient
+from src.main import create_app
+from src.profiles import ProfileRegistry
+from src.tools.profile_detection import ProfileDetectionTool
 
 ROOT = Path(__file__).resolve().parents[4]
 
@@ -83,7 +83,7 @@ def setup(tmp_path: Path, responses: list[str]):
     backend = SupabaseBusinessImports(db)
     documents = SupabaseSourceDocumentProvider(db, cache_root=tmp_path / "sources")
     profiles = ProfileRegistry(
-        profile_root=ROOT / "services/agent/profiles", workspace_root=ROOT, allow_legacy_references=True
+        profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles", workspace_root=ROOT, allow_legacy_references=True
     )
     profiles.load_all()
     settings = AgentSettings(environment="test", internal_token="gate-b-test", workspace_root=ROOT)
@@ -91,7 +91,7 @@ def setup(tmp_path: Path, responses: list[str]):
     gateway = FakeModelGateway(responses)
     app.state.business_imports = backend
     app.state.supervisor_conversations = SupervisorConversationService(
-        agent=SupervisorAgent(gateway=gateway, prompt_path=ROOT / "services/agent/prompts/supervisor.md"),
+        agent=SupervisorAgent(gateway=gateway, prompt_path=ROOT / "services/agent/src/agent/extraction_agent/prompts/supervisor.md"),
         workflows=WorkflowRegistry(),
         profiles=profiles,
         detection=ProfileDetectionTool(
@@ -181,7 +181,7 @@ def test_http_import_confirm_real_worker_and_duplicate_confirmation(tmp_path: Pa
         assert queued["options"]["profile_confirmation"]["source_checksum"] == imported["checksum"]
         fake = FakeStages()
         with patch(
-            "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
+            "src.agent.extraction_agent.application.page_workflow_extraction.build_extraction_stage_dispatcher",
             return_value=fake,
         ):
             assert client.portal.call(app.state.agent_worker.run_once)
@@ -378,7 +378,7 @@ def test_terminal_script_http_only_upload_and_confirmation(tmp_path: Path) -> No
         # Harness runs the server Worker; the unmodified client never selects a stage/tool.
         if method == "GET" and url.endswith("/events/stream"):
             with patch(
-                "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
+                "src.agent.extraction_agent.application.page_workflow_extraction.build_extraction_stage_dispatcher",
                 return_value=fake,
             ):
                 client.portal.call(app.state.agent_worker.run_once)

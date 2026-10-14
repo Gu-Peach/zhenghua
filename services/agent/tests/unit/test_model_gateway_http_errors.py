@@ -7,20 +7,20 @@ from pathlib import Path
 
 import httpx
 
-from agent_service.application.document_extraction.runtime import GraphRuntime
-from agent_service.application.document_extraction.settings import Settings as ZhWorkflowSettings
-from agent_service.config import AgentSettings
-from agent_service.domain.enums import ErrorCode
-from agent_service.domain.models.image_payload import ImagePayload
-from agent_service.graphs.document_extraction.helpers import _is_fatal_model_request_error
-from agent_service.graphs.document_extraction.pages import _classify_pages_node
-from agent_service.harness.model_gateway import (
+from src.agent.extraction_agent.application.document_extraction.runtime import GraphRuntime
+from src.agent.extraction_agent.application.document_extraction.settings import Settings as ZhWorkflowSettings
+from src.config import AgentSettings
+from src.domain.enums import ErrorCode
+from src.agent.extraction_agent.domain.models.image_payload import ImagePayload
+from src.agent.extraction_agent.graphs.document_extraction.helpers import _is_fatal_model_request_error
+from src.agent.extraction_agent.graphs.document_extraction.pages import _classify_pages_node
+from src.harness.model_gateway import (
     ModelGatewayError,
     ModelRequest,
     OpenAICompatibleModelGateway,
 )
-from agent_service.harness.retry import RetryPolicy
-from agent_service.profiles.zh.policy import ZhExtractionPolicy
+from src.harness.retry import RetryPolicy
+from src.agent.extraction_agent.profiles.zh.policy import ZhExtractionPolicy
 
 
 class ModelGatewayHttpErrorTests(unittest.TestCase):

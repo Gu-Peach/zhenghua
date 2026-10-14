@@ -4,8 +4,8 @@ import math
 
 import pytest
 
-from agent_service.domain.enums import AgentStage
-from agent_service.domain.models.stage_persistence import StageItem, canonical_json, digest
+from src.domain.enums import AgentStage
+from src.domain.models.stage_persistence import StageItem, canonical_json, digest
 
 
 def test_stage_canonical_json_preserves_order_and_normalizes_numbers() -> None:

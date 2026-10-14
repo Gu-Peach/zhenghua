@@ -4,16 +4,16 @@ import asyncio
 from pathlib import Path
 from typing import Any
 
-from agent_service.application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
-from agent_service.domain.enums import CorrectionIssueKind, CrossPageState, ScopeType
-from agent_service.domain.models.correction import (
+from src.agent.extraction_agent.application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
+from src.domain.enums import CorrectionIssueKind, CrossPageState, ScopeType
+from src.domain.models.correction import (
     CorrectionConstraints,
     CorrectionContext,
     CorrectionEvidenceBundle,
     CorrectionFacts,
     FeedbackTarget,
 )
-from agent_service.domain.models.extraction_stages import (
+from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
     CrossPageCompletionRequest,
     DrawingEndpoint,
@@ -25,10 +25,10 @@ from agent_service.domain.models.extraction_stages import (
     ScannedConnection,
     ScannedWireUnit,
 )
-from agent_service.infrastructure.zh_vlm_stages import _normalize_page_scan
-from agent_service.profiles import ProfileRegistry
-from agent_service.tools.correction_router import CorrectionRoutePlanner
-from agent_service.tools.extraction_runner import ScopedExtractionRunner
+from src.agent.extraction_agent.infrastructure.zh_vlm_stages import _normalize_page_scan
+from src.profiles import ProfileRegistry
+from src.tools.correction_router import CorrectionRoutePlanner
+from src.agent.extraction_agent.tools.extraction_runner import ScopedExtractionRunner
 
 ROOT = Path(__file__).resolve().parents[4]
 
@@ -143,7 +143,7 @@ class Stage2ChangesToSamePage:
 def test_unknown_route_skips_stage3_when_stage2_confirms_same_page() -> None:
     async def run() -> None:
         registry = ProfileRegistry(
-            profile_root=ROOT / "services" / "agent" / "profiles",
+            profile_root=ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles",
             workspace_root=ROOT,
             allow_legacy_references=True,
         )
@@ -242,7 +242,7 @@ class ScopedCrossPageStages(Stage2ChangesToSamePage):
 def test_scoped_cross_page_matches_fresh_source_and_reaches_stage3() -> None:
     async def run() -> None:
         registry = ProfileRegistry(
-            profile_root=ROOT / "services/agent/profiles", workspace_root=ROOT, allow_legacy_references=True
+            profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles", workspace_root=ROOT, allow_legacy_references=True
         )
         registry.load_all()
         binding = registry.bind("zh")

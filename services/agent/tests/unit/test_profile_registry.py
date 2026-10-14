@@ -5,11 +5,11 @@ from pathlib import Path
 
 import pytest
 
-from agent_service.domain.enums import ProfileStatus
-from agent_service.profiles import DrawingProfile, ProfileRegistry, ProfileRegistryError
+from src.domain.enums import ProfileStatus
+from src.profiles import DrawingProfile, ProfileRegistry, ProfileRegistryError
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
-PROFILE_ROOT = REPOSITORY_ROOT / "services" / "agent" / "profiles"
+PROFILE_ROOT = REPOSITORY_ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles"
 
 
 def build_registry() -> ProfileRegistry:

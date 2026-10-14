@@ -1,0 +1,109 @@
+{
+  "version": 6,
+  "description": "ZH 2.0.2 direct terminals on each marked wire segment; business terminal strip computed in postprocessing. stage3_cases is a historical loader key.",
+  "images": {
+    "002c03": "images/002c03.png",
+    "002c06": "images/002c06.png",
+    "002c11": "images/002c11.png",
+    "002c21": "images/002c21.png",
+    "003c20": "images/003c20.png",
+    "002c01": "images/002c01.png",
+    "c03_receivers": "images/c03_receivers.png",
+    "002c02": "images/002c02.png",
+    "002m03": "images/002m03.png",
+    "098m25": "images/098m25.png",
+    "002m23": "images/002m23.png"
+  },
+  "stage2_cases": [
+    {
+      "id": "002c01_visible_sources",
+      "title": "002.C/1：非 XD 白名单端点、实际局部连接与离开端子的跨页箭头",
+      "expected": "stage2/002c01.expected.json",
+      "images": [
+        {
+          "path": "images/002c01.png",
+          "role": "source_page",
+          "note": "16 条 XD1-W1 本页段保留方向不确定；6 条 W1 出线按明确箭头输出。不得凭业务标准补 MV 代号、X6 或颜色。"
+        }
+      ]
+    },
+    {
+      "id": "c03_receivers_only",
+      "title": "C03 局部负例：箭头指向 X9:2/X9:4，只有接收端，不创建起点记录",
+      "expected": "stage2/c03_receivers.expected.json",
+      "images": [
+        {
+          "path": "images/c03_receivers.png",
+          "role": "source_page"
+        }
+      ]
+    },
+    {
+      "id": "002c02_sources_only",
+      "title": "C02完整页：只输出下方K2/K3两组8条来源，排除上方Q1接收组；分别绑定5.x/6.x引用",
+      "expected": "stage2/002c02.expected.json",
+      "images": [
+        {
+          "path": "images/002c02.png",
+          "role": "source_page"
+        }
+      ]
+    },
+    {
+      "id": "002m03_fan_out",
+      "title": "M03完整页：XD3:16两条离页分支分别输出；下方103-108跨页接收段不反向输出",
+      "expected": "stage2/002m03_branches.expected.json",
+      "images": [
+        {
+          "path": "images/002m03.png",
+          "role": "source_page"
+        }
+      ]
+    },
+    {
+      "id": "m23_direct_terminals",
+      "title": "M23放线段：17到1、2到109及同排其余数字端子，端点到实际端子即停止",
+      "expected": "stage2/002m23_direct.expected.json",
+      "images": [
+        {
+          "path": "images/002m23.png",
+          "role": "source_page"
+        }
+      ]
+    }
+  ],
+  "stage3_cases": [
+    {
+      "id": "002c01_w1_l1_to_002c02_q1",
+      "title": "Stage 2 内部节点：C01 W1:L1 定向补全到 C02 Q1:L1",
+      "input": "completion/w1_l1_to_q1.task.json",
+      "expected": "completion/w1_l1_to_q1.expected.json",
+      "images": [
+        {
+          "path": "images/002c01.png",
+          "role": "source_page"
+        },
+        {
+          "path": "images/002c02.png",
+          "role": "target_page"
+        }
+      ]
+    },
+    {
+      "id": "w1_fo2_to_tf41",
+      "title": "定向双图补全FO2到TF41:1R，排除数字误推2R",
+      "input": "completion/w1_fo2_to_tf41.task.json",
+      "expected": "completion/w1_fo2_to_tf41.expected.json",
+      "images": [
+        {
+          "path": "images/002c01.png",
+          "role": "source_page"
+        },
+        {
+          "path": "images/098m25.png",
+          "role": "target_page"
+        }
+      ]
+    }
+  ]
+}

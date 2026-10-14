@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-14
+
+- 按用户新目录集中提取实现到src/agent/extraction_agent，共享包名src及入口/资源引用同步；61份源码只移动/改引用，254份Python静态AST对照保持非引用实现不变。未运行业务测试、模型或写库。见[ADR-0017](../adr/0017-extraction-agent-directory.md)及[Agent记录](../service/agent/changelog/2026-10-14-extraction-agent-directory.md)。
+
+- 同步ZH实际提取样例与Prompt：C01完整端子/排号、C02元件描述、FO2设备/实际排号分离，manifest v6/资源摘要更新；不运行测试/模型或写库。见[Agent记录](../service/agent/changelog/2026-10-14-zh-expected-alignment.md)。
+
+- 按用户要求删除ZH离线regression_cases及对应expected/独占图片，同步manifest v5、资源条目和测试引用，保留运行时初扫/内部补全案例。本轮未运行测试/模型或写库。见[Agent清理记录](../service/agent/changelog/2026-10-14-zh-example-cleanup.md)。
+
+- 用户明确修订ZH放线口径：读取标记两侧直接端子、遇端子停止，业务端子排仅后处理映射。ZH本地2.0.2精简Prompt并保留电流约束，新增M23八条用户确认样例；本轮不运行测试/模型、不写库、不发布。见[ADR-0016](../adr/0016-zh-direct-terminal-segments.md)及[Agent记录](../service/agent/changelog/2026-10-14-zh-direct-terminals.md)。
+
 This directory records cross-module architecture and product behavior changes.
 Detailed application work is archived under `docs/apps/`; service work is
 archived under `docs/service/`.

@@ -10,26 +10,26 @@ from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
-from agent_service.application.extraction_run_executor import FullExtractionRunExecutor
-from agent_service.application.run_control import RunControlService
-from agent_service.application.worker import AgentWorker
-from agent_service.config import AgentSettings
-from agent_service.domain.enums import RunType
-from agent_service.infrastructure.project_assets import (
+from src.agent.extraction_agent.application.extraction_run_executor import FullExtractionRunExecutor
+from src.application.run_control import RunControlService
+from src.application.worker import AgentWorker
+from src.config import AgentSettings
+from src.domain.enums import RunType
+from src.infrastructure.project_assets import (
     SupabaseProjectAssetStore,
     SupabaseSourceDocumentProvider,
 )
-from agent_service.infrastructure.supabase_client import SupabaseClient
-from agent_service.infrastructure.supabase_repositories import (
+from src.infrastructure.supabase_client import SupabaseClient
+from src.infrastructure.supabase_repositories import (
     SupabaseArtifactRepository,
     SupabaseEventRepository,
     SupabaseProposalRepository,
     SupabaseRunQueue,
     SupabaseRunRepository,
 )
-from agent_service.infrastructure.supabase_result_data import SupabaseResultDataRepository
-from agent_service.infrastructure.supabase_stage_repository import SupabaseStageRepository
-from agent_service.profiles import ProfileRegistry
+from src.infrastructure.supabase_result_data import SupabaseResultDataRepository
+from src.infrastructure.supabase_stage_repository import SupabaseStageRepository
+from src.profiles import ProfileRegistry
 
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "services/agent/tests/integration"))
@@ -88,7 +88,7 @@ async def main() -> int:
     fake = FakeStages(args.crash)
     exit_code = 0
     with patch(
-        "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
+        "src.agent.extraction_agent.application.page_workflow_extraction.build_extraction_stage_dispatcher",
         return_value=fake,
     ):
         try:

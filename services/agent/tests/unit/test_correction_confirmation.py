@@ -3,14 +3,14 @@ from __future__ import annotations
 import asyncio
 from unittest.mock import AsyncMock
 
-from agent_service.application.supervisor_handlers import CorrectionWorkflowHandler
-from agent_service.domain.enums import ErrorCode, RunType, ScopeType, WorkflowKind
-from agent_service.domain.errors import AgentServiceError
-from agent_service.domain.models.improvement import AcceptedFeedback, AffectedScope
-from agent_service.domain.models.proposals import ProposalValidation, ResultPatchProposal
-from agent_service.domain.models.result_data import ResultCommitResult
-from agent_service.domain.models.runs import AgentRun, ModelRef, ProfileRef, RunScope
-from agent_service.domain.models.supervisor import SupervisorTargetHint, WorkflowCommand
+from src.application.supervisor_handlers import CorrectionWorkflowHandler
+from src.domain.enums import ErrorCode, RunType, ScopeType, WorkflowKind
+from src.domain.errors import AgentServiceError
+from src.domain.models.improvement import AcceptedFeedback, AffectedScope
+from src.domain.models.proposals import ProposalValidation, ResultPatchProposal
+from src.domain.models.result_data import ResultCommitResult
+from src.domain.models.runs import AgentRun, ModelRef, ProfileRef, RunScope
+from src.domain.models.supervisor import SupervisorTargetHint, WorkflowCommand
 
 
 def test_improvement_launch_failure_does_not_report_committed_correction_as_failed() -> None:

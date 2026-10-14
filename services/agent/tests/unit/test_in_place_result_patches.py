@@ -7,13 +7,13 @@ from uuid import uuid4
 
 import httpx
 
-from agent_service.domain.enums import ScopeType
-from agent_service.domain.models.improvement import AcceptedFeedback
-from agent_service.domain.models.proposals import ProposalOperation, ProposalValidation, ResultPatchProposal
-from agent_service.domain.models.runs import ModelRef, ProfileRef, RunScope
-from agent_service.infrastructure.supabase_client import SupabaseClient
-from agent_service.infrastructure.supabase_result_data import SupabaseResultDataRepository
-from agent_service.profiles import ProfileRegistry
+from src.domain.enums import ScopeType
+from src.domain.models.improvement import AcceptedFeedback
+from src.domain.models.proposals import ProposalOperation, ProposalValidation, ResultPatchProposal
+from src.domain.models.runs import ModelRef, ProfileRef, RunScope
+from src.infrastructure.supabase_client import SupabaseClient
+from src.infrastructure.supabase_result_data import SupabaseResultDataRepository
+from src.profiles import ProfileRegistry
 
 
 def test_scoped_commit_updates_only_target_and_replays_receipt(tmp_path: Path) -> None:

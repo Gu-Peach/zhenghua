@@ -4,6 +4,16 @@
 
 ## 进行中
 
+- [x] Stage2测试脚本默认页面目录改docs/test/pages，索引改实际位置docs/test/pages/agent/drawing_index.json；说明和模块记录同步，未运行测试/模型、不覆盖结果。
+
+- [x] 迁移61份两阶段提取源码到`services/agent/src/agent/extraction_agent`，只调整导入/patch目标、资源/入口/包引用；共享包按用户布局改为src。254份Python静态AST比对无非引用实现差异，116份资源字节不变，3份路径/校验和元数据同步；.env仅改AGENT_PROFILE_ROOT目录引用。未运行业务测试/模型/数据库/服务，不覆盖旧结果。见ADR-0017和Agent迁移记录。
+
+- [x] 同步ZH expected与2.0.2 Prompt：C01完整XD1端子/排号、C02可见元件描述、FO2补全区分设备代号和实际排号；manifest v6/provenance和文档更新。只改样例，不运行测试/模型，不写库或覆盖结果。见Agent expected同步记录。
+
+- [x] 清理ZH样例中的regression_cases、两份expected及两张独占图片和空目录；manifest v5、provenance、测试引用与文档同步。保留5组初扫/2组补全，不运行测试、不写数据库，用户已有stage3删除保留。见Agent样例清理记录。
+
+- [x] 按用户2026-10-14新口径完成本地ZH2.0.2规则/后处理修改：精简两份Stage2 Prompt，按放线段两侧直接端子提取、补齐同排X/XD数字端子，端子排仅由程序映射，保留电流约束；新增M23原图及八条用户确认expected、manifest v4/checksum和既有测试预期同步。用户要求自行测试，本轮未运行测试/真实模型/脚本，不写数据库、不发布、不覆盖旧结果。见ADR-0016及Agent变更记录。
+
 - [x] 微调 Supervisor 为专业电气图纸与线表助手：CHAT 公开回复流、日常无确认卡片、任务先说明后卡片，提取只使用已上传 PDF；77项 Agent/Server离线测试、21项浏览器夹具回归、Web类型/lint/build、修改文件Ruff与3源码strict mypy通过，桌面/窄屏截图已检查。契约6/checksum与文档同步，Server OpenAPI导出无差异；未调用真实模型、写业务数据库或重启现有Agent，实际服务需加载新代码。见 `docs/service/agent/changelog/2026-10-13-supervisor-chat.md`。
 
 - [x] 补充 Web、Server/API、Agent README 的 Windows PowerShell 本地启动指令、依赖/配置准备、端口、健康检查和同进程 Worker；启动命令语法与入口路径静态核对通过。只改文档，未安装依赖、启动服务或写数据库。

@@ -5,18 +5,18 @@ import logging
 
 import pytest
 
-from agent_service.application.run_control import RunControlService
-from agent_service.application.worker import AgentWorker, RunExecutionOutcome
-from agent_service.domain.enums import RunStatus, RunType, ScopeType
-from agent_service.domain.models.runs import AgentRun, RunScope
-from agent_service.harness import (
+from src.application.run_control import RunControlService
+from src.application.worker import AgentWorker, RunExecutionOutcome
+from src.domain.enums import RunStatus, RunType, ScopeType
+from src.domain.models.runs import AgentRun, RunScope
+from src.harness import (
     InMemoryArtifactRepository,
     InMemoryEventRepository,
     InMemoryProposalRepository,
     InMemoryRunRepository,
 )
-from agent_service.harness.stores import CancellationToken
-from agent_service.infrastructure.queue import InMemoryRunQueue
+from src.harness.stores import CancellationToken
+from src.infrastructure.queue import InMemoryRunQueue
 
 
 class FailingExecutor:
@@ -49,7 +49,7 @@ def test_worker_logs_failure_location_without_secret_or_model_content(
         )
         await runs.save(run)
         await queue.enqueue(run.agent_run_id)
-        with caplog.at_level(logging.ERROR, logger="agent_service.application.worker"):
+        with caplog.at_level(logging.ERROR, logger="src.application.worker"):
             assert await worker.run_once()
         result = await runs.get(run.agent_run_id)
         assert result is not None and result.status == RunStatus.FAILED

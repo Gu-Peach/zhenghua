@@ -5,30 +5,30 @@ from pathlib import Path
 
 import pytest
 
-from agent_service.application.correction_workflow import CorrectionWorkflowExecutor
-from agent_service.application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
-from agent_service.domain.enums import CorrectionIssueKind, RunType, ScopeType
-from agent_service.domain.models.correction import (
+from src.application.correction_workflow import CorrectionWorkflowExecutor
+from src.agent.extraction_agent.application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
+from src.domain.enums import CorrectionIssueKind, RunType, ScopeType
+from src.domain.models.correction import (
     CorrectionConstraints,
     CorrectionContext,
     CorrectionEvidenceBundle,
     CorrectionFacts,
     FeedbackTarget,
 )
-from agent_service.domain.models.runs import AgentRun, RunOptions, RunScope
-from agent_service.harness import InMemoryArtifactRepository
-from agent_service.harness.stores import CancellationToken
-from agent_service.infrastructure.correction_data import InMemoryCorrectionDataProvider
-from agent_service.profiles import ProfileRegistry
-from agent_service.profiles.package import build_package, verify_package
-from agent_service.tools.extraction_runner import ScopedExtractionRunner
+from src.domain.models.runs import AgentRun, RunOptions, RunScope
+from src.harness import InMemoryArtifactRepository
+from src.harness.stores import CancellationToken
+from src.infrastructure.correction_data import InMemoryCorrectionDataProvider
+from src.profiles import ProfileRegistry
+from src.profiles.package import build_package, verify_package
+from src.agent.extraction_agent.tools.extraction_runner import ScopedExtractionRunner
 
 ROOT = Path(__file__).resolve().parents[4]
 
 
 def registry() -> ProfileRegistry:
     value = ProfileRegistry(
-        profile_root=ROOT / "services/agent/profiles", workspace_root=ROOT, allow_legacy_references=True
+        profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles", workspace_root=ROOT, allow_legacy_references=True
     )
     value.load_all()
     return value

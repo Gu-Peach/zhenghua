@@ -6,10 +6,10 @@ import asyncio
 import json
 from pathlib import Path
 
-from agent_service.application.extraction_stage_factory import build_extraction_stage_dispatcher
-from agent_service.config import AgentSettings
-from agent_service.domain.enums import ProfileStatus
-from agent_service.domain.models.extraction_stages import (
+from src.agent.extraction_agent.application.extraction_stage_factory import build_extraction_stage_dispatcher
+from src.config import AgentSettings
+from src.domain.enums import ProfileStatus
+from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
     CrossPageCompletionRequest,
     DrawingPageInput,
@@ -18,25 +18,25 @@ from agent_service.domain.models.extraction_stages import (
     PageScanData,
     PageScanRequest,
 )
-from agent_service.harness.model_gateway import FakeModelGateway
-from agent_service.infrastructure.document.few_shot import (
+from src.harness.model_gateway import FakeModelGateway
+from src.agent.extraction_agent.infrastructure.document.few_shot import (
     load_cross_page_few_shot_examples,
     load_page_classification_few_shot_examples,
     load_page_scan_few_shot_examples,
 )
-from agent_service.profiles.abb import AbbExtractionPolicy
-from agent_service.profiles.extraction_policy import default_extraction_policies
-from agent_service.profiles.package import build_package, verify_package
-from agent_service.profiles.registry import ProfileRegistry
+from src.agent.extraction_agent.profiles.abb import AbbExtractionPolicy
+from src.agent.extraction_agent.profiles.extraction_policy import default_extraction_policies
+from src.profiles.package import build_package, verify_package
+from src.profiles.registry import ProfileRegistry
 
 ROOT = Path(__file__).resolve().parents[4]
-RESOURCES = ROOT / "services" / "agent" / "prompts" / "abb"
+RESOURCES = ROOT / "services" / "agent" / "src/agent/extraction_agent/prompts" / "abb"
 WIRING = RESOURCES / "examples_wiring" / "annotated"
 
 
 def test_abb_resources_are_independent_and_ready(tmp_path: Path) -> None:
     registry = ProfileRegistry(
-        profile_root=ROOT / "services" / "agent" / "profiles",
+        profile_root=ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles",
         workspace_root=ROOT,
         allow_legacy_references=True,
     )
@@ -80,7 +80,7 @@ def test_abb_native_policy_is_registered_and_resolves_sheet_reference() -> None:
 def test_abb_package_routes_all_three_stages_without_zh_rules() -> None:
     async def run() -> None:
         registry = ProfileRegistry(
-            profile_root=ROOT / "services" / "agent" / "profiles",
+            profile_root=ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles",
             workspace_root=ROOT,
             allow_legacy_references=True,
         )

@@ -1,0 +1,212 @@
+{
+  "drawing_function": "002.C",
+  "drawing_page_number": 2,
+  "needs_review": false,
+  "units": [
+    {
+      "unit_id": "002.C-2-evidence",
+      "connections": [
+        {
+          "local_connection_id": "c02-K2-L1",
+          "line_number": "002C0201",
+          "endpoint_role": "source",
+          "direction_basis": "下方-K2的L1实线沿离页箭头到5.x；上方Q1箭头进入端子，不提取其接收段",
+          "start": {
+            "device": "-K2",
+            "terminal": "L1",
+            "location": "+02",
+            "terminal_board": null,
+            "name": "MAIN TRANSFORMER FEEDER"
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "5.1 / -K2_L1",
+              "target_function": "002.C",
+              "target_drawing_page": 5,
+              "target_column": 1
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "source_note": "下方-K2的L1实线沿离页箭头到5.x；上方Q1箭头进入端子，不提取其接收段"
+        },
+        {
+          "local_connection_id": "c02-K2-L2",
+          "line_number": "002C0202",
+          "endpoint_role": "source",
+          "direction_basis": "下方-K2的L2实线沿离页箭头到5.x；上方Q1箭头进入端子，不提取其接收段",
+          "start": {
+            "device": "-K2",
+            "terminal": "L2",
+            "location": "+02",
+            "terminal_board": null,
+            "name": "MAIN TRANSFORMER FEEDER"
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "5.1 / -K2_L2",
+              "target_function": "002.C",
+              "target_drawing_page": 5,
+              "target_column": 1
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "source_note": "下方-K2的L2实线沿离页箭头到5.x；上方Q1箭头进入端子，不提取其接收段"
+        },
+        {
+          "local_connection_id": "c02-K2-L3",
+          "line_number": "002C0203",
+          "endpoint_role": "source",
+          "direction_basis": "下方-K2的L3实线沿离页箭头到5.x；上方Q1箭头进入端子，不提取其接收段",
+          "start": {
+            "device": "-K2",
+            "terminal": "L3",
+            "location": "+02",
+            "terminal_board": null,
+            "name": "MAIN TRANSFORMER FEEDER"
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "5.2 / -K2_L3",
+              "target_function": "002.C",
+              "target_drawing_page": 5,
+              "target_column": 2
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "source_note": "下方-K2的L3实线沿离页箭头到5.x；上方Q1箭头进入端子，不提取其接收段"
+        },
+        {
+          "local_connection_id": "c02-K2-PE",
+          "line_number": "PE",
+          "endpoint_role": "source",
+          "direction_basis": "下方-K2的PE实线沿离页箭头到5.x；上方Q1箭头进入端子，不提取其接收段",
+          "start": {
+            "device": "-K2",
+            "terminal": "PE",
+            "location": "+02",
+            "terminal_board": null,
+            "name": "MAIN TRANSFORMER FEEDER"
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "5.2 / -K2_PE",
+              "target_function": "002.C",
+              "target_drawing_page": 5,
+              "target_column": 2
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "source_note": "下方-K2的PE实线沿离页箭头到5.x；上方Q1箭头进入端子，不提取其接收段"
+        },
+        {
+          "local_connection_id": "c02-K3-L1",
+          "line_number": "002C0211",
+          "endpoint_role": "source",
+          "direction_basis": "下方-K3的L1实线沿离页箭头到6.x；上方Q1箭头进入端子，不提取其接收段",
+          "start": {
+            "device": "-K3",
+            "terminal": "L1",
+            "location": "+02",
+            "terminal_board": null,
+            "name": "AUXILIARY TRANSFORMER FEEDER"
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "6.1 / -K3_L1",
+              "target_function": "002.C",
+              "target_drawing_page": 6,
+              "target_column": 1
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "source_note": "下方-K3的L1实线沿离页箭头到6.x；上方Q1箭头进入端子，不提取其接收段"
+        },
+        {
+          "local_connection_id": "c02-K3-L2",
+          "line_number": "002C0212",
+          "endpoint_role": "source",
+          "direction_basis": "下方-K3的L2实线沿离页箭头到6.x；上方Q1箭头进入端子，不提取其接收段",
+          "start": {
+            "device": "-K3",
+            "terminal": "L2",
+            "location": "+02",
+            "terminal_board": null,
+            "name": "AUXILIARY TRANSFORMER FEEDER"
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "6.1 / -K3_L2",
+              "target_function": "002.C",
+              "target_drawing_page": 6,
+              "target_column": 1
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "source_note": "下方-K3的L2实线沿离页箭头到6.x；上方Q1箭头进入端子，不提取其接收段"
+        },
+        {
+          "local_connection_id": "c02-K3-L3",
+          "line_number": "002C0213",
+          "endpoint_role": "source",
+          "direction_basis": "下方-K3的L3实线沿离页箭头到6.x；上方Q1箭头进入端子，不提取其接收段",
+          "start": {
+            "device": "-K3",
+            "terminal": "L3",
+            "location": "+02",
+            "terminal_board": null,
+            "name": "AUXILIARY TRANSFORMER FEEDER"
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "6.2 / -K3_L3",
+              "target_function": "002.C",
+              "target_drawing_page": 6,
+              "target_column": 2
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "source_note": "下方-K3的L3实线沿离页箭头到6.x；上方Q1箭头进入端子，不提取其接收段"
+        },
+        {
+          "local_connection_id": "c02-K3-PE",
+          "line_number": "PE",
+          "endpoint_role": "source",
+          "direction_basis": "下方-K3的PE实线沿离页箭头到6.x；上方Q1箭头进入端子，不提取其接收段",
+          "start": {
+            "device": "-K3",
+            "terminal": "PE",
+            "location": "+02",
+            "terminal_board": null,
+            "name": "AUXILIARY TRANSFORMER FEEDER"
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "6.2 / -K3_PE",
+              "target_function": "002.C",
+              "target_drawing_page": 6,
+              "target_column": 2
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "source_note": "下方-K3的PE实线沿离页箭头到6.x；上方Q1箭头进入端子，不提取其接收段"
+        }
+      ]
+    }
+  ]
+}

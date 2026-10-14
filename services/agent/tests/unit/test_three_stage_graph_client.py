@@ -7,15 +7,15 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from agent_service.application.page_workflow_extraction import ExtractionStageGraphClient
-from agent_service.domain.models.extraction_stages import (
+from src.agent.extraction_agent.application.page_workflow_extraction import ExtractionStageGraphClient
+from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
     DrawingEndpoint,
     PageClassificationData,
     PageScanData,
 )
-from agent_service.domain.models.profiles import ProfileBinding
-from agent_service.profiles import ProfileRegistry
+from src.domain.models.profiles import ProfileBinding
+from src.profiles import ProfileRegistry
 
 ROOT = Path(__file__).resolve().parents[4]
 
@@ -55,7 +55,7 @@ class ThreeStageGraphClientTests(unittest.TestCase):
     def test_all_three_langgraph_subgraphs_bridge_legacy_graph_contracts(self) -> None:
         async def run() -> None:
             registry = ProfileRegistry(
-                profile_root=ROOT / "services" / "agent" / "profiles",
+                profile_root=ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles",
                 workspace_root=ROOT,
                 allow_legacy_references=True,
             )

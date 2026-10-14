@@ -4,12 +4,12 @@ import asyncio
 import json
 from pathlib import Path
 
-from agent_service.agents.profile_router import ProfileRouterAgent
-from agent_service.domain.enums import ProfileDetectionStatus
-from agent_service.graphs.profile_detection import ProfileDetectionRuntime, run_profile_detection
-from agent_service.harness import FakeModelGateway
-from agent_service.profiles import ProfileRegistry
-from agent_service.tools.pdf_first_page import PdfFirstPageRenderer
+from src.agents.profile_router import ProfileRouterAgent
+from src.domain.enums import ProfileDetectionStatus
+from src.graphs.profile_detection import ProfileDetectionRuntime, run_profile_detection
+from src.harness import FakeModelGateway
+from src.profiles import ProfileRegistry
+from src.tools.pdf_first_page import PdfFirstPageRenderer
 from tests.unit.test_pdf_first_page import FakeBackend, FakeDocument
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
@@ -18,7 +18,7 @@ REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
 def test_profile_detection_graph_renders_then_routes(tmp_path: Path) -> None:
     async def run() -> None:
         profile_registry = ProfileRegistry(
-            profile_root=REPOSITORY_ROOT / "services" / "agent" / "profiles",
+            profile_root=REPOSITORY_ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles",
             workspace_root=REPOSITORY_ROOT,
             allow_legacy_references=True,
         )
@@ -40,7 +40,7 @@ def test_profile_detection_graph_renders_then_routes(tmp_path: Path) -> None:
             router=ProfileRouterAgent(
                 gateway=FakeModelGateway([output]),
                 registry=profile_registry,
-                prompt_path=REPOSITORY_ROOT / "services" / "agent" / "prompts" / "profile_router.md",
+                prompt_path=REPOSITORY_ROOT / "services" / "agent" / "src/agent/extraction_agent/prompts" / "profile_router.md",
             ),
         )
         pdf_path = tmp_path / "drawing.pdf"

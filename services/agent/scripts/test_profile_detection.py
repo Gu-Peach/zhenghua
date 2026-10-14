@@ -9,22 +9,22 @@ from pathlib import Path
 
 AGENT_ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY_ROOT = AGENT_ROOT.parents[1]
-SOURCE_ROOT = AGENT_ROOT / "src"
+SOURCE_ROOT = AGENT_ROOT
 for path in (str(SOURCE_ROOT), str(REPOSITORY_ROOT)):
     if path not in sys.path:
         sys.path.insert(0, path)
 
-from agent_service.agents.profile_router import ProfileRouterAgent  # noqa: E402
-from agent_service.application.profile_assignment import ProfileAssignmentService  # noqa: E402
-from agent_service.config import AgentSettings  # noqa: E402
-from agent_service.graphs.profile_detection import (  # noqa: E402
+from src.agents.profile_router import ProfileRouterAgent  # noqa: E402
+from src.application.profile_assignment import ProfileAssignmentService  # noqa: E402
+from src.config import AgentSettings  # noqa: E402
+from src.graphs.profile_detection import (  # noqa: E402
     ProfileDetectionRuntime,
     run_profile_detection,
 )
-from agent_service.harness.model_gateway import OpenAICompatibleModelGateway  # noqa: E402
-from agent_service.harness.retry import RetryPolicy  # noqa: E402
-from agent_service.profiles import ProfileRegistry  # noqa: E402
-from agent_service.tools.pdf_first_page import PdfFirstPageRenderer  # noqa: E402
+from src.harness.model_gateway import OpenAICompatibleModelGateway  # noqa: E402
+from src.harness.retry import RetryPolicy  # noqa: E402
+from src.profiles import ProfileRegistry  # noqa: E402
+from src.tools.pdf_first_page import PdfFirstPageRenderer  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -71,7 +71,7 @@ async def main() -> int:
         router=ProfileRouterAgent(
             gateway=gateway,
             registry=registry,
-            prompt_path=AGENT_ROOT / "prompts" / "profile_router.md",
+            prompt_path=AGENT_ROOT / "src/agent/extraction_agent/prompts" / "profile_router.md",
             auto_select_threshold=settings.profile_auto_select_threshold,
         ),
     )

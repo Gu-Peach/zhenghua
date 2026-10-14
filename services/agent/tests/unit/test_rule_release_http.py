@@ -10,8 +10,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from agent_service.api.routes.improvement import router
-from agent_service.application.candidate_release import CandidateReleaseService
+from src.api.routes.improvement import router
+from src.application.candidate_release import CandidateReleaseService
 
 ROOT = Path(__file__).resolve().parents[4]
 

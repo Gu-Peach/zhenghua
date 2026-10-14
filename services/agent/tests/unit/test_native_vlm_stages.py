@@ -7,17 +7,17 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from agent_service.config import AgentSettings
-from agent_service.domain.enums import ErrorCode
-from agent_service.domain.models.extraction_stages import (
+from src.config import AgentSettings
+from src.domain.enums import ErrorCode
+from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionRequest,
     DrawingPageInput,
     PageClassificationRequest,
     PageScanRequest,
 )
-from agent_service.harness.model_gateway import FakeModelGateway, ModelGatewayError
-from agent_service.infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
-from agent_service.profiles import ProfileRegistry
+from src.harness.model_gateway import FakeModelGateway, ModelGatewayError
+from src.agent.extraction_agent.infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
+from src.profiles import ProfileRegistry
 
 AGENT_ROOT = Path(__file__).resolve().parents[2]
 ROOT = AGENT_ROOT.parent.parent
@@ -27,7 +27,7 @@ class NativeVlmStageTests(unittest.TestCase):
     def test_non_schema_model_error_is_not_retried_as_schema_error(self) -> None:
         async def run() -> None:
             registry = ProfileRegistry(
-                profile_root=AGENT_ROOT / "profiles",
+                profile_root=AGENT_ROOT / "src/agent/extraction_agent/profiles",
                 workspace_root=ROOT,
                 allow_legacy_references=True,
             )
@@ -60,7 +60,7 @@ class NativeVlmStageTests(unittest.TestCase):
     def test_three_stage_adapter_sends_query_and_few_shot_images(self) -> None:
         async def run() -> None:
             registry = ProfileRegistry(
-                profile_root=AGENT_ROOT / "profiles",
+                profile_root=AGENT_ROOT / "src/agent/extraction_agent/profiles",
                 workspace_root=ROOT,
                 allow_legacy_references=True,
             )
@@ -141,7 +141,7 @@ class NativeVlmStageTests(unittest.TestCase):
             )
 
             stage2_examples = _example_image_parts(gateway.calls[1].messages)
-            self.assertEqual(len(stage2_examples), 4)
+            self.assertEqual(len(stage2_examples), 5)
             self.assertTrue(all(max(_png_dimensions(part)) <= 1800 for part in stage2_examples))
             stage2_input = gateway.calls[1].messages[-1]["content"][-1]
             self.assertEqual(_decode_image_part(stage2_input), b"source image")

@@ -5,7 +5,7 @@ from pathlib import Path
 
 AGENT_ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY_ROOT = AGENT_ROOT.parents[1]
-SOURCE_ROOT = AGENT_ROOT / "src"
+SOURCE_ROOT = AGENT_ROOT
 
 for path in (str(SOURCE_ROOT), str(REPOSITORY_ROOT)):
     if path not in sys.path:

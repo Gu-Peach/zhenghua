@@ -7,15 +7,15 @@ from pathlib import Path
 import httpx
 import pytest
 
-from agent_service.agents.profile_patch_builder import ProfilePatchBuilderAgent
-from agent_service.domain.models.improvement import AcceptedFeedback, Diagnosis, ProfilePatchModelOutput
-from agent_service.harness.model_gateway import (
+from src.agents.profile_patch_builder import ProfilePatchBuilderAgent
+from src.domain.models.improvement import AcceptedFeedback, Diagnosis, ProfilePatchModelOutput
+from src.harness.model_gateway import (
     FakeModelGateway,
     ModelGatewayError,
     OpenAICompatibleModelGateway,
 )
 
-PROMPT = Path(__file__).resolve().parents[4] / "services/agent/prompts/profile_patch_builder.md"
+PROMPT = Path(__file__).resolve().parents[4] / "services/agent/src/agent/extraction_agent/prompts/profile_patch_builder.md"
 
 
 def feedback() -> AcceptedFeedback:

@@ -6,14 +6,14 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from agent_service.application.page_workflow_extraction import run_page_workflow_extraction
-from agent_service.config import AgentSettings
-from agent_service.domain.models.extraction_stages import (
+from src.agent.extraction_agent.application.page_workflow_extraction import run_page_workflow_extraction
+from src.config import AgentSettings
+from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
     PageClassificationData,
     PageScanData,
 )
-from agent_service.profiles import ProfileRegistry
+from src.profiles import ProfileRegistry
 
 ROOT = Path(__file__).resolve().parents[4]
 
@@ -48,7 +48,7 @@ class StandaloneWorkflowTests(unittest.TestCase):
                 import fitz
 
             registry = ProfileRegistry(
-                profile_root=ROOT / "services" / "agent" / "profiles",
+                profile_root=ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles",
                 workspace_root=ROOT,
                 allow_legacy_references=True,
             )
@@ -66,7 +66,7 @@ class StandaloneWorkflowTests(unittest.TestCase):
                 document.close()
 
                 with patch(
-                    "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
+                    "src.agent.extraction_agent.application.page_workflow_extraction.build_extraction_stage_dispatcher",
                     return_value=FakeStages(),
                 ):
                     result = await run_page_workflow_extraction(

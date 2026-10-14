@@ -5,8 +5,8 @@ from typing import Any
 
 import pytest
 
-from agent_service.domain.errors import AgentServiceError
-from agent_service.tools.extraction_runner import _replace_scoped
+from src.domain.errors import AgentServiceError
+from src.agent.extraction_agent.tools.extraction_runner import _replace_scoped
 
 
 def stored(terminal: str, location: str = "+10F01") -> dict[str, Any]:

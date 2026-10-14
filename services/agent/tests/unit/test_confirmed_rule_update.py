@@ -6,9 +6,9 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from agent_service.application.candidate_release import CandidateReleaseService
-from agent_service.application.supervisor_handlers import ResumeWorkflowHandler
-from agent_service.domain.enums import RunStatus, WorkflowKind
+from src.application.candidate_release import CandidateReleaseService
+from src.application.supervisor_handlers import ResumeWorkflowHandler
+from src.domain.enums import RunStatus, WorkflowKind
 
 
 def test_direct_publication_requires_confirmation_and_source_owner_not_evaluation() -> None:

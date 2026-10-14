@@ -6,27 +6,27 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from agent_service.application.extraction_run_executor import FullExtractionRunExecutor
-from agent_service.application.run_control import RunControlService
-from agent_service.application.worker import AgentWorker
-from agent_service.config import AgentSettings
-from agent_service.domain.enums import EventType, RunStatus, RunType, ScopeType
-from agent_service.domain.models.extraction_stages import (
+from src.agent.extraction_agent.application.extraction_run_executor import FullExtractionRunExecutor
+from src.application.run_control import RunControlService
+from src.application.worker import AgentWorker
+from src.config import AgentSettings
+from src.domain.enums import EventType, RunStatus, RunType, ScopeType
+from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
     PageClassificationData,
     PageScanData,
 )
-from agent_service.domain.models.runs import CreateRunRequest, RunScope
-from agent_service.harness import (
+from src.domain.models.runs import CreateRunRequest, RunScope
+from src.harness import (
     InMemoryArtifactRepository,
     InMemoryEventRepository,
     InMemoryProposalRepository,
     InMemoryRunRepository,
 )
-from agent_service.infrastructure.queue import InMemoryRunQueue
-from agent_service.infrastructure.result_data import InMemoryResultDataRepository
-from agent_service.infrastructure.source_documents import InMemorySourceDocumentProvider
-from agent_service.profiles import ProfileRegistry
+from src.infrastructure.queue import InMemoryRunQueue
+from src.infrastructure.result_data import InMemoryResultDataRepository
+from src.infrastructure.source_documents import InMemorySourceDocumentProvider
+from src.profiles import ProfileRegistry
 
 ROOT = Path(__file__).resolve().parents[4]
 
@@ -59,14 +59,14 @@ class ExtractionWorkerTests(unittest.TestCase):
                 import fitz
 
             registry = ProfileRegistry(
-                profile_root=ROOT / "services" / "agent" / "profiles",
+                profile_root=ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles",
                 workspace_root=ROOT,
                 allow_legacy_references=True,
             )
             registry.load_all()
             settings = AgentSettings(
                 workspace_root=ROOT,
-                profile_root=ROOT / "services" / "agent" / "profiles",
+                profile_root=ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles",
             )
             runs = InMemoryRunRepository()
             events = InMemoryEventRepository()
@@ -115,7 +115,7 @@ class ExtractionWorkerTests(unittest.TestCase):
                 )
                 created = await control.create(request, "extraction-worker")
                 with patch(
-                    "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
+                    "src.agent.extraction_agent.application.page_workflow_extraction.build_extraction_stage_dispatcher",
                     return_value=FakeStages(),
                 ):
                     self.assertTrue(await worker.run_once())

@@ -11,8 +11,8 @@
 ```powershell
 $env:AGENT_PERSISTENCE_BACKEND="supabase"
 $env:AGENT_INLINE_WORKER="true"
-.\.venv\Scripts\python.exe -m uvicorn agent_service.main:app `
-  --app-dir services/agent/src --host 127.0.0.1 --port 8100
+.\.venv\Scripts\python.exe -m uvicorn src.main:app `
+  --app-dir services/agent --host 127.0.0.1 --port 8100
 ```
 
 inline Worker 只用于本地开发，生产长任务应独立部署；没有运行 Worker 时任务保持 QUEUED，脚本不会代替服务执行提取。旧三阶段 CLI 不具备本验收链路，不要用它代替 HTTP 脚本。

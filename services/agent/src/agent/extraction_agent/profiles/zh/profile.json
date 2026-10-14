@@ -1,0 +1,23 @@
+{
+  "manifest_version": 1,
+  "key": "zh",
+  "version": "2.0.2",
+  "display_name": "振华电气图纸",
+  "description": "Evidence-driven classification and Stage 2 page extraction workflow.",
+  "status": "active",
+  "adapter": "zh_native",
+  "resource_mode": "legacy_reference",
+  "resources": {
+    "classification_prompt": "../../prompts/zh/page_classification.md",
+    "page_scan_prompt": "../../prompts/zh/page_scan_index.md",
+    "cross_page_prompt": "../../prompts/zh/page_connection_completion.md",
+    "classification_examples": "../../prompts/zh/examples_page_classification",
+    "wiring_examples": "../../prompts/zh/examples_wiring/002c",
+    "routing_rules": "rules.json"
+  },
+  "capabilities": [
+    "page_classification",
+    "page_extraction",
+    "full_document_extraction"
+  ]
+}

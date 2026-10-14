@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import pytest
-from agent_service.domain.enums import (
+from src.domain.enums import (
     AgentStage,
     CorrectionAction,
     CorrectionIssueKind,
     CrossPageState,
     ScopeType,
 )
-from agent_service.domain.models.correction import CorrectionFacts, FeedbackTarget
-from agent_service.tools.correction_router import CorrectionRoutePlanner
+from src.domain.models.correction import CorrectionFacts, FeedbackTarget
+from src.tools.correction_router import CorrectionRoutePlanner
 
 
 def facts(

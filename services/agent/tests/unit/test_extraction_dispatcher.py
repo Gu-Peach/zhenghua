@@ -3,9 +3,12 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 
-from agent_service.application.extraction_dispatcher import ProfileBoundExtractionDispatcher
-from agent_service.domain.models.extraction import ExtractionExecutionResult, LegacyExtractionRequest
-from agent_service.profiles import ProfileRegistry
+from src.agent.extraction_agent.application.extraction_dispatcher import ProfileBoundExtractionDispatcher
+from src.agent.extraction_agent.domain.models.extraction import (
+    ExtractionExecutionResult,
+    LegacyExtractionRequest,
+)
+from src.profiles import ProfileRegistry
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
 
@@ -26,7 +29,7 @@ class FakeExtractionAdapter:
 def test_dispatcher_uses_adapter_from_profile_binding(tmp_path: Path) -> None:
     async def run() -> None:
         registry = ProfileRegistry(
-            profile_root=REPOSITORY_ROOT / "services" / "agent" / "profiles",
+            profile_root=REPOSITORY_ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles",
             workspace_root=REPOSITORY_ROOT,
             allow_legacy_references=True,
         )

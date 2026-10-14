@@ -6,19 +6,19 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from agent_service.agents.evaluation_judge import EvaluationJudgeAgent
-from agent_service.agents.improvement_diagnoser import ImprovementDiagnoserAgent
-from agent_service.agents.profile_patch_builder import ProfilePatchBuilderAgent
-from agent_service.agents.supervisor import SupervisorAgent
-from agent_service.application.correction_workflow import CorrectionWorkflowExecutor
-from agent_service.application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
-from agent_service.application.improvement_run_executor import ImprovementRunExecutor
-from agent_service.application.improvement_workflow import ImprovementWorkflow
-from agent_service.application.run_control import RunControlService
-from agent_service.application.supervisor_handlers import register_default_supervisor_handlers
-from agent_service.application.worker import AgentWorker
-from agent_service.application.workflow_registry import WorkflowRegistry
-from agent_service.domain.enums import (
+from src.agents.evaluation_judge import EvaluationJudgeAgent
+from src.agents.improvement_diagnoser import ImprovementDiagnoserAgent
+from src.agents.profile_patch_builder import ProfilePatchBuilderAgent
+from src.agents.supervisor import SupervisorAgent
+from src.application.correction_workflow import CorrectionWorkflowExecutor
+from src.agent.extraction_agent.application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
+from src.application.improvement_run_executor import ImprovementRunExecutor
+from src.application.improvement_workflow import ImprovementWorkflow
+from src.application.run_control import RunControlService
+from src.application.supervisor_handlers import register_default_supervisor_handlers
+from src.application.worker import AgentWorker
+from src.application.workflow_registry import WorkflowRegistry
+from src.domain.enums import (
     CorrectionIssueKind,
     CrossPageState,
     EventType,
@@ -27,17 +27,17 @@ from agent_service.domain.enums import (
     ScopeType,
     SupervisorIntent,
 )
-from agent_service.domain.models.correction import (
+from src.domain.models.correction import (
     CorrectionConstraints,
     CorrectionContext,
     CorrectionEvidenceBundle,
     CorrectionFacts,
     FeedbackTarget,
 )
-from agent_service.domain.models.result_data import ConnectionSearchResult
-from agent_service.domain.models.supervisor import ConversationTurn, SupervisorTargetHint
-from agent_service.graphs.supervisor import run_supervisor_graph
-from agent_service.harness import (
+from src.domain.models.result_data import ConnectionSearchResult
+from src.domain.models.supervisor import ConversationTurn, SupervisorTargetHint
+from src.graphs.supervisor import run_supervisor_graph
+from src.harness import (
     FakeModelGateway,
     InMemoryArtifactRepository,
     InMemoryCandidateRepository,
@@ -47,12 +47,12 @@ from agent_service.harness import (
     ProfileSandbox,
     ReleaseGate,
 )
-from agent_service.infrastructure.correction_data import InMemoryCorrectionDataProvider
-from agent_service.infrastructure.queue import InMemoryRunQueue
-from agent_service.infrastructure.result_data import InMemoryResultDataRepository
-from agent_service.profiles import ProfileRegistry
-from agent_service.tools.extraction_runner import ScopedExtractionRunner
-from agent_service.tools.result_data import ControlledResultDataTool
+from src.infrastructure.correction_data import InMemoryCorrectionDataProvider
+from src.infrastructure.queue import InMemoryRunQueue
+from src.infrastructure.result_data import InMemoryResultDataRepository
+from src.profiles import ProfileRegistry
+from src.agent.extraction_agent.tools.extraction_runner import ScopedExtractionRunner
+from src.tools.result_data import ControlledResultDataTool
 
 ROOT = Path(__file__).resolve().parents[4]
 
@@ -61,7 +61,7 @@ class SupervisorAgentChainTests(unittest.TestCase):
     def test_direct_patch_confirmation_runs_diagnosis_then_authorized_candidate(self) -> None:
         async def run() -> None:
             registry = ProfileRegistry(
-                profile_root=ROOT / "services" / "agent" / "profiles",
+                profile_root=ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles",
                 workspace_root=ROOT,
                 allow_legacy_references=True,
             )
@@ -187,7 +187,7 @@ class SupervisorAgentChainTests(unittest.TestCase):
             )
             supervisor = SupervisorAgent(
                 gateway=supervisor_gateway,
-                prompt_path=ROOT / "services" / "agent" / "prompts" / "supervisor.md",
+                prompt_path=ROOT / "services" / "agent" / "src/agent/extraction_agent/prompts" / "supervisor.md",
             )
             improvement_gateway = FakeModelGateway(
                 [
@@ -241,15 +241,15 @@ class SupervisorAgentChainTests(unittest.TestCase):
                     profiles=registry,
                     diagnoser=ImprovementDiagnoserAgent(
                         gateway=improvement_gateway,
-                        prompt_path=ROOT / "services" / "agent" / "prompts" / "improvement_diagnosis.md",
+                        prompt_path=ROOT / "services" / "agent" / "src/agent/extraction_agent/prompts" / "improvement_diagnosis.md",
                     ),
                     patch_builder=ProfilePatchBuilderAgent(
                         gateway=improvement_gateway,
-                        prompt_path=ROOT / "services" / "agent" / "prompts" / "profile_patch_builder.md",
+                        prompt_path=ROOT / "services" / "agent" / "src/agent/extraction_agent/prompts" / "profile_patch_builder.md",
                     ),
                     judge=EvaluationJudgeAgent(
                         gateway=improvement_gateway,
-                        prompt_path=ROOT / "services" / "agent" / "prompts" / "evaluation_judge.md",
+                        prompt_path=ROOT / "services" / "agent" / "src/agent/extraction_agent/prompts" / "evaluation_judge.md",
                     ),
                     sandbox=ProfileSandbox(Path(temporary) / "sandbox"),
                     candidates=candidates,

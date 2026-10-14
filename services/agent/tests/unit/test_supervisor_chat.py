@@ -7,17 +7,17 @@ from pathlib import Path
 import httpx
 import pytest
 
-from agent_service.agents.supervisor import SupervisorAgent
-from agent_service.application.workflow_registry import WorkflowRegistry
-from agent_service.domain.models.supervisor import ConversationTurn
-from agent_service.graphs.supervisor.graph import run_supervisor_graph
-from agent_service.harness.model_gateway import (
+from src.agents.supervisor import SupervisorAgent
+from src.application.workflow_registry import WorkflowRegistry
+from src.domain.models.supervisor import ConversationTurn
+from src.graphs.supervisor.graph import run_supervisor_graph
+from src.harness.model_gateway import (
     FakeModelGateway,
     ModelGatewayError,
     ModelRequest,
     OpenAICompatibleModelGateway,
 )
-from agent_service.harness.retry import RetryPolicy
+from src.harness.retry import RetryPolicy
 
 PROMPT = Path(__file__).resolve().parents[2] / "prompts/supervisor.md"
 

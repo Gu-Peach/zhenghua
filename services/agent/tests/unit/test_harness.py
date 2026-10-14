@@ -7,10 +7,10 @@ import httpx
 import pytest
 from pydantic import BaseModel
 
-from agent_service.domain.enums import ErrorCode, RunType, ScopeType
-from agent_service.domain.errors import AgentServiceError
-from agent_service.domain.models.runs import CreateRunRequest, ProfileRef, RunScope
-from agent_service.harness import (
+from src.domain.enums import ErrorCode, RunType, ScopeType
+from src.domain.errors import AgentServiceError
+from src.domain.models.runs import CreateRunRequest, ProfileRef, RunScope
+from src.harness import (
     ContextBuilder,
     ContextResource,
     FakeModelGateway,
@@ -24,7 +24,7 @@ from agent_service.harness import (
     ToolRegistry,
     checkpoint_key,
 )
-from agent_service.harness.retry import RetryPolicy
+from src.harness.retry import RetryPolicy
 
 
 class ParsedAnswer(BaseModel):

@@ -1,5 +1,9 @@
 # Agent Service
 
+2026-10-14目录迁移：独立提取实现位于[src/agent/extraction_agent](./src/agent/extraction_agent/README.md)，共享服务包按当前目录改为src，API入口为src.main:app。算法、Prompt和expected不改，只调整引用；静态比对完成，未运行模型/业务测试。现有测试脚本参数不变，见[迁移记录](../../docs/service/agent/changelog/2026-10-14-extraction-agent-directory.md)。
+
+2026-10-14本地ZH2.0.2按用户新口径精简规则，读取放线段两侧直接端子，业务端子排仅后处理映射，保留电流约束。用户自行测试，本轮未运行测试/模型，不写数据库或发布；见[记录](../../docs/service/agent/changelog/2026-10-14-zh-direct-terminals.md)。
+
 2026-10-13 Supervisor 对话微调：专业电气图纸与线表助手增加 CHAT 路线，日常交流流式输出公开回答、不分派工作流；真实 PDF 才能进入类型确认及 Stage 1/2 提取。任务说明后展示卡片，保留纠错/规则修改确认和权限检查。SSE 只发送 `delta.content`，不发送模型内部推理；运行服务需加载新代码。见[对话交付](../../docs/service/agent/changelog/2026-10-13-supervisor-chat.md)。
 
 2026-10-13 本地ZH2.0.1：方向缺失降级、原始引用解析、分支保留与端子身份校验；40项冒烟及7项接口/兼容回归通过。旧结果保留，尚未重跑真实模型，数据库与远端规则未变。见[变更记录](../../docs/service/agent/changelog/2026-10-13-zh-stage2-quality.md)。
@@ -44,7 +48,7 @@ M4 的真实 VLM 首页识别评测和 ZH 固定案例字段级回归仍未执�
 
 Supabase 模式下，完整提取 Proposal 会原子写入规范化结果版本；source document 和 Correction drawing 会从私有 Bucket 下载并校验或重新物化。受控结果工具支持多条件查询、持久 Correction bundle、乐观版本提交和 accepted feedback；Profile candidate、release gate、eval、状态审计和模型 Trace 也会持久化。Stage 1/2/3 本身仍只返回结构化候选，只有完整提取持久步骤或用户明确确认修订后才调用受控提交 RPC。
 
-ABB Profile 1.1.2 使用独立三阶段 Prompt，各阶段仅一案例：Stage 1 原页 205、Stage 2 原页 205（示范 Q4 跨页连接）、Stage 3 原页 205+目标页 241。资源已上传私有 `agent-profile-assets` 并读回校验；`abb_native` VLM adapter、Sheet/Cont 页面索引、跨页引用与确定性策略已注册，全量 Graph 可执行。真实模型字段级质量仍待人工验收。见 [ABB 资源说明](prompts/abb/README.md)。
+ABB Profile 1.1.2 使用独立三阶段 Prompt，各阶段仅一案例：Stage 1 原页 205、Stage 2 原页 205（示范 Q4 跨页连接）、Stage 3 原页 205+目标页 241。资源已上传私有 `agent-profile-assets` 并读回校验；`abb_native` VLM adapter、Sheet/Cont 页面索引、跨页引用与确定性策略已注册，全量 Graph 可执行。真实模型字段级质量仍待人工验收。见 [ABB 资源说明](src/agent/extraction_agent/prompts/abb/README.md)。
 
 上传可用规则资源包（不覆盖不可变旧包；使用已有 Auth 用户 UUID）：
 
@@ -89,8 +93,8 @@ AGENT_SUPABASE_STORAGE_BUCKET=project-assets
 ```powershell
 Set-Location E:\project\zhenghua_test
 $env:AGENT_INLINE_WORKER="true"
-.\.venv\Scripts\python.exe -m uvicorn agent_service.main:app `
-  --app-dir services/agent/src `
+.\.venv\Scripts\python.exe -m uvicorn src.main:app `
+  --app-dir services/agent `
   --host 127.0.0.1 `
   --port 8100
 ```
@@ -123,14 +127,14 @@ POST http://127.0.0.1:8100/v1/supervisor/turns
 默认测试不调用真实 VLM：
 
 ```powershell
-$env:PYTHONPATH="services/agent/src;."
+$env:PYTHONPATH="services/agent;."
 .\.venv\Scripts\python.exe -m pytest services\agent\tests
 ```
 
 本地 Supabase 启动并应用 migration 后，可运行真实持久化冒烟。脚本会创建临时用户和项目，验证完成后清理，不调用 VLM：
 
 ```powershell
-$env:PYTHONPATH="services/agent/src"
+$env:PYTHONPATH="services/agent"
 $env:AGENT_SUPABASE_URL="http://127.0.0.1:54321"
 $env:AGENT_SUPABASE_SERVICE_ROLE_KEY="..."
 $env:AGENT_SUPABASE_ANON_KEY="..."
@@ -143,14 +147,14 @@ $env:AGENT_SUPABASE_STORAGE_BUCKET="project-assets"
 完整数据库工作流验证不调用 VLM，覆盖提取落库、结果查询、纠错确认、新版本、accepted feedback、Trace、候选、评测、门禁和审计：
 
 ```powershell
-$env:PYTHONPATH="services/agent/src"
+$env:PYTHONPATH="services/agent"
 .\.venv\Scripts\python.exe services\agent\scripts\verify_supabase_agent_database_workflows.py
 ```
 
 若当前环境没有安装可选开发依赖 `pytest`，可用 `unittest` 执行迁移相关回归：
 
 ```powershell
-$env:PYTHONPATH="services/agent/src;."
+$env:PYTHONPATH="services/agent;."
 .\.venv\Scripts\python.exe -m unittest discover -s services\agent\tests\unit -p "test_agent_settings.py"
 .\.venv\Scripts\python.exe -m unittest discover -s services\agent\tests\unit -p "test_atomic_checkpoint.py"
 .\.venv\Scripts\python.exe -m unittest discover -s services\agent\tests\unit -p "test_native_vlm_stages.py"
@@ -209,7 +213,7 @@ $env:AGENT_DEFAULT_MODEL="your-vlm"
 
 ## 边界
 
-- `agent_service.domain` 不依赖 FastAPI、数据库 SDK 或模型供应商。
+- `src.domain` 不依赖 FastAPI、数据库 SDK 或模型供应商。
 - 新原生子 Agent 通过 Harness 调用模型与工具；`legacy_zh_adapter.py` 与 `legacy_zh_stages.py` 仅保留旧 Agent 调用方的兼容入口，不导入或执行旧 `backend` 实现。
 - `LegacyZhExtractionAdapter` 只返回候选结果，不提交生产数据。
 - `LegacyZhStageAdapter` 只执行单阶段 VLM 调用并返回候选 Schema，不负责索引、最终校验或生产数据写入。

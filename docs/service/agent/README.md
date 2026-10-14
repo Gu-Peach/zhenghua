@@ -1,5 +1,15 @@
 # Agent 服务设计索引
 
+2026-10-14用户移动拆分页后，本地Stage2脚本默认输入改docs/test/pages，索引改docs/test/pages/agent/drawing_index.json；未执行测试或模型。见[路径更新记录](./changelog/2026-10-14-local-pages-path.md)。
+
+2026-10-14独立提取代码迁至services/agent/src/agent/extraction_agent，共享源包按用户布局改为src。61份源码仅移动/改引用，254份Python静态比对无非引用实现差异；Prompt/expected字节保持，不跑业务测试/模型。见[迁移记录](./changelog/2026-10-14-extraction-agent-directory.md)与[模块入口](../../../services/agent/src/agent/extraction_agent/README.md)。
+
+2026-10-14 ZH运行时expected字段与新Prompt同步：C01完整端子、C02可见描述、FO2设备/排号区分；manifest v6/checksum同步，未运行测试或模型。见[记录](./changelog/2026-10-14-zh-expected-alignment.md)。
+
+2026-10-14按用户要求移除ZH离线regression_cases及对应样例/独占图片，manifest v5与引用同步；运行时保留5组初扫和2组内部补全，未运行测试或模型。见[清理记录](./changelog/2026-10-14-zh-example-cleanup.md)。
+
+2026-10-14本地ZH2.0.2按用户新口径修改：按放线段读取两侧直接端子，X/XD数字继承排号，业务端子排仅程序映射；Prompt精简，电流约束保留，M23八条用户确认样例加入。用户自行测试，本轮没有运行测试或模型；见[记录](./changelog/2026-10-14-zh-direct-terminals.md)与[ADR-0016](../../adr/0016-zh-direct-terminal-segments.md)。
+
 2026-10-13 Supervisor日常对话完成：CHAT公开回答流、无PDF不分派提取、问候不确认既有任务；契约6、77项Agent/Server离线验证和21项浏览器夹具。设计与边界见[计划](./supervisor-chat-plan.md)，验证和服务加载限制见[交付](./changelog/2026-10-13-supervisor-chat.md)。
 
 2026-10-13 ZH本地2.0.1质量修正：方向缺失降级、真实针脚与地址区分、原始引用解析及分支去重；40项离线冒烟与7项接口/兼容边界回归，未重跑真实模型或写库。旧121条结果保留，准确率未复验；见[记录](./changelog/2026-10-13-zh-stage2-quality.md)。

@@ -12,8 +12,8 @@
 $env:AGENT_PERSISTENCE_BACKEND="supabase"
 $env:AGENT_PROFILE_PACKAGES_ENABLED="true"
 $env:AGENT_INLINE_WORKER="true"
-.\.venv\Scripts\python.exe -m uvicorn agent_service.main:app `
-  --app-dir services/agent/src --host 127.0.0.1 --port 8100
+.\.venv\Scripts\python.exe -m uvicorn src.main:app `
+  --app-dir services/agent --host 127.0.0.1 --port 8100
 ```
 
 另开终端，运行纯 HTTP 脚本。候选及用户 UUID 取现有任务值：
@@ -44,8 +44,8 @@ $env:AGENT_ACCEPTANCE_USER_ID="<候选来源用户 UUID>"
 $env:AGENT_PERSISTENCE_BACKEND="supabase"
 $env:AGENT_PROFILE_PACKAGES_ENABLED="true"
 $env:AGENT_INLINE_WORKER="true"
-.\.venv\Scripts\python.exe -m uvicorn agent_service.main:app `
-  --app-dir services/agent/src --host 127.0.0.1 --port 8100
+.\.venv\Scripts\python.exe -m uvicorn src.main:app `
+  --app-dir services/agent --host 127.0.0.1 --port 8100
 ```
 
 另开终端：

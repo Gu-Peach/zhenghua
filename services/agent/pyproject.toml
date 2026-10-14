@@ -27,7 +27,12 @@ dev = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
+include = ["src", "src.*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+"src.agent.extraction_agent" = ["profiles/**/*.json", "profiles/**/*.md", "prompts/*.md", "prompts/**/*.json", "prompts/**/*.md", "prompts/**/*.png"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -43,7 +48,7 @@ select = ["E", "F", "I", "UP", "B", "ASYNC"]
 [tool.mypy]
 python_version = "3.10"
 strict = true
-packages = ["agent_service"]
+packages = ["src"]
 
 [[tool.mypy.overrides]]
 module = ["pymupdf"]

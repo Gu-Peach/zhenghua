@@ -7,10 +7,10 @@ from io import BytesIO
 from pathlib import Path
 from unittest.mock import patch
 
-from agent_service.application.page_workflow_extraction import run_page_workflow_extraction
-from agent_service.config import AgentSettings
-from agent_service.domain.enums import CrossPageState
-from agent_service.domain.models.extraction_stages import (
+from src.agent.extraction_agent.application.page_workflow_extraction import run_page_workflow_extraction
+from src.config import AgentSettings
+from src.domain.enums import CrossPageState
+from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
     CrossPageCompletionRequest,
     DrawingEndpoint,
@@ -22,12 +22,12 @@ from agent_service.domain.models.extraction_stages import (
     ScannedConnection,
     ScannedWireUnit,
 )
-from agent_service.profiles import ProfileRegistry
-from agent_service.profiles.extraction_policy import default_extraction_policies
+from src.profiles import ProfileRegistry
+from src.agent.extraction_agent.profiles.extraction_policy import default_extraction_policies
 from openpyxl import load_workbook
 
 ROOT = Path(__file__).resolve().parents[4]
-SOURCE = ROOT / "services/agent/src/agent_service"
+SOURCE = ROOT / "services/agent/src"
 
 
 class ConnectionStages:
@@ -96,7 +96,7 @@ class ConnectionStages:
 
 
 def test_nonempty_pdf_preserves_fields_and_resumes_without_model_calls(tmp_path: Path) -> None:
-    from agent_service.infrastructure.document.pdf_runtime import load_pdf_module
+    from src.agent.extraction_agent.infrastructure.document.pdf_runtime import load_pdf_module
 
     pdf = tmp_path / "drawing.pdf"
     document = load_pdf_module().open()
@@ -106,7 +106,7 @@ def test_nonempty_pdf_preserves_fields_and_resumes_without_model_calls(tmp_path:
     document.save(pdf)
     document.close()
     registry = ProfileRegistry(
-        profile_root=ROOT / "services/agent/profiles",
+        profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles",
         workspace_root=ROOT,
         allow_legacy_references=True,
     )
@@ -123,7 +123,7 @@ def test_nonempty_pdf_preserves_fields_and_resumes_without_model_calls(tmp_path:
             project_id="migration-project",
         )
         with patch(
-            "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
+            "src.agent.extraction_agent.application.page_workflow_extraction.build_extraction_stage_dispatcher",
             return_value=stages,
         ):
             first = await run_page_workflow_extraction(**kwargs)
@@ -183,15 +183,15 @@ def test_abb_policy_is_registered_without_inheriting_zh_rules() -> None:
 
 
 def test_wiring_models_reuse_shared_domain_models() -> None:
-    from agent_service.domain.models.wiring import WireConnection
+    from src.agent.extraction_agent.domain.models.wiring import WireConnection
 
     assert WireConnection is ScannedConnection
 
 
 def test_export_writer_uses_injected_zh_fields() -> None:
-    from agent_service.domain.models.wiring import WireRecord
-    from agent_service.infrastructure.document.excel import records_to_xlsx_bytes
-    from agent_service.profiles.zh.export_fields import ZhExportFields
+    from src.agent.extraction_agent.domain.models.wiring import WireRecord
+    from src.agent.extraction_agent.infrastructure.document.excel import records_to_xlsx_bytes
+    from src.agent.extraction_agent.profiles.zh.export_fields import ZhExportFields
 
     record = WireRecord(start_device="-XD3", start_terminal="1", line_number="003G01")
     prepared = records_to_xlsx_bytes([record], export_fields=ZhExportFields())
@@ -208,11 +208,11 @@ def test_retired_batch_modules_and_exports_are_unavailable() -> None:
     import importlib.util
 
     import pytest
-    from agent_service.graphs.document_extraction import workflow
+    from src.agent.extraction_agent.graphs.document_extraction import workflow
 
     for module in (
-        "agent_service.application.document_extraction.legacy",
-        "agent_service.application.document_extraction.segment_decider",
+        "src.agent.extraction_agent.application.document_extraction.legacy",
+        "src.agent.extraction_agent.application.document_extraction.segment_decider",
     ):
         assert importlib.util.find_spec(module) is None
     for name in ("_segment_node", "_extract_wiring_node", "_assemble_xlsx_node"):
@@ -224,4 +224,4 @@ def test_zh_workflow_compatibility_package_is_removed() -> None:
     import importlib.util
 
     assert not (SOURCE / "zh_workflow").exists()
-    assert importlib.util.find_spec("agent_service.zh_workflow") is None
+    assert importlib.util.find_spec("src.zh_workflow") is None

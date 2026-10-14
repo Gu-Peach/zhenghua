@@ -11,11 +11,11 @@ from unittest.mock import patch
 import httpx
 import pytest
 
-from agent_service.application.page_workflow_extraction import run_page_workflow_extraction
-from agent_service.application.stage_persistence import STAGES, DurableExtractionSession
-from agent_service.config import AgentSettings
-from agent_service.domain.enums import AgentStage
-from agent_service.domain.models.extraction_stages import (
+from src.agent.extraction_agent.application.page_workflow_extraction import run_page_workflow_extraction
+from src.agent.extraction_agent.application.stage_persistence import STAGES, DurableExtractionSession
+from src.config import AgentSettings
+from src.domain.enums import AgentStage
+from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
     CrossPageCompletionRequest,
     DrawingEndpoint,
@@ -25,12 +25,12 @@ from agent_service.domain.models.extraction_stages import (
     ScannedConnection,
     ScannedWireUnit,
 )
-from agent_service.domain.models.stage_persistence import StageInput, StageItem
-from agent_service.domain.models.wiring import WireRecord
-from agent_service.harness.model_gateway import FakeModelGateway
-from agent_service.infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
-from agent_service.profiles import ProfileRegistry
-from agent_service.profiles.zh.policy import ZhExtractionPolicy
+from src.domain.models.stage_persistence import StageInput, StageItem
+from src.agent.extraction_agent.domain.models.wiring import WireRecord
+from src.harness.model_gateway import FakeModelGateway
+from src.agent.extraction_agent.infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
+from src.profiles import ProfileRegistry
+from src.agent.extraction_agent.profiles.zh.policy import ZhExtractionPolicy
 
 ROOT = Path(__file__).resolve().parents[4]
 
@@ -46,7 +46,7 @@ def forbid_network(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def binding():
     registry = ProfileRegistry(
-        profile_root=ROOT / "services/agent/profiles", workspace_root=ROOT, allow_legacy_references=True
+        profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles", workspace_root=ROOT, allow_legacy_references=True
     )
     registry.load_all()
     return registry.bind("zh")
@@ -118,7 +118,7 @@ class FakeStages:
 
 
 def make_pdf(path: Path) -> None:
-    from agent_service.infrastructure.document.pdf_runtime import load_pdf_module
+    from src.agent.extraction_agent.infrastructure.document.pdf_runtime import load_pdf_module
 
     document = load_pdf_module().open()
     for number in (1, 2):
@@ -144,7 +144,7 @@ def test_document_closes_and_saves_page_before_next_scan_and_resumes(tmp_path: P
             progress=progress.append,
         )
         with patch(
-            "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
+            "src.agent.extraction_agent.application.page_workflow_extraction.build_extraction_stage_dispatcher",
             return_value=stages,
         ):
             first = await run_page_workflow_extraction(**kwargs)
@@ -179,7 +179,7 @@ def test_page_save_failure_stops_before_next_source_page(tmp_path: Path) -> None
         pdf = tmp_path / "drawing.pdf"
         make_pdf(pdf)
         stages = FakeStages()
-        from agent_service.infrastructure.document.checkpoint import _write_json_atomic
+        from src.agent.extraction_agent.infrastructure.document.checkpoint import _write_json_atomic
 
         def save(path, value):
             if "completed-pages" in path.parts:
@@ -188,10 +188,10 @@ def test_page_save_failure_stops_before_next_source_page(tmp_path: Path) -> None
 
         with (
             patch(
-                "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
+                "src.agent.extraction_agent.application.page_workflow_extraction.build_extraction_stage_dispatcher",
                 return_value=stages,
             ),
-            patch("agent_service.graphs.document_extraction.page_extraction._write_json_atomic", save),
+            patch("src.agent.extraction_agent.graphs.document_extraction.page_extraction._write_json_atomic", save),
         ):
             with pytest.raises(OSError, match="persistence failure"):
                 await run_page_workflow_extraction(
@@ -210,7 +210,7 @@ def test_page_save_failure_stops_before_next_source_page(tmp_path: Path) -> None
 def test_double_image_completion_and_manifest_paths(tmp_path: Path) -> None:
     async def check() -> None:
         profile = binding()
-        assert profile.profile.version == "2.0.1"
+        assert profile.profile.version == "2.0.2"
         gateway = FakeModelGateway(['{"end":{"device":"-Q1","terminal":"L1"},"status":"resolved"}'])
         adapter = ZhVlmExtractionStageAdapter(AgentSettings(default_model="fake"), gateway)
         pages = []
@@ -243,7 +243,7 @@ def test_double_image_completion_and_manifest_paths(tmp_path: Path) -> None:
     asyncio.run(check())
 
 
-def test_observed_terminal_fields_win_and_unknown_pe_end_stays_null() -> None:
+def test_actual_terminals_win_but_business_strip_is_computed_and_pe_end_stays_null() -> None:
     policy = ZhExtractionPolicy()
     observed = policy.normalize_record(
         WireRecord(
@@ -255,7 +255,8 @@ def test_observed_terminal_fields_win_and_unknown_pe_end_stays_null() -> None:
         ),
         {},
     )
-    assert observed.terminal_strip == "CUSTOM-X9"
+    assert observed.terminal_strip == "X3"
+    assert observed.start_terminal == "XD3:15"
     assert observed.start_terminal_code == "X9"
     unknown = policy.normalize_record(WireRecord(line_number="PE", start_terminal="PE"), {})
     assert unknown.end_terminal is None
@@ -331,7 +332,7 @@ def test_unclear_cross_page_output_keeps_null_and_continues(tmp_path: Path) -> N
         make_pdf(pdf)
         stages = UnclearStages()
         with patch(
-            "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
+            "src.agent.extraction_agent.application.page_workflow_extraction.build_extraction_stage_dispatcher",
             return_value=stages,
         ):
             result = await run_page_workflow_extraction(
@@ -351,17 +352,17 @@ def test_unclear_cross_page_output_keeps_null_and_continues(tmp_path: Path) -> N
 
 
 def test_cross_page_correction_uses_stage2_internal_completion(tmp_path: Path) -> None:
-    from agent_service.domain.enums import CorrectionIssueKind, CrossPageState, ScopeType
-    from agent_service.domain.models.correction import (
+    from src.domain.enums import CorrectionIssueKind, CrossPageState, ScopeType
+    from src.domain.models.correction import (
         CorrectionConstraints,
         CorrectionContext,
         CorrectionEvidenceBundle,
         CorrectionFacts,
         FeedbackTarget,
     )
-    from agent_service.domain.models.extraction_stages import PageScanRequest
-    from agent_service.tools.correction_router import CorrectionRoutePlanner
-    from agent_service.tools.extraction_runner import ScopedExtractionRunner
+    from src.agent.extraction_agent.domain.models.extraction_stages import PageScanRequest
+    from src.tools.correction_router import CorrectionRoutePlanner
+    from src.agent.extraction_agent.tools.extraction_runner import ScopedExtractionRunner
 
     class Stages:
         async def scan_page(self, request):
@@ -442,10 +443,10 @@ def test_cross_page_correction_uses_stage2_internal_completion(tmp_path: Path) -
 
 
 def test_origin_page_controls_mapping_and_evidence_even_when_target_is_earlier() -> None:
-    from agent_service.domain.enums import ScopeType
-    from agent_service.domain.models.proposals import ProposalOperation, ProposalValidation, ResultProposal
-    from agent_service.domain.models.runs import ModelRef, RunScope
-    from agent_service.infrastructure.result_mapping import proposal_to_normalized_units
+    from src.domain.enums import ScopeType
+    from src.domain.models.proposals import ProposalOperation, ProposalValidation, ResultProposal
+    from src.domain.models.runs import ModelRef, RunScope
+    from src.infrastructure.result_mapping import proposal_to_normalized_units
 
     proposal = ResultProposal(
         agent_run_id="smoke",
@@ -489,8 +490,8 @@ def test_origin_page_controls_mapping_and_evidence_even_when_target_is_earlier()
 
 
 def test_configuration_failure_stops_instead_of_becoming_an_empty_endpoint(tmp_path: Path) -> None:
-    from agent_service.domain.enums import ErrorCode
-    from agent_service.domain.errors import AgentServiceError
+    from src.domain.enums import ErrorCode
+    from src.domain.errors import AgentServiceError
 
     class InvalidStages(FakeStages):
         async def resolve_cross_page(self, request):
@@ -501,7 +502,7 @@ def test_configuration_failure_stops_instead_of_becoming_an_empty_endpoint(tmp_p
         make_pdf(pdf)
         stages = InvalidStages()
         with patch(
-            "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
+            "src.agent.extraction_agent.application.page_workflow_extraction.build_extraction_stage_dispatcher",
             return_value=stages,
         ):
             with pytest.raises(AgentServiceError, match="bad configuration"):
@@ -520,7 +521,7 @@ def test_configuration_failure_stops_instead_of_becoming_an_empty_endpoint(tmp_p
 
 
 def test_same_wire_number_in_separate_page_groups_keeps_distinct_connection_ids() -> None:
-    from agent_service.graphs.document_extraction.helpers import _merge_scanned_unit
+    from src.agent.extraction_agent.graphs.document_extraction.helpers import _merge_scanned_unit
 
     units = {}
     for index in (1, 2):

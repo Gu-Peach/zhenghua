@@ -3,6 +3,16 @@
 > 最后更新：2026-10-12
 > 状态含义：`planned`、`in progress`、`blocked`、`done`
 
+2026-10-14本地Stage2脚本页面/索引默认路径已跟随用户移动到docs/test/pages，提取范围和实现不变，未运行测试/模型；验收状态不变。见[记录](./service/agent/changelog/2026-10-14-local-pages-path.md)。
+
+2026-10-14独立提取目录迁移文件完成：61份源码移动/引用修正、254份Python静态对照无非引用逻辑差异，资源原文保留；不运行业务测试/模型/数据库，实际运行待用户验收，Phase 4仍in progress。见[记录](./service/agent/changelog/2026-10-14-extraction-agent-directory.md)。
+
+2026-10-14 ZH三个expected字段与2.0.2 Prompt同步，manifest v6/checksum更新；用户自行测试，本轮未运行测试或模型，Phase 4验收仍in progress。见[记录](./service/agent/changelog/2026-10-14-zh-expected-alignment.md)。
+
+2026-10-14 ZH离线样例清理文件修改完成，保留运行时5组初扫/2组补全；用户要求不跑测试，Phase 4质量验收仍in progress。见[记录](./service/agent/changelog/2026-10-14-zh-example-cleanup.md)。
+
+2026-10-14 ZH本地2.0.2规则/后处理文件修改完成：直接端子段、程序映射业务分类、精简Prompt、电流约束保留。用户要求自行测试，本轮未运行测试/模型，Phase 4仍in progress；见[记录](./service/agent/changelog/2026-10-14-zh-direct-terminals.md)。
+
 2026-10-13 Supervisor对话微调完成：日常聊天公开回答流、任务说明后才出卡片、已上传PDF进入Stage 1/2；77项Agent/Server离线与21项浏览器夹具、Web检查通过。未调用真实模型/写业务库/重启现有Agent，实际对话质量待加载服务验收，既有阶段状态保持不变；见[交付](./service/agent/changelog/2026-10-13-supervisor-chat.md)。
 
 2026-10-13 本地启动文档已补齐：Web 5174、Server/API 8000、Agent 8100，含依赖/配置准备、开发 Worker 和健康检查。仅静态核对命令及入口，未启动服务；各开发阶段状态保持不变。

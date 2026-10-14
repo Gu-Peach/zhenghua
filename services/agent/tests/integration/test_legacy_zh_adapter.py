@@ -5,13 +5,16 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
-from agent_service.config import AgentSettings
-from agent_service.domain.models.extraction import ExtractionExecutionResult, LegacyExtractionRequest
-from agent_service.infrastructure.legacy_zh_adapter import LegacyZhExtractionAdapter
-from agent_service.profiles import ProfileRegistry
+from src.config import AgentSettings
+from src.agent.extraction_agent.domain.models.extraction import (
+    ExtractionExecutionResult,
+    LegacyExtractionRequest,
+)
+from src.agent.extraction_agent.infrastructure.legacy_zh_adapter import LegacyZhExtractionAdapter
+from src.profiles import ProfileRegistry
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
-PROFILE_ROOT = REPOSITORY_ROOT / "services" / "agent" / "profiles"
+PROFILE_ROOT = REPOSITORY_ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles"
 
 
 def test_compatibility_adapter_delegates_to_native_agent_workflow(tmp_path: Path) -> None:
@@ -38,7 +41,7 @@ def test_compatibility_adapter_delegates_to_native_agent_workflow(tmp_path: Path
         )
         adapter = LegacyZhExtractionAdapter(AgentSettings())
         with patch(
-            "agent_service.application.page_workflow_extraction.run_page_workflow_extraction",
+            "src.agent.extraction_agent.application.page_workflow_extraction.run_page_workflow_extraction",
             new=AsyncMock(return_value=SimpleNamespace(execution=execution)),
         ) as workflow:
             result = await adapter.run_full(request)

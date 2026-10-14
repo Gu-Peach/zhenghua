@@ -1,0 +1,284 @@
+from __future__ import annotations
+
+import asyncio
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from typing import Any
+
+from src.domain.enums import ProfileCandidateStatus
+from src.domain.models.improvement import EvalReport, ProfileCandidate, ReleaseDecision
+
+
+@dataclass(frozen=True, slots=True)
+class ReleaseThresholds:
+    max_cost_ratio: float = 1.20
+    max_p95_latency_ratio: float = 1.20
+
+
+class ReleaseGate:
+    def __init__(self, thresholds: ReleaseThresholds | None = None) -> None:
+        self.thresholds = thresholds or ReleaseThresholds()
+
+    def evaluate(self, report: EvalReport) -> ReleaseDecision:
+        metrics = report.candidate
+        baseline = report.baseline
+        reasons: list[str] = []
+        if not report.baseline_results or not report.candidate_results or metrics.total_cases == 0:
+            reasons.append("evaluation report is empty")
+        if report.candidate_checksum:
+            from src.domain.enums import AgentStage, EvalCaseKind
+            from src.harness.eval_runner import EvalRunner
+
+            if report.baseline != EvalRunner.metrics(
+                report.baseline_results
+            ) or metrics != EvalRunner.metrics(report.candidate_results):
+                reasons.append("reported metrics do not match actual case results")
+            if [item.case_id for item in report.baseline_results] != [
+                item.case_id for item in report.candidate_results
+            ]:
+                reasons.append("baseline and candidate case inventories differ")
+            if len({item.case_id for item in report.candidate_results}) != len(report.candidate_results):
+                reasons.append("evaluation case IDs are duplicated")
+            if any(
+                base.kind != proposed.kind or base.expected != proposed.expected
+                for base, proposed in zip(report.baseline_results, report.candidate_results, strict=False)
+            ):
+                reasons.append("baseline and candidate expected fields differ")
+            if {item.kind for item in report.candidate_results} != {
+                EvalCaseKind.TARGET,
+                EvalCaseKind.PROTECTED,
+                EvalCaseKind.NEGATIVE,
+            }:
+                reasons.append("target/protected/negative coverage is incomplete")
+            if set(report.evaluated_stages) != {
+                AgentStage.PAGE_CLASSIFICATION,
+                AgentStage.PAGE_SCAN,
+                AgentStage.CROSS_PAGE_COMPLETION,
+            }:
+                reasons.append("three-stage regression coverage is incomplete")
+            if not report.dataset_checksum or not report.baseline_profile:
+                reasons.append("frozen dataset/Profile identity is missing")
+            if any(
+                item.kind == EvalCaseKind.NEGATIVE and not EvalRunner._passes(item)
+                for item in report.candidate_results
+            ):
+                reasons.append("negative regression cases failed")
+        if metrics.target_pass_rate < 1.0:
+            reasons.append("target cases did not all pass")
+        if metrics.protected_regressions:
+            reasons.append("protected cases regressed")
+        if metrics.negative_hallucinations:
+            reasons.append("negative cases introduced hallucinations")
+        if metrics.schema_valid_rate < 1.0:
+            reasons.append("schema valid rate is below 100%")
+        if metrics.field_precision < baseline.field_precision:
+            reasons.append("field precision decreased")
+        if metrics.field_recall < baseline.field_recall:
+            reasons.append("field recall decreased")
+        if (not report.candidate_checksum or report.cost_reported) and _exceeds_ratio(
+            metrics.total_cost, baseline.total_cost, self.thresholds.max_cost_ratio
+        ):
+            reasons.append("cost exceeds configured threshold")
+        if _exceeds_ratio(
+            metrics.p95_duration_seconds,
+            baseline.p95_duration_seconds,
+            self.thresholds.max_p95_latency_ratio,
+        ):
+            reasons.append("P95 latency exceeds configured threshold")
+        return ReleaseDecision(passed=not reasons, reasons=reasons, reviewer_required=True)
+
+
+class InMemoryCandidateRepository:
+    def __init__(self) -> None:
+        self._items: dict[str, ProfileCandidate] = {}
+        self._reviews: dict[str, list[str]] = {}
+        self._active: dict[str, str] = {}
+        self._previous_active: dict[str, str] = {}
+        self._audit: list[dict[str, Any]] = []
+        self._gate_decisions: dict[str, ReleaseDecision] = {}
+        self._lock = asyncio.Lock()
+
+    async def put(self, candidate: ProfileCandidate) -> None:
+        async with self._lock:
+            self._items[candidate.candidate_id] = candidate.model_copy(deep=True)
+            self._audit.append(
+                {
+                    "candidate_id": candidate.candidate_id,
+                    "action": "created",
+                    "status": candidate.status.value,
+                    "occurred_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+
+    async def get(self, candidate_id: str) -> ProfileCandidate:
+        async with self._lock:
+            candidate = self._items.get(candidate_id)
+        if candidate is None:
+            raise KeyError(candidate_id)
+        return candidate.model_copy(deep=True)
+
+    async def transition(
+        self,
+        candidate_id: str,
+        status: ProfileCandidateStatus,
+        *,
+        reviewer_id: str | None = None,
+    ) -> ProfileCandidate:
+        async with self._lock:
+            candidate = self._items[candidate_id]
+            _validate_transition(candidate.status, status)
+            if status in {ProfileCandidateStatus.APPROVED, ProfileCandidateStatus.CANARY} and not reviewer_id:
+                raise ValueError("Human reviewer_id is required for approval and canary.")
+            if reviewer_id:
+                self._reviews.setdefault(candidate_id, []).append(reviewer_id)
+            if status == ProfileCandidateStatus.ACTIVE:
+                if not self._reviews.get(candidate_id):
+                    raise ValueError("A candidate cannot become active without human approval.")
+                key = candidate.profile.key
+                previous = self._active.get(key)
+                if previous:
+                    self._previous_active[key] = previous
+                    old_candidate = self._items[previous]
+                    self._items[previous] = old_candidate.model_copy(
+                        update={"status": ProfileCandidateStatus.RETIRED}
+                    )
+                self._active[key] = candidate_id
+            updated = candidate.model_copy(update={"status": status})
+            self._items[candidate_id] = updated
+            self._audit.append(
+                {
+                    "candidate_id": candidate_id,
+                    "action": "transition",
+                    "from": candidate.status.value,
+                    "to": status.value,
+                    "reviewer_id": reviewer_id,
+                    "occurred_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+            return updated.model_copy(deep=True)
+
+    async def activate_confirmed(self, candidate_id: str, reviewer_id: str) -> ProfileCandidate:
+        if not reviewer_id.strip():
+            raise ValueError("Explicit human confirmation requires reviewer_id.")
+        async with self._lock:
+            candidate = self._items[candidate_id]
+            if candidate.status == ProfileCandidateStatus.ACTIVE:
+                if reviewer_id not in self._reviews.get(candidate_id, []):
+                    raise PermissionError("Confirmation belongs to another reviewer.")
+                return candidate.model_copy(deep=True)
+            if candidate.status not in {
+                ProfileCandidateStatus.DRAFT,
+                ProfileCandidateStatus.EVALUATING,
+                ProfileCandidateStatus.REJECTED,
+                ProfileCandidateStatus.APPROVED,
+                ProfileCandidateStatus.CANARY,
+            }:
+                raise ValueError("Candidate cannot be published in its current state.")
+            previous = self._active.get(candidate.profile.key)
+            if previous and previous != candidate_id:
+                self._previous_active[candidate.profile.key] = previous
+                self._items[previous] = self._items[previous].model_copy(
+                    update={"status": ProfileCandidateStatus.RETIRED}
+                )
+            self._reviews.setdefault(candidate_id, []).append(reviewer_id)
+            self._active[candidate.profile.key] = candidate_id
+            updated = candidate.model_copy(update={"status": ProfileCandidateStatus.ACTIVE})
+            self._items[candidate_id] = updated
+            self._audit.append(
+                {
+                    "candidate_id": candidate_id,
+                    "action": "confirmed_publish",
+                    "from": candidate.status.value,
+                    "to": "ACTIVE",
+                    "reviewer_id": reviewer_id,
+                    "payload": {"evaluation_required": False, "checksum": candidate.checksum},
+                    "occurred_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+            return updated.model_copy(deep=True)
+
+    async def rollback(self, candidate_id: str, reviewer_id: str) -> ProfileCandidate:
+        async with self._lock:
+            candidate = self._items[candidate_id]
+            if candidate.status not in {ProfileCandidateStatus.CANARY, ProfileCandidateStatus.ACTIVE}:
+                raise ValueError("Only canary or active candidates can be rolled back.")
+            self._reviews.setdefault(candidate_id, []).append(reviewer_id)
+            if self._active.get(candidate.profile.key) == candidate_id:
+                previous = self._previous_active.get(candidate.profile.key)
+                if previous:
+                    self._active[candidate.profile.key] = previous
+                    previous_candidate = self._items[previous]
+                    self._items[previous] = previous_candidate.model_copy(
+                        update={"status": ProfileCandidateStatus.ACTIVE}
+                    )
+                else:
+                    self._active.pop(candidate.profile.key, None)
+            updated = candidate.model_copy(update={"status": ProfileCandidateStatus.ROLLED_BACK})
+            self._items[candidate_id] = updated
+            self._audit.append(
+                {
+                    "candidate_id": candidate_id,
+                    "action": "rollback",
+                    "reviewer_id": reviewer_id,
+                    "occurred_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+            return updated.model_copy(deep=True)
+
+    async def audit_log(self, candidate_id: str | None = None) -> list[dict[str, Any]]:
+        async with self._lock:
+            return [
+                dict(item)
+                for item in self._audit
+                if candidate_id is None or item["candidate_id"] == candidate_id
+            ]
+
+    async def record_gate(self, candidate_id: str, decision: ReleaseDecision) -> None:
+        async with self._lock:
+            if candidate_id not in self._items:
+                raise KeyError(candidate_id)
+            self._gate_decisions[candidate_id] = decision.model_copy(deep=True)
+            self._audit.append(
+                {
+                    "candidate_id": candidate_id,
+                    "action": "release_gate",
+                    "passed": decision.passed,
+                    "reasons": list(decision.reasons),
+                    "occurred_at": datetime.now(timezone.utc).isoformat(),
+                }
+            )
+
+    async def gate_passed(self, candidate_id: str) -> bool:
+        async with self._lock:
+            decision = self._gate_decisions.get(candidate_id)
+            return bool(decision and decision.passed)
+
+
+def _exceeds_ratio(value: float, baseline: float, ratio: float) -> bool:
+    if baseline <= 0:
+        return value > 0
+    return value > baseline * ratio
+
+
+def _validate_transition(current: ProfileCandidateStatus, target: ProfileCandidateStatus) -> None:
+    allowed = {
+        ProfileCandidateStatus.DRAFT: {
+            ProfileCandidateStatus.EVALUATING,
+            ProfileCandidateStatus.REJECTED,
+        },
+        ProfileCandidateStatus.EVALUATING: {
+            ProfileCandidateStatus.REJECTED,
+            ProfileCandidateStatus.APPROVED,
+        },
+        ProfileCandidateStatus.APPROVED: {ProfileCandidateStatus.CANARY},
+        ProfileCandidateStatus.CANARY: {
+            ProfileCandidateStatus.ACTIVE,
+            ProfileCandidateStatus.ROLLED_BACK,
+        },
+        ProfileCandidateStatus.ACTIVE: {
+            ProfileCandidateStatus.RETIRED,
+            ProfileCandidateStatus.ROLLED_BACK,
+        },
+    }
+    if target not in allowed.get(current, set()):
+        raise ValueError(f"Invalid candidate transition: {current.value} -> {target.value}.")

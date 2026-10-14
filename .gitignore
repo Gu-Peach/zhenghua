@@ -69,3 +69,7 @@ docs/test/
 !services/agent/prompts/**/*.jpg
 !services/agent/prompts/**/*.jpeg
 !services/agent/prompts/**/*.webp
+!services/agent/src/agent/extraction_agent/prompts/**/*.png
+!services/agent/src/agent/extraction_agent/prompts/**/*.jpg
+!services/agent/src/agent/extraction_agent/prompts/**/*.jpeg
+!services/agent/src/agent/extraction_agent/prompts/**/*.webp

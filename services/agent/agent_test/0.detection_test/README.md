@@ -7,7 +7,7 @@
 从仓库根目录启动本轮代码的 Agent API；模型配置由服务读取 `services/agent/.env`。阶段 0 不需要开启 inline Worker。
 
 ```powershell
-.\.venv\Scripts\python.exe -m uvicorn agent_service.main:app --app-dir services/agent/src --host 127.0.0.1 --port 8100
+.\.venv\Scripts\python.exe -m uvicorn src.main:app --app-dir services/agent --host 127.0.0.1 --port 8100
 ```
 
 另开终端运行；省略 PDF 路径时会列出本目录案例供选择：

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from agent_service.domain.schema import contract_schema_checksum
+from src.domain.schema import contract_schema_checksum
 
 SNAPSHOT = Path(__file__).resolve().parents[2] / "contracts" / "domain-schema.sha256"
 

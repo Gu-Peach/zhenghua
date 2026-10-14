@@ -7,15 +7,17 @@ from pathlib import Path
 
 AGENT_ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY_ROOT = AGENT_ROOT.parents[1]
-for path in (AGENT_ROOT / "src", REPOSITORY_ROOT):
+for path in (AGENT_ROOT, REPOSITORY_ROOT):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
 # isort: split
-from agent_service.application.page_workflow_extraction import run_page_workflow_extraction  # noqa: E402
-from agent_service.config import AgentSettings  # noqa: E402
-from agent_service.domain.errors import AgentServiceError  # noqa: E402
-from agent_service.profiles import ProfileRegistry  # noqa: E402
+from src.agent.extraction_agent.application.page_workflow_extraction import (  # noqa: E402
+    run_page_workflow_extraction,
+)
+from src.config import AgentSettings  # noqa: E402
+from src.domain.errors import AgentServiceError  # noqa: E402
+from src.profiles import ProfileRegistry  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:

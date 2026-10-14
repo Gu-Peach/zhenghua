@@ -6,11 +6,11 @@ from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
-from agent_service.application.model_output_view import model_output_view
-from agent_service.config import AgentSettings
-from agent_service.domain.enums import RunType, ScopeType
-from agent_service.domain.models.runs import CreateRunRequest, RunOptions, RunScope
-from agent_service.main import create_app
+from src.application.model_output_view import model_output_view
+from src.config import AgentSettings
+from src.domain.enums import RunType, ScopeType
+from src.domain.models.runs import CreateRunRequest, RunOptions, RunScope
+from src.main import create_app
 
 
 def test_projection_does_not_expose_hidden_reasoning_or_request_context() -> None:

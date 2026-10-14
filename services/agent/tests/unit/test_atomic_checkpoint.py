@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from agent_service.infrastructure.document import checkpoint as wiring_graph
+from src.agent.extraction_agent.infrastructure.document import checkpoint as wiring_graph
 
 
 class AtomicCheckpointTests(unittest.TestCase):

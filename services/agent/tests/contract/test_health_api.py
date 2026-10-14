@@ -4,12 +4,12 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from agent_service.config import AgentSettings
-from agent_service.main import create_app
-from agent_service.profiles import ProfileRegistry
+from src.config import AgentSettings
+from src.main import create_app
+from src.profiles import ProfileRegistry
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
-PROFILE_ROOT = REPOSITORY_ROOT / "services" / "agent" / "profiles"
+PROFILE_ROOT = REPOSITORY_ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles"
 
 
 def registry() -> ProfileRegistry:

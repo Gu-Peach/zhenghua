@@ -2,7 +2,7 @@
 
 入口：`services/agent/scripts/run_stage2_groups.py`。读取已有拆分页和图纸索引，不调用 Stage 1、不重新渲染 PDF、不创建项目、数据库客户端、队列或 Storage 上传。
 
-默认来源目录`docs/test/agent-run-001/pages`，索引`docs/test/agent-run-001/agent/drawing_index.json`。只扫描002.C的7页和002.M的5页，跨页可读取其他本地目标页。当前本地ZH为2.0.1；旧run_stage2产物来自2.0.0，不查询远端规则包。质量修正见[记录](./changelog/2026-10-13-zh-stage2-quality.md)。
+默认来源目录`docs/test/pages`，索引`docs/test/pages/agent/drawing_index.json`，已按用户移动后的实际位置更新。只扫描002.C的7页和002.M的5页，跨页可读取其他本地目标页。当前本地ZH为2.0.2；旧run_stage2产物来自2.0.0，run_stage2_v201来自2.0.1，不查询远端规则包。最新[规则记录](./changelog/2026-10-14-zh-direct-terminals.md)以直接端子段及程序分类为准。
 
 ## 命令
 
@@ -19,12 +19,12 @@
   --allow-real-model --model "Qwen3.8 27B"
 ```
 
-为保留旧结果，2.0.1对比试跑使用新输出目录（本次未执行）：
+为保留旧结果，2.0.2对比试跑使用新输出目录（本次未执行，用户自行运行）：
 
 ```powershell
 .\.venv\Scripts\python.exe services/agent/scripts/run_stage2_groups.py `
   --allow-real-model --model "Qwen3.8 27B" `
-  --output-dir docs/test/run_stage2_v201 --run-id stage2-quality-v201
+  --output-dir docs/test/run_stage2_v202 --run-id stage2-direct-v202
 ```
 
 `--groups`、`--pages-dir`、`--index`、`--output-dir` 可覆盖默认范围；`--max-source-pages 1` 可缩小试跑，但不代表全组验收。`--run-id` 默认稳定，以便在同输出目录恢复完成页。Profile/模型/请求配置或图片改变会使旧完成页缓存失效。

@@ -4,16 +4,16 @@ import asyncio
 import json
 from pathlib import Path
 
-from agent_service.agents.profile_router import ProfileRouterAgent
-from agent_service.application.profile_assignment import ProfileAssignmentService
-from agent_service.domain.enums import ProfileDetectionStatus, ProfileStatus
-from agent_service.harness import FakeModelGateway
-from agent_service.profiles import ProfileRegistry
-from agent_service.tools.pdf_first_page import FirstPageImage
+from src.agents.profile_router import ProfileRouterAgent
+from src.application.profile_assignment import ProfileAssignmentService
+from src.domain.enums import ProfileDetectionStatus, ProfileStatus
+from src.harness import FakeModelGateway
+from src.profiles import ProfileRegistry
+from src.tools.pdf_first_page import FirstPageImage
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
-PROFILE_ROOT = REPOSITORY_ROOT / "services" / "agent" / "profiles"
-ROUTER_PROMPT = REPOSITORY_ROOT / "services" / "agent" / "prompts" / "profile_router.md"
+PROFILE_ROOT = REPOSITORY_ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles"
+ROUTER_PROMPT = REPOSITORY_ROOT / "services" / "agent" / "src/agent/extraction_agent/prompts" / "profile_router.md"
 
 
 def registry() -> ProfileRegistry:

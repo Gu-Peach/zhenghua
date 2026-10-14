@@ -11,15 +11,15 @@ from zipfile import ZipFile
 import httpx
 import pytest
 
-from agent_service.config import AgentSettings
-from agent_service.domain.models.extraction_stages import (
+from src.config import AgentSettings
+from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
     DrawingEndpoint,
     PageScanData,
     ScannedConnection,
     ScannedWireUnit,
 )
-from agent_service.infrastructure.supabase_client import SupabaseClient
+from src.infrastructure.supabase_client import SupabaseClient
 
 ROOT = Path(__file__).resolve().parents[4]
 spec = importlib.util.spec_from_file_location(
@@ -161,7 +161,7 @@ def test_empty_values_and_actual_zero_are_distinct_in_standard_rows() -> None:
 
 
 def test_unknown_reference_page_zero_becomes_null_without_inventing_a_target() -> None:
-    from agent_service.infrastructure.zh_vlm_stages import _normalize_page_scan
+    from src.agent.extraction_agent.infrastructure.zh_vlm_stages import _normalize_page_scan
 
     data = {
         "units": [

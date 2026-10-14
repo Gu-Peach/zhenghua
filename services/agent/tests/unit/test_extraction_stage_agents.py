@@ -4,11 +4,11 @@ import asyncio
 from pathlib import Path
 
 import pytest
-from agent_service.agents.page_classifier import PageClassifierAgent
-from agent_service.agents.page_scanner import PageScannerAgent
-from agent_service.application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
-from agent_service.config import AgentSettings
-from agent_service.domain.models.extraction_stages import (
+from src.agent.extraction_agent.agents.page_classifier import PageClassifierAgent
+from src.agent.extraction_agent.agents.page_scanner import PageScannerAgent
+from src.agent.extraction_agent.application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
+from src.config import AgentSettings
+from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
     CrossPageCompletionRequest,
     DrawingEndpoint,
@@ -18,21 +18,21 @@ from agent_service.domain.models.extraction_stages import (
     PageScanData,
     PageScanRequest,
 )
-from agent_service.graphs.extraction import (
+from src.agent.extraction_agent.graphs.extraction import (
     run_page_classification,
     run_page_scan,
 )
-from agent_service.graphs.extraction.page_scan import complete_page_connection
-from agent_service.harness.model_gateway import FakeModelGateway
-from agent_service.infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
-from agent_service.profiles import ProfileRegistry
+from src.agent.extraction_agent.graphs.extraction.page_scan import complete_page_connection
+from src.harness.model_gateway import FakeModelGateway
+from src.agent.extraction_agent.infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
+from src.profiles import ProfileRegistry
 
 ROOT = Path(__file__).resolve().parents[4]
 
 
 def zh_binding():
     registry = ProfileRegistry(
-        profile_root=ROOT / "services" / "agent" / "profiles",
+        profile_root=ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles",
         workspace_root=ROOT,
         allow_legacy_references=True,
     )
@@ -229,7 +229,7 @@ def test_profile_bound_dispatcher_rejects_missing_adapter() -> None:
 def test_abb_never_falls_through_to_zh_adapter() -> None:
     async def run() -> None:
         registry = ProfileRegistry(
-            profile_root=ROOT / "services" / "agent" / "profiles",
+            profile_root=ROOT / "services" / "agent" / "src/agent/extraction_agent/profiles",
             workspace_root=ROOT,
             allow_legacy_references=True,
         )

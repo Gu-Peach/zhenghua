@@ -8,16 +8,16 @@ from typing import Any
 import httpx
 import pytest
 
-from agent_service.agents.improvement_diagnoser import ImprovementDiagnoserAgent
-from agent_service.domain.models.improvement import AcceptedFeedback, Diagnosis
-from agent_service.harness.model_gateway import (
+from src.agents.improvement_diagnoser import ImprovementDiagnoserAgent
+from src.domain.models.improvement import AcceptedFeedback, Diagnosis
+from src.harness.model_gateway import (
     FakeModelGateway,
     ModelGatewayError,
     OpenAICompatibleModelGateway,
 )
 
 ROOT = Path(__file__).resolve().parents[4]
-PROMPT = ROOT / "services/agent/prompts/improvement_diagnosis.md"
+PROMPT = ROOT / "services/agent/src/agent/extraction_agent/prompts/improvement_diagnosis.md"
 
 
 def feedback() -> AcceptedFeedback:

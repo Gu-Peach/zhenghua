@@ -8,13 +8,13 @@ import sys
 import tempfile
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from agent_service.config import AgentSettings
-from agent_service.infrastructure.supabase_client import SupabaseClient
-from agent_service.infrastructure.supabase_profile_packages import SupabaseProfilePackageRepository
-from agent_service.profiles.package import build_package
-from agent_service.profiles.registry import ProfileRegistry
+from src.config import AgentSettings
+from src.infrastructure.supabase_client import SupabaseClient
+from src.infrastructure.supabase_profile_packages import SupabaseProfilePackageRepository
+from src.profiles.package import build_package
+from src.profiles.registry import ProfileRegistry
 
 
 async def main() -> None:

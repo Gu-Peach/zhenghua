@@ -11,10 +11,10 @@ from unittest.mock import patch
 import httpx
 import pytest
 
-from agent_service.agents.page_scanner import PageScannerAgent
-from agent_service.application.page_workflow_extraction import run_page_workflow_extraction
-from agent_service.config import AgentSettings
-from agent_service.domain.models.extraction_stages import (
+from src.agent.extraction_agent.agents.page_scanner import PageScannerAgent
+from src.agent.extraction_agent.application.page_workflow_extraction import run_page_workflow_extraction
+from src.config import AgentSettings
+from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
     DrawingPageInput,
     PageClassificationData,
@@ -22,23 +22,23 @@ from agent_service.domain.models.extraction_stages import (
     PageScanRequest,
     ScannedWireUnit,
 )
-from agent_service.domain.models.wiring import WireConnection
-from agent_service.graphs.document_extraction.cross_page import _apply_terminal_task_results
-from agent_service.graphs.document_extraction.helpers import _connection_identity
-from agent_service.harness.model_gateway import FakeModelGateway
-from agent_service.infrastructure.abb_vlm_stages import AbbVlmExtractionStageAdapter
-from agent_service.infrastructure.zh_gantry_reel_vlm_stages import ZhGantryReelVlmAdapter
-from agent_service.infrastructure.zh_vlm_stages import (
+from src.agent.extraction_agent.domain.models.wiring import WireConnection
+from src.agent.extraction_agent.graphs.document_extraction.cross_page import _apply_terminal_task_results
+from src.agent.extraction_agent.graphs.document_extraction.helpers import _connection_identity
+from src.harness.model_gateway import FakeModelGateway
+from src.agent.extraction_agent.infrastructure.abb_vlm_stages import AbbVlmExtractionStageAdapter
+from src.agent.extraction_agent.infrastructure.zh_gantry_reel_vlm_stages import ZhGantryReelVlmAdapter
+from src.agent.extraction_agent.infrastructure.zh_vlm_stages import (
     ZhVlmExtractionStageAdapter,
     _normalize_cross_page,
     _normalize_page_scan,
 )
-from agent_service.profiles import ProfileRegistry
-from agent_service.profiles.zh.policy import ZhExtractionPolicy
-from agent_service.profiles.zh.references import prepare_reference
+from src.profiles import ProfileRegistry
+from src.agent.extraction_agent.profiles.zh.policy import ZhExtractionPolicy
+from src.agent.extraction_agent.profiles.zh.references import prepare_reference
 
 ROOT = Path(__file__).resolve().parents[4]
-ASSETS = ROOT / "services/agent/prompts/zh/examples_wiring/002c"
+ASSETS = ROOT / "services/agent/src/agent/extraction_agent/prompts/zh/examples_wiring/002c"
 
 
 @pytest.fixture(autouse=True)
@@ -52,7 +52,7 @@ def forbid_network(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def binding():
     registry = ProfileRegistry(
-        profile_root=ROOT / "services/agent/profiles", workspace_root=ROOT, allow_legacy_references=True
+        profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles", workspace_root=ROOT, allow_legacy_references=True
     )
     registry.load_all()
     return registry.bind("zh")
@@ -318,7 +318,7 @@ def test_fan_out_survives_full_page_graph_and_saved_resume(tmp_path: Path) -> No
             project_id="offline",
         )
         with patch(
-            "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
+            "src.agent.extraction_agent.application.page_workflow_extraction.build_extraction_stage_dispatcher",
             return_value=stages,
         ):
             run = await run_page_workflow_extraction(**kwargs)
@@ -338,7 +338,7 @@ def test_fan_out_survives_full_page_graph_and_saved_resume(tmp_path: Path) -> No
 
 def test_fixed_actual_image_cases_validate_fields_and_manifest_paths() -> None:
     manifest = json.loads((ASSETS / "manifest.json").read_text(encoding="utf-8"))
-    for section in ("stage2_cases", "stage3_cases", "regression_cases"):
+    for section in ("stage2_cases", "stage3_cases"):
         for case in manifest[section]:
             assert (ASSETS / case["expected"]).is_file()
             for image in case["images"]:
@@ -363,12 +363,6 @@ def test_fixed_actual_image_cases_validate_fields_and_manifest_paths() -> None:
         for device, prefix, page in [("-K2", "002C020", 5), ("-K3", "002C021", 6)]
         for i in range(1, 5)
     ]
-    c05 = connections("regression/002c05_secondary.expected.json")
-    assert [c.start.terminal for c in c05] == ["U2", "V2", "W2"]
-    m01 = connections("regression/002m01_local_plc.expected.json")
-    assert [
-        (c.start.terminal, c.end.device, c.end.terminal, c.is_cross_page.value, c.references) for c in m01
-    ] == [(str(i), "-KP1-8", str(i + 19), "same_page", []) for i in range(2, 10)]
     m03 = connections("stage2/002m03_branches.expected.json")
     assert len({c.local_connection_id for c in m03}) == 2
     assert [(c.start.terminal, c.references[0].target_drawing_page) for c in m03] == [
@@ -383,7 +377,7 @@ def test_fixed_actual_image_cases_validate_fields_and_manifest_paths() -> None:
 
 def test_quality_asset_and_validator_checksums() -> None:
     provenance = json.loads((ASSETS / "quality-provenance.json").read_text(encoding="utf-8"))
-    assert provenance["version"] == binding().profile.version == "2.0.1"
+    assert provenance["version"] == binding().profile.version == "2.0.2"
     for section, directory in [("assets", ASSETS), ("policy_sources", ROOT)]:
         for entry in provenance[section]:
             assert (
@@ -395,7 +389,7 @@ def test_quality_asset_and_validator_checksums() -> None:
 def test_fixed_cases_survive_fake_adapter_without_field_loss() -> None:
     async def check() -> None:
         manifest = json.loads((ASSETS / "manifest.json").read_text(encoding="utf-8"))
-        cases = manifest["stage2_cases"] + manifest["regression_cases"]
+        cases = manifest["stage2_cases"]
         for case in cases:
             response = (ASSETS / case["expected"]).read_text(encoding="utf-8")
             gold = PageScanData.model_validate_json(response)

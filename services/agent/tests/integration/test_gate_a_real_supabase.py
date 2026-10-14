@@ -13,13 +13,13 @@ from uuid import uuid4
 
 import httpx
 import pytest
-from agent_service.application.extraction_run_executor import FullExtractionRunExecutor
-from agent_service.application.run_control import RunControlService
-from agent_service.application.worker import AgentWorker
-from agent_service.config import AgentSettings
-from agent_service.domain.enums import AgentStage, EventType, RunType, ScopeType
-from agent_service.domain.errors import AgentServiceError
-from agent_service.domain.models.extraction_stages import (
+from src.agent.extraction_agent.application.extraction_run_executor import FullExtractionRunExecutor
+from src.application.run_control import RunControlService
+from src.application.worker import AgentWorker
+from src.config import AgentSettings
+from src.domain.enums import AgentStage, EventType, RunType, ScopeType
+from src.domain.errors import AgentServiceError
+from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
     DrawingEndpoint,
     DrawingReference,
@@ -28,25 +28,25 @@ from agent_service.domain.models.extraction_stages import (
     ScannedConnection,
     ScannedWireUnit,
 )
-from agent_service.domain.models.runs import AgentEvent, CreateRunRequest, RunScope
-from agent_service.domain.models.stage_persistence import StageInput, StageItem, digest
-from agent_service.infrastructure.document.pdf_runtime import load_pdf_module
-from agent_service.infrastructure.project_assets import (
+from src.domain.models.runs import AgentEvent, CreateRunRequest, RunScope
+from src.domain.models.stage_persistence import StageInput, StageItem, digest
+from src.agent.extraction_agent.infrastructure.document.pdf_runtime import load_pdf_module
+from src.infrastructure.project_assets import (
     SupabaseProjectAssetStore,
     SupabaseSourceDocumentProvider,
 )
-from agent_service.infrastructure.run_lease_context import current_run_lease
-from agent_service.infrastructure.supabase_client import SupabaseClient
-from agent_service.infrastructure.supabase_repositories import (
+from src.infrastructure.run_lease_context import current_run_lease
+from src.infrastructure.supabase_client import SupabaseClient
+from src.infrastructure.supabase_repositories import (
     SupabaseArtifactRepository,
     SupabaseEventRepository,
     SupabaseProposalRepository,
     SupabaseRunQueue,
     SupabaseRunRepository,
 )
-from agent_service.infrastructure.supabase_result_data import SupabaseResultDataRepository
-from agent_service.infrastructure.supabase_stage_repository import SupabaseStageRepository
-from agent_service.profiles import ProfileRegistry
+from src.infrastructure.supabase_result_data import SupabaseResultDataRepository
+from src.infrastructure.supabase_stage_repository import SupabaseStageRepository
+from src.profiles import ProfileRegistry
 
 ROOT = Path(__file__).resolve().parents[4]
 pytestmark = pytest.mark.skipif(
@@ -359,7 +359,7 @@ def test_gate_a_database_fake_model_pipeline(tmp_path: Path, scenario: str) -> N
 
                 with (
                     patch(
-                        "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
+                        "src.agent.extraction_agent.application.page_workflow_extraction.build_extraction_stage_dispatcher",
                         return_value=fake,
                     ),
                     patch.object(stages, "seal", side_effect=crash_after_classification),
@@ -371,7 +371,7 @@ def test_gate_a_database_fake_model_pipeline(tmp_path: Path, scenario: str) -> N
                 assert not await client.select("drawings", params={"project_id": f"eq.{project_id}"})
                 await control.cancel(saved.agent_run_id)
                 with patch(
-                    "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
+                    "src.agent.extraction_agent.application.page_workflow_extraction.build_extraction_stage_dispatcher",
                     return_value=FakeStages(),
                 ):
                     assert await worker.run_once()
@@ -401,7 +401,7 @@ def test_gate_a_database_fake_model_pipeline(tmp_path: Path, scenario: str) -> N
 
             with (
                 patch(
-                    "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
+                    "src.agent.extraction_agent.application.page_workflow_extraction.build_extraction_stage_dispatcher",
                     return_value=fake,
                 ),
                 patch.object(stages, "claim", side_effect=capture_claim),
@@ -494,7 +494,7 @@ def test_gate_a_database_fake_model_pipeline(tmp_path: Path, scenario: str) -> N
                     )
                     successor.register(RunType.FULL_EXTRACTION, fresh_executor)
                     with patch(
-                        "agent_service.application.page_workflow_extraction.build_extraction_stage_dispatcher",
+                        "src.agent.extraction_agent.application.page_workflow_extraction.build_extraction_stage_dispatcher",
                         return_value=successor_fake,
                     ):
                         assert await successor._run_durable(lease)

@@ -1,0 +1,96 @@
+{
+  "version": "2.0.2",
+  "review_basis": "M23 direct terminal pairs confirmed by user on 2026-10-14; previous image cases retained; tests not executed in this revision",
+  "assets": [
+    {
+      "path": "completion/w1_fo2_to_tf41.expected.json",
+      "checksum": "sha256:efb550b6fbadf6ebb06506ef6f646f8c739c92ff6e1d3ba3ba518bbe1426641f"
+    },
+    {
+      "path": "completion/w1_fo2_to_tf41.task.json",
+      "checksum": "sha256:a3b52b066fe90859b3a1fdb797441b7f25df0fe3b4415154105aa670bbea1dd8"
+    },
+    {
+      "path": "completion/w1_l1_to_q1.expected.json",
+      "checksum": "sha256:ac6ca70ede966dfe96f2df157aadf6c4d6cee7dd968c732fd519b4e6290fe071"
+    },
+    {
+      "path": "completion/w1_l1_to_q1.task.json",
+      "checksum": "sha256:e4b5a9bd8094d68eb45f69752186b9d3fef22d5f823ed9392f3e30e7503a01f0"
+    },
+    {
+      "path": "images/002c01.png",
+      "checksum": "sha256:17da22ed27b64c3a5683629da4020bdbe3fde937dd9707acb2d4b446aab74838"
+    },
+    {
+      "path": "images/002c02.png",
+      "checksum": "sha256:6a97a0ac6011a14bdfbddab1ef10e4c04ac206ea18a35415ad844593665cb072"
+    },
+    {
+      "path": "images/002m03.png",
+      "checksum": "sha256:06904cd0919e7c50df9e8dbfb3b447eb84b58df46859d38b49156b4e51b1680b"
+    },
+    {
+      "path": "images/002m23.png",
+      "checksum": "sha256:f7c06a01850f5456022c4bee89f608cab4a29be2af952cc4a0fd1bbefa577c10"
+    },
+    {
+      "path": "images/098m25.png",
+      "checksum": "sha256:f159d055098f0351030fea0ae1cfcfce7c545d0e25f9c2eff3fa5b235b33692a"
+    },
+    {
+      "path": "images/c03_receivers.png",
+      "checksum": "sha256:7c4c7d8c5f0564703a7be52c9d72ffecaa7b1cce4ab0088b55fab672f7e21772"
+    },
+    {
+      "path": "stage2/002c01.expected.json",
+      "checksum": "sha256:a27f88b3ee2b761cb1947094d9bb1ea44cf2c40884598b71d998fbafe5de8d8d"
+    },
+    {
+      "path": "stage2/002c02.expected.json",
+      "checksum": "sha256:d85d32b63570736cd635a125927da1d6d694d839f21591de1384ccda0c39dd81"
+    },
+    {
+      "path": "stage2/002m03_branches.expected.json",
+      "checksum": "sha256:ce483291eb7eba28ecbba7a004bf6178b91e35615b3163fdcc65de08037be8b5"
+    },
+    {
+      "path": "stage2/002m23_direct.expected.json",
+      "checksum": "sha256:7d8b258144edb41e23d944c13bafb68dddbed87766e2425d7aecbb8c4bd8e8e1"
+    },
+    {
+      "path": "stage2/c03_receivers.expected.json",
+      "checksum": "sha256:a9d66024b792c9b1291b4502d5fc5b4dfaf1dd86ff164e66f497b0d820d5da1e"
+    }
+  ],
+  "policy_sources": [
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/zh/policy.py",
+      "checksum": "sha256:2f91acdb660267d4b7a0cef2a7c1ee71e4277762ee4595fc42d631ee4875604a"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/zh/validation.py",
+      "checksum": "sha256:db05d7d0ff001de7b4ed0feea2842f94ae39519bef6b39f8a26ca5c637e3070f"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/zh/references.py",
+      "checksum": "sha256:ed8f81cbb7823df54914894f02f8397e18894456563e2dc7fe3d9252fca0ece2"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/zh_vlm_stages.py",
+      "checksum": "sha256:21b505d01a682cc6d2dafd952e051d63b47bbe0c73f427fed09c096e783f13eb"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/graphs/document_extraction/helpers.py",
+      "checksum": "sha256:9d14b74bd6c684742e29d8b5dde91a67be308cf12d7f4b9c78f71a78fa9c9202"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/zh/normalization.py",
+      "checksum": "sha256:5cec1be36398df4a28f1b43e1a5c025aa994a3e93c8dc0eef4701cc4d4b2b26b"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/zh/terminal_strips.py",
+      "checksum": "sha256:a8c270b5edbb76a3d69493f2e12b606200bce6bbe2ef04360197a204c45d9867"
+    }
+  ]
+}

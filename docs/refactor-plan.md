@@ -6,6 +6,10 @@
 
 ## 1. 重构结论
 
+2026-10-14按用户新布局迁移独立提取实现到`services/agent/src/agent/extraction_agent`，共享控制面保留，算法不变只调整引用；见[ADR-0017](./adr/0017-extraction-agent-directory.md)。原模板资源路径由该目录接管。
+
+2026-10-14 ZH用户口径修订见[ADR-0016](./adr/0016-zh-direct-terminal-segments.md)：按放线标记读取两侧直接端子、遇端子停止；导出端子排由程序映射，VLM只读实际端子。保留Stage2逐页工作流及电流约束，精简其他硬提示，本地版本2.0.2，不写库或发布。
+
 2026-10-13 Supervisor 对话微调设计见 [对话计划](./service/agent/supervisor-chat-plan.md)：日常聊天直接流式回答，任务说明后才显示卡片，完整提取仍要求会话内真实 PDF 与类型确认；现有任务权限/持久化边界保持不变。
 
 2026-10-13 本地新增 ZH 大车卷盘网格页标 experimental Profile，采用独立页标/引用策略及可逆接口映射，不上传或修改生产资源；见 [ADR-0015](./adr/0015-zh-gantry-reel-profile.md)。

@@ -7,12 +7,12 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from agent_service.graphs.document_extraction.cross_page import (
+from src.agent.extraction_agent.graphs.document_extraction.cross_page import (
     _apply_cross_page_completion,
     _build_cross_page_tasks_node,
     _resolve_cross_page_node,
 )
-from agent_service.profiles.zh.policy import ZhExtractionPolicy
+from src.agent.extraction_agent.profiles.zh.policy import ZhExtractionPolicy
 
 
 class _SequentialResolver:

@@ -10,23 +10,23 @@ from uuid import uuid4
 
 import httpx
 
-from agent_service.domain.enums import EventType, RunType, ScopeType
-from agent_service.domain.errors import AgentServiceError
-from agent_service.domain.models.proposals import ProposalValidation, ResultProposal
-from agent_service.domain.models.runs import (
+from src.domain.enums import EventType, RunType, ScopeType
+from src.domain.errors import AgentServiceError
+from src.domain.models.proposals import ProposalValidation, ResultProposal
+from src.domain.models.runs import (
     AgentEvent,
     CreateRunRequest,
     ModelRef,
     ProfileRef,
     RunScope,
 )
-from agent_service.infrastructure.project_assets import (
+from src.infrastructure.project_assets import (
     SupabaseProjectAssetStore,
     SupabaseSourceDocumentProvider,
 )
-from agent_service.infrastructure.storage_paths import project_source_pdf_path
-from agent_service.infrastructure.supabase_client import SupabaseClient
-from agent_service.infrastructure.supabase_repositories import (
+from src.infrastructure.storage_paths import project_source_pdf_path
+from src.infrastructure.supabase_client import SupabaseClient
+from src.infrastructure.supabase_repositories import (
     SupabaseArtifactRepository,
     SupabaseCheckpointStore,
     SupabaseEventRepository,

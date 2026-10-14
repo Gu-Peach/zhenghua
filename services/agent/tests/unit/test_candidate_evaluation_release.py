@@ -7,37 +7,37 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from agent_service.agents.evaluation_judge import EvaluationJudgeAgent
-from agent_service.application.candidate_evaluation import (
+from src.agents.evaluation_judge import EvaluationJudgeAgent
+from src.application.candidate_evaluation import (
     CandidateEvaluationExecutor,
     EvaluationCase,
     binding,
     fixed_cases,
 )
-from agent_service.application.candidate_release import CandidateReleaseService
-from agent_service.application.improvement_workflow import ImprovementWorkflow
-from agent_service.domain.enums import AgentStage, EvalCaseKind, ProfileCandidateStatus, RunStatus, RunType
-from agent_service.domain.models.correction import CorrectionEvidenceBundle
-from agent_service.domain.models.improvement import (
+from src.application.candidate_release import CandidateReleaseService
+from src.application.improvement_workflow import ImprovementWorkflow
+from src.domain.enums import AgentStage, EvalCaseKind, ProfileCandidateStatus, RunStatus, RunType
+from src.domain.models.correction import CorrectionEvidenceBundle
+from src.domain.models.improvement import (
     AcceptedFeedback,
     EvalCaseResult,
     EvalReport,
     ProfileCandidate,
 )
-from agent_service.domain.models.runs import CreateRunRequest, RunOptions, RunScope
-from agent_service.domain.models.stage_persistence import digest
-from agent_service.harness import (
+from src.domain.models.runs import CreateRunRequest, RunOptions, RunScope
+from src.domain.models.stage_persistence import digest
+from src.harness import (
     FakeModelGateway,
     InMemoryArtifactRepository,
     InMemoryCandidateRepository,
     InMemoryEvalRepository,
     ProfileSandbox,
 )
-from agent_service.harness.eval_runner import EvalRunner
-from agent_service.harness.release_gate import ReleaseGate
-from agent_service.harness.stores import CancellationToken
-from agent_service.profiles.package import build_package
-from agent_service.profiles.registry import ProfileRegistry
+from src.harness.eval_runner import EvalRunner
+from src.harness.release_gate import ReleaseGate
+from src.harness.stores import CancellationToken
+from src.profiles.package import build_package
+from src.profiles.registry import ProfileRegistry
 
 ROOT = Path(__file__).resolve().parents[4]
 
@@ -82,7 +82,7 @@ def test_gate_rejects_empty_forged_and_incomplete_reports() -> None:
 
 def test_frozen_fixed_dataset_covers_three_stages_and_negative(tmp_path: Path) -> None:
     registry = ProfileRegistry(
-        profile_root=ROOT / "services/agent/profiles", workspace_root=ROOT, allow_legacy_references=True
+        profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles", workspace_root=ROOT, allow_legacy_references=True
     )
     registry.load_all()
     snapshot = registry.resolve("zh")
@@ -124,7 +124,7 @@ def test_real_evaluation_requires_server_and_request_consent(tmp_path: Path) -> 
             scope=RunScope(type="PROFILE", id="zh"),
             options=RunOptions(profile_candidate_id="c", real_evaluation_authorized=True),
         )
-        from agent_service.domain.models.runs import AgentRun
+        from src.domain.models.runs import AgentRun
 
         with pytest.raises(ValueError, match="authorization"):
             await executor.execute(AgentRun.from_request(request, "key"), CancellationToken())
@@ -140,7 +140,7 @@ def test_target_start_is_passed_without_expected_answers(
 ) -> None:
     async def run() -> None:
         registry = ProfileRegistry(
-            profile_root=ROOT / "services/agent/profiles", workspace_root=ROOT, allow_legacy_references=True
+            profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles", workspace_root=ROOT, allow_legacy_references=True
         )
         registry.load_all()
         package = tmp_path / "base"
@@ -238,8 +238,11 @@ def test_target_start_is_passed_without_expected_answers(
             assert locating["start_location"] == "+SRC"
             assert locating["start_device"] == "XD3"
             assert locating["start_terminal"] == "XD3:113"
-        from agent_service.domain.models.extraction_stages import CrossPageCompletionData, PageScanData
-        from agent_service.domain.models.runs import AgentRun
+        from src.agent.extraction_agent.domain.models.extraction_stages import (
+            CrossPageCompletionData,
+            PageScanData,
+        )
+        from src.domain.models.runs import AgentRun
 
         stages = AsyncMock()
         stages.scan_page.return_value = PageScanData.model_validate(
@@ -301,9 +304,11 @@ def test_target_start_is_passed_without_expected_answers(
             assert cross_request.run_id.startswith(agent_run.agent_run_id + ":evaluation:")
 
         # Also inspect the final multimodal messages, not just the stage DTO.
-        from agent_service.application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
-        from agent_service.config import AgentSettings
-        from agent_service.infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
+        from src.agent.extraction_agent.application.extraction_stage_dispatcher import (
+            ProfileBoundStageDispatcher,
+        )
+        from src.config import AgentSettings
+        from src.agent.extraction_agent.infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
 
         responses = [stages.scan_page.return_value.model_dump_json()]
         if cross_page:
@@ -346,7 +351,7 @@ def test_worker_persists_results_and_resume_skips_model_calls(
 
     ticks = count()
     monkeypatch.setattr(
-        "agent_service.application.candidate_evaluation.perf_counter", lambda: float(next(ticks))
+        "src.application.candidate_evaluation.perf_counter", lambda: float(next(ticks))
     )
 
     async def run() -> None:
@@ -377,7 +382,7 @@ def test_worker_persists_results_and_resume_skips_model_calls(
         artifacts, evals = InMemoryArtifactRepository(), InMemoryEvalRepository()
         judge = EvaluationJudgeAgent(
             gateway=FakeModelGateway([json.dumps({"recommendation": "APPROVE", "summary": "通过固定回归"})]),
-            prompt_path=ROOT / "services/agent/prompts/evaluation_judge.md",
+            prompt_path=ROOT / "services/agent/src/agent/extraction_agent/prompts/evaluation_judge.md",
         )
         workflow = ImprovementWorkflow(
             profiles=Mock(),
@@ -417,7 +422,7 @@ def test_worker_persists_results_and_resume_skips_model_calls(
         executor._roots = AsyncMock(return_value=(bound, proposed))
         executor._dataset = AsyncMock(return_value=cases)
         executor._execute_case = AsyncMock(return_value={"value": "ok"})
-        from agent_service.domain.models.runs import AgentRun
+        from src.domain.models.runs import AgentRun
 
         request = CreateRunRequest(
             run_type="PROFILE_EVALUATION",
@@ -532,14 +537,14 @@ def test_review_publication_receipt_checks_scope_checksum_and_confirmation() -> 
 
 
 def test_native_fixed_cases_execute_with_fake_gateway_and_no_fewshot(tmp_path: Path) -> None:
-    from agent_service.application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
-    from agent_service.config import AgentSettings
-    from agent_service.domain.models.runs import AgentRun
-    from agent_service.infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
+    from src.agent.extraction_agent.application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
+    from src.config import AgentSettings
+    from src.domain.models.runs import AgentRun
+    from src.agent.extraction_agent.infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
 
     async def run() -> None:
         registry = ProfileRegistry(
-            profile_root=ROOT / "services/agent/profiles", workspace_root=ROOT, allow_legacy_references=True
+            profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles", workspace_root=ROOT, allow_legacy_references=True
         )
         registry.load_all()
         package = tmp_path / "base"

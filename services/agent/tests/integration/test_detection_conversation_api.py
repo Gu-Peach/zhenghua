@@ -7,17 +7,17 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from agent_service.agents.supervisor import SupervisorAgent
-from agent_service.application.profile_detection import create_profile_detection_runtime
-from agent_service.application.supervisor_conversation import SupervisorConversationService
-from agent_service.application.workflow_registry import WorkflowRegistry
-from agent_service.config import AgentSettings
-from agent_service.harness.model_gateway import FakeModelGateway
-from agent_service.infrastructure.conversation_memory import ShortTermConversationStore
-from agent_service.infrastructure.document.pdf_runtime import load_pdf_module
-from agent_service.main import create_app
-from agent_service.profiles import ProfileRegistry
-from agent_service.tools.profile_detection import ProfileDetectionTool
+from src.agents.supervisor import SupervisorAgent
+from src.application.profile_detection import create_profile_detection_runtime
+from src.application.supervisor_conversation import SupervisorConversationService
+from src.application.workflow_registry import WorkflowRegistry
+from src.config import AgentSettings
+from src.harness.model_gateway import FakeModelGateway
+from src.infrastructure.conversation_memory import ShortTermConversationStore
+from src.agent.extraction_agent.infrastructure.document.pdf_runtime import load_pdf_module
+from src.main import create_app
+from src.profiles import ProfileRegistry
+from src.tools.profile_detection import ProfileDetectionTool
 
 ROOT = Path(__file__).resolve().parents[4]
 HEADERS = {"Authorization": "Bearer acceptance-test"}
@@ -104,21 +104,21 @@ def detection(*, recognized: bool = True) -> str:
 
 def setup_api(tmp_path: Path, responses: list[str]) -> tuple[TestClient, FakeModelGateway, bytes]:
     registry = ProfileRegistry(
-        profile_root=ROOT / "services/agent/profiles",
+        profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles",
         workspace_root=ROOT,
         allow_legacy_references=True,
     )
     registry.load_all()
     settings = AgentSettings(
         workspace_root=ROOT,
-        profile_root=ROOT / "services/agent/profiles",
+        profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles",
         environment="test",
         internal_token="acceptance-test",
     )
     app = create_app(settings=settings, profile_registry=registry)
     gateway = FakeModelGateway(responses)
     app.state.supervisor_conversations = SupervisorConversationService(
-        agent=SupervisorAgent(gateway=gateway, prompt_path=ROOT / "services/agent/prompts/supervisor.md"),
+        agent=SupervisorAgent(gateway=gateway, prompt_path=ROOT / "services/agent/src/agent/extraction_agent/prompts/supervisor.md"),
         workflows=WorkflowRegistry(),
         profiles=registry,
         detection=ProfileDetectionTool(
@@ -341,12 +341,12 @@ def test_main_factory_wires_memory_service_when_model_is_configured() -> None:
 
     settings = AgentSettings(
         workspace_root=ROOT,
-        profile_root=ROOT / "services/agent/profiles",
+        profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles",
         environment="test",
         model_base_url="http://fake.model",
         default_model="fake-vlm",
     )
-    with patch("agent_service.main.OpenAICompatibleModelGateway", return_value=FakeModelGateway([])):
+    with patch("src.main.OpenAICompatibleModelGateway", return_value=FakeModelGateway([])):
         app = create_app(settings=settings)
     assert isinstance(app.state.supervisor_conversations, SupervisorConversationService)
     assert (

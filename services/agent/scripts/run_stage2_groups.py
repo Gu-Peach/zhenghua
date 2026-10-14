@@ -21,27 +21,33 @@ from zipfile import ZipFile
 
 AGENT_ROOT = Path(__file__).resolve().parents[1]
 ROOT = AGENT_ROOT.parents[1]
-sys.path.insert(0, str(AGENT_ROOT / "src"))
+sys.path.insert(0, str(AGENT_ROOT))
 
 # isort: split
-from agent_service.application.document_extraction.settings import Settings  # noqa: E402
-from agent_service.application.extraction_stage_factory import build_extraction_stage_dispatcher  # noqa: E402
-from agent_service.application.page_workflow_extraction import ExtractionStageGraphClient  # noqa: E402
-from agent_service.config import AgentSettings  # noqa: E402
-from agent_service.domain.models.extraction_stages import DrawingPageInput  # noqa: E402
-from agent_service.graphs.document_extraction.state import PageMeta  # noqa: E402
-from agent_service.graphs.document_extraction.workflow import run_document_stages_2_3  # noqa: E402
-from agent_service.harness.model_gateway import (  # noqa: E402
+from src.agent.extraction_agent.application.document_extraction.settings import Settings  # noqa: E402
+from src.agent.extraction_agent.application.extraction_stage_factory import (  # noqa: E402
+    build_extraction_stage_dispatcher,
+)
+from src.agent.extraction_agent.application.page_workflow_extraction import (  # noqa: E402
+    ExtractionStageGraphClient,
+)
+from src.config import AgentSettings  # noqa: E402
+from src.agent.extraction_agent.domain.models.extraction_stages import DrawingPageInput  # noqa: E402
+from src.agent.extraction_agent.graphs.document_extraction.state import PageMeta  # noqa: E402
+from src.agent.extraction_agent.graphs.document_extraction.workflow import (  # noqa: E402
+    run_document_stages_2_3,
+)
+from src.harness.model_gateway import (  # noqa: E402
     ModelGateway,
     ModelRequest,
     ModelResponse,
     OpenAICompatibleModelGateway,
 )
-from agent_service.harness.retry import RetryPolicy  # noqa: E402
-from agent_service.infrastructure.document.checkpoint import _write_json_atomic  # noqa: E402
-from agent_service.infrastructure.zh_vlm_stages import _prepare_few_shot_image  # noqa: E402
-from agent_service.profiles import ProfileRegistry  # noqa: E402
-from agent_service.profiles.zh.policy import ZhExtractionPolicy  # noqa: E402
+from src.harness.retry import RetryPolicy  # noqa: E402
+from src.agent.extraction_agent.infrastructure.document.checkpoint import _write_json_atomic  # noqa: E402
+from src.agent.extraction_agent.infrastructure.zh_vlm_stages import _prepare_few_shot_image  # noqa: E402
+from src.profiles import ProfileRegistry  # noqa: E402
+from src.agent.extraction_agent.profiles.zh.policy import ZhExtractionPolicy  # noqa: E402
 
 HEADERS = [
     "页码",
@@ -113,7 +119,7 @@ def memory_settings(settings: AgentSettings) -> AgentSettings:
         profile_packages_enabled=False,
         supabase_url=None,
         supabase_service_role_key=None,
-        profile_root=AGENT_ROOT / "profiles",
+        profile_root=AGENT_ROOT / "src/agent/extraction_agent/profiles",
         inline_worker=False,
         import_template_path=None,
         extraction_output_mode="library",
@@ -546,9 +552,9 @@ async def execute(args: argparse.Namespace, *, stages: Any | None = None) -> dic
 def parse_args() -> argparse.Namespace:
     dependency = Path.home() / ".cache/codex-runtimes/codex-primary-runtime/dependencies/node"
     parser = argparse.ArgumentParser(description="Local Stage 2 test; no database or Storage uploads.")
-    parser.add_argument("--pages-dir", type=Path, default=ROOT / "docs/test/agent-run-001/pages")
+    parser.add_argument("--pages-dir", type=Path, default=ROOT / "docs/test/pages")
     parser.add_argument(
-        "--index", type=Path, default=ROOT / "docs/test/agent-run-001/agent/drawing_index.json"
+        "--index", type=Path, default=ROOT / "docs/test/pages/agent/drawing_index.json"
     )
     parser.add_argument("--template", type=Path, default=ROOT / "docs/test/1641.xlsx")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "docs/test/run_stage2")

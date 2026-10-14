@@ -7,17 +7,17 @@ from uuid import uuid4
 import httpx
 import pytest
 
-from agent_service.domain.enums import ScopeType
-from agent_service.domain.errors import AgentServiceError
-from agent_service.domain.models.proposals import (
+from src.domain.enums import ScopeType
+from src.domain.errors import AgentServiceError
+from src.domain.models.proposals import (
     ProposalOperation,
     ProposalValidation,
     ResultProposal,
 )
-from agent_service.domain.models.runs import ModelRef, ProfileRef, RunScope
-from agent_service.infrastructure.result_mapping import proposal_to_normalized_units
-from agent_service.infrastructure.supabase_client import SupabaseClient
-from agent_service.infrastructure.supabase_repositories import SupabaseProposalRepository
+from src.domain.models.runs import ModelRef, ProfileRef, RunScope
+from src.infrastructure.result_mapping import proposal_to_normalized_units
+from src.infrastructure.supabase_client import SupabaseClient
+from src.infrastructure.supabase_repositories import SupabaseProposalRepository
 
 
 def _proposal(*records: dict[str, object]) -> ResultProposal:

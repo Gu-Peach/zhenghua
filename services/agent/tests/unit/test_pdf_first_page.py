@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from agent_service.tools.pdf_first_page import PdfFirstPageRenderer
+from src.tools.pdf_first_page import PdfFirstPageRenderer
 
 
 class FakePixmap:

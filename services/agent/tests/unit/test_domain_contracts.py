@@ -3,9 +3,9 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
-from agent_service.domain.enums import RunType, ScopeType
-from agent_service.domain.models.proposals import ProposalOperation
-from agent_service.domain.models.runs import CreateRunRequest, RunScope
+from src.domain.enums import RunType, ScopeType
+from src.domain.models.proposals import ProposalOperation
+from src.domain.models.runs import CreateRunRequest, RunScope
 
 
 def base_request(**overrides: object) -> dict[str, object]:

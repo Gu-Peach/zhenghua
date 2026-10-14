@@ -9,18 +9,18 @@ from uuid import uuid4
 import httpx
 import pytest
 
-from agent_service.agents.profile_router import ProfileRouterAgent
-from agent_service.application.profile_package_lifecycle import (
+from src.agents.profile_router import ProfileRouterAgent
+from src.application.profile_package_lifecycle import (
     CreateProfilePackage,
     PackageLifecycleError,
     ProfilePackageLifecycle,
 )
-from agent_service.harness import FakeModelGateway
-from agent_service.infrastructure.supabase_client import SupabaseClient
-from agent_service.infrastructure.supabase_profile_packages import SupabaseProfilePackageRepository
-from agent_service.profiles import ProfileRegistry, ProfileRegistryError
-from agent_service.profiles.package import build_package
-from agent_service.tools.pdf_first_page import FirstPageImage
+from src.harness import FakeModelGateway
+from src.infrastructure.supabase_client import SupabaseClient
+from src.infrastructure.supabase_profile_packages import SupabaseProfilePackageRepository
+from src.profiles import ProfileRegistry, ProfileRegistryError
+from src.profiles.package import build_package
+from src.tools.pdf_first_page import FirstPageImage
 
 ROOT = Path(__file__).resolve().parents[4]
 USER, OTHER = str(uuid4()), str(uuid4())
@@ -67,7 +67,7 @@ class PackageBackend:
 
 def local_registry() -> ProfileRegistry:
     registry = ProfileRegistry(
-        profile_root=ROOT / "services/agent/profiles", workspace_root=ROOT, allow_legacy_references=True
+        profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles", workspace_root=ROOT, allow_legacy_references=True
     )
     registry.load_all()
     return registry
@@ -121,7 +121,7 @@ def test_create_register_retry_delete_and_historical_binding(tmp_path: Path) -> 
         detected = await ProfileRouterAgent(
             gateway=gateway,
             registry=registry,
-            prompt_path=ROOT / "services/agent/prompts/profile_router.md",
+            prompt_path=ROOT / "services/agent/src/agent/extraction_agent/prompts/profile_router.md",
         ).detect(
             first_page=FirstPageImage(
                 content=b"fixture", mime_type="image/png", width=1, height=1, checksum="sha256:" + "a" * 64

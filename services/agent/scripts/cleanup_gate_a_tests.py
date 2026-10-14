@@ -8,8 +8,8 @@ from uuid import UUID
 
 import httpx
 
-from agent_service.config import AgentSettings
-from agent_service.infrastructure.supabase_client import SupabaseClient
+from src.config import AgentSettings
+from src.infrastructure.supabase_client import SupabaseClient
 
 
 async def main() -> None:
