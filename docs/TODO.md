@@ -4,6 +4,8 @@
 
 ## 进行中
 
+- [x] 微调 Supervisor 为专业电气图纸与线表助手：CHAT 公开回复流、日常无确认卡片、任务先说明后卡片，提取只使用已上传 PDF；77项 Agent/Server离线测试、21项浏览器夹具回归、Web类型/lint/build、修改文件Ruff与3源码strict mypy通过，桌面/窄屏截图已检查。契约6/checksum与文档同步，Server OpenAPI导出无差异；未调用真实模型、写业务数据库或重启现有Agent，实际服务需加载新代码。见 `docs/service/agent/changelog/2026-10-13-supervisor-chat.md`。
+
 - [x] 补充 Web、Server/API、Agent README 的 Windows PowerShell 本地启动指令、依赖/配置准备、端口、健康检查和同进程 Worker；启动命令语法与入口路径静态核对通过。只改文档，未安装依赖、启动服务或写数据库。
 
 - [x] 基于本地002.C/002.M原图核对完成ZH2.0.1：方向契约/缺失降级、原始引用解析、端子身份/同页/分支/器件定义规则与实际图片Few-shot；40项冒烟、7项接口/兼容边界回归、Ruff与8文件strict mypy通过，公共Schema不变。保留旧结果，不写数据库、不发布、不调用真实模型；真实效果尚未复验。见 `docs/service/agent/changelog/2026-10-13-zh-stage2-quality.md`。

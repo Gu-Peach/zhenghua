@@ -1,5 +1,7 @@
 # Agent Service
 
+2026-10-13 Supervisor 对话微调：专业电气图纸与线表助手增加 CHAT 路线，日常交流流式输出公开回答、不分派工作流；真实 PDF 才能进入类型确认及 Stage 1/2 提取。任务说明后展示卡片，保留纠错/规则修改确认和权限检查。SSE 只发送 `delta.content`，不发送模型内部推理；运行服务需加载新代码。见[对话交付](../../docs/service/agent/changelog/2026-10-13-supervisor-chat.md)。
+
 2026-10-13 本地ZH2.0.1：方向缺失降级、原始引用解析、分支保留与端子身份校验；40项冒烟及7项接口/兼容回归通过。旧结果保留，尚未重跑真实模型，数据库与远端规则未变。见[变更记录](../../docs/service/agent/changelog/2026-10-13-zh-stage2-quality.md)。
 
 本地 002.C/002.M 测试入口：`scripts/run_stage2_groups.py`，仅本地图/索引、内存执行，导出与 `1641.xlsx` 同顺序的 12 列线表，色标留空。默认预检，真实模型须 `--allow-real-model`；无数据库/Storage 上传。命令和产物见 [测试说明](../../docs/service/agent/local-stage2-group-test.md)。

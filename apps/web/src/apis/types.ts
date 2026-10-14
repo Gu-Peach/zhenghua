@@ -80,7 +80,7 @@ export interface StageEvent {
   timestamp: string;
 }
 
-export type AgentEventKind = "thought" | "stage" | "tool" | "result" | "error";
+export type AgentEventKind = "message" | "thought" | "stage" | "tool" | "result" | "error";
 
 export interface AgentEvent {
   id: string;

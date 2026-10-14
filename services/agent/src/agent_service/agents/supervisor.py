@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 from ..domain.enums import SupervisorIntent, SupervisorTurnStatus, WorkflowKind
@@ -64,6 +65,22 @@ class SupervisorAgent:
         turn: ConversationTurn,
         model_output: SupervisorModelOutput,
     ) -> SupervisorDecision:
+        if model_output.intent in {SupervisorIntent.CHAT, SupervisorIntent.UNKNOWN} or (
+            model_output.intent in {SupervisorIntent.PROCESS_DOCUMENT, SupervisorIntent.DETECT_PROFILE}
+            and not turn.attachment_ids
+        ):
+            return SupervisorDecision(
+                turn_id=turn.turn_id,
+                conversation_id=turn.conversation_id,
+                intent=SupervisorIntent.CHAT
+                if model_output.intent == SupervisorIntent.UNKNOWN
+                else model_output.intent,
+                confidence=model_output.confidence,
+                status=SupervisorTurnStatus.ANSWERED,
+                reason=model_output.reason,
+                user_message="请先上传需要处理的 PDF 图纸，我会按 Stage 1 分类、Stage 2 提取的路线处理。",
+                requires_input=False,
+            )
         # Model hints are search terms, never authority or a replacement for stable IDs.
         target = turn.target_hint.model_copy(deep=True)
         for key in type(target).model_fields:
@@ -84,7 +101,6 @@ class SupervisorAgent:
             model_output.requires_input
             or model_output.confidence < 0.65
             or missing_fields
-            or model_output.intent == SupervisorIntent.UNKNOWN
         ):
             question = model_output.question or self._question_for(model_output.intent, missing_fields)
             return SupervisorDecision(
@@ -126,6 +142,57 @@ class SupervisorAgent:
             requires_input=False,
             command=command,
         )
+
+    async def chat(
+        self,
+        turn: ConversationTurn,
+        *,
+        context_summary: str = "",
+        on_text: Callable[[str], Awaitable[None]] | None = None,
+    ) -> str:
+        """Answer without tools; only public response content may be streamed."""
+        try:
+            context = json.loads(context_summary) if context_summary else {}
+        except ValueError:
+            context = {}
+        history = context.get("history", []) if isinstance(context, dict) else []
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "你是专业的电气图纸与线表智能助手，帮助用户理解电气原理图、端子和连接关系，"
+                    "核对线表、查询任务，并在用户上传PDF后协助Stage 1分类与Stage 2提取。"
+                    "你也能自然回应问候、闲聊、能力咨询和一般知识问题。使用自然简洁的中文直接回答，"
+                    "不输出JSON、内部推理、意图标签或任务确认卡片。没有运行工具时不能声称已读取图纸、"
+                    "查询数据库、执行提取或修改规则；无法从提供的信息确定的图纸事实要说明缺少依据。"
+                    "仅依据用户提供的内容解释，不编造元件、端子或连接。日常问候不催促上传文件。"
+                ),
+            }
+        ]
+        if isinstance(history, list):
+            messages.extend(
+                {"role": item["role"], "content": str(item["content"])}
+                for item in history[-24:]
+                if isinstance(item, dict)
+                and item.get("role") in {"user", "assistant"}
+                and isinstance(item.get("content"), str)
+            )
+        messages.append({"role": "user", "content": turn.message})
+        request = ModelRequest(
+            agent_name="supervisor_chat",
+            run_id=f"turn:{turn.turn_id}",
+            messages=messages,
+            max_tokens=1024,
+            metadata={"conversation_id": turn.conversation_id, "user_id": turn.user_id},
+        )
+        stream = getattr(self._gateway, "stream_text", None)
+        if on_text is not None and callable(stream):
+            response = await stream(request, on_text)
+        else:
+            response = await self._gateway.invoke(request)
+            if on_text and response.content:
+                await on_text(response.content)
+        return str(response.content)
 
     @staticmethod
     def _missing_fields(turn: ConversationTurn, intent: SupervisorIntent) -> list[str]:

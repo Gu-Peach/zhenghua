@@ -110,8 +110,8 @@ function ProjectWorkspace({ id, projects, onUpload, onProjectLoaded }: { id: str
           setEvents(e => [...e, { id: crypto.randomUUID(), kind: "result", title: diagnosis.candidate_recommended ? "待确认规则建议" : "纠错归因结果", detail: `${diagnosis.candidate_recommended ? "确认规则修改后将直接修改并启用新规则版本。\n" : ""}${JSON.stringify(diagnosis.diagnoses, null, 2)}`, status: diagnosis.candidate_recommended ? "pending" : "done", timestamp: new Date().toISOString() }]);
         } else setHint({ agent_run_id: currentRun.current });
       }
-    } catch (e) { if (!abort.current?.signal.aborted) setEvents(events => [...events, { id: crypto.randomUUID(), kind: "error", title: "连接/任务失败", detail: String(e), status: "failed", timestamp: new Date().toISOString() }]); }
-    finally { setRunning(false); setRevision(n => n + 1); }
+    } catch (e) { if (!abort.current?.signal.aborted) setEvents(events => [...events.map(item => item.status === "running" ? { ...item, status: "failed" as const } : item), { id: crypto.randomUUID(), kind: "error", title: "连接/任务失败", detail: String(e), status: "failed", timestamp: new Date().toISOString() }]); }
+    finally { setRunning(false); if (currentRun.current) setRevision(n => n + 1); }
   }
   async function send(message: string, attachmentIds: string[] = []) {
     if (running) return;
@@ -127,12 +127,12 @@ function ProjectWorkspace({ id, projects, onUpload, onProjectLoaded }: { id: str
     started.current = true;
     if (imported && !sessionStorage.getItem(`import-started:${id}`)) {
       sessionStorage.setItem(`import-started:${id}`, "true");
-      void send("请识别这份 PDF 的图纸类型，确认后执行完整三阶段提取。", [imported.attachment_id]);
+      void send("请识别这份已上传 PDF 的图纸类型，确认后执行 Stage 1 分类和 Stage 2 逐页提取。", [imported.attachment_id]);
     } else {
       const run = sessionStorage.getItem(`run:${id}`);
       if (run) { abort.current = new AbortController(); void consume(watchRun(run, abort.current.signal)); }
       else if (sessionStorage.getItem(`conversation:${id}`)) {
-        void request<{ history?: Array<{ role: string; content: string }> }>(`/api/v1/supervisor/conversations/${conversation.current}`).then(memory => setEvents((memory.history ?? []).map(h => ({ id: crypto.randomUUID(), kind: "result", title: h.role === "user" ? "用户" : "Supervisor", detail: h.content, status: "done", timestamp: "" })))).catch(() => setNotice("Agent 短期会话不可恢复；结果仍保存在数据库，可开启新任务。"));
+        void request<{ history?: Array<{ role: string; content: string }> }>(`/api/v1/supervisor/conversations/${conversation.current}`).then(memory => setEvents((memory.history ?? []).map(h => ({ id: crypto.randomUUID(), kind: "message", title: h.role === "user" ? "用户" : "电气图纸助手", detail: h.content, status: "done", timestamp: "" })))).catch(() => setNotice("Agent 短期会话不可恢复；结果仍保存在数据库，可开启新任务。"));
       }
     }
     }, 0);

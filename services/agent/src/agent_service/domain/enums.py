@@ -113,6 +113,7 @@ class RootCauseCategory(StringEnum):
 
 
 class SupervisorIntent(StringEnum):
+    CHAT = "CHAT"
     DETECT_PROFILE = "DETECT_PROFILE"
     QUERY_CONTEXT = "QUERY_CONTEXT"
     PROCESS_DOCUMENT = "PROCESS_DOCUMENT"

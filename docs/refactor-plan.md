@@ -6,6 +6,8 @@
 
 ## 1. 重构结论
 
+2026-10-13 Supervisor 对话微调设计见 [对话计划](./service/agent/supervisor-chat-plan.md)：日常聊天直接流式回答，任务说明后才显示卡片，完整提取仍要求会话内真实 PDF 与类型确认；现有任务权限/持久化边界保持不变。
+
 2026-10-13 本地新增 ZH 大车卷盘网格页标 experimental Profile，采用独立页标/引用策略及可逆接口映射，不上传或修改生产资源；见 [ADR-0015](./adr/0015-zh-gantry-reel-profile.md)。
 
 2026-10-13 提取链路调整实施见 [ADR-0014](./adr/0014-stage2-page-extraction-workflow.md)：Stage 2 独立逐页 LangGraph 内部执行扫描、双图定向补全与完成页持久化，新运行取消独立 Stage 3；历史兼容和最终业务版本边界见 ADR。

@@ -23,6 +23,59 @@ ROOT = Path(__file__).resolve().parents[4]
 HEADERS = {"Authorization": "Bearer acceptance-test"}
 
 
+def test_daily_chat_sse_has_text_deltas_then_one_final_answer(tmp_path: Path) -> None:
+    client, gateway, _ = setup_api(tmp_path, [intent("CHAT"), "你好！我可以帮助你理解图纸和核对线表。"])
+    payload = {"turn_id": "daily-1", "conversation_id": "daily", "user_id": "user", "message": "你好"}
+    with client:
+        response = client.post("/v1/supervisor/turns/stream", json=payload, headers=HEADERS)
+        assert response.status_code == 200
+        frames = [json.loads(line[6:]) for line in response.text.splitlines() if line.startswith("data: ")]
+        assert len(frames) > 2
+        assert all(frame.get("event_type") == "ASSISTANT_DELTA" for frame in frames[:-1])
+        assert frames[-1]["receipt"] is None
+        assert frames[-1]["user_event"]["event_type"] == "ASSISTANT_MESSAGE"
+        assert not frames[-1]["user_event"]["requires_input"]
+        assert (
+            "".join(frame["user_message"] for frame in frames[:-1])
+            == frames[-1]["user_event"]["user_message"]
+        )
+        # An identical replay uses the cached answer, not another paid model call.
+        replay = client.post("/v1/supervisor/turns/stream", json=payload, headers=HEADERS)
+        assert replay.status_code == 200
+        assert len(gateway.calls) == 2
+
+
+def test_greeting_with_pending_pdf_does_not_confirm_or_start_task(tmp_path: Path) -> None:
+    client, gateway, pdf = setup_api(
+        tmp_path, [intent("DETECT_PROFILE"), detection(), intent("CHAT"), "你好！"]
+    )
+    with client:
+        attachment = upload(client, pdf)
+        client.post(
+            "/v1/supervisor/turns",
+            json={
+                "conversation_id": "session-1",
+                "user_id": "user-1",
+                "message": "只识别类型",
+                "attachment_ids": [attachment],
+            },
+        )
+        response = client.post(
+            "/v1/supervisor/turns",
+            json={
+                "conversation_id": "session-1",
+                "user_id": "user-1",
+                "message": "你好",
+            },
+        )
+        assert response.status_code == 200
+        assert response.json()["receipt"] is None
+        memory = client.get("/v1/supervisor/conversations/session-1", params={"user_id": "user-1"}).json()
+        assert memory["pending_detection"] is not None
+        assert memory["profile_assignment"] is None
+        assert len(gateway.calls) == 4
+
+
 def intent(name: str, hints: dict[str, str] | None = None) -> str:
     return json.dumps(
         {

@@ -5,7 +5,7 @@ export type AgentStageStatus = "pending" | "processing" | "done" | "failed";
 export interface AgentStageProgress { stage: string; status: AgentStageStatus; agentName?: string }
 export interface SupervisorRequest { projectId: string; conversationId: string; message: string; attachmentIds?: string[]; targetHint?: Record<string, string> }
 export interface AgentStreamUpdate { stageUpdate?: AgentStageProgress; event?: AgentEvent; response?: TurnResponse; refresh?: boolean; runId?: string; seq?: number }
-export interface TurnResponse { receipt?: { agent_run_id?: string; payload?: Record<string, unknown> }; decision?: { reason?: string }; user_event?: { user_message: string; requires_input?: boolean; occurred_at?: string } }
+export interface TurnResponse { receipt?: { agent_run_id?: string; payload?: Record<string, unknown> }; decision?: { reason?: string; intent?: string }; user_event?: { turn_id?: string; event_type?: string; user_message: string; requires_input?: boolean; occurred_at?: string } }
 interface RunEvent { seq: number; agent_run_id: string; event_type: string; stage?: string; message: string; occurred_at: string; metrics?: Record<string, unknown>; error?: { message: string } }
 const labels: Record<string, string> = { RENDER: "PDF 渲染", PAGE_CLASSIFICATION: "Stage 1", PAGE_SCAN: "Stage 2", BUILD_CROSS_PAGE_TASKS: "跨页任务索引", CROSS_PAGE_COMPLETION: "Stage 3", VALIDATION: "确定性校验", ISSUE_DIAGNOSIS: "规则归因", PROPOSAL: "结果修订" };
 
@@ -36,17 +36,29 @@ export async function* sse(path: string, options: RequestInit = {}): AsyncGenera
 export async function* streamSupervisorRun(input: SupervisorRequest, signal?: AbortSignal): AsyncGenerator<AgentStreamUpdate> {
   let final: TurnResponse | undefined;
   let lastMessage = "";
+  let replyText = "";
+  let replyId = "";
   for await (const frame of sse("/api/v1/supervisor/turns/stream", { method: "POST", signal, body: JSON.stringify({ conversation_id: input.conversationId, turn_id: crypto.randomUUID(), project_id: input.projectId, message: input.message, attachment_ids: input.attachmentIds ?? [], target_hint: input.targetHint ?? {} }) })) {
     if (frame.event === "error") { const error = frame.data as { detail: unknown }; throw new Error(typeof error.detail === "string" ? error.detail : JSON.stringify(error.detail)); }
     if (frame.event === "message") {
-      const message = frame.data as { event_type: string; user_message: string; occurred_at: string };
+      const message = frame.data as { turn_id?: string; event_type: string; user_message: string; occurred_at: string; payload?: { workflow?: string } };
+      if (message.event_type === "ASSISTANT_DELTA") {
+        replyText += message.user_message;
+        replyId ||= `reply:${message.turn_id ?? input.conversationId}`;
+        yield { event: { id: replyId, kind: "message", title: "电气图纸助手", detail: replyText, timestamp: message.occurred_at, status: "running" } };
+        continue;
+      }
+      if (message.event_type === "WORKFLOW_DISPATCHED" && message.payload?.workflow === "READ_ONLY_QUERY") continue;
       lastMessage = message.user_message;
       yield { event: { id: crypto.randomUUID(), kind: message.event_type === "SUPERVISOR_PLAN" ? "thought" : "result", title: "Supervisor", detail: message.user_message, timestamp: message.occurred_at, status: "done" } };
     }
     if (frame.event === "response") {
       final = frame.data as TurnResponse;
       const userEvent = final.user_event;
-      yield { response: final, refresh: true, event: userEvent && userEvent.user_message !== lastMessage ? { id: crypto.randomUUID(), kind: "result", title: userEvent.requires_input ? "等待用户确认" : "Supervisor", detail: userEvent.user_message, timestamp: userEvent.occurred_at ?? new Date().toISOString(), status: userEvent.requires_input ? "pending" : "done" } : undefined };
+      const intent = final.decision?.intent;
+      const taskCard = !intent || ["PROCESS_DOCUMENT", "DETECT_PROFILE", "CORRECT_RESULT", "CONFIRM_INPUT", "CONFIRM_RESULT_PATCH", "AUTHORIZE_PROFILE_CANDIDATE"].includes(intent);
+      const plainReply = userEvent?.event_type === "ASSISTANT_MESSAGE" || !taskCard;
+      yield { response: final, refresh: !!final.receipt || !plainReply, event: userEvent && (replyId || userEvent.user_message !== lastMessage) ? { id: replyId || crypto.randomUUID(), kind: plainReply ? "message" : "result", title: plainReply ? "电气图纸助手" : userEvent.requires_input ? "等待用户确认" : "任务处理", detail: userEvent.user_message, timestamp: userEvent.occurred_at ?? new Date().toISOString(), status: !plainReply && userEvent.requires_input ? "pending" : "done" } : undefined };
     }
   }
   if (!final) throw new Error("Supervisor 响应中断，尚无法确认任务是否创建；请查询会话状态，不要盲目重复提交。");

@@ -48,7 +48,8 @@ def test_ready_and_profile_contract_when_dependencies_are_configured() -> None:
     profiles = client.get("/v1/profiles")
     assert profiles.status_code == 200
     assert {"zh", "abb"}.issubset({item["key"] for item in profiles.json()["items"]})
-    rules = client.get("/v1/profiles/zh/versions/1.0.0/rules")
+    zh = next(item for item in profiles.json()["items"] if item["key"] == "zh")
+    rules = client.get(f"/v1/profiles/zh/versions/{zh['version']}/rules")
     assert rules.status_code == 200
     assert rules.json()["rules"]["profile_key"] == "zh"
     assert rules.json()["rules"]["extraction"]["output_contract"] == "wiring_connection_v1"

@@ -451,6 +451,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .agent-feed-label span { display: inline-flex; align-items: center; gap: 5px; color: #3f6871; font-weight: 800; }
 .agent-feed-label small { color: #99a4b1; font-size: 8px; }
 .agent-thought { display: grid; grid-template-columns: 16px minmax(0,1fr); gap: 7px; margin: 8px 3px 13px; color: #9aa5b1; }
+.agent-message { margin: 12px 3px 18px; padding-left: 23px; min-width: 0; }
+.agent-message strong { color: #344357; font-size: 12px; }
+.agent-message p { margin: 6px 0 0; color: #536174; font-size: 12px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+.agent-message-user p { color: #69778a; }
 .agent-thought > svg { margin-top: 2px; color: #a9b3bd; }
 .agent-thought strong { display: block; margin-bottom: 2px; color: #8793a0; font-size: 8px; font-weight: 600; }
 .agent-thought p { margin: 0; color: #8793a0; font-size: 9px; font-style: italic; line-height: 1.55; overflow-wrap: anywhere; }

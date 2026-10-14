@@ -1,5 +1,7 @@
 # Agent 服务设计索引
 
+2026-10-13 Supervisor日常对话完成：CHAT公开回答流、无PDF不分派提取、问候不确认既有任务；契约6、77项Agent/Server离线验证和21项浏览器夹具。设计与边界见[计划](./supervisor-chat-plan.md)，验证和服务加载限制见[交付](./changelog/2026-10-13-supervisor-chat.md)。
+
 2026-10-13 ZH本地2.0.1质量修正：方向缺失降级、真实针脚与地址区分、原始引用解析及分支去重；40项离线冒烟与7项接口/兼容边界回归，未重跑真实模型或写库。旧121条结果保留，准确率未复验；见[记录](./changelog/2026-10-13-zh-stage2-quality.md)。
 
 2026-10-13 本地新增大车卷盘 `zh_gantry_reel@0.1.0` experimental 资源：SH.NO. 网格页标/引用，分类、初扫、内部补全各两组实际图片；仅离线资源/接口回归，不上传、不调用真实模型。资料差异与范围见 [核对说明](./zh-gantry-reel-review.md)，规范索引设计见 [ADR-0015](../../adr/0015-zh-gantry-reel-profile.md)。

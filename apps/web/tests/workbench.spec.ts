@@ -27,6 +27,64 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
+test("日常聊天累积流式回复，不创建任务或确认卡片", async ({ page }) => {
+  let posts = 0;
+  await page.route("**/api/v1/supervisor/turns/stream", async route => {
+    posts++;
+    expect(route.request().postDataJSON().attachment_ids).toEqual([]);
+    const events = ["你好！", "我是电气图纸与线表智能助手，", "可以帮你解释图纸和核对连接。"].map(text => `event: message\ndata: ${JSON.stringify({ turn_id: "daily", event_type: "ASSISTANT_DELTA", user_message: text })}\n\n`);
+    const response = { decision: { intent: "CHAT" }, receipt: null, user_event: { turn_id: "daily", event_type: "ASSISTANT_MESSAGE", user_message: "你好！我是电气图纸与线表智能助手，可以帮你解释图纸和核对连接。", requires_input: false } };
+    await route.fulfill({ contentType: "text/event-stream", body: events.join("") + `event: response\ndata: ${JSON.stringify(response)}\n\n` });
+  });
+  await page.goto(`/projects/${project}`);
+  await page.getByRole("button", { name: "打开 AI 聊天面板" }).click();
+  await page.getByRole("textbox", { name: "向主 Agent 提出自然语言需求" }).fill("你好");
+  await page.getByRole("button", { name: "发送给主 Agent" }).click();
+  const feed = page.locator(".agent-feed");
+  await expect(feed.locator(".agent-message-assistant")).toHaveCount(1);
+  await expect(feed).toContainText("可以帮你解释图纸和核对连接。");
+  await expect(feed.locator(".agent-step")).toHaveCount(0);
+  await expect(feed).not.toContainText("等待用户确认");
+  expect(posts).toBe(1);
+  await page.screenshot({ path: "../../.runtime/web-tests/daily-chat-desktop.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: "../../.runtime/web-tests/daily-chat-mobile.png", fullPage: true });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(392);
+});
+
+test("任务先展示说明，说明流式显示完成后才出现确认卡片", async ({ page }) => {
+  await page.route("**/api/v1/supervisor/turns/stream", route => {
+    const plan = { event_type: "SUPERVISOR_PLAN", user_message: "我会先核对你提供的来源端子与图中连接，再确定需要重新识别的范围。" };
+    const response = { decision: { intent: "CORRECT_RESULT" }, user_event: { user_message: "请确认重新识别范围", requires_input: true } };
+    return route.fulfill({ contentType: "text/event-stream", body: `event: message\ndata: ${JSON.stringify(plan)}\n\nevent: response\ndata: ${JSON.stringify(response)}\n\n` });
+  });
+  await page.goto(`/projects/${project}`);
+  await page.getByRole("button", { name: "打开 AI 聊天面板" }).click();
+  await page.getByRole("textbox", { name: "向主 Agent 提出自然语言需求" }).fill("请重新检查XD3:251");
+  await page.getByRole("button", { name: "发送给主 Agent" }).click();
+  await expect(page.locator(".agent-thought")).toBeVisible();
+  await expect(page.locator(".agent-feed")).not.toContainText("等待用户确认");
+  await expect(page.locator(".agent-feed")).toContainText("请确认重新识别范围");
+  await expect(page.locator(".agent-thought .thought-cursor")).toHaveCount(0);
+});
+
+test("聊天流中断保留已收到的文字，停止光标并允许继续发送", async ({ page }) => {
+  await page.route("**/api/v1/supervisor/turns/stream", route => route.fulfill({
+    contentType: "text/event-stream",
+    body: `event: message\ndata: ${JSON.stringify({ turn_id: "broken-chat", event_type: "ASSISTANT_DELTA", user_message: "已收到的回答内容" })}\n\nevent: error\ndata: ${JSON.stringify({ detail: "模型连接中断" })}\n\n`,
+  }));
+  await page.goto(`/projects/${project}`);
+  await page.getByRole("button", { name: "打开 AI 聊天面板" }).click();
+  const input = page.getByRole("textbox", { name: "向主 Agent 提出自然语言需求" });
+  await input.fill("介绍一下端子排");
+  await page.getByRole("button", { name: "发送给主 Agent" }).click();
+  await expect(page.locator(".agent-message-assistant")).toContainText("已收到的回答内容");
+  await expect(page.locator(".agent-message-assistant .thought-cursor")).toHaveCount(0);
+  await expect(page.locator(".agent-feed")).toContainText("模型连接中断");
+  await input.fill("继续");
+  await expect(page.getByRole("button", { name: "发送给主 Agent" })).toBeEnabled();
+});
+
 test("规则建议一次确认后直接启用，不出现评测审核提示", async ({ page }) => {
   const run = "confirmed-rule-fixture";
   let confirmed = false;

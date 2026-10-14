@@ -8,7 +8,7 @@ from langgraph.graph import END, START, StateGraph
 
 from ...agents.supervisor import SupervisorAgent
 from ...application.workflow_registry import WorkflowDispatchReceipt, WorkflowRegistry
-from ...domain.enums import SupervisorTurnStatus
+from ...domain.enums import SupervisorIntent, SupervisorTurnStatus
 from ...domain.models.supervisor import ConversationTurn, SupervisorDecision, SupervisorUserEvent
 
 
@@ -37,6 +37,28 @@ def build_supervisor_graph(
             state["turn"],
             context_summary=state.get("context_summary", ""),
         )
+        if decision.intent == SupervisorIntent.CHAT:
+
+            async def emit(text: str) -> None:
+                if on_event and text:
+                    await on_event(
+                        SupervisorUserEvent(
+                            conversation_id=decision.conversation_id,
+                            turn_id=decision.turn_id,
+                            event_type="ASSISTANT_DELTA",
+                            user_message=text,
+                            payload={"intent": "CHAT"},
+                        )
+                    )
+
+            answer = await agent.chat(
+                state["turn"],
+                context_summary=state.get("context_summary", ""),
+                on_text=emit if on_event else None,
+            )
+            return {"decision": decision.model_copy(update={"user_message": answer})}
+        if decision.status == SupervisorTurnStatus.ANSWERED:
+            return {"decision": decision}
         if on_event:
             await on_event(
                 SupervisorUserEvent(
@@ -108,7 +130,9 @@ def build_supervisor_graph(
             conversation_id=decision.conversation_id,
             turn_id=decision.turn_id,
             agent_run_id=receipt.agent_run_id if receipt else decision.agent_run_id,
-            event_type=decision.status.value,
+            event_type="ASSISTANT_MESSAGE"
+            if decision.status == SupervisorTurnStatus.ANSWERED
+            else decision.status.value,
             user_message=f"{decision.user_message}{suffix}".strip(),
             requires_input=decision.requires_input,
             payload={

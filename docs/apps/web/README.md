@@ -1,5 +1,7 @@
 # apps/web 前端归档
 
+2026-10-13 对话入口微调：日常公开回复累积显示，任务先说明后卡片；21项浏览器HTTP夹具及Web类型/lint/build通过，桌面/窄屏已检查。见[记录](./changelog/2026-10-13-supervisor-chat.md)。
+
 2026-10-13 规则改进取消评测门禁，聊天展示一次确认直接修改/启用及成功结果；详见 [跨模块记录](../../service/agent/changelog/2026-10-13-confirmed-rules.md)。
 
 > 当前状态：真实 Supabase Auth、Server 工作台 API、持久 Agent 事件流和资源库已接入。

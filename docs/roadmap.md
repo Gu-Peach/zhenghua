@@ -3,6 +3,8 @@
 > 最后更新：2026-10-12
 > 状态含义：`planned`、`in progress`、`blocked`、`done`
 
+2026-10-13 Supervisor对话微调完成：日常聊天公开回答流、任务说明后才出卡片、已上传PDF进入Stage 1/2；77项Agent/Server离线与21项浏览器夹具、Web检查通过。未调用真实模型/写业务库/重启现有Agent，实际对话质量待加载服务验收，既有阶段状态保持不变；见[交付](./service/agent/changelog/2026-10-13-supervisor-chat.md)。
+
 2026-10-13 本地启动文档已补齐：Web 5174、Server/API 8000、Agent 8100，含依赖/配置准备、开发 Worker 和健康检查。仅静态核对命令及入口，未启动服务；各开发阶段状态保持不变。
 
 2026-10-13 ZH本地2.0.1完成原图核对后的规则/校验修正及40项冒烟、7项接口/兼容回归。旧2.0.0结果保留，真实模型质量未复验，Phase 4仍in progress；见[记录](./service/agent/changelog/2026-10-13-zh-stage2-quality.md)。

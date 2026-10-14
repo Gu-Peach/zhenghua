@@ -4,6 +4,7 @@ import asyncio
 import json
 import re
 from collections import deque
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from time import perf_counter
 from typing import Any, Protocol
@@ -228,6 +229,129 @@ class OpenAICompatibleModelGateway:
         usage = payload.get("usage") if isinstance(payload.get("usage"), dict) else {}
         return content, usage
 
+    async def stream_text(
+        self, request: ModelRequest, on_text: Callable[[str], Awaitable[None]]
+    ) -> ModelResponse:
+        """Stream public text only; never retry after any text has reached the client."""
+        if request.output_model is not None:
+            raise ValueError("Text streaming is not a structured-output operation.")
+        model = request.model or self._default_model
+        payload: dict[str, Any] = {
+            "model": model,
+            "messages": self._normalize_messages(request.messages),
+            "temperature": request.temperature,
+            "stream": True,
+        }
+        if request.max_tokens is not None:
+            payload["max_tokens"] = request.max_tokens
+        headers = {"Content-Type": "application/json"}
+        if self._api_key:
+            headers["Authorization"] = f"Bearer {self._api_key}"
+        client = self._client or httpx.AsyncClient(timeout=self._timeout_seconds)
+        started = perf_counter()
+        parts: list[str] = []
+        usage: dict[str, Any] = {}
+        attempts = 0
+        try:
+            for attempt in range(self._retry_policy.max_retries + 1):
+                attempts = attempt + 1
+                try:
+                    async with client.stream("POST", self._url, headers=headers, json=payload) as response:
+                        if response.is_error:
+                            await response.aread()
+                            details = _provider_error_details(response)
+                            retryable = is_retryable_status(response.status_code)
+                            raise ModelGatewayError(
+                                ErrorCode.MODEL_TEMPORARILY_UNAVAILABLE
+                                if retryable
+                                else ErrorCode.INVALID_REQUEST,
+                                f"Model request failed with HTTP {response.status_code}: "
+                                + details.get("provider_message", "Provider rejected the request."),
+                                retryable=retryable,
+                                details={"status_code": response.status_code, **details},
+                            )
+                        if "application/json" in response.headers.get("content-type", ""):
+                            await response.aread()
+                            content, usage = self._read_response(response)
+                            if content:
+                                parts.append(content)
+                                await on_text(content)
+                        else:
+                            finished = False
+                            async for line in response.aiter_lines():
+                                if not line.startswith("data:"):
+                                    continue
+                                data = line[5:].strip()
+                                if data == "[DONE]":
+                                    finished = True
+                                    break
+                                if not data:
+                                    continue
+                                try:
+                                    frame = json.loads(data)
+                                    if not isinstance(frame, dict) or frame.get("error"):
+                                        raise ValueError("Invalid stream frame")
+                                    if isinstance(frame.get("usage"), dict):
+                                        usage = frame["usage"]
+                                    choices = frame.get("choices") or []
+                                    if not choices:
+                                        continue
+                                    choice = choices[0]
+                                    delta = choice.get("delta") or {}
+                                    delta_text = delta.get("content")
+                                    finished = finished or choice.get("finish_reason") is not None
+                                except (ValueError, TypeError, KeyError, AttributeError) as exc:
+                                    raise ModelGatewayError(
+                                        ErrorCode.MODEL_SCHEMA_INVALID,
+                                        "Invalid model text stream.",
+                                        retryable=False,
+                                    ) from exc
+                                # reasoning_content/tool_calls are deliberately never forwarded.
+                                if isinstance(delta_text, str) and delta_text:
+                                    parts.append(delta_text)
+                                    await on_text(delta_text)
+                            if not finished:
+                                raise ModelGatewayError(
+                                    ErrorCode.MODEL_TEMPORARILY_UNAVAILABLE,
+                                    "Model text stream ended before completion.",
+                                    retryable=True,
+                                )
+                        if not parts or not "".join(parts).strip():
+                            raise ModelGatewayError(
+                                ErrorCode.MODEL_SCHEMA_INVALID,
+                                "Model returned an empty answer.",
+                                retryable=False,
+                            )
+                        result = ModelResponse(
+                            content="".join(parts),
+                            parsed=None,
+                            model=model,
+                            duration_seconds=perf_counter() - started,
+                            attempts=attempts,
+                            usage=usage,
+                        )
+                        await self._trace(request, result=result, error=None)
+                        return result
+                except (httpx.TransportError, ModelGatewayError) as exc:
+                    retryable = not isinstance(exc, ModelGatewayError) or exc.retryable
+                    if parts or not retryable or attempt >= self._retry_policy.max_retries:
+                        error = (
+                            exc
+                            if isinstance(exc, ModelGatewayError)
+                            else ModelGatewayError(
+                                ErrorCode.MODEL_TEMPORARILY_UNAVAILABLE,
+                                "Model text stream interrupted.",
+                                retryable=True,
+                            )
+                        )
+                        await self._trace(request, result=None, error=error)
+                        raise error from exc
+                    await asyncio.sleep(self._retry_policy.delay_for(attempt))
+            raise AssertionError("Unreachable text-stream retry state.")
+        finally:
+            if self._client is None:
+                await client.aclose()
+
     @classmethod
     def _parse_output(
         cls,
@@ -370,3 +494,11 @@ class FakeModelGateway:
             attempts=1,
             usage={},
         )
+
+    async def stream_text(
+        self, request: ModelRequest, on_text: Callable[[str], Awaitable[None]]
+    ) -> ModelResponse:
+        result = await self.invoke(request)
+        for index in range(0, len(result.content), 8):
+            await on_text(result.content[index : index + 8])
+        return result

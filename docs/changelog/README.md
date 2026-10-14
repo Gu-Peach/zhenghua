@@ -8,6 +8,8 @@ archived under `docs/service/`.
 
 ## 2026-10-13
 
+- Supervisor改为专业电气图纸与线表助手：日常CHAT流式回答且不分派任务/展示确认卡片，任务先说明后卡片，真实上传PDF保留类型确认及Stage 1/2提取。SSE公开回答流和前端稳定消息同步，领域契约6，业务Server接口不变；77项离线和21项浏览器夹具/Web检查通过，无真实模型/业务库写入或已有Agent重启。见[Agent](../service/agent/changelog/2026-10-13-supervisor-chat.md)与[Web](../apps/web/changelog/2026-10-13-supervisor-chat.md)记录。
+
 - 补齐 [Web](../../apps/web/README.md#启动)、[Server](../../services/server/README.md#启动)、[API](../../apps/api/README.md#本地启动) 和 [Agent](../../services/agent/README.md#启动) 的本地启动说明，统一仓库根目录执行方式、端口及启动顺序，明确 Agent 开发 Worker 与 Server 事务连接。仅文档更新，启动命令语法/入口静态核对通过，未安装依赖、启动服务或操作数据库。
 
 - 根据002.C/002.M原图核对修正本地ZH2.0.1：方向缺失不再默认确认起点，原始引用优先解析，同源分支在补全前保留，端子身份/证据不足降级复核。40项冒烟与7项接口/兼容边界回归；不写数据库、不发布、不重跑真实模型，旧结果保留。见[Agent记录](../service/agent/changelog/2026-10-13-zh-stage2-quality.md)。

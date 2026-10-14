@@ -12,6 +12,10 @@ from uuid import uuid4
 
 import httpx
 import pytest
+from fastapi.testclient import TestClient
+from services.agent.tests.integration.test_detection_conversation_api import detection, intent
+from services.agent.tests.integration.test_gate_a_real_supabase import FakeStages
+
 from agent_service.agents.supervisor import SupervisorAgent
 from agent_service.application.extraction_run_executor import FullExtractionRunExecutor
 from agent_service.application.profile_detection import create_profile_detection_runtime
@@ -29,10 +33,6 @@ from agent_service.infrastructure.supabase_client import SupabaseClient
 from agent_service.main import create_app
 from agent_service.profiles import ProfileRegistry
 from agent_service.tools.profile_detection import ProfileDetectionTool
-from fastapi.testclient import TestClient
-
-from services.agent.tests.integration.test_detection_conversation_api import detection, intent
-from services.agent.tests.integration.test_gate_a_real_supabase import FakeStages
 
 ROOT = Path(__file__).resolve().parents[4]
 
@@ -185,7 +185,7 @@ def test_http_import_confirm_real_worker_and_duplicate_confirmation(tmp_path: Pa
             return_value=fake,
         ):
             assert client.portal.call(app.state.agent_worker.run_once)
-        assert [stage for stage, _ in fake.calls] == ["classify", "classify", "scan", "scan", "cross"]
+        assert [stage for stage, _ in fake.calls] == ["classify", "classify", "scan", "cross", "scan"]
         assert client.get(f"/v1/runs/{run_id}").json()["run"]["status"] in {"SUCCEEDED", "NEEDS_REVIEW"}
         completed_reply = turn(client, user, "OK")
         assert completed_reply.status_code == 200, (

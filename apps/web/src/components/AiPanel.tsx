@@ -1,5 +1,5 @@
 import { Activity, Brain, Check, Circle, Loader2, Send, Sparkles, X, XCircle } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type { AgentStageProgress } from "@/apis/agent";
 import type { AgentEvent } from "@/apis/types";
 
@@ -20,8 +20,12 @@ export function AiPanel({ events, isRunning, hasPendingUpload, simulationEnabled
   const [request, setRequest] = useState("");
   const feed = useRef<HTMLDivElement>(null);
   const followTail = useRef(true);
+  const [shownPlans, setShownPlans] = useState<Set<string>>(() => new Set());
+  const finishPlan = useCallback((id: string) => setShownPlans(previous => new Set(previous).add(id)), []);
+  const waitingPlan = events.findIndex(event => event.kind === "thought" && !shownPlans.has(event.id));
+  const visibleEvents = waitingPlan < 0 ? events : events.slice(0, waitingPlan + 1);
   const latestEvent = events[events.length - 1];
-  useEffect(() => { if (isVisible && feed.current && followTail.current) feed.current.scrollTop = feed.current.scrollHeight; }, [events.length, latestEvent?.detail, isRunning, isVisible]);
+  useEffect(() => { if (isVisible && feed.current && followTail.current) feed.current.scrollTop = feed.current.scrollHeight; }, [events.length, latestEvent?.detail, shownPlans, isRunning, isVisible]);
 
   function submitRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,14 +38,14 @@ export function AiPanel({ events, isRunning, hasPendingUpload, simulationEnabled
   return (
     <aside className="ai-panel">
       <div className="ai-heading">
-        <div><span className="ai-mark"><Sparkles size={17} /></span><span><strong>Supervisor 主 Agent</strong><small>思考与子 Agent 调度</small></span></div>
+        <div><span className="ai-mark"><Sparkles size={17} /></span><span><strong>电气图纸与线表智能助手</strong><small>图纸解读、连接提取与线表核对</small></span></div>
         <div className="ai-heading-actions"><span className={`agent-run-status ${isRunning ? "running" : hasPendingUpload ? "queued" : ""}`}><i />{isRunning ? "执行中" : hasPendingUpload ? "待启动" : "已就绪"}</span>{onClose ? <button type="button" onClick={onClose} aria-label="收起聊天窗口" title="收起聊天窗口"><X size={18} /></button> : null}</div>
       </div>
-      <div ref={feed} className="agent-feed" role="log" aria-live="polite" aria-label="主 Agent 流式思考和子 Agent 事件" onScroll={e => { const node = e.currentTarget; followTail.current = node.scrollHeight - node.scrollTop - node.clientHeight < 80; }}>
-        <div className="agent-feed-label"><span><Activity size={13} />思考与处理过程</span><small>{isRunning ? "实时更新" : ""}</small></div>
-        {events.map((event) => <AgentFeedItem key={event.id} event={event} />)}
-        {!events.length ? <div className="agent-feed-empty"><Activity size={22} /><strong>{hasPendingUpload ? "PDF 已上传，等待确认" : "等待上传 PDF 或用户提出需求"}</strong><span>真实 Agent 的公开计划、阶段结果和诊断依据会显示在这里。</span></div> : null}
-        {isRunning ? <div className="agent-streaming"><Loader2 size={14} className="spin" />主 Agent 正在思考</div> : null}
+      <div ref={feed} className="agent-feed" role="log" aria-live="polite" aria-label="智能助手对话和任务进度" onScroll={e => { const node = e.currentTarget; followTail.current = node.scrollHeight - node.scrollTop - node.clientHeight < 80; }}>
+        <div className="agent-feed-label"><span><Activity size={13} />对话与任务进度</span><small>{isRunning ? "实时更新" : ""}</small></div>
+        {visibleEvents.map((event) => <AgentFeedItem key={event.id} event={event} onPlanComplete={finishPlan} />)}
+        {!events.length ? <div className="agent-feed-empty"><Activity size={22} /><strong>{hasPendingUpload ? "PDF 已上传，等待确认" : "你好，我是电气图纸与线表智能助手"}</strong><span>可以直接聊天、询问图纸知识，或上传 PDF 提取连接信息。</span></div> : null}
+        {isRunning ? <div className="agent-streaming"><Loader2 size={14} className="spin" />助手正在回复或处理任务</div> : null}
       </div>
       <form className="agent-composer" onSubmit={submitRequest}>
         <div className="agent-composer-heading"><span>向主 Agent 提出需求</span>{onReconnect ? <button type="button" disabled={isRunning} onClick={onReconnect}>重新连接进度</button> : null}<button type="button" disabled={isRunning} onClick={() => onSimulationToggle(true)}>新任务</button></div>
@@ -52,9 +56,12 @@ export function AiPanel({ events, isRunning, hasPendingUpload, simulationEnabled
   );
 }
 
-function AgentFeedItem({ event }: { event: AgentEvent }) {
+function AgentFeedItem({ event, onPlanComplete }: { event: AgentEvent; onPlanComplete: (id: string) => void }) {
+  if (event.kind === "message" || event.title === "用户") {
+    return <div className={`agent-message ${event.title === "用户" ? "agent-message-user" : "agent-message-assistant"}`}><strong>{event.title}</strong><p>{event.detail}{event.status === "running" ? <span className="thought-cursor" aria-hidden="true">▌</span> : null}</p></div>;
+  }
   if (event.kind === "thought") {
-    return <div className="agent-thought"><Brain size={13} /><div><strong>主 Agent 思考</strong><ThoughtStream text={event.detail} /></div></div>;
+    return <div className="agent-thought"><Brain size={13} /><div><strong>处理说明</strong><ThoughtStream text={event.detail} id={event.id} onComplete={onPlanComplete} /></div></div>;
   }
 
   const status = event.status === "running" ? "processing" : event.status === "failed" ? "failed" : event.status === "pending" ? "pending" : "done";
@@ -64,7 +71,7 @@ function AgentFeedItem({ event }: { event: AgentEvent }) {
   return <article className={`agent-step agent-step-${status} agent-event-${event.kind}`}><span className="agent-step-status">{icon}</span><div><header><strong>{agentTitle}</strong><span>{stateLabel}</span></header><p>{event.detail}</p><footer><span>{event.stage}</span><time>{event.timestamp}</time></footer></div></article>;
 }
 
-function ThoughtStream({ text }: { text: string }) {
+function ThoughtStream({ text, id, onComplete }: { text: string; id: string; onComplete: (id: string) => void }) {
   const [visibleText, setVisibleText] = useState("");
 
   useEffect(() => {
@@ -72,10 +79,10 @@ function ThoughtStream({ text }: { text: string }) {
     const timer = window.setInterval(() => {
       index += 1;
       setVisibleText(text.slice(0, index));
-      if (index >= text.length) window.clearInterval(timer);
+      if (index >= text.length) { window.clearInterval(timer); onComplete(id); }
     }, 24);
     return () => window.clearInterval(timer);
-  }, [text]);
+  }, [text, id, onComplete]);
 
   return <p>{visibleText}{visibleText.length < text.length ? <span className="thought-cursor" aria-hidden="true">▌</span> : null}</p>;
 }
