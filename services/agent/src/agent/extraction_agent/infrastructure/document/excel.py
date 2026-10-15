@@ -52,6 +52,8 @@ WIRE_TABLE_HEADERS.extend(
         "中间端点",
         "跨页引用",
         "unit identity confidence",
+        "起点端子坐标",
+        "终点端子坐标",
     ]
 )
 
@@ -95,6 +97,8 @@ RAW_HEADERS = [
     "references",
     "unit_identity_confidence",
     "raw_json",
+    "start_terminal_coordinates",
+    "end_terminal_coordinates",
 ]
 
 
@@ -189,6 +193,8 @@ def _write_wire_table(
             _format_json_cell(data.get("intermediate_points")),
             _format_json_cell(data.get("references")),
             data.get("unit_identity_confidence"),
+            _format_json_cell(data.get("start_terminal_coordinates")),
+            _format_json_cell(data.get("end_terminal_coordinates")),
         ]
         sheet.append([_clean_cell(value) for value in row])
     _style_table(sheet, len(WIRE_TABLE_HEADERS), freeze="A2")
@@ -207,7 +213,9 @@ def _write_raw_table(sheet: Any, records: Sequence[WireRecord]) -> None:
                 else _format_string_list(data.get(header))
                 if header == "drawing_source_pages"
                 else _format_json_cell(data.get(header))
-                if header in {"intermediate_points", "references"}
+                if header in {
+                    "intermediate_points", "references", "start_terminal_coordinates", "end_terminal_coordinates"
+                }
                 else _clean_cell(data.get(header))
                 for header in RAW_HEADERS
             ]

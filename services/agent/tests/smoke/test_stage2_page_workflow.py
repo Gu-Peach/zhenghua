@@ -210,7 +210,7 @@ def test_page_save_failure_stops_before_next_source_page(tmp_path: Path) -> None
 def test_double_image_completion_and_manifest_paths(tmp_path: Path) -> None:
     async def check() -> None:
         profile = binding()
-        assert profile.profile.version == "2.0.2"
+        assert profile.profile.version == "2.0.5"
         gateway = FakeModelGateway(['{"end":{"device":"-Q1","terminal":"L1"},"status":"resolved"}'])
         adapter = ZhVlmExtractionStageAdapter(AgentSettings(default_model="fake"), gateway)
         pages = []

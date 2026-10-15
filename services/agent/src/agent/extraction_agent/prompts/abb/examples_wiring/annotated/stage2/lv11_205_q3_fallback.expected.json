@@ -1,0 +1,118 @@
+{
+  "pdf_page_number": 1,
+  "drawing_function": "LV11",
+  "drawing_page_number": 205,
+  "drawing_object_location": "+EH.Q1.1",
+  "blank": false,
+  "needs_review": false,
+  "units": [
+    {
+      "unit_id": "205-q3",
+      "wire_number": null,
+      "current": null,
+      "connections": [
+        {
+          "local_connection_id": "205-q3-2",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头，按实际接线从图上方设备/端子到下方设备/端子记录",
+          "line_number": "Q3:2205",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+EH.Q1.1",
+            "device": "-Q3",
+            "name": "Shore power output",
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "2"
+          },
+          "end": {
+            "part": "++",
+            "location": null,
+            "device": "-Q106",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "1"
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_note": "用户明确纳入的无圈断路器对外出线；没有标记数字，用Q3实际端子拼Sheet205。"
+        },
+        {
+          "local_connection_id": "205-q3-4",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头，按实际接线从图上方设备/端子到下方设备/端子记录",
+          "line_number": "Q3:4205",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+EH.Q1.1",
+            "device": "-Q3",
+            "name": "Shore power output",
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "4"
+          },
+          "end": {
+            "part": "++",
+            "location": null,
+            "device": "-Q106",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "3"
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_note": "用户明确纳入的无圈断路器对外出线；没有标记数字，用Q3实际端子拼Sheet205。"
+        },
+        {
+          "local_connection_id": "205-q3-6",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头，按实际接线从图上方设备/端子到下方设备/端子记录",
+          "line_number": "Q3:6205",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+EH.Q1.1",
+            "device": "-Q3",
+            "name": "Shore power output",
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "6"
+          },
+          "end": {
+            "part": "++",
+            "location": null,
+            "device": "-Q106",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "5"
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_note": "用户明确纳入的无圈断路器对外出线；没有标记数字，用Q3实际端子拼Sheet205。"
+        }
+      ]
+    }
+  ],
+  "page_references": [],
+  "warnings": []
+}

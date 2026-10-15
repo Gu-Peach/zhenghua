@@ -59,6 +59,14 @@ class PageClassificationData(StrictModel):
     reason: str | None = None
 
 
+class TerminalCoordinates(StrictModel):
+    """Terminal-symbol center in the full page image, independent of image resizing."""
+
+    x: float = Field(ge=0.0, le=1.0, allow_inf_nan=False)
+    y: float = Field(ge=0.0, le=1.0, allow_inf_nan=False)
+    pdf_page_number: int = Field(ge=1)
+
+
 class DrawingEndpoint(StrictModel):
     part: str | None = None
     location: str | None = None
@@ -68,6 +76,7 @@ class DrawingEndpoint(StrictModel):
     terminal_code: str | None = None
     terminal_strip: str | None = None
     terminal: str | int | None = None
+    terminal_coordinates: TerminalCoordinates | None = None
 
 
 class DrawingReference(StrictModel):
@@ -140,9 +149,18 @@ class PageScanData(StrictModel):
     warnings: list[str] = Field(default_factory=list)
 
 
+class SourceComponent(StrictModel):
+    """Source component metadata; terminal and connection identity remain frozen."""
+
+    device: str = Field(min_length=1)
+    location: str | None = None
+    basis: str = Field(min_length=1)
+
+
 class CrossPageCompletionData(StrictModel):
     task_id: str | None = None
     end: DrawingEndpoint | None = None
+    source_component: SourceComponent | None = None
     intermediate_points: list[DrawingEndpoint] = Field(default_factory=list)
     current: str | int | float | None = None
     current_basis: str | None = None
@@ -186,6 +204,7 @@ class PageScanResult(StageResultMetadata):
 class CrossPageCompletionResult(StageResultMetadata):
     task_id: str
     end: DrawingEndpoint | None = None
+    source_component: SourceComponent | None = None
     intermediate_points: list[DrawingEndpoint] = Field(default_factory=list)
     current: str | int | float | None = None
     current_basis: str | None = None

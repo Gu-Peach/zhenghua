@@ -12,11 +12,16 @@
           "endpoint_role": "source",
           "direction_basis": "XD3:16分支沿实线到TA1离页箭头；上方电源接收段跳过，下方103-108跨页接收段跳过",
           "start": {
-            "device": "-XD3",
+            "device": "+01F11.3",
             "terminal": "XD3:16",
             "location": "+01F11.3",
             "terminal_board": "XD3",
-            "name": null
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.17773,
+              "y": 0.09299,
+              "pdf_page_number": 56
+            }
           },
           "end": null,
           "references": [
@@ -38,11 +43,16 @@
           "endpoint_role": "source",
           "direction_basis": "XD3:16分支沿实线到TA2离页箭头；上方电源接收段跳过，下方103-108跨页接收段跳过",
           "start": {
-            "device": "-XD3",
+            "device": "+01F11.3",
             "terminal": "XD3:16",
             "location": "+01F11.3",
             "terminal_board": "XD3",
-            "name": null
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.17773,
+              "y": 0.09299,
+              "pdf_page_number": 56
+            }
           },
           "end": null,
           "references": [
@@ -60,5 +70,7 @@
         }
       ]
     }
-  ]
+  ],
+  "drawing_object_location": "+01F11.3",
+  "pdf_page_number": 56
 }

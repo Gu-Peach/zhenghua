@@ -138,7 +138,7 @@ def test_only_requested_groups_are_scanned_and_database_construction_is_forbidde
     table = json.loads((args.output_dir / "table.json").read_text(encoding="utf-8"))
     assert table["headers"] == runner.HEADERS
     assert [row[0] for row in table["rows"]] == ["002C01", "002M01"]
-    assert all(len(row) == 12 and row[10] is None for row in table["rows"])
+    assert all(len(row) == 14 and row[10] is None for row in table["rows"])
 
 
 @pytest.mark.parametrize("invalid_key", ["other", "zh"])
@@ -182,11 +182,28 @@ def test_local_zh_binding_isolated_from_invalid_profiles(
         assert runner.load_local_zh_profile(settings).profile.key == "zh"
         assert str(profile_root / "other" / "prompt.md") in capsys.readouterr().err
     else:
+        assert runner.load_local_profile(settings, "other").profile.key == "other"
         with pytest.raises(runner.ProfileRegistryError) as caught:
             runner.load_local_zh_profile(settings)
         report = runner.failure_report(caught.value)
         assert any(str(profile_root / "zh" / "prompt.md") in error for error in report["profile_errors"])
         assert report["database_upload"] is False
+
+
+def test_pdf_cli_accepts_explicit_profile_and_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    pdf_spec = importlib.util.spec_from_file_location(
+        "local_pdf_cli", ROOT / "services/agent/scripts/run_page_workflow_extraction.py"
+    )
+    pdf_runner = importlib.util.module_from_spec(pdf_spec)
+    pdf_spec.loader.exec_module(pdf_runner)
+    monkeypatch.setattr(
+        sys, "argv",
+        ["local_pdf_cli", "sample.pdf", "--profile", "abb", "--model", "test-model", "--output-dir", "output"],
+    )
+    args = pdf_runner.parse_args()
+    assert args.profile == "abb"
+    assert args.model == "test-model"
+    assert args.allow_real_model is False
 
 
 def test_missing_requested_image_fails_preflight(tmp_path: Path) -> None:
@@ -206,6 +223,16 @@ def test_empty_values_and_actual_zero_are_distinct_in_standard_rows() -> None:
     assert rows[0][9] == 0
     assert rows[1][9] is None
     assert rows[0][10] is None
+
+
+def test_coordinate_columns_preserve_each_endpoint_image_identity() -> None:
+    start = {"x": 0.2, "y": 0.5, "pdf_page_number": 60}
+    end = {"x": 0.2, "y": 0.17, "pdf_page_number": 403}
+    row = runner.table_rows([{"start_terminal_coordinates": start, "end_terminal_coordinates": end}])[0]
+    assert len(row) == 14
+    assert json.loads(row[12]) == start
+    assert json.loads(row[13]) == end
+    assert row[10] is None
 
 
 def test_unknown_reference_page_zero_becomes_null_without_inventing_a_target() -> None:

@@ -111,6 +111,7 @@ def _normalize_connection(value: dict[str, Any], index: int) -> dict[str, Any]:
                 "terminal_code",
                 "terminal_strip",
                 "terminal",
+                "terminal_coordinates",
             )
             endpoint = {
                 field: connection.pop(prefix + field) for field in fields if prefix + field in connection

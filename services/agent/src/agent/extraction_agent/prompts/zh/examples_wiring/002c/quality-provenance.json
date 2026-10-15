@@ -1,23 +1,7 @@
 {
-  "version": "2.0.2",
-  "review_basis": "M23 direct terminal pairs confirmed by user on 2026-10-14; previous image cases retained; tests not executed in this revision",
+  "version": "2.0.5",
+  "review_basis": "2026-10-15: preserve direct endpoints/coordinates, trace current separately; C01 FC11/FC12 Ie160A and FC13 Ie80A read from image, N/PE/control empty. No model regression executed. Added middle FC12 group cross-page case XA:11 to 003.C/31 XD10:1, physical page 74.",
   "assets": [
-    {
-      "path": "completion/w1_fo2_to_tf41.expected.json",
-      "checksum": "sha256:efb550b6fbadf6ebb06506ef6f646f8c739c92ff6e1d3ba3ba518bbe1426641f"
-    },
-    {
-      "path": "completion/w1_fo2_to_tf41.task.json",
-      "checksum": "sha256:a3b52b066fe90859b3a1fdb797441b7f25df0fe3b4415154105aa670bbea1dd8"
-    },
-    {
-      "path": "completion/w1_l1_to_q1.expected.json",
-      "checksum": "sha256:ac6ca70ede966dfe96f2df157aadf6c4d6cee7dd968c732fd519b4e6290fe071"
-    },
-    {
-      "path": "completion/w1_l1_to_q1.task.json",
-      "checksum": "sha256:e4b5a9bd8094d68eb45f69752186b9d3fef22d5f823ed9392f3e30e7503a01f0"
-    },
     {
       "path": "images/002c01.png",
       "checksum": "sha256:17da22ed27b64c3a5683629da4020bdbe3fde937dd9707acb2d4b446aab74838"
@@ -35,32 +19,64 @@
       "checksum": "sha256:f7c06a01850f5456022c4bee89f608cab4a29be2af952cc4a0fd1bbefa577c10"
     },
     {
-      "path": "images/098m25.png",
-      "checksum": "sha256:f159d055098f0351030fea0ae1cfcfce7c545d0e25f9c2eff3fa5b235b33692a"
+      "path": "images/003c01.png",
+      "checksum": "sha256:1e1929e22c5f27447d9c3688440ca31d5c851fe088f7c0d42c8c0e302517753e"
     },
     {
-      "path": "images/c03_receivers.png",
-      "checksum": "sha256:7c4c7d8c5f0564703a7be52c9d72ffecaa7b1cce4ab0088b55fab672f7e21772"
+      "path": "images/003c31.png",
+      "checksum": "sha256:e5ecd0e8cb616c01ae4aed107620d161d0e255f31cc3f7ae0fdd4c109a433800"
+    },
+    {
+      "path": "images/004c01.png",
+      "checksum": "sha256:dd6b1c1ae1681020c5f98de412c1073aafbf2f5ccfca7e3ab69031fbcf2e6db3"
+    },
+    {
+      "path": "images/080c10.png",
+      "checksum": "sha256:6504f0d676c4c0a866ae9d62279c79f24e508a57ea271df927c1233414a139da"
     },
     {
       "path": "stage2/002c01.expected.json",
-      "checksum": "sha256:a27f88b3ee2b761cb1947094d9bb1ea44cf2c40884598b71d998fbafe5de8d8d"
+      "checksum": "sha256:9e08159fe673210f829784fda102833ee62e585ca4a502e2cccf9aa61f87c66e"
     },
     {
       "path": "stage2/002c02.expected.json",
-      "checksum": "sha256:d85d32b63570736cd635a125927da1d6d694d839f21591de1384ccda0c39dd81"
+      "checksum": "sha256:0374659e7f0f490987a3c7b1353f556b052738b80ee0d18510d2740a379ec683"
     },
     {
       "path": "stage2/002m03_branches.expected.json",
-      "checksum": "sha256:ce483291eb7eba28ecbba7a004bf6178b91e35615b3163fdcc65de08037be8b5"
+      "checksum": "sha256:f394f94f1ade4d35a39b99a36d9683182163f4463ddcfe004082719327353f21"
     },
     {
       "path": "stage2/002m23_direct.expected.json",
-      "checksum": "sha256:7d8b258144edb41e23d944c13bafb68dddbed87766e2425d7aecbb8c4bd8e8e1"
+      "checksum": "sha256:ccb5fa81915a16665ee4be549c64344bd7e9f07c4049d40f861fb8684f1aff94"
     },
     {
-      "path": "stage2/c03_receivers.expected.json",
-      "checksum": "sha256:a9d66024b792c9b1291b4502d5fc5b4dfaf1dd86ff164e66f497b0d820d5da1e"
+      "path": "stage2/003c01.expected.json",
+      "checksum": "sha256:46957fdd0506db512409c7a90c2a94bf0dd308c8b2b76ce3c6a764f723305cc1"
+    },
+    {
+      "path": "completion/c01_nbar_to_004c01_xd10_4.expected.json",
+      "checksum": "sha256:8e4a75dd6875c96cdd4f355af38c6499afbcff613ef98274acf759dcbb2ff1ee"
+    },
+    {
+      "path": "completion/c01_nbar_to_004c01_xd10_4.task.json",
+      "checksum": "sha256:dc7ff2ddcd01f4bc0017834218cec9233c5fddd10d89404d5d5803547746e1e5"
+    },
+    {
+      "path": "completion/c01_xa11_to_003c31_xd10_1.expected.json",
+      "checksum": "sha256:0a2f05a27af8c95edaa47122f02c7604c3ad803e7e0e51f4e323e0a7d15b2100"
+    },
+    {
+      "path": "completion/c01_xa11_to_003c31_xd10_1.task.json",
+      "checksum": "sha256:21e4c82929161a26a66d5f82612039ca9dd03274d11c6baa36f20f3c6f3e8b25"
+    },
+    {
+      "path": "completion/c01_xa8_to_080c10_xd10_1.expected.json",
+      "checksum": "sha256:90c59f408c211b475d7c9240f08dbb8d21860f427215979192c7ec79f1032943"
+    },
+    {
+      "path": "completion/c01_xa8_to_080c10_xd10_1.task.json",
+      "checksum": "sha256:90bdf4f877d7f0beca44142d948594d58af63d5e3d5b1f9225e9302bb7cb55e5"
     }
   ],
   "policy_sources": [
@@ -78,19 +94,61 @@
     },
     {
       "path": "services/agent/src/agent/extraction_agent/infrastructure/zh_vlm_stages.py",
-      "checksum": "sha256:bb43e7bf214ece6aab6710b029319ca17a5802cb15afde44e2dae377bf388e77"
+      "checksum": "sha256:86a94ede2cdcd1bbbae0966339c39b633653da3d5f2ab6bf4db3e0ccc2fe3a70"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/graphs/document_extraction/helpers.py",
-      "checksum": "sha256:9d14b74bd6c684742e29d8b5dde91a67be308cf12d7f4b9c78f71a78fa9c9202"
+      "checksum": "sha256:b586198b946ee01ecef890c1901f39de91c62e3b6e2ce462fb07b2ad3a4bdbb4"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/profiles/zh/normalization.py",
-      "checksum": "sha256:5cec1be36398df4a28f1b43e1a5c025aa994a3e93c8dc0eef4701cc4d4b2b26b"
+      "checksum": "sha256:e6a3948ecc5196a87e46a43c247c22455f7207c7112241612ffe6ff616034af4"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/profiles/zh/terminal_strips.py",
       "checksum": "sha256:a8c270b5edbb76a3d69493f2e12b606200bce6bbe2ef04360197a204c45d9867"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/domain/models/extraction_stages.py",
+      "checksum": "sha256:0b73af19ecea72a02c365b7443a6046f1ac71166fe0ea697712f42f4df4e2892"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/graphs/document_extraction/cross_page.py",
+      "checksum": "sha256:06d5922633b18b34d16ce47ae46d6031d626677212ec4aa0867b69e419bc9be7"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/domain/models/wiring.py",
+      "checksum": "sha256:18abc35c1ecdfda66b4922b1aa06819a7c2f2d93bb2c9c28f2bc5f10c4625720"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/document/excel.py",
+      "checksum": "sha256:85c07a9c470461ea945395df49d8c890ebd00304c41b690a75f6fe3ddbd867c7"
+    },
+    {
+      "path": "services/agent/scripts/run_stage2_groups.py",
+      "checksum": "sha256:029682c98e5d2e719597d8aa9aeb8c3d54b61fc512d9fac6b0b85079fdc966b9"
+    },
+    {
+      "path": "services/agent/scripts/export_stage2_xlsx.mjs",
+      "checksum": "sha256:e5db38825181336aaedc1ef18ca35a48765424acf4c1ece79d40a3f1070988b0"
+    }
+  ],
+  "prompt_sources": [
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/zh/page_scan_index.md",
+      "checksum": "sha256:552025091c2ccd07ac60d107169290a0479de1239582a26221c3870ffa95d6f5"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/zh/page_connection_completion.md",
+      "checksum": "sha256:8d24ba019f0cc653007b5cc794821eb66b5ae6c05246c7da5ed1888af48959cb"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/zh/profile.json",
+      "checksum": "sha256:9dbed97ea067b0454318cdf8edea7f5142b3a91c2c152face6b2093c5bbae64b"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/zh/rules.json",
+      "checksum": "sha256:34f2ef9b2e769bb5b17aa62e4424e699e825407a3a7366d993e355bcd740d30e"
     }
   ]
 }

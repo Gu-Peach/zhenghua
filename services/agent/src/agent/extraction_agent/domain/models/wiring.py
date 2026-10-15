@@ -24,6 +24,7 @@ from src.agent.extraction_agent.domain.models.extraction_stages import (
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     ScannedWireUnit as WireUnit,
 )
+from src.agent.extraction_agent.domain.models.extraction_stages import TerminalCoordinates
 
 __all__ = [
     "CrossPageCompletion",
@@ -96,6 +97,7 @@ class WireRecord(BaseModel):
     start_terminal_board: str | None = None
     start_terminal_code: str | None = None
     start_terminal: int | str | None = None
+    start_terminal_coordinates: TerminalCoordinates | None = None
     end_part: str | None = None
     end_location: str | None = None
     end_device: str | None = None
@@ -103,6 +105,7 @@ class WireRecord(BaseModel):
     end_terminal_board: str | None = None
     end_terminal_code: str | None = None
     end_terminal: int | str | None = None
+    end_terminal_coordinates: TerminalCoordinates | None = None
     terminal_strip: str | None = None
     remark: str | None = None
     confidence: float | None = None

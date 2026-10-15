@@ -1,0 +1,42 @@
+{
+  "task_id": "pn2_to_cu320",
+  "source_pdf_page": 10,
+  "target_pdf_page": 7,
+  "source_drawing_page": "2A",
+  "target_drawing_page": "1F",
+  "connection": {
+    "local_connection_id": "2a-pn2",
+    "endpoint_role": "source",
+    "direction_basis": "放线斜杠位于B1:P2和向左出页箭头之间，本页P2为起点",
+    "line_number": null,
+    "core_number": null,
+    "color": null,
+    "current": null,
+    "current_basis": null,
+    "current_source_text": null,
+    "start": {
+      "location": "+GCR",
+      "device": "-B1",
+      "name": "SIMATIC ET200SP IM155-6PN ST",
+      "terminal_board": null,
+      "terminal_code": null,
+      "terminal_strip": null,
+      "terminal": "P2"
+    },
+    "end": null,
+    "references": [
+      {
+        "raw": "1F33R / PN2",
+        "target_function": "GCR.1",
+        "target_drawing_page": 6,
+        "target_column": 33
+      }
+    ],
+    "is_cross_page": "cross_page",
+    "status": "needs_reference",
+    "source_drawing_pages": [
+      "2A"
+    ],
+    "source_note": "PN2是箭头旁的信号名称，1F33R是续接地址，未单独标注原理号。"
+  }
+}

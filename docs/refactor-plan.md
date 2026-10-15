@@ -6,6 +6,16 @@
 
 ## 1. 重构结论
 
+2026-10-15本地ABB1.1.3按用户确认修订为小圆圈放线、大圆圈端子，同段双标记一条连接，原理号数字或完整端子直接拼来源Sheet；跨页/Sheet.列行保持独立。设计与静态验收边界见[修订记录](./service/agent/abb-circle-rule-update.md)，未运行测试/模型或发布。
+
+2026-10-15本地ZH2.0.4以003C01替换旧接收/跨页样例，端点增加归一化坐标及本端图片物理页，最终记录/本地14列XLSX保留；坐标不影响连接身份，补全不改来源坐标。契约见[ADR-0016](./adr/0016-zh-direct-terminal-segments.md)，静态核对与未验收项见[记录](./service/agent/changelog/2026-10-15-zh-c01-terminal-coordinates.md)。
+
+2026-10-14本地ZH2.0.3明确元件标识优先级与Object Loc回退；内部补全仅可完善来源元件元数据，起点端子和原理号保持。数据含义修订见[ADR-0016](./adr/0016-zh-direct-terminal-segments.md)与[记录](./service/agent/changelog/2026-10-14-zh-component-priority.md)，未运行真实模型或发布。
+
+2026-10-14用户随后明确放弃旧业务数据并授权直接删除：本地已创建三张精简业务表并删除18张旧表/1个视图，Agent/Auth/Storage数据保留；属于用户对渐进保留旧schema原则的明确例外。当前应用仍待适配，详见[ADR-0018](./adr/0018-simple-extraction-business-tables.md)和[部署记录](./service/server/changelog/2026-10-14-local-business-table-retirement.md)。
+
+2026-10-14按用户要求提供三张精简提取业务表的新增SQL草案，现有应用/数据仍使用旧schema；仅交付创建指令，不执行迁移或删除。设计及接入限制见[ADR-0018](./adr/0018-simple-extraction-business-tables.md)。
+
 2026-10-14按用户新布局迁移独立提取实现到`services/agent/src/agent/extraction_agent`，共享控制面保留，算法不变只调整引用；见[ADR-0017](./adr/0017-extraction-agent-directory.md)。原模板资源路径由该目录接管。
 
 2026-10-14 ZH用户口径修订见[ADR-0016](./adr/0016-zh-direct-terminal-segments.md)：按放线标记读取两侧直接端子、遇端子停止；导出端子排由程序映射，VLM只读实际端子。保留Stage2逐页工作流及电流约束，精简其他硬提示，本地版本2.0.2，不写库或发布。

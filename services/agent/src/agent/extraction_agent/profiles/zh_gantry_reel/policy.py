@@ -9,7 +9,7 @@ from src.agent.extraction_agent.domain.models.drawing_index import DrawingIndex,
 from src.agent.extraction_agent.domain.models.wiring import WireRecord
 from src.agent.extraction_agent.profiles.zh.policy import ZhExtractionPolicy
 
-POLICY_VERSION = "0.1.0"
+POLICY_VERSION = "0.1.1"
 
 SHEET_RE = re.compile(r"^(\d{1,2})([A-Z])$")
 ADDRESS_RE = re.compile(
@@ -141,12 +141,15 @@ class ZhGantryReelPolicy(ZhExtractionPolicy):
 
     def normalize_record(self, record: WireRecord, mapping: Mapping[str, str]) -> WireRecord:
         # No XA/XD-to-business-class inference in this family: actual X strips win.
-        explicit = record.terminal_strip or record.start_terminal_strip
-        board = record.start_terminal_board
-        if board and re.fullmatch(r"-?X\d+", board):
-            record.terminal_strip = board.lstrip("-")
-        else:
-            record.terminal_strip = explicit or record.end_terminal_strip
+        record.terminal_strip = next(
+            (
+                board.lstrip("-")
+                for board in (record.start_terminal_board, record.end_terminal_board)
+                if board and re.fullmatch(r"-?X\d+", board)
+            ),
+            None,
+        )
+        record.color = None
         if record.drawing_function and record.drawing_page_number:
             record.drawing_page = decode_sheet(record.drawing_function, record.drawing_page_number)
             record.drawing_source_pages = list(

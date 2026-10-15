@@ -12,11 +12,16 @@
           "endpoint_role": "source",
           "direction_basis": "下方-K2的L1实线沿离页箭头到5.x；上方Q1箭头进入端子，不提取其接收段",
           "start": {
-            "device": "-K2",
+            "device": "+02",
             "terminal": "L1",
             "location": "+02",
             "terminal_board": null,
-            "name": "MAIN TRANSFORMER FEEDER"
+            "name": "MAIN TRANSFORMER FEEDER",
+            "terminal_coordinates": {
+              "x": 0.17773,
+              "y": 0.51524,
+              "pdf_page_number": 49
+            }
           },
           "end": null,
           "references": [
@@ -37,11 +42,16 @@
           "endpoint_role": "source",
           "direction_basis": "下方-K2的L2实线沿离页箭头到5.x；上方Q1箭头进入端子，不提取其接收段",
           "start": {
-            "device": "-K2",
+            "device": "+02",
             "terminal": "L2",
             "location": "+02",
             "terminal_board": null,
-            "name": "MAIN TRANSFORMER FEEDER"
+            "name": "MAIN TRANSFORMER FEEDER",
+            "terminal_coordinates": {
+              "x": 0.19647,
+              "y": 0.51524,
+              "pdf_page_number": 49
+            }
           },
           "end": null,
           "references": [
@@ -62,11 +72,16 @@
           "endpoint_role": "source",
           "direction_basis": "下方-K2的L3实线沿离页箭头到5.x；上方Q1箭头进入端子，不提取其接收段",
           "start": {
-            "device": "-K2",
+            "device": "+02",
             "terminal": "L3",
             "location": "+02",
             "terminal_board": null,
-            "name": "MAIN TRANSFORMER FEEDER"
+            "name": "MAIN TRANSFORMER FEEDER",
+            "terminal_coordinates": {
+              "x": 0.2152,
+              "y": 0.51524,
+              "pdf_page_number": 49
+            }
           },
           "end": null,
           "references": [
@@ -87,11 +102,16 @@
           "endpoint_role": "source",
           "direction_basis": "下方-K2的PE实线沿离页箭头到5.x；上方Q1箭头进入端子，不提取其接收段",
           "start": {
-            "device": "-K2",
+            "device": "+02",
             "terminal": "PE",
             "location": "+02",
             "terminal_board": null,
-            "name": "MAIN TRANSFORMER FEEDER"
+            "name": "MAIN TRANSFORMER FEEDER",
+            "terminal_coordinates": {
+              "x": 0.2334,
+              "y": 0.51524,
+              "pdf_page_number": 49
+            }
           },
           "end": null,
           "references": [
@@ -112,11 +132,16 @@
           "endpoint_role": "source",
           "direction_basis": "下方-K3的L1实线沿离页箭头到6.x；上方Q1箭头进入端子，不提取其接收段",
           "start": {
-            "device": "-K3",
+            "device": "+02",
             "terminal": "L1",
             "location": "+02",
             "terminal_board": null,
-            "name": "AUXILIARY TRANSFORMER FEEDER"
+            "name": "AUXILIARY TRANSFORMER FEEDER",
+            "terminal_coordinates": {
+              "x": 0.30728,
+              "y": 0.51524,
+              "pdf_page_number": 49
+            }
           },
           "end": null,
           "references": [
@@ -137,11 +162,16 @@
           "endpoint_role": "source",
           "direction_basis": "下方-K3的L2实线沿离页箭头到6.x；上方Q1箭头进入端子，不提取其接收段",
           "start": {
-            "device": "-K3",
+            "device": "+02",
             "terminal": "L2",
             "location": "+02",
             "terminal_board": null,
-            "name": "AUXILIARY TRANSFORMER FEEDER"
+            "name": "AUXILIARY TRANSFORMER FEEDER",
+            "terminal_coordinates": {
+              "x": 0.32548,
+              "y": 0.51524,
+              "pdf_page_number": 49
+            }
           },
           "end": null,
           "references": [
@@ -162,11 +192,16 @@
           "endpoint_role": "source",
           "direction_basis": "下方-K3的L3实线沿离页箭头到6.x；上方Q1箭头进入端子，不提取其接收段",
           "start": {
-            "device": "-K3",
+            "device": "+02",
             "terminal": "L3",
             "location": "+02",
             "terminal_board": null,
-            "name": "AUXILIARY TRANSFORMER FEEDER"
+            "name": "AUXILIARY TRANSFORMER FEEDER",
+            "terminal_coordinates": {
+              "x": 0.34422,
+              "y": 0.51524,
+              "pdf_page_number": 49
+            }
           },
           "end": null,
           "references": [
@@ -187,11 +222,16 @@
           "endpoint_role": "source",
           "direction_basis": "下方-K3的PE实线沿离页箭头到6.x；上方Q1箭头进入端子，不提取其接收段",
           "start": {
-            "device": "-K3",
+            "device": "+02",
             "terminal": "PE",
             "location": "+02",
             "terminal_board": null,
-            "name": "AUXILIARY TRANSFORMER FEEDER"
+            "name": "AUXILIARY TRANSFORMER FEEDER",
+            "terminal_coordinates": {
+              "x": 0.36242,
+              "y": 0.51524,
+              "pdf_page_number": 49
+            }
           },
           "end": null,
           "references": [
@@ -208,5 +248,7 @@
         }
       ]
     }
-  ]
+  ],
+  "drawing_object_location": "+00",
+  "pdf_page_number": 49
 }

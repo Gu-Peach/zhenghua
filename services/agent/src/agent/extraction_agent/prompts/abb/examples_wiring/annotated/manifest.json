@@ -1,9 +1,10 @@
 {
-  "version": 1,
-  "description": "ABB 精简样例：Stage 2 一张完整原页，示范范围仅 Q4 出线；Stage 3 一例原页+目标页。expected 待工程确认。",
+  "version": 2,
+  "description": "小圆圈放线、大圆圈端子、同段双标记一条连接；原理号数字或完整端子直接拼Sheet。局部案例不限制整页扫描。stage3_cases为内部补全历史键。",
   "images": {
     "lv11_205": "images/lv11_205.png",
-    "lv12_241": "images/lv12_241.png"
+    "lv12_241": "images/lv12_241.png",
+    "lv21_281": "images/lv21_281.png"
   },
   "stage2_cases": [
     {
@@ -16,7 +17,43 @@
           "role": "source_page",
           "note": "完整 Sheet 205 原页；本示例仅示范 Q4:2/4/6/8 出线到 Sheet 241 的四条跨页连接。expected 不是整页穷举结果，其他单元未纳入此示例答案。"
         }
-      ]
+      ],
+      "checksums": {
+        "stage2/lv11_205_q4_cross.expected.json": "sha256:85f0be1029708f47b04ffe1557265fa3d0ab18825a596de7634f132060f4157f",
+        "images/lv11_205.png": "sha256:5d33f36cfa99dd73b7159bda9969cb50761d273951294b9c12ccb50eedf8aecb"
+      }
+    },
+    {
+      "id": "lv11_205_q3_fallback",
+      "title": "205局部：Q3无标记编号，以Q3:2/4/6直接拼Sheet205",
+      "expected": "stage2/lv11_205_q3_fallback.expected.json",
+      "images": [
+        {
+          "path": "images/lv11_205.png",
+          "role": "source_page",
+          "note": "只示范指定段，不是整页穷举结果。"
+        }
+      ],
+      "checksums": {
+        "stage2/lv11_205_q3_fallback.expected.json": "sha256:40456314c960bcd97c80a4a257ebd71ef0a83dde42a6437791db0720904c09f3",
+        "images/lv11_205.png": "sha256:5d33f36cfa99dd73b7159bda9969cb50761d273951294b9c12ccb50eedf8aecb"
+      }
+    },
+    {
+      "id": "lv21_281_circles",
+      "title": "281局部：双小圆圈一段、大端子分段、数字与端子号回退",
+      "expected": "stage2/lv21_281_circles.expected.json",
+      "images": [
+        {
+          "path": "images/lv21_281.png",
+          "role": "source_page",
+          "note": "只示范指定段，不是整页穷举结果。"
+        }
+      ],
+      "checksums": {
+        "stage2/lv21_281_circles.expected.json": "sha256:5ff220f80ba81b5188343bd4936131f4f7d2f47f697fbc82cbdbb4a92dd58c22",
+        "images/lv21_281.png": "sha256:bcb98870a6ae5c1cbc6f610e53f69a3f6cbf233c152b9816be0195d7d14f3ce6"
+      }
     }
   ],
   "stage3_cases": [
@@ -36,7 +73,14 @@
           "role": "target_page",
           "note": "Sheet 241 目标页：核对 =LV11-Q4 L1、/205.3D 并补全 +EH.Q21-Q1:2。物理页序号仅为样例位置。"
         }
-      ]
+      ],
+      "checksums": {
+        "stage3/205_q4_l1_to_241_q1.expected.json": "sha256:eb118192ae8970726b466d066bf213952c795743e930956878b368498a0e4f14",
+        "stage3/205_q4_l1_to_241_q1.task.json": "sha256:ab213a302078ebd4b87225511f7690cafadc2512d5d71522511e526c99508e24",
+        "images/lv11_205.png": "sha256:5d33f36cfa99dd73b7159bda9969cb50761d273951294b9c12ccb50eedf8aecb",
+        "images/lv12_241.png": "sha256:9f6bbef109ee8e3830c86d5136540edbce040befd217e9720dedfaf7106746ca"
+      }
     }
-  ]
+  ],
+  "profile_version": "1.1.3"
 }

@@ -1,38 +1,21 @@
-# 振华大车卷盘 SH.NO. 网格模板
+# XMZ 大车卷盘图纸规则
 
-本地实验版本 `zh_gantry_reel@0.1.0`，来源为 1002001693 大车卷盘 PDF 和放线 XLSX。未上传、未发布、未调用真实模型。XLSX 用作对照，不是图中不可见字段的生成依据。
+本地Profile为`zh_gantry_reel@0.1.1`，适配器`zh_gantry_reel_native`，资源目录为`prompts/xmz`。保持experimental，不上传或发布。
 
-## 资源入口
+三份Prompt分别用于页面分类、Stage 2初扫和内部双图补全。初扫与ZH一致：放线斜杠 → 最近端子/跨页箭头 → 同段箭头定向；图中字段能读到什么就保留什么，未标针脚为空。颜色为空，terminal_strip由程序从实际X排号确定，不套用XA/XD分类。
 
-- `page_classification.md`：Stage 1；读取原始 SH.NO.，区分原理图/封面/TD，规范索引与物理页分开。
-- `page_scan_index.md`：Stage 2 初扫；识别实际放线、方向和连接，不使用旧 XA/XD 白名单。
-- `page_connection_completion.md`：Stage 2 内部双图补全；冻结来源，不把电位/引用当针脚。
-- `examples_page_classification/manifest.json`：两组案例，1A 正例和 TD 3.a 负例。
-- `examples_wiring/manifest.json`：初扫两组（1E、TD 3.a），内部补全两组（1E→1G 明确接口、1B→2A 未标针脚）。`stage3_cases` 是当前加载器的历史资源键，不是独立 Stage 3。
-- `sheet-index.json`：25 页原标、规范索引、物理页与非接线标志。
-- `title-block-evidence.json`：来自 PDF 的精简图框文本，用于离线页标回归，不含作者行。
-- `field-rules.json`：字段优先级、禁止推测项、业务映射禁用状态。
-- `baseline-review.json`：XLSX 单元格级代表性差异；不是完整准确率审计。
-- `schema.json`、`provenance.json`：当前结构化协议、源文件/图片/资源 checksum。
+SH.NO.原标和网格地址使用本模板独立规则：1E→GCR.1/5，1G45H→1G页45列H行；TD 3.a与原理图3A分开。端子报告保留身份，不重复提取。
 
-## 页标与连接依据
+## 图片样例
 
-此图册使用 SH.NO. 如 1E，续接坐标如 1G45H（页1G/列45/行H），而不是原 zh 图册的 Plant Function + Page Number。规范索引将 1E 表示为 GCR.1/page 5，3A 为 GCR.3/page 1；这是可逆接口键，原始页标留在 reason/source_drawing_pages/drawing_page。TD 3.a 使用 GCR.TD/page 301，避免与 TD 3 和原理图3A冲突。
+- 分类：1A身份正例、TD 3.a非接线页负例。
+- 初扫：1E电机放线；1B选定制动器/ABS段；1G选定编码器段；2A选定PN2出页段；TD空连接负例。
+- 内部补全：2A→1F明确接口正例；1B→2A未标针脚的部分补全。
+- 局部案例只示范指定段，不表示模型只提取这些段；实际扫描处理整页所有符合规则的放线段。
+- `stage3_cases`仍是共享加载器的历史键，表示Stage 2内部补全，不是独立Stage 3。
 
-只有绑定在当前线路续接箭头旁的坐标才生成引用。原理号可能具有相同字形，全文匹配会产生假任务。正常目标回指用于匹配；图册外目标、模糊端点留空并复核。
+所有expected和task仅使用配套图片可读事实。1E的X0:5/6/7、1G的1F23N～1F28N照录；BRAKE1缺失针脚和绝对值编码器缺失代号/针脚为null。不使用人工表中的X1/X2、XD柜端子、MVCR别名、0261/2401等电缆编号或备用芯。CASE原表和PDF未修改。
 
-图中 X3 与表中电缆类别 X4 不等同；实际 X0、X21、S11 等不得被标准表别名覆盖。型号/规格/长度/颜色/芯号/备用芯没有明确图中证据时为空。一个可见 PE 段不扩展成多个芯。
+manifest保存资源checksum，结构使用共享Pydantic Schema。已删除的sheet-index、field-rules、schema和provenance文件不再作为运行依赖；页标索引由policy读取输入PDF建立。
 
-## 验证与待确认
-
-运行（Fake Gateway、禁止 HTTP）：
-
-```powershell
-python -m pytest services/agent/tests/unit/test_zh_gantry_reel_profile.py -q
-```
-
-该命令核对 25 个实际图框、每类两个样例、路径/Schema/hash、引用与原样字段、六案例的 Fake 适配器逐字段结果。它不证明模型能从图像正确识别。
-
-新 expected 已根据图像和明确约定目视核对，状态为 `source_checked_draft_pending_engineer_confirmation`，仍待工程人员确认；真实模型固定回归未运行。Profile 是 experimental，选择时需显式允许；既有 zh/ABB 资源未修改。
-
-当前通用导出/页面展示仍主要消费规范数字索引；原始 SH.NO. 已保留在结果字段，但完整展示/导出原页标需后续输出适配。本轮没有修改业务接口、数据或生成整本提取结果。
+离线回归入口：`python -m pytest services/agent/tests/unit/test_zh_gantry_reel_profile.py -q`。本轮未运行测试、提取或真实模型，效果待用户验证；通用导出的原始SH.NO.展示仍是后续任务。

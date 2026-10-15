@@ -1,0 +1,19 @@
+{
+  "task_id": "pn2_to_cu320",
+  "end": {
+    "location": "+GCR",
+    "device": "-CU320",
+    "name": "SINAMICS S120 CONTROL UNIT CU320-2 PN",
+    "terminal_board": "X150",
+    "terminal_code": "X150",
+    "terminal_strip": null,
+    "terminal": "X150:P1"
+  },
+  "current": null,
+  "current_basis": null,
+  "current_source_text": null,
+  "status": "resolved",
+  "needs_review": false,
+  "source_note": "2A页B1的P2出页引用1F33R/PN2；1F页33列的PN2入页线直接接到CU320的X150 P1接口，目标回指2A05I。",
+  "warnings": []
+}

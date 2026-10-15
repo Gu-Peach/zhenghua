@@ -2,11 +2,38 @@
 
 入口：`services/agent/scripts/run_stage2_groups.py`。读取已有拆分页和图纸索引，不调用 Stage 1、不重新渲染 PDF、不创建项目、数据库客户端、队列或 Storage 上传。
 
-该脚本只绑定本地ZH Profile。其他模板资源缺失时显示具体告警并跳过，不阻塞ZH；ZH自身缺失或无效仍停止，终端和failure.json保留具体资源原因。服务主入口的严格Profile加载不变，见[修复记录](./changelog/2026-10-14-local-profile-isolation.md)。
+该脚本默认绑定本地ZH，可用`--profile`切换本地规则键；模型适配器和确定性策略均按Profile.adapter绑定。其他模板资源缺失时告警后跳过，选中的规则无效仍停止。服务主入口的严格Profile加载不变，见[切换说明](./changelog/2026-10-15-local-profile-cli.md)。
 
-默认来源目录`docs/test/pages`，索引`docs/test/pages/agent/drawing_index.json`，已按用户移动后的实际位置更新。只扫描002.C的7页和002.M的5页，跨页可读取其他本地目标页。当前本地ZH为2.0.2；旧run_stage2产物来自2.0.0，run_stage2_v201来自2.0.1，不查询远端规则包。最新[规则记录](./changelog/2026-10-14-zh-direct-terminals.md)以直接端子段及程序分类为准。
+默认来源目录`docs/test/pages`，索引`docs/test/pages/agent/drawing_index.json`，已按用户移动后的实际位置更新。默认只扫描002.C的7页和002.M的5页，跨页可读取其他本地目标页。当前本地ZH为2.0.5；旧run_stage2产物来自2.0.0，run_stage2_v201来自2.0.1，不查询远端规则包。[电流规则](./changelog/2026-10-15-zh-ie-current.md)允许端点冻结后沿相线读取Ie明确A值；[坐标及样例记录](./changelog/2026-10-15-zh-c01-terminal-coordinates.md)明确归一化坐标与003C01案例，元件、直接端子段及程序分类规则沿用。
 
 ## 命令
+
+规则键为`zh`（振华）、`abb`、`zh_gantry_reel`（资源目录xmz）。使用规则键而非Prompt目录名；`--profile`只切换本地注册规则，不读取远端规则包。显式指定实验规则表示本次手工选择，不改变其发布状态。
+
+新PDF尚未拆页时使用完整入口，自动拆页、分类和提取（替换实际PDF路径）：
+
+```powershell
+.\.venv\Scripts\python.exe services/agent/scripts/run_page_workflow_extraction.py `
+  "E:\图纸目录\其他图纸.pdf" `
+  --profile zh_gantry_reel --model "Qwen3.8 27B" `
+  --max-pdf-pages 0 --output-dir docs/test/run_xmz_001 `
+  --run-id xmz-001 --allow-real-model
+```
+
+0表示全PDF；可改为较小正整数限制物理页数。完整入口输出根目录`table.xlsx`和分阶段JSON，以及`pages/`和`agent/drawing_index.json`。内存/本地模式已强制设置，不依赖.env中的持久化模式，不上传或调用业务数据库。
+
+已有拆页和索引时，可切规则只跑指定工作区：
+
+```powershell
+.\.venv\Scripts\python.exe services/agent/scripts/run_stage2_groups.py `
+  --profile zh_gantry_reel --model "Qwen3.8 27B" `
+  --pages-dir docs/test/run_xmz_001/pages `
+  --index docs/test/run_xmz_001/agent/drawing_index.json `
+  --groups GCR.1 --output-dir docs/test/run_xmz_stage2_001 `
+  --run-id xmz-stage2-001 --allow-real-model
+```
+
+`--groups`必须使用该索引内实际工作区，图片目录和索引必须来自同一PDF。变更PDF/规则时使用新输出目录和run-id；完整入口的表格含诊断列，分组入口生成下述标准14列`result.xlsx`。
 
 默认只预检，不调用付费模型：
 
@@ -45,7 +72,7 @@
 
 统一写入 `docs/test/run_stage2`（Git 已忽略）：
 
-- `result.xlsx`：Sheet1，与 `1641.xlsx` 表头顺序一致的 12 列：页码、原理号、端子排、起点元件、起点描述、起点端子、终点元件、终点描述、终点端子、电流、色标、备注。色标按用户要求全部为空，不参与本次提取。
+- `result.xlsx`：Sheet1，前12列沿用 `1641.xlsx`：页码、原理号、端子排、起点元件、起点描述、起点端子、终点元件、终点描述、终点端子、电流、色标、备注；再追加起点端子坐标、终点端子坐标，共14列。色标按用户要求全部为空。坐标保存JSON对象，例如`{"x":0.178,"y":0.173,"pdf_page_number":403}`，左上角为原点、整图归一化0～1，各端绑定各自图片物理页；未知留空，不修改参考模板。
 - `table.json`、`records.json`：标准行与完整结构化记录；业务备注不混入诊断原因，缺失值保持 null，不伪造电流 0。
 - `page-scan-results.json`、`cross-page-tasks.json`、`cross-page-results.json`：逐页扫描和内部补全明细。
 - `agent/completed-pages/`：完成页事实与恢复指纹。

@@ -1,0 +1,599 @@
+{
+  "pdf_page_number": 60,
+  "drawing_function": "003.C",
+  "drawing_page_number": 1,
+  "drawing_object_location": "+01F11.1",
+  "needs_review": true,
+  "units": [
+    {
+      "unit_id": "003c01-marked-segments",
+      "current": null,
+      "connections": [
+        {
+          "local_connection_id": "003c01-fc11-l1",
+          "line_number": "003C0101",
+          "endpoint_role": "source",
+          "direction_basis": "从端子下方放线斜杠向两侧读取：上侧最近本页端子为起点，下侧箭头离开本页；上方断路器不属于该放线段。",
+          "start": {
+            "device": "+01F10",
+            "location": "+01F10",
+            "terminal_board": "XA",
+            "terminal": "XA:8",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.17773,
+              "y": 0.53735,
+              "pdf_page_number": 60
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "=080.C+01F12.1/10.1 / +01F12.1-FC11_L1",
+              "target_function": "080.C",
+              "target_drawing_page": 10,
+              "target_column": 1,
+              "target_pdf_page": 403,
+              "target_object": "+01F12.1"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": "160A",
+          "current_basis": "Ie",
+          "current_source_text": "Ie:(0.7-1)*160A"
+        },
+        {
+          "local_connection_id": "003c01-fc11-l2",
+          "line_number": "003C0102",
+          "endpoint_role": "source",
+          "direction_basis": "从端子下方放线斜杠向两侧读取：上侧最近本页端子为起点，下侧箭头离开本页；上方断路器不属于该放线段。",
+          "start": {
+            "device": "+01F10",
+            "location": "+01F10",
+            "terminal_board": "XA",
+            "terminal": "XA:9",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.19647,
+              "y": 0.53735,
+              "pdf_page_number": 60
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "=080.C+01F12.1/10.1 / +01F12.1-FC11_L2",
+              "target_function": "080.C",
+              "target_drawing_page": 10,
+              "target_column": 1,
+              "target_pdf_page": 403,
+              "target_object": "+01F12.1"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": "160A",
+          "current_basis": "Ie",
+          "current_source_text": "Ie:(0.7-1)*160A"
+        },
+        {
+          "local_connection_id": "003c01-fc11-l3",
+          "line_number": "003C0103",
+          "endpoint_role": "source",
+          "direction_basis": "从端子下方放线斜杠向两侧读取：上侧最近本页端子为起点，下侧箭头离开本页；上方断路器不属于该放线段。",
+          "start": {
+            "device": "+01F10",
+            "location": "+01F10",
+            "terminal_board": "XA",
+            "terminal": "XA:10",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.2152,
+              "y": 0.53735,
+              "pdf_page_number": 60
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "=080.C+01F12.1/10.1 / +01F12.1-FC11_L3",
+              "target_function": "080.C",
+              "target_drawing_page": 10,
+              "target_column": 1,
+              "target_pdf_page": 403,
+              "target_object": "+01F12.1"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": "160A",
+          "current_basis": "Ie",
+          "current_source_text": "Ie:(0.7-1)*160A"
+        },
+        {
+          "local_connection_id": "003c01-fc11-n",
+          "line_number": "002C0600",
+          "endpoint_role": "source",
+          "direction_basis": "从端子下方放线斜杠向两侧读取：上侧最近本页端子为起点，下侧箭头离开本页；上方断路器不属于该放线段。",
+          "start": {
+            "device": "+01F10",
+            "location": "+01F10",
+            "terminal_board": null,
+            "terminal": "N-BAR",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.23287,
+              "y": 0.47561,
+              "pdf_page_number": 60
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "=080.C+01F12.1/10.1 / +01F12.1-FC11_N",
+              "target_function": "080.C",
+              "target_drawing_page": 10,
+              "target_column": 1,
+              "target_pdf_page": 403,
+              "target_object": "+01F12.1"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null
+        },
+        {
+          "local_connection_id": "003c01-fc11-pe",
+          "line_number": "PE",
+          "endpoint_role": "source",
+          "direction_basis": "从端子下方放线斜杠向两侧读取：上侧最近本页端子为起点，下侧箭头离开本页；上方断路器不属于该放线段。",
+          "start": {
+            "device": "+01F10",
+            "location": "+01F10",
+            "terminal_board": null,
+            "terminal": "PE",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.25161,
+              "y": 0.47561,
+              "pdf_page_number": 60
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "=080.C+01F12.1/10.1 / +01F12.1-FC11_PE",
+              "target_function": "080.C",
+              "target_drawing_page": 10,
+              "target_column": 1,
+              "target_pdf_page": 403,
+              "target_object": "+01F12.1"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null
+        },
+        {
+          "local_connection_id": "003c01-fc12-l1",
+          "line_number": "003C0111",
+          "endpoint_role": "source",
+          "direction_basis": "从端子下方放线斜杠向两侧读取：上侧最近本页端子为起点，下侧箭头离开本页；上方断路器不属于该放线段。",
+          "start": {
+            "device": "+01F10",
+            "location": "+01F10",
+            "terminal_board": "XA",
+            "terminal": "XA:11",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.34422,
+              "y": 0.53735,
+              "pdf_page_number": 60
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "+10F01/31.1 / +10F01-FC12_L1",
+              "target_function": "003.C",
+              "target_drawing_page": 31,
+              "target_column": 1,
+              "target_pdf_page": 74,
+              "target_object": "+10F01"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": "160A",
+          "current_basis": "Ie",
+          "current_source_text": "Ie:(0.7-1)*160A"
+        },
+        {
+          "local_connection_id": "003c01-fc12-l2",
+          "line_number": "003C0112",
+          "endpoint_role": "source",
+          "direction_basis": "从端子下方放线斜杠向两侧读取：上侧最近本页端子为起点，下侧箭头离开本页；上方断路器不属于该放线段。",
+          "start": {
+            "device": "+01F10",
+            "location": "+01F10",
+            "terminal_board": "XA",
+            "terminal": "XA:12",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.36296,
+              "y": 0.53735,
+              "pdf_page_number": 60
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "+10F01/31.1 / +10F01-FC12_L2",
+              "target_function": "003.C",
+              "target_drawing_page": 31,
+              "target_column": 1,
+              "target_pdf_page": 74,
+              "target_object": "+10F01"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": "160A",
+          "current_basis": "Ie",
+          "current_source_text": "Ie:(0.7-1)*160A"
+        },
+        {
+          "local_connection_id": "003c01-fc12-l3",
+          "line_number": "003C0113",
+          "endpoint_role": "source",
+          "direction_basis": "从端子下方放线斜杠向两侧读取：上侧最近本页端子为起点，下侧箭头离开本页；上方断路器不属于该放线段。",
+          "start": {
+            "device": "+01F10",
+            "location": "+01F10",
+            "terminal_board": "XA",
+            "terminal": "XA:13",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.38169,
+              "y": 0.53735,
+              "pdf_page_number": 60
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "+10F01/31.1 / +10F01-FC12_L3",
+              "target_function": "003.C",
+              "target_drawing_page": 31,
+              "target_column": 1,
+              "target_pdf_page": 74,
+              "target_object": "+10F01"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": "160A",
+          "current_basis": "Ie",
+          "current_source_text": "Ie:(0.7-1)*160A"
+        },
+        {
+          "local_connection_id": "003c01-fc12-n",
+          "line_number": "002C0600",
+          "endpoint_role": "source",
+          "direction_basis": "从端子下方放线斜杠向两侧读取：上侧最近本页端子为起点，下侧箭头离开本页；上方断路器不属于该放线段。",
+          "start": {
+            "device": "+01F10",
+            "location": "+01F10",
+            "terminal_board": null,
+            "terminal": "N-BAR",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.40043,
+              "y": 0.47561,
+              "pdf_page_number": 60
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "+10F01/31.1 / +10F01-FC12_N",
+              "target_function": "003.C",
+              "target_drawing_page": 31,
+              "target_column": 1,
+              "target_pdf_page": 74,
+              "target_object": "+10F01"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null
+        },
+        {
+          "local_connection_id": "003c01-fc12-pe",
+          "line_number": "PE",
+          "endpoint_role": "source",
+          "direction_basis": "从端子下方放线斜杠向两侧读取：上侧最近本页端子为起点，下侧箭头离开本页；上方断路器不属于该放线段。",
+          "start": {
+            "device": "+01F10",
+            "location": "+01F10",
+            "terminal_board": null,
+            "terminal": "PE",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.41863,
+              "y": 0.47561,
+              "pdf_page_number": 60
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "+10F01/31.1 / +10F01-FC12_PE",
+              "target_function": "003.C",
+              "target_drawing_page": 31,
+              "target_column": 1,
+              "target_pdf_page": 74,
+              "target_object": "+10F01"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null
+        },
+        {
+          "local_connection_id": "003c01-fc13-l1",
+          "line_number": "003C0121",
+          "endpoint_role": "source",
+          "direction_basis": "从端子下方放线斜杠向两侧读取：上侧最近本页端子为起点，下侧箭头离开本页；上方断路器不属于该放线段。",
+          "start": {
+            "device": "+01F11.1",
+            "location": "+01F11.1",
+            "terminal_board": "XD10",
+            "terminal": "XD10:13",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.51071,
+              "y": 0.52896,
+              "pdf_page_number": 60
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "=004.C+01F35/1.1 / +01F35-FC13_L1",
+              "target_function": "004.C",
+              "target_drawing_page": 1,
+              "target_column": 1,
+              "target_pdf_page": 117,
+              "target_object": "+01F35"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": "80A",
+          "current_basis": "Ie",
+          "current_source_text": "Ie:(0.7-1)*80A"
+        },
+        {
+          "local_connection_id": "003c01-fc13-l2",
+          "line_number": "003C0122",
+          "endpoint_role": "source",
+          "direction_basis": "从端子下方放线斜杠向两侧读取：上侧最近本页端子为起点，下侧箭头离开本页；上方断路器不属于该放线段。",
+          "start": {
+            "device": "+01F11.1",
+            "location": "+01F11.1",
+            "terminal_board": "XD10",
+            "terminal": "XD10:14",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.52944,
+              "y": 0.52896,
+              "pdf_page_number": 60
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "=004.C+01F35/1.1 / +01F35-FC13_L2",
+              "target_function": "004.C",
+              "target_drawing_page": 1,
+              "target_column": 1,
+              "target_pdf_page": 117,
+              "target_object": "+01F35"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": "80A",
+          "current_basis": "Ie",
+          "current_source_text": "Ie:(0.7-1)*80A"
+        },
+        {
+          "local_connection_id": "003c01-fc13-l3",
+          "line_number": "003C0123",
+          "endpoint_role": "source",
+          "direction_basis": "从端子下方放线斜杠向两侧读取：上侧最近本页端子为起点，下侧箭头离开本页；上方断路器不属于该放线段。",
+          "start": {
+            "device": "+01F11.1",
+            "location": "+01F11.1",
+            "terminal_board": "XD10",
+            "terminal": "XD10:15",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.54818,
+              "y": 0.52896,
+              "pdf_page_number": 60
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "=004.C+01F35/1.1 / +01F35-FC13_L3",
+              "target_function": "004.C",
+              "target_drawing_page": 1,
+              "target_column": 1,
+              "target_pdf_page": 117,
+              "target_object": "+01F35"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": "80A",
+          "current_basis": "Ie",
+          "current_source_text": "Ie:(0.7-1)*80A"
+        },
+        {
+          "local_connection_id": "003c01-fc13-n",
+          "line_number": "002C0600",
+          "endpoint_role": "source",
+          "direction_basis": "从端子下方放线斜杠向两侧读取：上侧最近本页端子为起点，下侧箭头离开本页；上方断路器不属于该放线段。",
+          "start": {
+            "device": "+01F11.1",
+            "location": "+01F11.1",
+            "terminal_board": null,
+            "terminal": "N-BAR",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.56638,
+              "y": 0.47561,
+              "pdf_page_number": 60
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "=004.C+01F35/1.1 / +01F35-FC13_N",
+              "target_function": "004.C",
+              "target_drawing_page": 1,
+              "target_column": 1,
+              "target_pdf_page": 117,
+              "target_object": "+01F35"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null
+        },
+        {
+          "local_connection_id": "003c01-fc13-pe",
+          "line_number": "PE",
+          "endpoint_role": "source",
+          "direction_basis": "从端子下方放线斜杠向两侧读取：上侧最近本页端子为起点，下侧箭头离开本页；上方断路器不属于该放线段。",
+          "start": {
+            "device": "+01F11.1",
+            "location": "+01F11.1",
+            "terminal_board": null,
+            "terminal": "PE",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.58512,
+              "y": 0.47561,
+              "pdf_page_number": 60
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "=004.C+01F35/1.1 / +01F35-FC13_PE",
+              "target_function": "004.C",
+              "target_drawing_page": 1,
+              "target_column": 1,
+              "target_pdf_page": 117,
+              "target_object": "+01F35"
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null
+        },
+        {
+          "local_connection_id": "003c01-control-1",
+          "line_number": "003C0151",
+          "endpoint_role": "unknown",
+          "direction_basis": "两侧直接端子为下方XD3:116和上方XD3:9；此局部放线段无直接方向箭头，顺序保留待复核，不借用上游24VDC入页箭头。",
+          "start": {
+            "device": "+01F11.3",
+            "location": "+01F11.3",
+            "terminal_board": "XD3",
+            "terminal": "XD3:116",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.73287,
+              "y": 0.52896,
+              "pdf_page_number": 60
+            }
+          },
+          "end": {
+            "device": "+01F10",
+            "location": "+01F10",
+            "terminal_board": "XD3",
+            "terminal": "XD3:9",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.73287,
+              "y": 0.30412,
+              "pdf_page_number": 60
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "needs_review",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null
+        },
+        {
+          "local_connection_id": "003c01-control-2",
+          "line_number": "003C0152",
+          "endpoint_role": "unknown",
+          "direction_basis": "两侧直接端子为下方XD3:117和上方XD3:10；此局部放线段无直接方向箭头，顺序保留待复核，不借用上游24VDC入页箭头。",
+          "start": {
+            "device": "+01F11.3",
+            "location": "+01F11.3",
+            "terminal_board": "XD3",
+            "terminal": "XD3:117",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.80675,
+              "y": 0.52896,
+              "pdf_page_number": 60
+            }
+          },
+          "end": {
+            "device": "+01F10",
+            "location": "+01F10",
+            "terminal_board": "XD3",
+            "terminal": "XD3:10",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.80675,
+              "y": 0.30412,
+              "pdf_page_number": 60
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "needs_review",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null
+        }
+      ]
+    }
+  ],
+  "page_references": [],
+  "warnings": []
+}

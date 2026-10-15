@@ -48,7 +48,7 @@ from src.harness.retry import RetryPolicy  # noqa: E402
 from src.agent.extraction_agent.infrastructure.document.checkpoint import _write_json_atomic  # noqa: E402
 from src.agent.extraction_agent.infrastructure.zh_vlm_stages import _prepare_few_shot_image  # noqa: E402
 from src.profiles import ProfileRegistry, ProfileRegistryError  # noqa: E402
-from src.agent.extraction_agent.profiles.zh.policy import ZhExtractionPolicy  # noqa: E402
+from src.agent.extraction_agent.profiles.extraction_policy import default_extraction_policies  # noqa: E402
 
 HEADERS = [
     "页码",
@@ -63,6 +63,8 @@ HEADERS = [
     "电流",
     "色标",
     "备注",
+    "起点端子坐标",
+    "终点端子坐标",
 ]
 
 
@@ -312,6 +314,10 @@ def table_rows(records: list[dict[str, Any]]) -> list[list[Any]]:
                 record.get("current"),
                 None,
                 record.get("remark"),
+                json.dumps(record["start_terminal_coordinates"], ensure_ascii=False)
+                if record.get("start_terminal_coordinates") is not None else None,
+                json.dumps(record["end_terminal_coordinates"], ensure_ascii=False)
+                if record.get("end_terminal_coordinates") is not None else None,
             ]
         )
     return rows
@@ -357,7 +363,7 @@ def template_style(path: Path) -> dict[str, Any]:
             else "".join(cell.find("m:is", ns).itertext())
             for cell in cells
         ]
-        if headers != HEADERS:
+        if headers != HEADERS[:12]:
             raise ValueError("Template header order differs from the required 12-column layout.")
         fmt = sheet.find("m:sheetFormatPr", ns)
         widths = [float(fmt.get("defaultColWidth", "8.89"))] * 12
@@ -370,7 +376,7 @@ def template_style(path: Path) -> dict[str, Any]:
         return {
             "font": name.get("val") if name is not None else "宋体",
             "size": float(size.get("val")) if size is not None else 9,
-            "widths": widths,
+            "widths": [*widths, 42, 42],
             "body_height": 21.6,
             "header_fill": "#C0C0C0",
         }
@@ -410,21 +416,26 @@ def export_xlsx(output: Path, template: Path, *, node: Path, modules: Path) -> P
     return output / "result.xlsx"
 
 
-def load_local_zh_profile(settings: AgentSettings) -> ProfileBinding:
-    """Require a valid ZH binding without blocking on unrelated local profiles."""
+def load_local_profile(settings: AgentSettings, profile_key: str) -> ProfileBinding:
+    """Bind an explicitly chosen local profile, independently of other invalid templates."""
     registry = ProfileRegistry(
         profile_root=settings.profile_root, workspace_root=ROOT, allow_legacy_references=True
     )
     registry.load_all(strict=False)
     try:
-        profile = registry.bind("zh")
+        profile = registry.bind(profile_key, allow_experimental=True)
     except ProfileRegistryError as exc:
         raise ProfileRegistryError(
             exc.message, details={"errors": list(registry.errors)}
         ) from exc
     for error in registry.errors:
-        print(f"跳过无效的其他Profile（本次仅使用ZH）：{error}", file=sys.stderr, flush=True)
+        print(f"跳过无效的其他Profile（本次使用{profile_key}）：{error}", file=sys.stderr, flush=True)
     return profile
+
+
+def load_local_zh_profile(settings: AgentSettings) -> ProfileBinding:
+    """Retain the existing ZH-only helper for callers using the old interface."""
+    return load_local_profile(settings, "zh")
 
 
 def failure_report(exc: Exception) -> dict[str, Any]:
@@ -478,7 +489,7 @@ async def execute(args: argparse.Namespace, *, stages: Any | None = None) -> dic
         settings = memory_settings(AgentSettings.from_env())
         if getattr(args, "model", None):
             settings = replace(settings, default_model=args.model)
-        profile = load_local_zh_profile(settings)
+        profile = load_local_profile(settings, getattr(args, "profile", "zh"))
         if stages is None:
             if not settings.model_configured:
                 raise ValueError("Configure the model in services/agent/.env before a real test.")
@@ -512,7 +523,7 @@ async def execute(args: argparse.Namespace, *, stages: Any | None = None) -> dic
             durable=None,
         )
         print(
-            f"Stage 2：{len(selected)} 来源页，Profile {profile.profile.version}，"
+            f"Stage 2：{len(selected)} 来源页，Profile {profile.profile.key}@{profile.profile.version}，"
             f"model={settings.default_model}; memory-only",
             flush=True,
         )
@@ -523,7 +534,7 @@ async def execute(args: argparse.Namespace, *, stages: Any | None = None) -> dic
             output_path=output,
             settings=Settings.from_agent(settings),
             extraction_client=client,
-            policy=ZhExtractionPolicy(),
+            policy=default_extraction_policies().resolve(profile.adapter),
             progress=lambda text: print(text, flush=True),
             assemble_output=False,
         )
@@ -588,6 +599,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--template", type=Path, default=ROOT / "docs/test/1641.xlsx")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "docs/test/run_stage2")
     parser.add_argument("--groups", nargs="+", default=["002.C", "002.M"])
+    parser.add_argument("--profile", default="zh", help="Local Profile key; e.g. zh, abb, zh_gantry_reel")
     parser.add_argument("--run-id", default="local-stage2-002c-002m")
     parser.add_argument("--max-source-pages", type=int, default=0)
     parser.add_argument("--allow-real-model", action="store_true")

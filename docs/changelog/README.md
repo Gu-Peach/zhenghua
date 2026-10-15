@@ -1,6 +1,26 @@
 # Changelog
 
+## 2026-10-15
+
+- ABB本地1.1.3按用户确认纠正为小圆圈放线、大圆圈端子，同段双标记只记一条；原理号标记数字或完整端子直接拼来源Sheet，更新图片expected及内部双图补全。静态检查通过，未运行测试/模型、不写库或发布。见[Agent修订记录](../service/agent/abb-circle-rule-update.md)。
+
+- 本地PDF/拆页测试CLI支持--profile/--model及对应策略，强制内存/本地资源、不写库；帮助命令和三种模板只读绑定通过，未运行模型或提取。见[Agent记录](../service/agent/changelog/2026-10-15-local-profile-cli.md)。
+
+- 补齐ZH003C01中间FC12组XA:11→003C31 XD10:1的双图样例，初扫五条引用保持；manifest v10/checksum同步，仅静态核对，未运行模型或写库。见[Agent记录](../service/agent/changelog/2026-10-15-zh-c01-middle-completion.md)。
+
+- ZH本地2.0.5在端点冻结后沿对应相线读取Ie明确电流，保留原文且不计算系数/改取Set；003C01样例区分160A与80A，manifest v9/checksum同步。未运行测试/模型或写库。见[Agent记录](../service/agent/changelog/2026-10-15-zh-ie-current.md)。
+
+- ZH本地2.0.4/manifest v8以003C01替换旧接收/跨页样例并清理独占旧图；端点/最终记录增加归一化端子坐标及本端图片PDF物理页，本地XLSX追加两列。静态资源/Schema/语法核对通过，未运行测试/模型、生成新XLSX或写库。见[Agent记录](../service/agent/changelog/2026-10-15-zh-c01-terminal-coordinates.md)。
+
 ## 2026-10-14
+
+- ZH本地2.0.3按对应线路引用、附近元件与本端所在页Object Loc读取元件标识，X/XD排号不作为元件；内部补全仅可完善来源元件元数据，不改起点端子/原理号。expected/manifest v7/Schema与checksum同步，静态核对通过，未运行模型或写库。见[Agent记录](../service/agent/changelog/2026-10-14-zh-component-priority.md)。
+
+- 经用户明确授权，本地zhenghua_test部署三张精简业务表并删除截图18张旧表/1个视图，旧业务数据不迁移。RLS/行版本/唯一键验证通过，Agent/Auth/Storage数据摘要不变，迁移登记完成；应用尚未适配，新上传暂不能走旧接口。见[Server实际部署](../service/server/changelog/2026-10-14-local-business-table-retirement.md)和[ADR-0018](../adr/0018-simple-extraction-business-tables.md)。
+
+- 按用户要求交付三张精简提取业务表创建SQL草案（规则引用、项目、连接结果），新增实体表/所有者RLS/页级幂等键，保留旧schema；仅文件交付，未执行数据库或应用切换。见[ADR-0018](../adr/0018-simple-extraction-business-tables.md)和[Server记录](../service/server/changelog/2026-10-14-simple-extraction-schema-sql.md)。
+
+- XMZ大车卷盘本地规则使用prompts/xmz资源，0.1.1对齐放线标记/最近端子及程序端子排，样例expected仅取图片事实、不补人工表外部字段；保持独立页标策略，静态检查，不跑测试/模型或写库/发布。见[Agent记录](../service/agent/changelog/2026-10-14-xmz-image-only.md)及[ADR-0015](../adr/0015-zh-gantry-reel-profile.md)。
 
 - 本地ZH测试脚本隔离其他模板缺失资源导致的ProfileRegistryError，ZH自身仍校验，终端/失败产物显示具体原因。只读资源绑定确认当前ZH可用，未运行提取/模型或写库。见[Agent记录](../service/agent/changelog/2026-10-14-local-profile-isolation.md)。
 

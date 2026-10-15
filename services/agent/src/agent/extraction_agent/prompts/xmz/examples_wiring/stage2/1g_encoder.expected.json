@@ -1,0 +1,239 @@
+{
+  "pdf_page_number": 8,
+  "drawing_function": "GCR.1",
+  "drawing_page_number": 7,
+  "drawing_object_location": "+GCR",
+  "blank": false,
+  "needs_review": false,
+  "units": [
+    {
+      "unit_id": "1g-encoder",
+      "wire_number": null,
+      "current": null,
+      "unit_identity_confidence": "low",
+      "connections": [
+        {
+          "local_connection_id": "1g-encoder-1",
+          "endpoint_role": "source",
+          "direction_basis": "斜杠位于X3端子下方；无箭头，按实际电缆记录到编码器C1",
+          "line_number": "1F23N",
+          "core_number": null,
+          "color": null,
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "location": "+GCR",
+            "device": "-X3",
+            "name": null,
+            "terminal_board": "X3",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "X3:1"
+          },
+          "end": {
+            "location": "+U2",
+            "device": "C1",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "K"
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_drawing_pages": [
+            "1G"
+          ],
+          "source_note": "原理号按1G图片中的1F前缀照录，不按页标或人工表改写。"
+        },
+        {
+          "local_connection_id": "1g-encoder-2",
+          "endpoint_role": "source",
+          "direction_basis": "斜杠位于X3端子下方；无箭头，按实际电缆记录到编码器C1",
+          "line_number": "1F24N",
+          "core_number": null,
+          "color": null,
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "location": "+GCR",
+            "device": "-X3",
+            "name": null,
+            "terminal_board": "X3",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "X3:2"
+          },
+          "end": {
+            "location": "+U2",
+            "device": "C1",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "H"
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_drawing_pages": [
+            "1G"
+          ],
+          "source_note": "原理号按1G图片中的1F前缀照录，不按页标或人工表改写。"
+        },
+        {
+          "local_connection_id": "1g-encoder-3",
+          "endpoint_role": "source",
+          "direction_basis": "斜杠位于X3端子下方；无箭头，按实际电缆记录到编码器C1",
+          "line_number": "1F25N",
+          "core_number": null,
+          "color": null,
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "location": "+GCR",
+            "device": "-X3",
+            "name": null,
+            "terminal_board": "X3",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "X3:3"
+          },
+          "end": {
+            "location": "+U2",
+            "device": "C1",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "F"
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_drawing_pages": [
+            "1G"
+          ],
+          "source_note": "原理号按1G图片中的1F前缀照录，不按页标或人工表改写。"
+        },
+        {
+          "local_connection_id": "1g-encoder-4",
+          "endpoint_role": "source",
+          "direction_basis": "斜杠位于X3端子下方；无箭头，按实际电缆记录到编码器C1",
+          "line_number": "1F26N",
+          "core_number": null,
+          "color": null,
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "location": "+GCR",
+            "device": "-X3",
+            "name": null,
+            "terminal_board": "X3",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "X3:4"
+          },
+          "end": {
+            "location": "+U2",
+            "device": "C1",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "E"
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_drawing_pages": [
+            "1G"
+          ],
+          "source_note": "原理号按1G图片中的1F前缀照录，不按页标或人工表改写。"
+        },
+        {
+          "local_connection_id": "1g-encoder-5",
+          "endpoint_role": "source",
+          "direction_basis": "斜杠位于X3端子下方；无箭头，按实际电缆记录到编码器C1",
+          "line_number": "1F27N",
+          "core_number": null,
+          "color": null,
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "location": "+GCR",
+            "device": "-X3",
+            "name": null,
+            "terminal_board": "X3",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "X3:5"
+          },
+          "end": {
+            "location": "+U2",
+            "device": "C1",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "D"
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_drawing_pages": [
+            "1G"
+          ],
+          "source_note": "原理号按1G图片中的1F前缀照录，不按页标或人工表改写。"
+        },
+        {
+          "local_connection_id": "1g-encoder-6",
+          "endpoint_role": "source",
+          "direction_basis": "斜杠位于X3端子下方；无箭头，按实际电缆记录到编码器C1",
+          "line_number": "1F28N",
+          "core_number": null,
+          "color": null,
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "location": "+GCR",
+            "device": "-X3",
+            "name": null,
+            "terminal_board": "X3",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "X3:6"
+          },
+          "end": {
+            "location": "+U2",
+            "device": "C1",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "C"
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_drawing_pages": [
+            "1G"
+          ],
+          "source_note": "原理号按1G图片中的1F前缀照录，不按页标或人工表改写。"
+        }
+      ],
+      "source_drawing_pages": [
+        "1G"
+      ]
+    }
+  ],
+  "page_references": [],
+  "warnings": []
+}

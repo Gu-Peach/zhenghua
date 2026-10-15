@@ -1,5 +1,19 @@
 # Agent 服务设计索引
 
+2026-10-15 ABB本地1.1.3纠正小圆圈放线/大圆圈端子、同段双标记只记一条，原理号数字或完整端子直接拼来源Sheet；Prompt/适配器/expected同步，未运行测试或模型。见[修订记录](./abb-circle-rule-update.md)。
+
+2026-10-15本地PDF/拆页测试入口支持--profile/--model切换规则与模型，强制内存模式；操作命令见[测试说明](./local-stage2-group-test.md)，静态验证与限制见[记录](./changelog/2026-10-15-local-profile-cli.md)。
+
+2026-10-15补齐003C01中间FC12组到003C31的双图Few-shot，manifest v10，5初扫/3补全/8图；仅静态核对。见[记录](./changelog/2026-10-15-zh-c01-middle-completion.md)。
+
+2026-10-15本地ZH2.0.5允许端点冻结后沿对应相线读取Ie明确电流，003C01样例按实际FC11/12的160A、FC13的80A同步；未运行测试/模型或写库。见[记录](./changelog/2026-10-15-zh-ie-current.md)。
+
+2026-10-15本地ZH2.0.4替换003C01初扫/跨页样例、清理独占旧图，并贯通起终点端子图片坐标及本地14列XLSX；仅静态核对，未运行模型/测试。见[记录](./changelog/2026-10-15-zh-c01-terminal-coordinates.md)。
+
+2026-10-14本地ZH2.0.3元件标识优先级与样例同步，内部补全可按图像依据完善来源元件元数据，冻结端子/原理号；仅静态核对，待用户实际复测。见[记录](./changelog/2026-10-14-zh-component-priority.md)。
+
+2026-10-14按用户确认对齐XMZ本地规则：Profile资源改用prompts/xmz，放线标记/最近端子边界、程序端子排及仅图像事实expected同步，本地0.1.1；未运行测试/模型，不写库或发布。见[记录](./changelog/2026-10-14-xmz-image-only.md)。
+
 2026-10-14本地ZH测试脚本隔离无关模板资源错误并显示具体失败原因，ZH绑定只读检查通过，未运行提取或真实模型。见[记录](./changelog/2026-10-14-local-profile-isolation.md)。
 
 2026-10-14按用户确认明确ZH初扫顺序：先定位放线斜杠，再沿两侧找端子/跨页箭头，最后按同段箭头定向；Prompt、调用指令和规则同步。未运行测试/模型，不写库，效果待用户复测。见[记录](./changelog/2026-10-14-zh-marker-first.md)。

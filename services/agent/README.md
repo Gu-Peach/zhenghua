@@ -8,7 +8,7 @@
 
 2026-10-13 本地ZH2.0.1：方向缺失降级、原始引用解析、分支保留与端子身份校验；40项冒烟及7项接口/兼容回归通过。旧结果保留，尚未重跑真实模型，数据库与远端规则未变。见[变更记录](../../docs/service/agent/changelog/2026-10-13-zh-stage2-quality.md)。
 
-本地 002.C/002.M 测试入口：`scripts/run_stage2_groups.py`，仅本地图/索引、内存执行，导出与 `1641.xlsx` 同顺序的 12 列线表，色标留空。默认预检，真实模型须 `--allow-real-model`；无数据库/Storage 上传。命令和产物见 [测试说明](../../docs/service/agent/local-stage2-group-test.md)。
+本地测试入口：已有拆页/索引用`scripts/run_stage2_groups.py`，导出标准12列加两端坐标共14列，色标留空；新PDF用`scripts/run_page_workflow_extraction.py`自动拆页/分类/提取并输出含诊断列的table.xlsx。两者支持`--profile zh|abb|zh_gantry_reel`和`--model`，强制内存/本地资源，不写数据库/Storage；真实模型须`--allow-real-model`。命令和产物见[测试说明](../../docs/service/agent/local-stage2-group-test.md)。
 
 2026-10-13 分支更新：提取改为 Stage 1 分类 + Stage 2 独立逐页 LangGraph，扫描/双图补全/保存形成闭环，删除独立 Stage 3 Agent 和全局补全阶段。实现见 [ADR-0014](../../docs/adr/0014-stage2-page-extraction-workflow.md) 与 [交付记录](../../docs/service/agent/changelog/2026-10-13-stage2-page-workflow.md)。本轮仅离线冒烟，不写真实数据库、不发布远端包、不重启服务；旧持久 run 只读，新 run 使用冻结 `page_extraction_v2` 工作流，真实库运行前需要未部署的新 migration。以下早期实施状态作为历史上下文。
 

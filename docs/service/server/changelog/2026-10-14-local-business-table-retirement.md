@@ -1,0 +1,24 @@
+# 本地旧业务表删除及新三表部署
+
+## 授权与目标
+
+用户明确表示旧数据不迁移、后续重新上传，要求直接删除截图中的旧业务对象并先落地新表。依据Agent/项目配置SUPABASE_URL=127.0.0.1:54321及Docker端口映射，操作目标限定为supabase_db_zhenghua_test/postgres；同机vc_simulation_backend及其他数据库未操作。
+
+## 已执行
+
+- 创建extraction_profiles、extraction_projects、extraction_connection_rows。三表均启用RLS，权限、索引、更新时间和行版本触发器部署。
+- 删除18张旧表：connection_evidence、document_files、drawings、evaluation_reports、feedback_items、profile_candidate_audit、profile_candidate_reviews、profile_candidates、profile_resource_packages、project_members、projects、result_proposals、result_versions、result_wire_number_counters、wiring_connections、wiring_tables、wiring_units、workspaces；删除wiring_connection_rows旧视图。
+- 显式解除agent_runs的项目/源文件两条外键及agent_traces项目外键，保留原行及原UUID。is_project_member改为新项目所有者权限，旧Storage项目读取策略替换为新项目所有者读取策略。
+- 使用RESTRICT而非CASCADE。两份新migration在同一事务内执行并登记至supabase_migrations.schema_migrations，发出PostgREST schema reload后提交。
+
+## 验证
+
+先进行DDL删除回滚演练，再进行带RLS探针的回滚演练，最后正式提交同一组SQL。探针验证所有者可读写、跨用户读写隔离、匿名拒绝、record_version递增和重复页项拒绝；临时测试数据回滚，不留在新表。
+
+事务内锁定并比较保留数据的行数及内容摘要，两者相同：agent_artifacts 497、agent_runs 38、agent_traces 142，agent_checkpoints/events/run_queue各0；auth.users 3、storage.objects 358。未删除用户、Storage文件或Buckets。提交后public仅有6张Agent表和3张新业务表，新业务表均0行，截图旧对象剩余0。
+
+## 后续限制
+
+旧业务数据已永久删除，无数据迁移。旧前端/API/Agent正式导入与RPC仍引用旧schema，当前不可使用；后续必须适配新表再重新上传。保留的旧Agent记录引用历史项目UUID，外键已解除，不自动关联新上传项目；普通用户通过新项目权限不能读取这些旧项目记录，管理员数据仍保留。旧Storage对象仍在，清理或重新关联另行授权。
+
+本轮未重启服务、上传文件或调用真实模型。原本地Stage2内存测试脚本不写数据库，不因本次表删除改为持久化。当前未验证完整Web/Server/Agent新链路，不能以schema部署代替应用接入完成。

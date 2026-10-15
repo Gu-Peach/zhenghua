@@ -18,12 +18,12 @@
     }
   ],
   "wire_number": null,
-  "line_number": "Q4 L1/205",
+  "line_number": "Q4:2205",
   "core_number": null,
   "source_record": {
     "drawing_function": "LV11",
     "drawing_page_number": 205,
-    "line_number": "Q4 L1/205",
+    "line_number": "Q4:2205",
     "start_location": "+EH.Q1.1",
     "start_device": "-Q4",
     "start_terminal": "2",

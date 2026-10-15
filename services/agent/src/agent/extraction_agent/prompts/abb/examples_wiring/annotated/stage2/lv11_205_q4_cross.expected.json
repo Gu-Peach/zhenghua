@@ -17,7 +17,7 @@
           "local_connection_id": "205-q4-l1",
           "core_number": null,
           "color": null,
-          "line_number": "Q4 L1/205",
+          "line_number": "Q4:2205",
           "current": null,
           "current_basis": null,
           "current_source_text": null,
@@ -26,7 +26,7 @@
             "location": "+EH.Q1.1",
             "device": "-Q4",
             "name": "Lighting/heating panel",
-            "terminal_board": "Q4",
+            "terminal_board": null,
             "terminal_code": null,
             "terminal_strip": null,
             "terminal": "2"
@@ -50,16 +50,18 @@
           "status": "needs_reference",
           "confidence": 0.96,
           "remark": null,
-          "source_note": "用户标注需要的 Q4 出线；没有数字原理号，取电位 Q4 L1 加 Sheet；范围 90-225A 不当单一电流",
+          "source_note": "明确无小圈的断路器对外出线；无标记数字，用Q4实际端子直接拼来源Sheet205。",
           "source_pdf_pages": [],
           "source_drawing_pages": [],
-          "external_source_required": false
+          "external_source_required": false,
+          "endpoint_role": "source",
+          "direction_basis": "Q4下方导线向下出页；本页设备端子是起点"
         },
         {
           "local_connection_id": "205-q4-l2",
           "core_number": null,
           "color": null,
-          "line_number": "Q4 L2/205",
+          "line_number": "Q4:4205",
           "current": null,
           "current_basis": null,
           "current_source_text": null,
@@ -68,7 +70,7 @@
             "location": "+EH.Q1.1",
             "device": "-Q4",
             "name": "Lighting/heating panel",
-            "terminal_board": "Q4",
+            "terminal_board": null,
             "terminal_code": null,
             "terminal_strip": null,
             "terminal": "4"
@@ -92,16 +94,18 @@
           "status": "needs_reference",
           "confidence": 0.96,
           "remark": null,
-          "source_note": "用户标注需要的 Q4 出线；没有数字原理号，取电位 Q4 L2 加 Sheet；范围 90-225A 不当单一电流",
+          "source_note": "明确无小圈的断路器对外出线；无标记数字，用Q4实际端子直接拼来源Sheet205。",
           "source_pdf_pages": [],
           "source_drawing_pages": [],
-          "external_source_required": false
+          "external_source_required": false,
+          "endpoint_role": "source",
+          "direction_basis": "Q4下方导线向下出页；本页设备端子是起点"
         },
         {
           "local_connection_id": "205-q4-l3",
           "core_number": null,
           "color": null,
-          "line_number": "Q4 L3/205",
+          "line_number": "Q4:6205",
           "current": null,
           "current_basis": null,
           "current_source_text": null,
@@ -110,7 +114,7 @@
             "location": "+EH.Q1.1",
             "device": "-Q4",
             "name": "Lighting/heating panel",
-            "terminal_board": "Q4",
+            "terminal_board": null,
             "terminal_code": null,
             "terminal_strip": null,
             "terminal": "6"
@@ -134,16 +138,18 @@
           "status": "needs_reference",
           "confidence": 0.96,
           "remark": null,
-          "source_note": "用户标注需要的 Q4 出线；没有数字原理号，取电位 Q4 L3 加 Sheet；范围 90-225A 不当单一电流",
+          "source_note": "明确无小圈的断路器对外出线；无标记数字，用Q4实际端子直接拼来源Sheet205。",
           "source_pdf_pages": [],
           "source_drawing_pages": [],
-          "external_source_required": false
+          "external_source_required": false,
+          "endpoint_role": "source",
+          "direction_basis": "Q4下方导线向下出页；本页设备端子是起点"
         },
         {
           "local_connection_id": "205-q4-n",
           "core_number": null,
           "color": null,
-          "line_number": "Q4 N/205",
+          "line_number": "Q4:8205",
           "current": null,
           "current_basis": null,
           "current_source_text": null,
@@ -152,7 +158,7 @@
             "location": "+EH.Q1.1",
             "device": "-Q4",
             "name": "Lighting/heating panel",
-            "terminal_board": "Q4",
+            "terminal_board": null,
             "terminal_code": null,
             "terminal_strip": null,
             "terminal": "8"
@@ -176,10 +182,12 @@
           "status": "needs_reference",
           "confidence": 0.96,
           "remark": null,
-          "source_note": "用户标注需要的 Q4 出线；没有数字原理号，取电位 Q4 N 加 Sheet；范围 90-225A 不当单一电流",
+          "source_note": "明确无小圈的断路器对外出线；无标记数字，用Q4实际端子直接拼来源Sheet205。",
           "source_pdf_pages": [],
           "source_drawing_pages": [],
-          "external_source_required": false
+          "external_source_required": false,
+          "endpoint_role": "source",
+          "direction_basis": "Q4下方导线向下出页；本页设备端子是起点"
         }
       ],
       "source_pages": [],

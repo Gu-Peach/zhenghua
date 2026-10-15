@@ -1,0 +1,21 @@
+{
+  "task_id": "abs_power",
+  "end": {
+    "location": "+GCR",
+    "device": null,
+    "name": "ABSOLUTE ENCODER WITH PROFINET",
+    "terminal_board": null,
+    "terminal_code": null,
+    "terminal_strip": null,
+    "terminal": null
+  },
+  "current": null,
+  "current_basis": null,
+  "current_source_text": null,
+  "status": "needs_review",
+  "needs_review": true,
+  "source_note": "1B页X3:33沿24VDC/ABS出页引用到2A35R；目标图右下角入页线接到绝对值编码器的24VDC接点，未标出元件代号或针脚编号。",
+  "warnings": [
+    "目标接点有24VDC功能标注，未提供物理端子编号。"
+  ]
+}

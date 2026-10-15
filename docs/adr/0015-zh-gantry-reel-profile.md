@@ -8,6 +8,8 @@
 
 ## 决策
 
+2026-10-14用户确认本地资源目录采用`prompts/xmz`，Profile key/adapter继续使用`zh_gantry_reel`/`zh_gantry_reel_native`。0.1.1对齐ZH放线标记优先和最近端子边界，保留独立SH.NO.身份/引用规则；模型端子排分类留空，由程序从实际X排号确定，不复用XA/XD业务映射。移除已删诊断资源的运行时引用，样例expected仅以提供图片为依据，未知针脚为空，不从人工XLSX补写。保持本地experimental，不跑测试或模型，不写库或发布。
+
 建立 `zh_gantry_reel@0.1.0` experimental Profile，独立三个 Prompt 及分类/初扫/内部补全各两案例。保留 Stage 1 + Stage 2 页闭环，不恢复独立 Stage 3。单独的 Profile policy/adapter 处理此模板；公共 Graph 不增加厂商条件。
 
 当前协议的页号字段是正整数。使用可逆映射：原始 `1E` → function `GCR.1`、page 5（A=1...Z=26）；`3A` → `GCR.3`/1；封面 `0A` → `GCR.0`/1；TD 的整数页用 `GCR.TD`/整数，TD `3.a` 用 `GCR.TD`/301（整数部分×100+字母序号）。该 function 是适配器命名空间，不能声称图中有 Plant Function。raw SH.NO. 留在 classification.reason、source_drawing_pages、drawing_page 和 sheet-index 资源。

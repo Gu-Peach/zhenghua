@@ -1,0 +1,174 @@
+{
+  "pdf_page_number": 3,
+  "drawing_function": "GCR.1",
+  "drawing_page_number": 2,
+  "drawing_object_location": "+GCR",
+  "blank": false,
+  "needs_review": true,
+  "units": [
+    {
+      "unit_id": "1b-brake",
+      "wire_number": null,
+      "current": null,
+      "unit_identity_confidence": "low",
+      "connections": [
+        {
+          "local_connection_id": "1b-brake-3",
+          "endpoint_role": "source",
+          "direction_basis": "斜杠位于X21端子下方；无箭头，沿实际接线记录至BRAKE1",
+          "line_number": "1B23M",
+          "core_number": null,
+          "color": null,
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "location": "+GCR",
+            "device": "-X21",
+            "name": null,
+            "terminal_board": "X21",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "X21:3"
+          },
+          "end": {
+            "location": "+GCR",
+            "device": "-BRAKE1",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": null
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "needs_review",
+          "source_drawing_pages": [
+            "1B"
+          ],
+          "source_note": "BRAKE1接线点未标出设备侧端子号，terminal为空，不填写人工表中的X1/X2。"
+        },
+        {
+          "local_connection_id": "1b-brake-4",
+          "endpoint_role": "source",
+          "direction_basis": "斜杠位于X21端子下方；无箭头，沿实际接线记录至BRAKE1",
+          "line_number": "1B24Q",
+          "core_number": null,
+          "color": null,
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "location": "+GCR",
+            "device": "-X21",
+            "name": null,
+            "terminal_board": "X21",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "X21:4"
+          },
+          "end": {
+            "location": "+GCR",
+            "device": "-BRAKE1",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": null
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "needs_review",
+          "source_drawing_pages": [
+            "1B"
+          ],
+          "source_note": "BRAKE1接线点未标出设备侧端子号，terminal为空，不填写人工表中的X1/X2。"
+        }
+      ],
+      "source_drawing_pages": [
+        "1B"
+      ]
+    },
+    {
+      "unit_id": "1b-abs",
+      "wire_number": null,
+      "current": null,
+      "unit_identity_confidence": "low",
+      "connections": [
+        {
+          "local_connection_id": "1b-abs-33",
+          "endpoint_role": "source",
+          "direction_basis": "斜杠位于X3端子与向下出页箭头之间，本页X3端子是起点",
+          "line_number": "1B38R",
+          "core_number": null,
+          "color": null,
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "location": "+GCR",
+            "device": "-X3",
+            "name": null,
+            "terminal_board": "X3",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "X3:33"
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "24VDC/ABS / 2A35R",
+              "target_function": "GCR.2",
+              "target_drawing_page": 1,
+              "target_column": 35
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "source_drawing_pages": [
+            "1B"
+          ]
+        },
+        {
+          "local_connection_id": "1b-abs-35",
+          "endpoint_role": "source",
+          "direction_basis": "斜杠位于X3端子与向下出页箭头之间，本页X3端子是起点",
+          "line_number": "1B35K",
+          "core_number": null,
+          "color": null,
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "location": "+GCR",
+            "device": "-X3",
+            "name": null,
+            "terminal_board": "X3",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "X3:35"
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "0VDC/ABS / 2A35S",
+              "target_function": "GCR.2",
+              "target_drawing_page": 1,
+              "target_column": 35
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "source_drawing_pages": [
+            "1B"
+          ]
+        }
+      ],
+      "source_drawing_pages": [
+        "1B"
+      ]
+    }
+  ],
+  "page_references": [],
+  "warnings": []
+}

@@ -1,5 +1,5 @@
 {
-  "pdf_page_number": null,
+  "pdf_page_number": 48,
   "drawing_function": "002.C",
   "drawing_page_number": 1,
   "drawing_object_location": "+00",
@@ -16,16 +16,26 @@
           "direction_basis": "无方向箭头；按本页上下阅读顺序记录已确认的 XD1-W1 连接，方向待复核",
           "start": {
             "location": "+00",
-            "device": "-XD1",
+            "device": "+00",
             "name": "HV CABLE POWER",
             "terminal": "XD1:L1",
-            "terminal_board": "XD1"
+            "terminal_board": "XD1",
+            "terminal_coordinates": {
+              "x": 0.17773,
+              "y": 0.10595,
+              "pdf_page_number": 48
+            }
           },
           "end": {
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "L1"
+            "terminal": "L1",
+            "terminal_coordinates": {
+              "x": 0.17773,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "is_cross_page": "same_page",
           "status": "needs_review",
@@ -38,16 +48,26 @@
           "direction_basis": "无方向箭头；按本页上下阅读顺序记录已确认的 XD1-W1 连接，方向待复核",
           "start": {
             "location": "+00",
-            "device": "-XD1",
+            "device": "+00",
             "name": "HV CABLE POWER",
             "terminal": "XD1:L2",
-            "terminal_board": "XD1"
+            "terminal_board": "XD1",
+            "terminal_coordinates": {
+              "x": 0.19647,
+              "y": 0.10595,
+              "pdf_page_number": 48
+            }
           },
           "end": {
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "L2"
+            "terminal": "L2",
+            "terminal_coordinates": {
+              "x": 0.19647,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "is_cross_page": "same_page",
           "status": "needs_review",
@@ -60,16 +80,26 @@
           "direction_basis": "无方向箭头；按本页上下阅读顺序记录已确认的 XD1-W1 连接，方向待复核",
           "start": {
             "location": "+00",
-            "device": "-XD1",
+            "device": "+00",
             "name": "HV CABLE POWER",
             "terminal": "XD1:L3",
-            "terminal_board": "XD1"
+            "terminal_board": "XD1",
+            "terminal_coordinates": {
+              "x": 0.2152,
+              "y": 0.10595,
+              "pdf_page_number": 48
+            }
           },
           "end": {
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "L3"
+            "terminal": "L3",
+            "terminal_coordinates": {
+              "x": 0.2152,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "is_cross_page": "same_page",
           "status": "needs_review",
@@ -82,16 +112,26 @@
           "direction_basis": "无方向箭头；按本页上下阅读顺序记录已确认的 XD1-W1 连接，方向待复核",
           "start": {
             "location": "+00",
-            "device": "-XD1",
+            "device": "+00",
             "name": "HV CABLE POWER",
             "terminal": "PE",
-            "terminal_board": "XD1"
+            "terminal_board": "XD1",
+            "terminal_coordinates": {
+              "x": 0.2334,
+              "y": 0.10595,
+              "pdf_page_number": 48
+            }
           },
           "end": {
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "PE"
+            "terminal": "PE",
+            "terminal_coordinates": {
+              "x": 0.2334,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "is_cross_page": "same_page",
           "status": "needs_review",
@@ -104,16 +144,26 @@
           "direction_basis": "无方向箭头；按本页上下阅读顺序记录已确认的 XD1-W1 连接，方向待复核",
           "start": {
             "location": "+00",
-            "device": "-XD1",
+            "device": "+00",
             "name": "HV CABLE POWER",
             "terminal": "XD1:FO1",
-            "terminal_board": "XD1"
+            "terminal_board": "XD1",
+            "terminal_coordinates": {
+              "x": 0.35332,
+              "y": 0.10595,
+              "pdf_page_number": 48
+            }
           },
           "end": {
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "FO1"
+            "terminal": "FO1",
+            "terminal_coordinates": {
+              "x": 0.35332,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "is_cross_page": "same_page",
           "status": "needs_review",
@@ -126,16 +176,26 @@
           "direction_basis": "无方向箭头；按本页上下阅读顺序记录已确认的 XD1-W1 连接，方向待复核",
           "start": {
             "location": "+00",
-            "device": "-XD1",
+            "device": "+00",
             "name": "HV CABLE POWER",
             "terminal": "XD1:FO2",
-            "terminal_board": "XD1"
+            "terminal_board": "XD1",
+            "terminal_coordinates": {
+              "x": 0.37206,
+              "y": 0.10595,
+              "pdf_page_number": 48
+            }
           },
           "end": {
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "FO2"
+            "terminal": "FO2",
+            "terminal_coordinates": {
+              "x": 0.37206,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "is_cross_page": "same_page",
           "status": "needs_review",
@@ -148,16 +208,26 @@
           "direction_basis": "无方向箭头；按本页上下阅读顺序记录已确认的 XD1-W1 连接，方向待复核",
           "start": {
             "location": "+00",
-            "device": "-XD1",
+            "device": "+00",
             "name": "HV CABLE POWER",
             "terminal": "XD1:FO3",
-            "terminal_board": "XD1"
+            "terminal_board": "XD1",
+            "terminal_coordinates": {
+              "x": 0.39079,
+              "y": 0.10595,
+              "pdf_page_number": 48
+            }
           },
           "end": {
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "FO3"
+            "terminal": "FO3",
+            "terminal_coordinates": {
+              "x": 0.39079,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "is_cross_page": "same_page",
           "status": "needs_review",
@@ -170,16 +240,26 @@
           "direction_basis": "无方向箭头；按本页上下阅读顺序记录已确认的 XD1-W1 连接，方向待复核",
           "start": {
             "location": "+00",
-            "device": "-XD1",
+            "device": "+00",
             "name": "HV CABLE POWER",
             "terminal": "XD1:FO4",
-            "terminal_board": "XD1"
+            "terminal_board": "XD1",
+            "terminal_coordinates": {
+              "x": 0.40899,
+              "y": 0.10595,
+              "pdf_page_number": 48
+            }
           },
           "end": {
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "FO4"
+            "terminal": "FO4",
+            "terminal_coordinates": {
+              "x": 0.40899,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "is_cross_page": "same_page",
           "status": "needs_review",
@@ -192,16 +272,26 @@
           "direction_basis": "无方向箭头；按本页上下阅读顺序记录已确认的 XD1-W1 连接，方向待复核",
           "start": {
             "location": "+00",
-            "device": "-XD1",
+            "device": "+00",
             "name": "HV CABLE POWER",
             "terminal": "XD1:FO5",
-            "terminal_board": "XD1"
+            "terminal_board": "XD1",
+            "terminal_coordinates": {
+              "x": 0.42773,
+              "y": 0.10595,
+              "pdf_page_number": 48
+            }
           },
           "end": {
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "FO5"
+            "terminal": "FO5",
+            "terminal_coordinates": {
+              "x": 0.42773,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "is_cross_page": "same_page",
           "status": "needs_review",
@@ -214,16 +304,26 @@
           "direction_basis": "无方向箭头；按本页上下阅读顺序记录已确认的 XD1-W1 连接，方向待复核",
           "start": {
             "location": "+00",
-            "device": "-XD1",
+            "device": "+00",
             "name": "HV CABLE POWER",
             "terminal": "XD1:FO6",
-            "terminal_board": "XD1"
+            "terminal_board": "XD1",
+            "terminal_coordinates": {
+              "x": 0.44647,
+              "y": 0.10595,
+              "pdf_page_number": 48
+            }
           },
           "end": {
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "FO6"
+            "terminal": "FO6",
+            "terminal_coordinates": {
+              "x": 0.44647,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "is_cross_page": "same_page",
           "status": "needs_review",
@@ -236,16 +336,26 @@
           "direction_basis": "无方向箭头；按本页上下阅读顺序记录已确认的 XD1-W1 连接，方向待复核",
           "start": {
             "location": "+00",
-            "device": "-XD1",
+            "device": "+00",
             "name": "HV CABLE POWER",
             "terminal": "XD1:FO7",
-            "terminal_board": "XD1"
+            "terminal_board": "XD1",
+            "terminal_coordinates": {
+              "x": 0.46467,
+              "y": 0.10595,
+              "pdf_page_number": 48
+            }
           },
           "end": {
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "FO7"
+            "terminal": "FO7",
+            "terminal_coordinates": {
+              "x": 0.46467,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "is_cross_page": "same_page",
           "status": "needs_review",
@@ -258,16 +368,26 @@
           "direction_basis": "无方向箭头；按本页上下阅读顺序记录已确认的 XD1-W1 连接，方向待复核",
           "start": {
             "location": "+00",
-            "device": "-XD1",
+            "device": "+00",
             "name": "HV CABLE POWER",
             "terminal": "XD1:FO8",
-            "terminal_board": "XD1"
+            "terminal_board": "XD1",
+            "terminal_coordinates": {
+              "x": 0.4834,
+              "y": 0.10595,
+              "pdf_page_number": 48
+            }
           },
           "end": {
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "FO8"
+            "terminal": "FO8",
+            "terminal_coordinates": {
+              "x": 0.4834,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "is_cross_page": "same_page",
           "status": "needs_review",
@@ -280,16 +400,26 @@
           "direction_basis": "无方向箭头；按本页上下阅读顺序记录已确认的 XD1-W1 连接，方向待复核",
           "start": {
             "location": "+00",
-            "device": "-XD1",
+            "device": "+00",
             "name": "HV CABLE POWER",
             "terminal": "XD1:FO9",
-            "terminal_board": "XD1"
+            "terminal_board": "XD1",
+            "terminal_coordinates": {
+              "x": 0.50161,
+              "y": 0.10595,
+              "pdf_page_number": 48
+            }
           },
           "end": {
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "FO9"
+            "terminal": "FO9",
+            "terminal_coordinates": {
+              "x": 0.50161,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "is_cross_page": "same_page",
           "status": "needs_review",
@@ -302,16 +432,26 @@
           "direction_basis": "无方向箭头；按本页上下阅读顺序记录已确认的 XD1-W1 连接，方向待复核",
           "start": {
             "location": "+00",
-            "device": "-XD1",
+            "device": "+00",
             "name": "HV CABLE POWER",
             "terminal": "XD1:FO10",
-            "terminal_board": "XD1"
+            "terminal_board": "XD1",
+            "terminal_coordinates": {
+              "x": 0.52034,
+              "y": 0.10595,
+              "pdf_page_number": 48
+            }
           },
           "end": {
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "FO10"
+            "terminal": "FO10",
+            "terminal_coordinates": {
+              "x": 0.52034,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "is_cross_page": "same_page",
           "status": "needs_review",
@@ -324,16 +464,26 @@
           "direction_basis": "无方向箭头；按本页上下阅读顺序记录已确认的 XD1-W1 连接，方向待复核",
           "start": {
             "location": "+00",
-            "device": "-XD1",
+            "device": "+00",
             "name": "HV CABLE POWER",
             "terminal": "XD1:FO11",
-            "terminal_board": "XD1"
+            "terminal_board": "XD1",
+            "terminal_coordinates": {
+              "x": 0.53908,
+              "y": 0.10595,
+              "pdf_page_number": 48
+            }
           },
           "end": {
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "FO11"
+            "terminal": "FO11",
+            "terminal_coordinates": {
+              "x": 0.53908,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "is_cross_page": "same_page",
           "status": "needs_review",
@@ -346,16 +496,26 @@
           "direction_basis": "无方向箭头；按本页上下阅读顺序记录已确认的 XD1-W1 连接，方向待复核",
           "start": {
             "location": "+00",
-            "device": "-XD1",
+            "device": "+00",
             "name": "HV CABLE POWER",
             "terminal": "XD1:FO12",
-            "terminal_board": "XD1"
+            "terminal_board": "XD1",
+            "terminal_coordinates": {
+              "x": 0.55728,
+              "y": 0.10595,
+              "pdf_page_number": 48
+            }
           },
           "end": {
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "FO12"
+            "terminal": "FO12",
+            "terminal_coordinates": {
+              "x": 0.55728,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "is_cross_page": "same_page",
           "status": "needs_review",
@@ -371,7 +531,12 @@
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "L1"
+            "terminal": "L1",
+            "terminal_coordinates": {
+              "x": 0.17773,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "end": null,
           "is_cross_page": "cross_page",
@@ -395,7 +560,12 @@
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "L2"
+            "terminal": "L2",
+            "terminal_coordinates": {
+              "x": 0.19647,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "end": null,
           "is_cross_page": "cross_page",
@@ -419,7 +589,12 @@
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "L3"
+            "terminal": "L3",
+            "terminal_coordinates": {
+              "x": 0.2152,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "end": null,
           "is_cross_page": "cross_page",
@@ -443,7 +618,12 @@
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "PE"
+            "terminal": "PE",
+            "terminal_coordinates": {
+              "x": 0.2334,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "end": null,
           "is_cross_page": "cross_page",
@@ -467,7 +647,12 @@
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "FO1"
+            "terminal": "FO1",
+            "terminal_coordinates": {
+              "x": 0.35332,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "end": null,
           "is_cross_page": "cross_page",
@@ -477,7 +662,8 @@
               "raw": "=098.M+01F42/25.1 / =098.M-_XD1_FO1",
               "target_function": "098.M",
               "target_drawing_page": 25,
-              "target_column": 1
+              "target_column": 1,
+              "target_object": "+01F42"
             }
           ]
         },
@@ -491,7 +677,12 @@
             "location": "+00",
             "device": "-W1",
             "name": "HV CABLE REEL RING",
-            "terminal": "FO2"
+            "terminal": "FO2",
+            "terminal_coordinates": {
+              "x": 0.37206,
+              "y": 0.35061,
+              "pdf_page_number": 48
+            }
           },
           "end": null,
           "is_cross_page": "cross_page",
@@ -501,7 +692,8 @@
               "raw": "=098.M+01F42/25.1 / =098.M-_XD1_FO2",
               "target_function": "098.M",
               "target_drawing_page": 25,
-              "target_column": 1
+              "target_column": 1,
+              "target_object": "+01F42"
             }
           ]
         }

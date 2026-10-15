@@ -3,6 +3,24 @@
 > 最后更新：2026-10-12
 > 状态含义：`planned`、`in progress`、`blocked`、`done`
 
+2026-10-15 ABB本地1.1.3小圆圈放线、双标记合并和直接拼Sheet原理号规则/图像样例文件完成；仅静态检查，不跑测试/模型、不写库或发布，Phase 4质量验收仍in progress。见[修订记录](./service/agent/abb-circle-rule-update.md)。
+
+2026-10-15本地PDF/拆页CLI支持切换规则与模型并强制内存模式；--help及ZH/ABB/XMZ只读绑定通过，未运行测试或真实提取，Phase 4质量验收仍in progress。见[记录](./service/agent/changelog/2026-10-15-local-profile-cli.md)。
+
+2026-10-15 ZH中间FC12组补全Few-shot补齐，manifest v10（5初扫/3补全/8图）、Profile保持2.0.5；仅静态核对通过，未运行测试/模型，Phase 4仍in progress。见[记录](./service/agent/changelog/2026-10-15-zh-c01-middle-completion.md)。
+
+2026-10-15本地ZH2.0.5电流规则文件完成：冻结端点后沿相线查Ie，直接取明确A值，003C01六条160A/三条80A，manifest v9与样例同步；未运行测试或模型，Phase 4质量验收仍in progress。见[记录](./service/agent/changelog/2026-10-15-zh-ie-current.md)。
+
+2026-10-15本地ZH2.0.4/manifest v8样例替换和端子图片坐标输出文件完成，静态资源/Schema/语法核对通过；未运行测试/模型或生成新XLSX，实际定位和提取质量待用户复测，Phase 4仍in progress。见[记录](./service/agent/changelog/2026-10-15-zh-c01-terminal-coordinates.md)。
+
+2026-10-14本地ZH2.0.3元件标识优先级、可选来源元件完善及expected文件修改完成；5组初扫/2组补全静态路径/Schema/checksum与只读绑定通过，未运行测试/模型，准确率待用户复测，Phase 4仍in progress。见[记录](./service/agent/changelog/2026-10-14-zh-component-priority.md)。
+
+2026-10-14用户授权后，本地新三表已部署、截图18张旧表/1个视图已删除，旧业务数据不迁移。数据库RLS/页级唯一键/版本触发器与Agent/Auth/Storage保留摘要检查通过；应用尚未接入新schema，旧业务接口不可用，Phase 5仍in progress。见[实际清理记录](./service/server/changelog/2026-10-14-local-business-table-retirement.md)。
+
+2026-10-14三张精简提取业务表新增SQL草案已交付：规则引用/项目/扁平结果，未执行数据库迁移/测试，现有应用未切换；Phase 5保持in progress，数据迁移及旧schema退出另验。见[ADR-0018](./adr/0018-simple-extraction-business-tables.md)和[SQL交付](./service/server/changelog/2026-10-14-simple-extraction-schema-sql.md)。
+
+2026-10-14 XMZ本地0.1.1规则/资源对齐完成：实际路径、图像事实expected、最近端子边界和程序端子排；仅静态检查，按用户要求不运行测试/模型、不写库或发布，Phase 4质量验收仍in progress。见[记录](./service/agent/changelog/2026-10-14-xmz-image-only.md)。
+
 2026-10-14本地ZH测试脚本不再因无关模板资源缺失而失败，ZH自身仍校验，失败显示具体资源原因；只读资源绑定通过，新增回归未运行，真实提取待用户复测，阶段状态不变。见[记录](./service/agent/changelog/2026-10-14-local-profile-isolation.md)。
 
 2026-10-14 ZH初扫放线标记优先步骤文件修改完成，Prompt/调用指令/规则同步；未运行测试或模型，实际效果待用户复测，Phase 4仍in progress。见[记录](./service/agent/changelog/2026-10-14-zh-marker-first.md)。

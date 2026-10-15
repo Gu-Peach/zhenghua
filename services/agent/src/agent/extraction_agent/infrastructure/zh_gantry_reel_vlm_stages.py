@@ -11,7 +11,7 @@ from src.agent.extraction_agent.infrastructure.zh_vlm_stages import ZhVlmExtract
 class ZhGantryReelVlmAdapter(ZhVlmExtractionStageAdapter):
     """Reuse structured multimodal transport, with independent grid-template instructions."""
 
-    enforce_evidence_contract = False
+    enforce_evidence_contract = True
 
     def classification_instruction(self, request: PageClassificationRequest) -> str:
         return (
@@ -24,11 +24,11 @@ class ZhGantryReelVlmAdapter(ZhVlmExtractionStageAdapter):
 
     def scan_instruction(self, request: PageScanRequest) -> str:
         return (
-            "按本图放线斜杠、端子与实际导线识别来源连接；无 XA/XD 白名单。"
-            "箭头只判断相对端子的来源/接收，未能判断保留证据与复核。"
-            "电位名和引用坐标不是端子号；相同原理号的不同芯/分支分别保留。"
-            "端子图表/封面不重复提取；XLSX 外部柜端子、MVCR业务名、颜色/备用芯/型号/线号不能补造。"
-            "以实际 X0/X1/X21/X22/X3 为 terminal_board/strip，不用电缆类别反改端子。"
+            "先定位放线斜杠，沿两侧找到最近实际端子或跨页箭头，遇端子停止。"
+            "只用同一放线段的箭头判断来源/接收；无箭头按实际接线判断，不按端子类型定向。"
+            "同排数字端子继承实际X排号；只读取本图可见元件、端子和原理号，未知字段为空。"
+            "端子图表/封面不重复提取；不从人工表补外部端子、业务别名或电缆编号。"
+            "terminal_board保存实际排号/接口，terminal_strip留null由程序处理，颜色留null。"
             "跨页引用例如 1B30B 必须绑定连接，目标按 SH.NO. 映射，end=null。"
             "只输出 PageScanData JSON，source_drawing_pages 保留原始页标。"
             f"\nPDF物理页={request.page.pdf_page_number}; context={request.page_context}"
@@ -37,9 +37,11 @@ class ZhGantryReelVlmAdapter(ZhVlmExtractionStageAdapter):
     def cross_page_instruction(self, request: CrossPageCompletionRequest) -> str:
         return (
             "这是 Stage 2 内部双图补全，只处理冻结连接，不改起点、不扫描目标页其他线路。"
-            "按原始 SH.NO. + 数字列 + 字母行、信号/原理号/回指和实际路径共同匹配。"
+            "按原始 SH.NO. + 数字列 + 字母行、原理号/回指和实际路径匹配目标入页线路。"
+            "从对应入页箭头沿线读取第一个实际端子，遇端子停止，不追到下游设备。"
             "正常回指是匹配证据。电位/信号名不能冒充针脚；设备或端子未标注则该字段 null 并 needs_review。"
-            "禁止使用未提供的外部柜图、XLSX 标准答案或业务映射猜终点。只输出 CrossPageCompletionData JSON。"
+            "终点以图中标注为准，terminal_strip留null由程序处理，不从人工表猜终点。"
+            "只输出 CrossPageCompletionData JSON。"
             f"\nsource_pdf={request.source_page.pdf_page_number if request.source_page else 'unknown'}"
             f"; target_pdf={request.target_page.pdf_page_number}; task={request.task_context}"
         )

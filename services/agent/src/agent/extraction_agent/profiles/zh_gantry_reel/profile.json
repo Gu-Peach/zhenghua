@@ -1,22 +1,19 @@
 {
   "manifest_version": 1,
   "key": "zh_gantry_reel",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "display_name": "振华大车卷盘（SH.NO. 网格页标）",
   "description": "Local experimental grid-sheet drawing profile derived from 1002001693; no remote publication or real-VLM acceptance.",
   "status": "experimental",
   "adapter": "zh_gantry_reel_native",
   "resource_mode": "legacy_reference",
   "resources": {
-    "classification_prompt": "../../prompts/zh_gantry_reel/page_classification.md",
-    "page_scan_prompt": "../../prompts/zh_gantry_reel/page_scan_index.md",
-    "cross_page_prompt": "../../prompts/zh_gantry_reel/page_connection_completion.md",
-    "classification_examples": "../../prompts/zh_gantry_reel/examples_page_classification",
-    "wiring_examples": "../../prompts/zh_gantry_reel/examples_wiring",
-    "routing_rules": "rules.json",
-    "sheet_index": "../../prompts/zh_gantry_reel/sheet-index.json",
-    "field_rules": "../../prompts/zh_gantry_reel/field-rules.json",
-    "schema": "../../prompts/zh_gantry_reel/schema.json"
+    "classification_prompt": "../../prompts/xmz/page_classification.md",
+    "page_scan_prompt": "../../prompts/xmz/page_scan_index.md",
+    "cross_page_prompt": "../../prompts/xmz/page_connection_completion.md",
+    "classification_examples": "../../prompts/xmz/examples_page_classification",
+    "wiring_examples": "../../prompts/xmz/examples_wiring",
+    "routing_rules": "rules.json"
   },
   "capabilities": [
     "page_classification",

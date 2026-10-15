@@ -29,25 +29,24 @@
     "dynamic_resources": {
       "page_classification": [
         "classification_prompt",
-        "classification_examples",
-        "sheet_index"
+        "classification_examples"
       ],
       "page_scan": [
         "page_scan_prompt",
-        "wiring_examples",
-        "field_rules"
+        "wiring_examples"
       ],
-      "page_completion": [
+      "cross_page_completion": [
         "cross_page_prompt",
-        "wiring_examples",
-        "sheet_index"
+        "wiring_examples"
       ]
     },
     "business_rules": [
       "SH.NO. 原标完整保存，可逆索引不等于 PDF物理页号或印刷 Plant Function",
       "只把扫描器绑定到实际连接的续接地址作为引用，不全量解析相同格式的原理号",
       "端子图表为核对资料，不重复输出连接",
-      "真实端子/设备/位置优先，不照 XLSX 补外部柜或业务别名",
+      "先从放线斜杠沿两侧寻找最近端子或跨页箭头，再按同段箭头定向，遇端子停止",
+      "实际端子和原理号只读取图中标注，缺失针脚为空，不照 XLSX 补外部柜或业务别名",
+      "端子排由程序从实际X排号确定，模型terminal_strip为空，颜色暂不提取",
       "当前 Stage 2 内部定向补全，未知针脚填空并复核",
       "不同端子/芯/分支即使同一原理号仍分别保存"
     ],

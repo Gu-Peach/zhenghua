@@ -118,8 +118,10 @@ class AbbExtractionPolicy:
         return record
 
     def orient_connection(self, connection: WireConnection) -> tuple[WireConnection | None, bool]:
-        if connection.start is None or connection.start.terminal in (None, ""):
+        if connection.endpoint_role == "receiver":
             return None, False
+        if connection.start is None or connection.start.terminal in (None, ""):
+            connection.status = "needs_review"
         return connection, False
 
     def validated_current(

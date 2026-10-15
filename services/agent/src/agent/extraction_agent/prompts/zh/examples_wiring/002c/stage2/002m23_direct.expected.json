@@ -14,18 +14,28 @@
           "endpoint_role": "source",
           "direction_basis": "本页放线标记两侧的直接端子，上方向下接线",
           "start": {
-            "device": "-XD3",
+            "device": "+01F11.3",
             "terminal_board": "XD3",
             "terminal": "XD3:17",
-            "location": null,
-            "terminal_strip": null
+            "location": "+01F11.3",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.17773,
+              "y": 0.09756,
+              "pdf_page_number": 59
+            }
           },
           "end": {
-            "device": "-XD3",
+            "device": "+01F10",
             "terminal_board": "XD3",
             "terminal": "XD3:1",
             "location": "+01F10",
-            "terminal_strip": null
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.17773,
+              "y": 0.18979,
+              "pdf_page_number": 59
+            }
           },
           "is_cross_page": "same_page",
           "references": [],
@@ -38,18 +48,28 @@
           "endpoint_role": "source",
           "direction_basis": "本页放线标记两侧的直接端子，上方向下接线",
           "start": {
-            "device": "-XD3",
+            "device": "+01F10",
             "terminal_board": "XD3",
             "terminal": "XD3:2",
             "location": "+01F10",
-            "terminal_strip": null
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.17773,
+              "y": 0.29192,
+              "pdf_page_number": 59
+            }
           },
           "end": {
-            "device": "-XD3",
+            "device": "+01F11.3",
             "terminal_board": "XD3",
             "terminal": "XD3:109",
             "location": "+01F11.3",
-            "terminal_strip": null
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.17773,
+              "y": 0.52896,
+              "pdf_page_number": 59
+            }
           },
           "is_cross_page": "same_page",
           "references": [],
@@ -62,18 +82,28 @@
           "endpoint_role": "source",
           "direction_basis": "本页放线标记两侧的直接端子，上方向下接线",
           "start": {
-            "device": "-XD3",
+            "device": "+01F10",
             "terminal_board": "XD3",
             "terminal": "XD3:3",
             "location": "+01F10",
-            "terminal_strip": null
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.25161,
+              "y": 0.29192,
+              "pdf_page_number": 59
+            }
           },
           "end": {
-            "device": "-XD3",
+            "device": "+01F11.3",
             "terminal_board": "XD3",
             "terminal": "XD3:110",
             "location": "+01F11.3",
-            "terminal_strip": null
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.25161,
+              "y": 0.52896,
+              "pdf_page_number": 59
+            }
           },
           "is_cross_page": "same_page",
           "references": [],
@@ -86,18 +116,28 @@
           "endpoint_role": "source",
           "direction_basis": "本页放线标记两侧的直接端子，上方向下接线",
           "start": {
-            "device": "-XD3",
+            "device": "+01F10",
             "terminal_board": "XD3",
             "terminal": "XD3:4",
             "location": "+01F10",
-            "terminal_strip": null
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.32548,
+              "y": 0.29192,
+              "pdf_page_number": 59
+            }
           },
           "end": {
-            "device": "-XD3",
+            "device": "+01F11.3",
             "terminal_board": "XD3",
             "terminal": "XD3:111",
             "location": "+01F11.3",
-            "terminal_strip": null
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.32548,
+              "y": 0.52896,
+              "pdf_page_number": 59
+            }
           },
           "is_cross_page": "same_page",
           "references": [],
@@ -110,18 +150,28 @@
           "endpoint_role": "source",
           "direction_basis": "本页放线标记两侧的直接端子，上方向下接线",
           "start": {
-            "device": "-XD3",
+            "device": "+01F10",
             "terminal_board": "XD3",
             "terminal": "XD3:5",
             "location": "+01F10",
-            "terminal_strip": null
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.40043,
+              "y": 0.29192,
+              "pdf_page_number": 59
+            }
           },
           "end": {
-            "device": "-XD3",
+            "device": "+01F11.3",
             "terminal_board": "XD3",
             "terminal": "XD3:112",
             "location": "+01F11.3",
-            "terminal_strip": null
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.40043,
+              "y": 0.52896,
+              "pdf_page_number": 59
+            }
           },
           "is_cross_page": "same_page",
           "references": [],
@@ -134,18 +184,28 @@
           "endpoint_role": "source",
           "direction_basis": "本页放线标记两侧的直接端子，上方向下接线",
           "start": {
-            "device": "-XD3",
+            "device": "+01F10",
             "terminal_board": "XD3",
             "terminal": "XD3:6",
             "location": "+01F10",
-            "terminal_strip": null
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.4743,
+              "y": 0.29192,
+              "pdf_page_number": 59
+            }
           },
           "end": {
-            "device": "-XD3",
+            "device": "+01F11.3",
             "terminal_board": "XD3",
             "terminal": "XD3:113",
             "location": "+01F11.3",
-            "terminal_strip": null
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.4743,
+              "y": 0.52896,
+              "pdf_page_number": 59
+            }
           },
           "is_cross_page": "same_page",
           "references": [],
@@ -158,18 +218,28 @@
           "endpoint_role": "source",
           "direction_basis": "本页放线标记两侧的直接端子，上方向下接线",
           "start": {
-            "device": "-XD3",
+            "device": "+01F10",
             "terminal_board": "XD3",
             "terminal": "XD3:7",
             "location": "+01F10",
-            "terminal_strip": null
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.54764,
+              "y": 0.29192,
+              "pdf_page_number": 59
+            }
           },
           "end": {
-            "device": "-XD3",
+            "device": "+01F11.3",
             "terminal_board": "XD3",
             "terminal": "XD3:114",
             "location": "+01F11.3",
-            "terminal_strip": null
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.54764,
+              "y": 0.52896,
+              "pdf_page_number": 59
+            }
           },
           "is_cross_page": "same_page",
           "references": [],
@@ -182,18 +252,28 @@
           "endpoint_role": "source",
           "direction_basis": "本页放线标记两侧的直接端子，上方向下接线",
           "start": {
-            "device": "-XD3",
+            "device": "+01F10",
             "terminal_board": "XD3",
             "terminal": "XD3:8",
             "location": "+01F10",
-            "terminal_strip": null
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.62206,
+              "y": 0.29192,
+              "pdf_page_number": 59
+            }
           },
           "end": {
-            "device": "-XD3",
+            "device": "+01F11.3",
             "terminal_board": "XD3",
             "terminal": "XD3:115",
             "location": "+01F11.3",
-            "terminal_strip": null
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.62206,
+              "y": 0.52896,
+              "pdf_page_number": 59
+            }
           },
           "is_cross_page": "same_page",
           "references": [],
@@ -202,5 +282,6 @@
         }
       ]
     }
-  ]
+  ],
+  "pdf_page_number": 59
 }

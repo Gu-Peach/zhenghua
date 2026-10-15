@@ -252,6 +252,7 @@ def _wire_record_from_connection(
         start_terminal_board=start.terminal_board,
         start_terminal_code=start.terminal_code,
         start_terminal=start.terminal,
+        start_terminal_coordinates=start.terminal_coordinates,
         end_part=end.part,
         end_location=end.location,
         end_device=end.device,
@@ -259,6 +260,7 @@ def _wire_record_from_connection(
         end_terminal_board=end.terminal_board,
         end_terminal_code=end.terminal_code,
         end_terminal=end.terminal,
+        end_terminal_coordinates=end.terminal_coordinates,
         terminal_strip=start.terminal_strip,
         start_terminal_strip=start.terminal_strip,
         end_terminal_strip=end.terminal_strip,
@@ -365,7 +367,9 @@ def _endpoint_signature(endpoint: Endpoint | None) -> str:
     if endpoint is None:
         return ""
     return json.dumps(
-        endpoint.model_dump(mode="json", exclude_none=False), ensure_ascii=False, sort_keys=True
+        endpoint.model_dump(mode="json", exclude_none=False, exclude={"terminal_coordinates"}),
+        ensure_ascii=False,
+        sort_keys=True,
     )
 
 

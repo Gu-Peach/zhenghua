@@ -1,0 +1,9 @@
+# 三张精简提取业务表的SQL交付
+
+用户要求提供创建指令并自行操作数据库。本轮新增迁移20261014000000_create_simple_extraction_business_tables.sql，创建extraction_profiles、extraction_projects、extraction_connection_rows三张实体表。规则只保存资源引用和版本/checksum，项目外键关联规则，结果每条连接一行，project_id直接关联项目。
+
+字段包含标准线表列、业务页标/PDF物理页、跨页目标、批次、页内顺序/幂等项、复核状态、证据JSON和record_version。配套索引、所有者RLS及更新时间触发器；规则引用对已登录用户共享可读，仅创建者维护。Auth和暂留agent_*不计入三张提取业务表。
+
+创建SQL采用独立表名，未删除或替换现有wiring_connection_rows视图、projects或底层结果表。原前端/API/Agent仍使用旧schema；适配、数据迁移、历史批次选择、多人权限与人工修订审计另行实现，不能以创建表表示系统已切换。删除项目只级联DB行，Storage一致性清理由后续应用定义。
+
+交付方式：将SQL文件完整复制到指定Supabase SQL Editor执行一次。文件含begin/commit，不含DROP旧对象或清数据命令。用户自行执行前核对目标库及数据备份。本轮没有连接/执行数据库、空库/旧数据快照验证或RLS测试，仅静态审阅；不声称迁移已部署。设计见ADR-0018。

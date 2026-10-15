@@ -1,0 +1,330 @@
+{
+  "pdf_page_number": 3,
+  "drawing_function": "LV21",
+  "drawing_page_number": 281,
+  "drawing_object_location": "+CA.A1",
+  "blank": false,
+  "needs_review": false,
+  "units": [
+    {
+      "unit_id": "281-q2",
+      "wire_number": null,
+      "current": null,
+      "connections": [
+        {
+          "local_connection_id": "281-q2-input-L1",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头，按实际接线从图上方设备/端子到下方设备/端子记录",
+          "line_number": "552281",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+CA.A1",
+            "device": "-Q2",
+            "name": "-BUSBAR",
+            "terminal_board": "BUSBAR",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "L1"
+          },
+          "end": {
+            "part": null,
+            "location": "+CA.A1",
+            "device": "-Q2",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "1"
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_note": "同段两端小圆圈均标552，只生成一条；蓝斜杠不使该小圆圈段被排除。"
+        },
+        {
+          "local_connection_id": "281-q2-input-L2",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头，按实际接线从图上方设备/端子到下方设备/端子记录",
+          "line_number": "553281",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+CA.A1",
+            "device": "-Q2",
+            "name": "-BUSBAR",
+            "terminal_board": "BUSBAR",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "L2"
+          },
+          "end": {
+            "part": null,
+            "location": "+CA.A1",
+            "device": "-Q2",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "3"
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_note": "同段两端小圆圈均标553，只生成一条；蓝斜杠不使该小圆圈段被排除。"
+        },
+        {
+          "local_connection_id": "281-q2-input-L3",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头，按实际接线从图上方设备/端子到下方设备/端子记录",
+          "line_number": "554281",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+CA.A1",
+            "device": "-Q2",
+            "name": "-BUSBAR",
+            "terminal_board": "BUSBAR",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "L3"
+          },
+          "end": {
+            "part": null,
+            "location": "+CA.A1",
+            "device": "-Q2",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "5"
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_note": "同段两端小圆圈均标554，只生成一条；蓝斜杠不使该小圆圈段被排除。"
+        }
+      ]
+    },
+    {
+      "unit_id": "281-q2-x1",
+      "wire_number": null,
+      "current": null,
+      "connections": [
+        {
+          "local_connection_id": "281-q2-x1-757",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头，按实际接线从图上方设备/端子到下方设备/端子记录",
+          "line_number": "757281",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+CA.A1",
+            "device": "-Q2",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "2"
+          },
+          "end": {
+            "part": null,
+            "location": "+CA.A1",
+            "device": "-X1",
+            "name": null,
+            "terminal_board": "X1",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "4"
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_note": "两个小圆圈属于Q2至大圆圈端子X1的同一段，原理号为标记数字拼Sheet281，遇大圆圈停止。"
+        },
+        {
+          "local_connection_id": "281-q2-x1-758",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头，按实际接线从图上方设备/端子到下方设备/端子记录",
+          "line_number": "758281",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+CA.A1",
+            "device": "-Q2",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "4"
+          },
+          "end": {
+            "part": null,
+            "location": "+CA.A1",
+            "device": "-X1",
+            "name": null,
+            "terminal_board": "X1",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "5"
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_note": "两个小圆圈属于Q2至大圆圈端子X1的同一段，原理号为标记数字拼Sheet281，遇大圆圈停止。"
+        },
+        {
+          "local_connection_id": "281-q2-x1-759",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头，按实际接线从图上方设备/端子到下方设备/端子记录",
+          "line_number": "759281",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+CA.A1",
+            "device": "-Q2",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "6"
+          },
+          "end": {
+            "part": null,
+            "location": "+CA.A1",
+            "device": "-X1",
+            "name": null,
+            "terminal_board": "X1",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "6"
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_note": "两个小圆圈属于Q2至大圆圈端子X1的同一段，原理号为标记数字拼Sheet281，遇大圆圈停止。"
+        }
+      ]
+    },
+    {
+      "unit_id": "281-x1-t1",
+      "wire_number": null,
+      "current": null,
+      "connections": [
+        {
+          "local_connection_id": "281-x1-t1-1",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头，按实际接线从图上方设备/端子到下方设备/端子记录",
+          "line_number": "X1:4281",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+CA.A1",
+            "device": "-X1",
+            "name": null,
+            "terminal_board": "X1",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "4"
+          },
+          "end": {
+            "part": "++",
+            "location": null,
+            "device": "-T1",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "1L1"
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_note": "X1大圆圈下方至T1有无编号小圆圈；用起点X1实际端子拼Sheet281，不沿用隔着X1的757/758/759。"
+        },
+        {
+          "local_connection_id": "281-x1-t1-2",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头，按实际接线从图上方设备/端子到下方设备/端子记录",
+          "line_number": "X1:5281",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+CA.A1",
+            "device": "-X1",
+            "name": null,
+            "terminal_board": "X1",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "5"
+          },
+          "end": {
+            "part": "++",
+            "location": null,
+            "device": "-T1",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "1L2"
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_note": "X1大圆圈下方至T1有无编号小圆圈；用起点X1实际端子拼Sheet281，不沿用隔着X1的757/758/759。"
+        },
+        {
+          "local_connection_id": "281-x1-t1-3",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头，按实际接线从图上方设备/端子到下方设备/端子记录",
+          "line_number": "X1:6281",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+CA.A1",
+            "device": "-X1",
+            "name": null,
+            "terminal_board": "X1",
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "6"
+          },
+          "end": {
+            "part": "++",
+            "location": null,
+            "device": "-T1",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "1L3"
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_note": "X1大圆圈下方至T1有无编号小圆圈；用起点X1实际端子拼Sheet281，不沿用隔着X1的757/758/759。"
+        }
+      ]
+    }
+  ],
+  "page_references": [],
+  "warnings": []
+}

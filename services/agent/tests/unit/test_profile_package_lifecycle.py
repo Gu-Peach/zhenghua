@@ -132,7 +132,7 @@ def test_create_register_retry_delete_and_historical_binding(tmp_path: Path) -> 
         assert detected.assigned_profile == binding.profile
         assert "custom-test" in gateway.calls[0].metadata["candidate_profiles"]
         assert binding.resolved_resources["page_scan_prompt"].read_text(encoding="utf-8").startswith("只读取")
-        assert (binding.resolved_resources["wiring_examples"] / "images/002c11.png").is_file()
+        assert (binding.resolved_resources["wiring_examples"] / "images/003c01.png").is_file()
         assert (
             base_manifest.package_checksum
             == json.loads((base_root / "manifest.json").read_text())["package_checksum"]

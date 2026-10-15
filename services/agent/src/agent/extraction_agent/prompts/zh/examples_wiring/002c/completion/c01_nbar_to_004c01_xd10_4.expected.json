@@ -1,0 +1,26 @@
+{
+  "task_id": "c01_nbar_to_004c01_xd10_4",
+  "end": {
+    "device": "+01F35",
+    "location": "+01F35",
+    "terminal_board": "XD10",
+    "terminal": "XD10:4",
+    "terminal_strip": null,
+    "terminal_coordinates": {
+      "x": 0.23287,
+      "y": 0.1593,
+      "pdf_page_number": 117
+    }
+  },
+  "source_component": {
+    "device": "+01F11.1",
+    "location": "+01F11.1",
+    "basis": "目标对应线路回指=003.C+01F11.1/1.5中的+01F11.1属于起点元件，按跨页引用优先级读取，起点端子及坐标不改。"
+  },
+  "status": "resolved",
+  "needs_review": false,
+  "source_note": "来源FC13组N-BAR下方放线斜杠对应=004.C+01F35/1.1，目标入页002C0600先到XD10:4，不借用另外两组同原理号N线。",
+  "current": null,
+  "current_basis": null,
+  "current_source_text": null
+}

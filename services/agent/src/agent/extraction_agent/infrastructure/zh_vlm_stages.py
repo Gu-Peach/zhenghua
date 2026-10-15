@@ -106,7 +106,17 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             "endpoint_role与direction_basis保留判断；同页端点直接填写，"
             "需要目标图时绑定引用并留空终点。\n"
             "读取原理号、元件、描述和实际接口；terminal_strip由程序映射，模型留null。"
-            "电流遵守系统Prompt约束，其他未知信息留null。\n"
+            "device是元件标识，不填X/XD排号或原理号。"
+            "同页元件先读端子附近/所属框体，优先+对象位置，没有则用该端所在页Object Loc；"
+            "跨页先读对应导线引用中的+对象标识，再看附近，最后用该端所在页Object Loc。"
+            "来源出页引用中的+对象属于终点，目标回指中的+对象属于起点，不反填。"
+            "初扫对端对象标识放references.target_object，end仍留null。"
+            "每个可见实际端子的terminal_coordinates填写该端子符号中心的归一化x/y(0到1)"
+            "及所属图片PDF物理页号，左上角为原点；不是端子文字、斜杠或箭头的位置。"
+            "跨页初扫只填本页端子坐标；无法定位时留null。"
+            "端点确定后再沿同一相线查对应断路器电流，经过端子只为读电流，不改变端点或坐标。"
+            "Ie:(0.7-1)*160A直接读160A并保留Ie原文，不计算系数或改取Set；明确Ir仍优先。"
+            "不取相邻回路电流，N/PE/控制/通信/光纤为空，其他未知信息留null。\n"
             f"当前页上下文：{request.page_context or '无'}\n"
             f"PDF物理页码：{request.page.pdf_page_number}\n"
             "严格输出 PageScanData JSON。"
@@ -129,7 +139,8 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             user_text=user_text,
             output_model=CrossPageCompletionData,
             normalize=lambda value: _normalize_cross_page(
-                value, request.task_id, require_evidence=self.enforce_evidence_contract
+                value, request.task_id, require_evidence=self.enforce_evidence_contract,
+                target_pdf_page=request.target_page.pdf_page_number,
             ),
             item_id=request.task_id,
         )
@@ -140,8 +151,18 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             "按原始引用、原理号和实线定位目标图，读取直接相连的端子，遇到端子停止。\n"
             "同排附近X/XD标识与数字组合成完整端子；保留来源起点，"
             "terminal_strip由程序映射、模型留null。无法确认的字段留null并复核。\n"
+            "两端元件先读对应线路引用中的+对象标识，再看该端附近/所属框体，"
+            "最后用该端所在页Object Loc；出页引用给终点，目标回指给起点。"
+            "附近+对象位置优先于器件代号，X/XD排号和原理号不是元件。"
+            "end.device填终点元件，location填所属对象位置；"
+            "有依据的起点元件补充只通过source_component(device/location/basis)返回，"
+            "起点端子、原理号和方向不变。\n"
+            "end.terminal_coordinates填写终点端子在目标整张图上的归一化x/y与目标PDF物理页号，"
+            "不是来源图坐标或引用地址的位置；无法定位留null，来源坐标不修改。\n"
             "如果 task_context 已有 current，输出 current=null 表示不修改 Stage 2 的已有电流；"
             "只有目标页明确给出本连接电流且 task_context 中为空时才输出电流。\n"
+            "读电流可独立沿同一相线查对应断路器，不能改变已找到的端点和坐标；"
+            "Ie:(0.7-1)*160A直接读160A、basis=Ie并保留原文，明确Ir仍优先，不取Set或相邻回路值。\n"
             f"任务上下文：{request.task_context}\n"
             f"目标 PDF 物理页：{request.target_page.pdf_page_number}\n"
             "严格输出 CrossPageCompletionData JSON。"
@@ -183,6 +204,14 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             endpoint_schema["terminal"]["description"] = "实际完整端子；同排X/XD标识与数字组成XD3:109等"
             endpoint_schema["terminal_board"]["description"] = "图中实际端子排或设备接口标识，如XD3、X1"
             endpoint_schema["terminal_code"]["description"] = "实际接口标识，不是针脚数字或业务分类"
+            endpoint_schema["device"]["description"] = (
+                "ZH起/终点元件标识，常见+01F...；同页附近→本端所在页Object Loc，"
+                "跨页对应线路引用的对象标识→附近→本端所在页Object Loc；X/XD排号和原理号不是元件"
+            )
+            endpoint_schema["location"]["description"] = "该端所属对象位置，与元件标识可以相同"
+            endpoint_schema["terminal_coordinates"]["description"] = (
+                "实际端子符号中心：整张图左上为原点，x/y归一化0到1，pdf_page_number为本端图片物理页；未知null"
+            )
         if self.enforce_evidence_contract and output_model is PageScanData:
             connection_schema = contract["$defs"]["ScannedConnection"]
             connection_schema["required"] = list(
@@ -546,6 +575,7 @@ def _normalize_page_scan(
                             "terminal_code",
                             "terminal_strip",
                             "terminal",
+                            "terminal_coordinates",
                         )
                         if connection.get(f"{side}_{name}") not in (None, "")
                     }
@@ -581,11 +611,19 @@ def _normalize_page_scan(
                 connection["is_cross_page"] = "unknown"
     normalized.setdefault("pdf_page_number", page_number)
     normalized.setdefault("page_references", [])
+    for unit in normalized["units"]:
+        if not isinstance(unit, dict):
+            continue
+        for connection in unit.get("connections", []):
+            if not isinstance(connection, dict):
+                continue
+            for side in ("start", "end"):
+                _bind_terminal_coordinates(connection.get(side), page_number)
     return normalized
 
 
 def _normalize_cross_page(
-    payload: Any, task_id: str, *, require_evidence: bool = False
+    payload: Any, task_id: str, *, require_evidence: bool = False, target_pdf_page: int | None = None
 ) -> dict[str, Any]:
     if isinstance(payload, dict):
         payload = payload.get("completion") or payload.get("result") or payload
@@ -603,6 +641,8 @@ def _normalize_cross_page(
         if key.startswith("end_"):
             normalized.pop(key, None)
     normalized.setdefault("intermediate_points", [])
+    if target_pdf_page is not None:
+        _bind_terminal_coordinates(normalized.get("end"), target_pdf_page)
     if require_evidence:
         end = normalized.get("end")
         if (
@@ -614,6 +654,16 @@ def _normalize_cross_page(
             normalized["needs_review"] = True
             normalized.setdefault("warnings", []).append("missing endpoint or target path evidence")
     return normalized
+
+
+def _bind_terminal_coordinates(endpoint: Any, pdf_page_number: int) -> None:
+    """Bind model coordinates to the actual image rather than a guessed reference page."""
+    if not isinstance(endpoint, dict):
+        return
+    if endpoint.get("terminal") in (None, ""):
+        endpoint["terminal_coordinates"] = None
+    elif isinstance(endpoint.get("terminal_coordinates"), dict):
+        endpoint["terminal_coordinates"]["pdf_page_number"] = pdf_page_number
 
 
 def _filter_schema(model: type[BaseModel], value: Any) -> Any:

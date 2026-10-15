@@ -21,10 +21,14 @@ from src.agent.extraction_agent.domain.models.extraction_stages import (
     PageScanData,
     PageScanRequest,
     ScannedWireUnit,
+    TerminalCoordinates,
 )
 from src.agent.extraction_agent.domain.models.wiring import WireConnection
 from src.agent.extraction_agent.graphs.document_extraction.cross_page import _apply_terminal_task_results
-from src.agent.extraction_agent.graphs.document_extraction.helpers import _connection_identity
+from src.agent.extraction_agent.graphs.document_extraction.helpers import (
+    _connection_identity,
+    _wire_record_from_connection,
+)
 from src.harness.model_gateway import FakeModelGateway
 from src.agent.extraction_agent.infrastructure.abb_vlm_stages import AbbVlmExtractionStageAdapter
 from src.agent.extraction_agent.infrastructure.zh_gantry_reel_vlm_stages import ZhGantryReelVlmAdapter
@@ -360,7 +364,7 @@ def test_fixed_actual_image_cases_validate_fields_and_manifest_paths() -> None:
     c02 = connections("stage2/002c02.expected.json")
     assert [(c.start.device, c.line_number, c.references[0].target_drawing_page) for c in c02] == [
         (device, prefix + str(i) if i < 4 else "PE", page)
-        for device, prefix, page in [("-K2", "002C020", 5), ("-K3", "002C021", 6)]
+        for device, prefix, page in [("+02", "002C020", 5), ("+02", "002C021", 6)]
         for i in range(1, 5)
     ]
     m03 = connections("stage2/002m03_branches.expected.json")
@@ -369,16 +373,118 @@ def test_fixed_actual_image_cases_validate_fields_and_manifest_paths() -> None:
         ("XD3:16", 5),
         ("XD3:16", 6),
     ]
-    optical = CrossPageCompletionData.model_validate(
-        json.loads((ASSETS / "completion/w1_fo2_to_tf41.expected.json").read_text(encoding="utf-8"))
+    c01 = connections("stage2/003c01.expected.json")
+    assert len(c01) == 17
+    assert (c01[0].start.terminal, c01[0].end) == ("XA:8", None)
+    assert c01[0].start.terminal_coordinates.pdf_page_number == 60
+    assert [c.current for c in c01 if c.start.terminal.startswith("XA:")] == ["160A"] * 6
+    assert [c.current for c in c01 if c.start.terminal.startswith("XD10:")] == ["80A"] * 3
+    assert all(
+        c.current_basis == "Ie" and c.current_source_text == f"Ie:(0.7-1)*{c.current}"
+        for c in c01 if c.current is not None
     )
-    assert (optical.end.device, optical.end.terminal) == ("-TF41", "1R")
+    assert all(c.current is None for c in c01 if c.start.terminal in {"N-BAR", "PE"} or c.is_cross_page.value == "same_page")
+    completion = CrossPageCompletionData.model_validate(
+        json.loads((ASSETS / "completion/c01_xa8_to_080c10_xd10_1.expected.json").read_text(encoding="utf-8"))
+    )
+    assert (completion.end.device, completion.end.terminal) == ("+01F12.1", "XD10:1")
+    assert completion.end.terminal_coordinates.pdf_page_number == 403
+    assert completion.source_component.device == "+01F11.1"
+    middle = CrossPageCompletionData.model_validate_json(
+        (ASSETS / "completion/c01_xa11_to_003c31_xd10_1.expected.json").read_text(encoding="utf-8")
+    )
+    assert (middle.end.device, middle.end.terminal) == ("+10F01", "XD10:1")
+    assert middle.end.terminal_coordinates.pdf_page_number == 74
+
+
+def test_source_component_completion_keeps_source_terminal_and_circuit_frozen() -> None:
+    units = {
+        "u": {
+            "connections": [
+                {
+                    "connection_id": "c",
+                    "line_number": "003C0201",
+                    "endpoint_role": "source",
+                    "start": {
+                        "device": "-XD10", "terminal": "XD10:16", "terminal_board": "XD10",
+                        "terminal_coordinates": {"x": 0.2, "y": 0.5, "pdf_page_number": 61},
+                    },
+                }
+            ]
+        }
+    }
+    result = CrossPageCompletionData(
+        end={
+            "device": "+01F18", "terminal": "X1:L1",
+            "terminal_coordinates": {"x": 0.1, "y": 0.3, "pdf_page_number": 385},
+        },
+        source_component={
+            "device": "+01F11.1",
+            "location": "+01F11.1",
+            "basis": "目标回指=003.C+01F11.1/2.1对应同一线路",
+        },
+        status="resolved",
+    )
+    _apply_terminal_task_results(
+        units,
+        [
+            {
+                "task_id": "t",
+                "unit_id": "u",
+                "connection_id": "c",
+                "source_pdf_page": 61,
+                "target_pdf_page": 385,
+            }
+        ],
+        {"t": result.model_dump(mode="json")},
+    )
+    connection = units["u"]["connections"][0]
+    assert connection["start"] == {
+        "device": "+01F11.1",
+        "location": "+01F11.1",
+        "terminal": "XD10:16",
+        "terminal_board": "XD10",
+        "terminal_coordinates": {"x": 0.2, "y": 0.5, "pdf_page_number": 61},
+    }
+    assert connection["line_number"] == "003C0201"
+    assert connection["endpoint_role"] == "source"
+    assert connection["end"]["terminal_coordinates"]["pdf_page_number"] == 385
+    record = _wire_record_from_connection(
+        ScannedWireUnit(unit_id="u", source_pages=[61, 385]),
+        WireConnection.model_validate(connection),
+        page_by_number={},
+        terminal_strip_mapping={},
+    )
+    assert record.start_terminal_coordinates.pdf_page_number == 61
+    assert record.end_terminal_coordinates.pdf_page_number == 385
+    with pytest.raises(ValueError):
+        CrossPageCompletionData(
+            source_component={"device": "+01F11.1", "basis": "回指", "terminal": "XD10:99"}
+        )
+
+
+@pytest.mark.parametrize("x,y,page", [(1.1, 0.5, 60), (0.2, -0.1, 60), (float("nan"), 0.2, 60), (0.2, 0.3, 0)])
+def test_terminal_coordinate_contract_rejects_invalid_positions(x: float, y: float, page: int) -> None:
+    with pytest.raises(ValueError):
+        TerminalCoordinates(x=x, y=y, pdf_page_number=page)
+
+
+def test_terminal_coordinates_bind_to_input_image_and_do_not_change_connection_identity() -> None:
+    completion = _normalize_cross_page(
+        {"end": {"terminal": "XD10:1", "terminal_coordinates": {"x": 0.2, "y": 0.3, "pdf_page_number": 60}}},
+        "t", target_pdf_page=403,
+    )
+    assert completion["end"]["terminal_coordinates"]["pdf_page_number"] == 403
+    first = WireConnection(start={"terminal": "XA:8", "terminal_coordinates": {"x": 0.2, "y": 0.4, "pdf_page_number": 60}})
+    second = first.model_copy(deep=True)
+    second.start.terminal_coordinates.x = 0.21
+    assert _connection_identity(first) == _connection_identity(second)
 
 
 def test_quality_asset_and_validator_checksums() -> None:
     provenance = json.loads((ASSETS / "quality-provenance.json").read_text(encoding="utf-8"))
-    assert provenance["version"] == binding().profile.version == "2.0.2"
-    for section, directory in [("assets", ASSETS), ("policy_sources", ROOT)]:
+    assert provenance["version"] == binding().profile.version == "2.0.5"
+    for section, directory in [("assets", ASSETS), ("policy_sources", ROOT), ("prompt_sources", ROOT)]:
         for entry in provenance[section]:
             assert (
                 "sha256:" + hashlib.sha256((directory / entry["path"]).read_bytes()).hexdigest()
@@ -404,7 +510,10 @@ def test_fixed_cases_survive_fake_adapter_without_field_loss() -> None:
                     run_id="fixed-regression",
                     project_id="offline",
                     profile=binding(),
-                    page=DrawingPageInput(pdf_page_number=1, image_path=ASSETS / case["images"][0]["path"]),
+                    page=DrawingPageInput(
+                        pdf_page_number=gold.pdf_page_number or 1,
+                        image_path=ASSETS / case["images"][0]["path"],
+                    ),
                 )
             )
             assert [c.model_dump(mode="json") for u in result.units for c in u.connections] == [

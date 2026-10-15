@@ -211,6 +211,21 @@ def _apply_cross_page_completion(
     for field in ("current", "current_basis", "current_source_text", "confidence", "source_note"):
         if result.get(field) not in (None, ""):
             raw_connection[field] = result[field]
+    source_component = result.get("source_component")
+    start = raw_connection.get("start")
+    if (
+        isinstance(source_component, dict)
+        and isinstance(start, dict)
+        and str(source_component.get("device") or "").strip()
+        and str(source_component.get("basis") or "").strip()
+    ):
+        # The source terminal, circuit number and direction stay frozen.
+        start["device"] = source_component["device"]
+        if source_component.get("location") not in (None, ""):
+            start["location"] = source_component["location"]
+        raw_connection["source_note"] = "; ".join(
+            filter(None, [raw_connection.get("source_note"), source_component["basis"]])
+        )
 
 
 def _apply_terminal_task_results(
@@ -234,7 +249,12 @@ def _apply_terminal_task_results(
             if isinstance(result.get("end"), dict) and result["end"].get("terminal") not in (None, "")
         ]
         signatures = {
-            json.dumps(result["end"], ensure_ascii=False, sort_keys=True, default=str)
+            json.dumps(
+                {key: value for key, value in result["end"].items() if key != "terminal_coordinates"},
+                ensure_ascii=False,
+                sort_keys=True,
+                default=str,
+            )
             for _, result in resolved
         }
         if len(signatures) == 1:

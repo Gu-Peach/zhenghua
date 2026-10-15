@@ -43,15 +43,15 @@ def test_abb_resources_are_independent_and_ready(tmp_path: Path) -> None:
     registry.load_all()
     abb = registry.resolve("abb")
     assert abb.manifest.status == ProfileStatus.ACTIVE
-    assert abb.manifest.version == "1.1.2"
+    assert abb.manifest.version == "1.1.3"
     assert abb.manifest.adapter == "abb_native"
     assert "full_document_extraction" in abb.manifest.capabilities
     assert all("prompts/zh" not in str(path).replace("\\", "/") for path in abb.resolved_resources.values())
     package = build_package(abb, tmp_path / "package")
     verify_package(tmp_path / "package", package)
     assert any("provenance.json" in entry.path for entry in package.files)
-    # One classification image and two shared wiring images; unused cases are not packaged.
-    assert sum(Path(entry.path).suffix == ".png" for entry in package.files) == 3
+    # Classification205 plus the205/241/281 wiring images; originals remain outside the package.
+    assert sum(Path(entry.path).suffix == ".png" for entry in package.files) == 4
 
 
 def test_abb_native_policy_is_registered_and_resolves_sheet_reference() -> None:
@@ -117,6 +117,7 @@ def test_abb_package_routes_all_three_stages_without_zh_rules() -> None:
                 project_id="abb-project",
                 profile=binding,
                 task_id="abb-task",
+                source_page=source,
                 target_page=target,
                 task_context='{"task_id":"abb-task","source_record":{"start_terminal":"2"}}',
             )
@@ -133,6 +134,10 @@ def test_abb_package_routes_all_three_stages_without_zh_rules() -> None:
         )
         assert "不使用 ZH 起点白名单" in request_text
         assert "起点端子只能是 XD0" not in request_text
+        assert sum(
+            item.get("type") == "image_url"
+            for item in gateway.calls[-1].messages[-1]["content"]
+        ) == 2
 
     asyncio.run(run())
 
@@ -148,7 +153,7 @@ def test_classification_uses_one_current_sheet_not_cont() -> None:
 
 def test_page_scan_uses_one_full_page_with_cross_page_connections() -> None:
     examples = load_page_scan_few_shot_examples(WIRING)
-    assert len(examples) == 1
+    assert len(examples) == 3
     example = examples[0]
     data = PageScanData.model_validate_json(example.expected_json)
     assert data.pdf_page_number is None
@@ -156,6 +161,7 @@ def test_page_scan_uses_one_full_page_with_cross_page_connections() -> None:
     assert example.images[0].note and "不是整页穷举结果" in example.images[0].note
     assert len(data.units) == 1 and data.units[0].wire_number is None
     connections = data.units[0].connections
+    assert [c.line_number for c in connections] == ["Q4:2205", "Q4:4205", "Q4:6205", "Q4:8205"]
     assert [connection.start.terminal for connection in connections if connection.start] == [
         "2",
         "4",
@@ -167,6 +173,21 @@ def test_page_scan_uses_one_full_page_with_cross_page_connections() -> None:
         assert connection.references[0].target_drawing_page == 241
         assert connection.references[0].target_function is None
         assert connection.current is None
+
+
+def test_circle_examples_keep_direct_segments_and_source_sheet_numbers() -> None:
+    examples = load_page_scan_few_shot_examples(WIRING)
+    fallback = PageScanData.model_validate_json(examples[1].expected_json)
+    assert [c.line_number for c in fallback.units[0].connections] == ["Q3:2205", "Q3:4205", "Q3:6205"]
+    circles = PageScanData.model_validate_json(examples[2].expected_json)
+    connections = [c for u in circles.units for c in u.connections]
+    assert len(connections) == 9
+    assert [c.line_number for c in connections] == [
+        "552281", "553281", "554281", "757281", "758281", "759281",
+        "X1:4281", "X1:5281", "X1:6281",
+    ]
+    assert [c.end.terminal for c in connections[3:6] if c.end] == ["4", "5", "6"]
+    assert [c.end.terminal for c in connections[6:] if c.end] == ["1L1", "1L2", "1L3"]
 
 
 def test_cross_page_uses_one_source_target_pair_and_frozen_source() -> None:

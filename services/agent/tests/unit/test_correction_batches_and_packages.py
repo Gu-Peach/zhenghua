@@ -109,7 +109,7 @@ def test_profile_package_copies_external_assets_and_rejects_tampering(tmp_path: 
     manifest = build_package(snapshot, root)
     verify_package(root, manifest)
     assert (root / "resources/page_scan_prompt.md").is_file()
-    assert (root / "resources/wiring_examples/images/002c11.png").is_file()
+    assert (root / "resources/wiring_examples/images/003c01.png").is_file()
     assert any(entry.path.endswith("wiring_examples/manifest.json") for entry in manifest.files)
     (root / "resources/page_scan_prompt.md").write_text("tampered", encoding="utf-8")
     with pytest.raises(ValueError, match="checksum"):

@@ -1,68 +1,129 @@
 {
-  "version": 1,
-  "profile_version": "0.1.0",
-  "description": "Two scans and two internal Stage 2 completion cases; stage3_cases is a legacy asset-loader key only.",
-  "review_status": "source_checked_draft_pending_engineer_confirmation",
-  "images": {
-    "1e_sources": "images/pdf06_1E.png",
-    "td_3a_non_wiring": "images/pdf25_TD_3a.png"
-  },
+  "version": 2,
+  "profile_version": "0.1.1",
+  "description": "Image-only expected. Selected segments teach extraction; partial cases do not limit whole-page scanning. stage3_cases is the internal completion loader key.",
+  "review_status": "image_checked_pending_user_validation",
   "stage2_cases": [
     {
       "id": "1e_sources",
-      "title": "1E：实际 X0 电机放线、相同原理号不合并、CLIQ 跨页占位",
+      "title": "1E：两台电机八条带放线标记连接，原理号和端子照图读取",
       "expected": "stage2/1e_sources.expected.json",
       "images": [
         {
-          "path": "images/pdf06_1E.png",
+          "path": "images/1E.png",
           "role": "source_page"
         }
-      ]
+      ],
+      "checksums": {
+        "stage2/1e_sources.expected.json": "sha256:ff1bad3451ad78e394b3018aae4e875ced500ef82f27dfa4ba4e953ac5b7c19d",
+        "images/1E.png": "sha256:314c925258b16bfa436bcc071b65c312c26cd471a01f171b8a5b26d0f7a079f0"
+      }
+    },
+    {
+      "id": "1b_segments",
+      "title": "1B局部案例：BRAKE1针脚未标注留空，ABS出页保留占位",
+      "expected": "stage2/1b_segments.expected.json",
+      "images": [
+        {
+          "path": "images/1B.png",
+          "role": "source_page"
+        }
+      ],
+      "checksums": {
+        "stage2/1b_segments.expected.json": "sha256:3c40ed1436160ac1e8d24de12dd775f8e60c53ecdd566bdb814123d25499b828",
+        "images/1B.png": "sha256:09048041e2081b28d220581c6e3ad16040dee93adf3abbd14a61ae84f1124279"
+      }
+    },
+    {
+      "id": "1g_encoder",
+      "title": "1G局部案例：X3:1～6至编码器，保留图中1F原理号",
+      "expected": "stage2/1g_encoder.expected.json",
+      "images": [
+        {
+          "path": "images/1G.png",
+          "role": "source_page"
+        }
+      ],
+      "checksums": {
+        "stage2/1g_encoder.expected.json": "sha256:cff9344a2f6fbe304e6d27704642ec92197b0c6cacb2ab79caca5f1e9e0745d6",
+        "images/1G.png": "sha256:57bb75d637a522a3ca323c7c008862a0ece2d84f4c8f001f73d9490c0944002a"
+      }
+    },
+    {
+      "id": "2a_pn2",
+      "title": "2A局部案例：带放线斜杠的P2出页，入页P1不重复输出",
+      "expected": "stage2/2a_pn2.expected.json",
+      "images": [
+        {
+          "path": "images/2A.png",
+          "role": "source_page"
+        }
+      ],
+      "checksums": {
+        "stage2/2a_pn2.expected.json": "sha256:dd41bf73fbf7ccd2cd1dbe8018a3adf2f56ce5c0d7fee731e5abd18dce48f758",
+        "images/2A.png": "sha256:55572e06f377e4179085551012136c4bb0ddd52ccda27f35b310cf942aa943fc"
+      }
     },
     {
       "id": "td_3a_non_wiring",
-      "title": "TD 3.a：端子报告负例，不重复创建连接",
+      "title": "TD 3.a：端子报告负例，不生成连接",
       "expected": "stage2/td_3a_non_wiring.expected.json",
       "images": [
         {
           "path": "images/pdf25_TD_3a.png",
           "role": "source_page"
         }
-      ]
+      ],
+      "checksums": {
+        "stage2/td_3a_non_wiring.expected.json": "sha256:370b85108e75b34d81a30877a4f62875b2b138e80d271eedda01d6cee875f387",
+        "images/pdf25_TD_3a.png": "sha256:893958ba5970f3d4d5bc418abd05b9c0fa08ef07ef23b98f9ecdef52d0aa06c8"
+      }
     }
   ],
   "stage3_cases": [
     {
-      "id": "cliq3",
-      "title": "正例：1E INV:X201 → 1G SMC:X500",
-      "input": "completion/cliq3.task.json",
-      "expected": "completion/cliq3.expected.json",
+      "id": "pn2_to_cu320",
+      "title": "正例：2A B1:P2 → 1F CU320 X150:P1",
+      "input": "completion/pn2_to_cu320.task.json",
+      "expected": "completion/pn2_to_cu320.expected.json",
       "images": [
         {
-          "path": "images/pdf06_1E.png",
+          "path": "images/2A.png",
           "role": "source_page"
         },
         {
-          "path": "images/pdf08_1G.png",
+          "path": "images/1F.png",
           "role": "target_page"
         }
-      ]
+      ],
+      "checksums": {
+        "completion/pn2_to_cu320.expected.json": "sha256:1d453824ea8834afdd294443050c46c7fe52701375065eb62f71447281bbeda7",
+        "completion/pn2_to_cu320.task.json": "sha256:91bf455abc3f93764efc6438f146ee5b7268159c6fec809a8a4374b7ed7cf24d",
+        "images/2A.png": "sha256:55572e06f377e4179085551012136c4bb0ddd52ccda27f35b310cf942aa943fc",
+        "images/1F.png": "sha256:63c12ff23b6ba13fc9f40ad77c0da436e82c7fd4aba995abb9d343f317bd87d2"
+      }
     },
     {
       "id": "abs_power",
-      "title": "负例：1B X3:33 → 2A 电源接点，电位名不能冒充针脚",
+      "title": "缺失针脚：1B X3:33 → 2A绝对值编码器接点",
       "input": "completion/abs_power.task.json",
       "expected": "completion/abs_power.expected.json",
       "images": [
         {
-          "path": "images/pdf03_1B.png",
+          "path": "images/1B.png",
           "role": "source_page"
         },
         {
-          "path": "images/pdf10_2A.png",
+          "path": "images/2A.png",
           "role": "target_page"
         }
-      ]
+      ],
+      "checksums": {
+        "completion/abs_power.expected.json": "sha256:879d35ab071c9043cfb31190644ac0c47cad3efd5d613e3d23d3ea175e1e2bc8",
+        "completion/abs_power.task.json": "sha256:72051010b097f58ef6465562cd23b92da9e1f5b21656a001fc7f41969d96997c",
+        "images/1B.png": "sha256:09048041e2081b28d220581c6e3ad16040dee93adf3abbd14a61ae84f1124279",
+        "images/2A.png": "sha256:55572e06f377e4179085551012136c4bb0ddd52ccda27f35b310cf942aa943fc"
+      }
     }
   ]
 }

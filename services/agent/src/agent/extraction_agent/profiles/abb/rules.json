@@ -21,9 +21,7 @@
   "extraction": {
     "workflow": [
       "page_classification",
-      "page_scan",
-      "build_cross_page_tasks",
-      "cross_page_completion",
+      "page_extraction",
       "deterministic_validation"
     ],
     "dynamic_resources": {
@@ -31,17 +29,24 @@
         "classification_prompt",
         "classification_examples"
       ],
-      "page_scan": ["page_scan_prompt", "wiring_examples"],
-      "cross_page_completion": ["cross_page_prompt", "wiring_examples"]
+      "page_scan": [
+        "page_scan_prompt",
+        "wiring_examples"
+      ],
+      "cross_page_completion": [
+        "cross_page_prompt",
+        "wiring_examples"
+      ]
     },
     "business_rules": [
-      "功能代码去掉 =；Sheet 为当前业务页码，Cont 为续页",
-      "空心圆标记的外接线段纳入；斜杠内接线段排除，按线段区分",
-      "无圆圈但用户规则指定的断路器对外出线保留，不能扩大到全部内接线",
-      "数字原理号优先起点；缺失时用端子/Sheet 或设备端子/Sheet 回退",
-      "跨页 /241.1A 保留地址；源电位的功能不等于目标图框功能",
-      "Stage 3 只补任务终点；起点冻结，范围电流和电压不作为单一 current",
-      "ABB 使用独立 abb_native 确定性策略，不复用 ZH 端子白名单、方向或引用规则"
+      "小空心圆是放线标记，大空心圆是端子，实心点是连接点；从标记读取最近实际端点",
+      "同一直接连接段两个小圆圈只输出一条，不按圆圈数量或独立原理号合并不同段",
+      "标记数字直接拼来源Sheet，无分隔符；无编号时完整实际端子标识拼来源Sheet",
+      "无编号小圈与明确无圈断路器外出线保留，蓝斜杠不否定已确认的小圆圈",
+      "功能代码去掉=；Sheet是当前业务页，Cont是续页，不使用PDF物理页拼原理号",
+      "/289.3B是Sheet289列3行B；实际导线出页引用与触点关联索引区分",
+      "Stage2内部补全只补指定连接，冻结来源起点与原理号，不把目标功能从源电位推断",
+      "电流只读单一明确值，不用范围、电压或SET系数推算；未知字段为空"
     ],
     "output_contract": "wiring_connection_v1"
   }
