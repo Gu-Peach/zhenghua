@@ -1,4 +1,4 @@
-# ABB规则资源（本地1.1.3）
+# ABB规则资源（本地1.1.4）
 
 Stage 1识别图框；Stage 2逐页扫描并在内部定向补全。使用独立abb_native策略，保持ABB的Sheet/Cont及/Sheet.列行语法。
 
@@ -15,3 +15,5 @@ expected仅从配套原图读取，不使用外部表。圈号/端子/Sheet可�
 本地版本未上传、未发布、未写数据库。仅静态资源/Schema/checksum/语法检查，按用户要求不跑测试或真实模型。历史1.1.2发布记录不代表本版本已发布。
 
 离线回归入口：python -m pytest services/agent/tests/unit/test_abb_resources.py -q。
+
+2026-10-15：主表统一为ZH14列，含色标空列及两端坐标；初扫/补全expected按配套图实际端子符号或接点中心补齐人工目视坐标，未标针脚仍为空，待工程复核。无模型调用或数据库写入。

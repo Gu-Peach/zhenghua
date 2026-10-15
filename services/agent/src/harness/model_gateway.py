@@ -44,6 +44,7 @@ class ModelResponse:
     duration_seconds: float
     attempts: int
     usage: dict[str, Any] = field(default_factory=dict)
+    finish_reason: str | None = None
 
 
 class ModelGateway(Protocol):
@@ -161,7 +162,7 @@ class OpenAICompatibleModelGateway:
                             raise error
                         last_error = error
                     else:
-                        content, usage = self._read_response(response)
+                        content, usage, finish_reason = self._read_response(response)
                         try:
                             parsed = self._parse_output(content, request.output_model)
                         except ModelGatewayError as exc:
@@ -174,6 +175,7 @@ class OpenAICompatibleModelGateway:
                                     duration_seconds=perf_counter() - start,
                                     attempts=attempts,
                                     usage=usage,
+                                    finish_reason=finish_reason,
                                 ),
                                 error=exc,
                             )
@@ -185,6 +187,7 @@ class OpenAICompatibleModelGateway:
                             duration_seconds=perf_counter() - start,
                             attempts=attempts,
                             usage=usage,
+                            finish_reason=finish_reason,
                         )
                         await self._trace(request, result=result, error=None)
                         return result
@@ -208,7 +211,7 @@ class OpenAICompatibleModelGateway:
         raise error from last_error
 
     @staticmethod
-    def _read_response(response: httpx.Response) -> tuple[str, dict[str, Any]]:
+    def _read_response(response: httpx.Response) -> tuple[str, dict[str, Any], str | None]:
         try:
             payload = response.json()
             content = payload["choices"][0]["message"]["content"]
@@ -227,7 +230,8 @@ class OpenAICompatibleModelGateway:
                 retryable=False,
             )
         usage = payload.get("usage") if isinstance(payload.get("usage"), dict) else {}
-        return content, usage
+        finish_reason = payload["choices"][0].get("finish_reason")
+        return content, usage, finish_reason if isinstance(finish_reason, str) else None
 
     async def stream_text(
         self, request: ModelRequest, on_text: Callable[[str], Awaitable[None]]
@@ -251,6 +255,7 @@ class OpenAICompatibleModelGateway:
         started = perf_counter()
         parts: list[str] = []
         usage: dict[str, Any] = {}
+        finish_reason: str | None = None
         attempts = 0
         try:
             for attempt in range(self._retry_policy.max_retries + 1):
@@ -272,7 +277,7 @@ class OpenAICompatibleModelGateway:
                             )
                         if "application/json" in response.headers.get("content-type", ""):
                             await response.aread()
-                            content, usage = self._read_response(response)
+                            content, usage, finish_reason = self._read_response(response)
                             if content:
                                 parts.append(content)
                                 await on_text(content)
@@ -300,6 +305,8 @@ class OpenAICompatibleModelGateway:
                                     delta = choice.get("delta") or {}
                                     delta_text = delta.get("content")
                                     finished = finished or choice.get("finish_reason") is not None
+                                    if isinstance(choice.get("finish_reason"), str):
+                                        finish_reason = choice["finish_reason"]
                                 except (ValueError, TypeError, KeyError, AttributeError) as exc:
                                     raise ModelGatewayError(
                                         ErrorCode.MODEL_SCHEMA_INVALID,
@@ -329,6 +336,7 @@ class OpenAICompatibleModelGateway:
                             duration_seconds=perf_counter() - started,
                             attempts=attempts,
                             usage=usage,
+                            finish_reason=finish_reason,
                         )
                         await self._trace(request, result=result, error=None)
                         return result
@@ -419,6 +427,7 @@ class OpenAICompatibleModelGateway:
                 "attempts": result.attempts if result else None,
                 "duration_seconds": result.duration_seconds if result else None,
                 "usage": result.usage if result else {},
+                "finish_reason": result.finish_reason if result else None,
                 "metadata": request.metadata,
                 "response_content": result.content if result else None,
                 "error_type": type(error).__name__ if error else None,

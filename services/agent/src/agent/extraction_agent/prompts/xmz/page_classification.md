@@ -1,4 +1,4 @@
-# 大车卷盘图纸：Stage 1 页面分类（0.1.1）
+# 大车卷盘图纸：Stage 1 页面分类（0.1.2）
 
 输入是一张实际 PDF 页面。只识别页面身份，不提取连接。此模板的页标是右下角 SH.NO.，不是 Plant Function/Page Number，也不是 CONT.ON.SH。
 

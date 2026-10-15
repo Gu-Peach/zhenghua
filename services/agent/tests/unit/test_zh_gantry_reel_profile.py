@@ -92,7 +92,7 @@ def test_manifest_counts_schemas_and_every_asset_checksum() -> None:
                     ).hexdigest()
                 total += 1
     assert total == 9
-    assert registry().resolve("zh_gantry_reel", allow_experimental=True).manifest.version == "0.1.1"
+    assert registry().resolve("zh_gantry_reel", allow_experimental=True).manifest.version == "0.1.2"
 
 
 def test_address_keeps_row_and_refuses_external_or_invalid_grid() -> None:

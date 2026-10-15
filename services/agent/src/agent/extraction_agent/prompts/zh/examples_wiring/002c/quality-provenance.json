@@ -94,7 +94,7 @@
     },
     {
       "path": "services/agent/src/agent/extraction_agent/infrastructure/zh_vlm_stages.py",
-      "checksum": "sha256:86a94ede2cdcd1bbbae0966339c39b633653da3d5f2ab6bf4db3e0ccc2fe3a70"
+      "checksum": "sha256:a7e1bfb4ced9e42fe91a6b56e10412d7efabeaab080000fc5401e60fa3914169"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/graphs/document_extraction/helpers.py",
@@ -126,11 +126,23 @@
     },
     {
       "path": "services/agent/scripts/run_stage2_groups.py",
-      "checksum": "sha256:029682c98e5d2e719597d8aa9aeb8c3d54b61fc512d9fac6b0b85079fdc966b9"
+      "checksum": "sha256:b334a6ff7922b9ba8d2681895e05ec8ed2779c37a09deefb51026b86d427f625"
     },
     {
       "path": "services/agent/scripts/export_stage2_xlsx.mjs",
       "checksum": "sha256:e5db38825181336aaedc1ef18ca35a48765424acf4c1ece79d40a3f1070988b0"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/document/model_images.py",
+      "checksum": "sha256:0f7d70970f8919a96488a6b1bc801d95e66bcf6e68f8d5eb21546042f40310cb"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/application/page_workflow_extraction.py",
+      "checksum": "sha256:115ec2320369d08c6a4613213e863054db8c7a5d10f662e2c46025b5dac05c47"
+    },
+    {
+      "path": "services/agent/src/config.py",
+      "checksum": "sha256:86a952a91a3c17048819a6f3c6377332b7d9274d289fa98163599e387231b948"
     }
   ],
   "prompt_sources": [

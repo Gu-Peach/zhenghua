@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import base64
 import hashlib
 import json
@@ -26,6 +27,7 @@ from src.domain.models.profiles import ProfileBinding
 from src.domain.ports import ExtractionStageAdapter
 from src.harness.model_gateway import ModelGateway, ModelGatewayError, ModelRequest
 from src.agent.extraction_agent.infrastructure.document.json_response import _extract_json_candidate
+from src.agent.extraction_agent.infrastructure.document.model_images import prepare_vision_messages
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -34,6 +36,7 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
     """Native multimodal adapter for ZH page extraction operations."""
 
     enforce_evidence_contract = True
+    zh_endpoint_semantics = True
 
     def __init__(self, settings: AgentSettings, gateway: ModelGateway) -> None:
         self._settings = settings
@@ -195,6 +198,22 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             input_json=input_json,
         )
         contract = output_model.model_json_schema()
+        if "DrawingEndpoint" in contract.get("$defs", {}):
+            endpoint_schema = contract["$defs"]["DrawingEndpoint"]
+            endpoint_schema["properties"]["terminal_coordinates"]["description"] = (
+                "实际端子符号/接点中心在整张输入图片中的归一化x/y（0到1），"
+                "左上为原点，pdf_page_number使用本端图片的物理页号；无法定位时null"
+            )
+            endpoint_schema["required"] = list(dict.fromkeys([
+                *endpoint_schema.get("required", []), "terminal_coordinates",
+            ]))
+            prompt += (
+                "\n通用端子坐标要求：每个可见start/end填写terminal_coordinates={x,y,pdf_page_number}。"
+                "读取实际端子符号或连接点中心，按整张图片宽高归一化到0到1，左上为原点；"
+                "不要标放线标记、文字、箭头或裁剪区域坐标，不按端子编号推算。"
+                "初扫同页两端使用当前PDF物理页，跨页补全end使用目标PDF物理页，"
+                "来源起点坐标保持不变。等比例缩放前后的归一化坐标相同；未知端子/无法定位时null。"
+            )
         if self.enforce_evidence_contract and "DrawingEndpoint" in contract.get("$defs", {}):
             endpoint_schema = contract["$defs"]["DrawingEndpoint"]["properties"]
             endpoint_schema["terminal_strip"] = {
@@ -204,28 +223,33 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             endpoint_schema["terminal"]["description"] = "实际完整端子；同排X/XD标识与数字组成XD3:109等"
             endpoint_schema["terminal_board"]["description"] = "图中实际端子排或设备接口标识，如XD3、X1"
             endpoint_schema["terminal_code"]["description"] = "实际接口标识，不是针脚数字或业务分类"
-            endpoint_schema["device"]["description"] = (
-                "ZH起/终点元件标识，常见+01F...；同页附近→本端所在页Object Loc，"
-                "跨页对应线路引用的对象标识→附近→本端所在页Object Loc；X/XD排号和原理号不是元件"
-            )
+            if self.zh_endpoint_semantics:
+                endpoint_schema["device"]["description"] = (
+                    "ZH起/终点元件标识，常见+01F...；同页附近→本端所在页Object Loc，"
+                    "跨页对应线路引用的对象标识→附近→本端所在页Object Loc；X/XD排号和原理号不是元件"
+                )
             endpoint_schema["location"]["description"] = "该端所属对象位置，与元件标识可以相同"
-            endpoint_schema["terminal_coordinates"]["description"] = (
-                "实际端子符号中心：整张图左上为原点，x/y归一化0到1，pdf_page_number为本端图片物理页；未知null"
-            )
         if self.enforce_evidence_contract and output_model is PageScanData:
             connection_schema = contract["$defs"]["ScannedConnection"]
             connection_schema["required"] = list(
                 dict.fromkeys([*connection_schema.get("required", []), "endpoint_role", "direction_basis"])
             )
-        system_prompt = (
-            prompt + "\n输出 JSON Schema：\n" + json.dumps(contract)
-            if self.enforce_evidence_contract else prompt
-        )
+        # The output protocol is shared. The switch above only changes the
+        # ZH-specific semantics, never whether ABB receives a JSON contract.
+        system_prompt = prompt + "\n输出 JSON Schema：\n" + json.dumps(contract)
+        input_content = await asyncio.to_thread(_multimodal_content, user_text, images)
         messages = [
             {"role": "system", "content": system_prompt},
             *prefix,
-            {"role": "user", "content": _multimodal_content(user_text, images)},
+            {"role": "user", "content": input_content},
         ]
+        messages, image_metadata = await asyncio.to_thread(
+            prepare_vision_messages,
+            messages,
+            input_max_side=self._settings.model_input_max_image_side,
+            max_total_pixels=self._settings.model_max_total_image_pixels,
+            few_shot_min_side=self._settings.model_fewshot_min_image_side,
+        )
         last_error: Exception | None = None
         for schema_attempt in range(2):
             attempt_messages = list(messages)
@@ -233,9 +257,7 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
                 attempt_messages.append(
                     {
                         "role": "user",
-                        "content": (
-                            "上次输出未通过 JSON schema 校验，请重新检查图片和上下文，只输出完整合法 JSON。"
-                        ),
+                        "content": _schema_retry_instruction(last_error),
                     }
                 )
             try:
@@ -249,6 +271,7 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
                         json_mode=self._settings.model_json_mode,
                         enable_thinking=self._settings.model_enable_thinking,
                         metadata={
+                            **image_metadata,
                             "profile": profile.profile.key,
                             "profile_version": profile.profile.version,
                             "profile_checksum": profile.profile.checksum,
@@ -272,11 +295,15 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
                 return output_model.model_validate(_filter_schema(output_model, normalize(parsed)))
             except (ValueError, ValidationError) as exc:
                 last_error = exc
+                if response.finish_reason == "length":
+                    raise ValueError(
+                        f"{stage} model output stopped at its length limit; "
+                        "finish_reason=length; inspect model_calls before retrying."
+                    ) from exc
         detail = str(last_error)[:500] if last_error is not None else "unknown schema error"
         raise ValueError(
             f"{stage} returned invalid structured data after two attempts: {detail}"
         ) from last_error
-
     def _few_shot_messages(
         self,
         *,
@@ -315,6 +342,17 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
                 ]
             )
         return messages
+
+
+def _schema_retry_instruction(error: Exception | None) -> str:
+    """Report bounded parse diagnostics without replaying a huge invalid answer."""
+    detail = "输出不符合字段Schema"
+    if isinstance(error, json.JSONDecodeError):
+        detail = f"JSON语法错误：{error.msg}；行{error.lineno}、列{error.colno}、位置{error.pos}"
+    return (
+        f"上次输出未通过校验（{detail}）。请按提供的JSON Schema重新输出单个完整合法JSON对象；"
+        "不要输出解释、Markdown、重复连接或多份答案，使用紧凑JSON并省略无值的可选字段。"
+    )
 
 
 def _load_examples(

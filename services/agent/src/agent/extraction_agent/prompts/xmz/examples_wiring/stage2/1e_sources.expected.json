@@ -29,7 +29,12 @@
             "terminal_board": "X0",
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "X0:1"
+            "terminal": "X0:1",
+            "terminal_coordinates": {
+              "x": 0.16684,
+              "y": 0.67616,
+              "pdf_page_number": 6
+            }
           },
           "end": {
             "location": "+U1",
@@ -38,7 +43,12 @@
             "terminal_board": null,
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "U1"
+            "terminal": "U1",
+            "terminal_coordinates": {
+              "x": 0.16684,
+              "y": 0.81184,
+              "pdf_page_number": 6
+            }
           },
           "references": [],
           "is_cross_page": "same_page",
@@ -64,7 +74,12 @@
             "terminal_board": "X0",
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "X0:2"
+            "terminal": "X0:2",
+            "terminal_coordinates": {
+              "x": 0.18591,
+              "y": 0.67616,
+              "pdf_page_number": 6
+            }
           },
           "end": {
             "location": "+U1",
@@ -73,7 +88,12 @@
             "terminal_board": null,
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "V1"
+            "terminal": "V1",
+            "terminal_coordinates": {
+              "x": 0.18591,
+              "y": 0.8096,
+              "pdf_page_number": 6
+            }
           },
           "references": [],
           "is_cross_page": "same_page",
@@ -99,7 +119,12 @@
             "terminal_board": "X0",
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "X0:3"
+            "terminal": "X0:3",
+            "terminal_coordinates": {
+              "x": 0.20445,
+              "y": 0.67616,
+              "pdf_page_number": 6
+            }
           },
           "end": {
             "location": "+U1",
@@ -108,7 +133,12 @@
             "terminal_board": null,
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "W1"
+            "terminal": "W1",
+            "terminal_coordinates": {
+              "x": 0.20445,
+              "y": 0.81184,
+              "pdf_page_number": 6
+            }
           },
           "references": [],
           "is_cross_page": "same_page",
@@ -134,7 +164,12 @@
             "terminal_board": "X0",
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "PE"
+            "terminal": "PE",
+            "terminal_coordinates": {
+              "x": 0.22352,
+              "y": 0.67616,
+              "pdf_page_number": 6
+            }
           },
           "end": {
             "location": "+U1",
@@ -143,7 +178,12 @@
             "terminal_board": null,
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "PE"
+            "terminal": "PE",
+            "terminal_coordinates": {
+              "x": 0.20445,
+              "y": 0.85157,
+              "pdf_page_number": 6
+            }
           },
           "references": [],
           "is_cross_page": "same_page",
@@ -180,7 +220,12 @@
             "terminal_board": "X0",
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "X0:5"
+            "terminal": "X0:5",
+            "terminal_coordinates": {
+              "x": 0.49788,
+              "y": 0.68291,
+              "pdf_page_number": 6
+            }
           },
           "end": {
             "location": "+U2",
@@ -189,7 +234,12 @@
             "terminal_board": null,
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "U1"
+            "terminal": "U1",
+            "terminal_coordinates": {
+              "x": 0.49788,
+              "y": 0.81184,
+              "pdf_page_number": 6
+            }
           },
           "references": [],
           "is_cross_page": "same_page",
@@ -215,7 +265,12 @@
             "terminal_board": "X0",
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "X0:6"
+            "terminal": "X0:6",
+            "terminal_coordinates": {
+              "x": 0.51642,
+              "y": 0.68291,
+              "pdf_page_number": 6
+            }
           },
           "end": {
             "location": "+U2",
@@ -224,7 +279,12 @@
             "terminal_board": null,
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "V1"
+            "terminal": "V1",
+            "terminal_coordinates": {
+              "x": 0.51642,
+              "y": 0.8096,
+              "pdf_page_number": 6
+            }
           },
           "references": [],
           "is_cross_page": "same_page",
@@ -250,7 +310,12 @@
             "terminal_board": "X0",
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "X0:7"
+            "terminal": "X0:7",
+            "terminal_coordinates": {
+              "x": 0.53549,
+              "y": 0.68291,
+              "pdf_page_number": 6
+            }
           },
           "end": {
             "location": "+U2",
@@ -259,7 +324,12 @@
             "terminal_board": null,
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "W1"
+            "terminal": "W1",
+            "terminal_coordinates": {
+              "x": 0.53549,
+              "y": 0.81184,
+              "pdf_page_number": 6
+            }
           },
           "references": [],
           "is_cross_page": "same_page",
@@ -285,7 +355,12 @@
             "terminal_board": "X0",
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "PE"
+            "terminal": "PE",
+            "terminal_coordinates": {
+              "x": 0.55403,
+              "y": 0.68291,
+              "pdf_page_number": 6
+            }
           },
           "end": {
             "location": "+U2",
@@ -294,7 +369,12 @@
             "terminal_board": null,
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "PE"
+            "terminal": "PE",
+            "terminal_coordinates": {
+              "x": 0.53496,
+              "y": 0.85157,
+              "pdf_page_number": 6
+            }
           },
           "references": [],
           "is_cross_page": "same_page",

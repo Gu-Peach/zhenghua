@@ -12,6 +12,7 @@ class ZhGantryReelVlmAdapter(ZhVlmExtractionStageAdapter):
     """Reuse structured multimodal transport, with independent grid-template instructions."""
 
     enforce_evidence_contract = True
+    zh_endpoint_semantics = False
 
     def classification_instruction(self, request: PageClassificationRequest) -> str:
         return (
@@ -31,6 +32,7 @@ class ZhGantryReelVlmAdapter(ZhVlmExtractionStageAdapter):
             "terminal_board保存实际排号/接口，terminal_strip留null由程序处理，颜色留null。"
             "跨页引用例如 1B30B 必须绑定连接，目标按 SH.NO. 映射，end=null。"
             "只输出 PageScanData JSON，source_drawing_pages 保留原始页标。"
+            "每个可见端点填写terminal_coordinates：实际端子中心的整图归一化x/y及当前PDF物理页，无法定位则null。"
             f"\nPDF物理页={request.page.pdf_page_number}; context={request.page_context}"
         )
 
@@ -42,6 +44,7 @@ class ZhGantryReelVlmAdapter(ZhVlmExtractionStageAdapter):
             "正常回指是匹配证据。电位/信号名不能冒充针脚；设备或端子未标注则该字段 null 并 needs_review。"
             "终点以图中标注为准，terminal_strip留null由程序处理，不从人工表猜终点。"
             "只输出 CrossPageCompletionData JSON。"
+            "end.terminal_coordinates读取目标实际端子中心的整图归一化x/y和目标PDF物理页，不改来源坐标。"
             f"\nsource_pdf={request.source_page.pdf_page_number if request.source_page else 'unknown'}"
             f"; target_pdf={request.target_page.pdf_page_number}; task={request.task_context}"
         )

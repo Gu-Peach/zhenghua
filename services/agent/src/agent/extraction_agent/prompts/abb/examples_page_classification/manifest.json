@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "description": "ABB 精简图框身份样例：仅 Sheet 205 一页；Sheet 为当前页，Cont 为续页。expected 待工程确认。",
   "cases": [
     {
@@ -10,7 +10,12 @@
           "path": "lv11_205/page.png",
           "role": "drawing_page"
         }
-      ]
+      ],
+      "checksums": {
+        "lv11_205/expected.json": "sha256:46d1392da30257141cee181f0952bc4644c43d66ead43f64b746a382fbcc25f1",
+        "lv11_205/page.png": "sha256:5d33f36cfa99dd73b7159bda9969cb50761d273951294b9c12ccb50eedf8aecb"
+      }
     }
-  ]
+  ],
+  "profile_version": "1.1.4"
 }

@@ -29,7 +29,12 @@
             "terminal_board": "X21",
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "X21:3"
+            "terminal": "X21:3",
+            "terminal_coordinates": {
+              "x": 0.4661,
+              "y": 0.76387,
+              "pdf_page_number": 3
+            }
           },
           "end": {
             "location": "+GCR",
@@ -38,7 +43,8 @@
             "terminal_board": null,
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": null
+            "terminal": null,
+            "terminal_coordinates": null
           },
           "references": [],
           "is_cross_page": "same_page",
@@ -65,7 +71,12 @@
             "terminal_board": "X21",
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "X21:4"
+            "terminal": "X21:4",
+            "terminal_coordinates": {
+              "x": 0.50424,
+              "y": 0.76387,
+              "pdf_page_number": 3
+            }
           },
           "end": {
             "location": "+GCR",
@@ -74,7 +85,8 @@
             "terminal_board": null,
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": null
+            "terminal": null,
+            "terminal_coordinates": null
           },
           "references": [],
           "is_cross_page": "same_page",
@@ -112,7 +124,12 @@
             "terminal_board": "X3",
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "X3:33"
+            "terminal": "X3:33",
+            "terminal_coordinates": {
+              "x": 0.79449,
+              "y": 0.76312,
+              "pdf_page_number": 3
+            }
           },
           "end": null,
           "references": [
@@ -146,7 +163,12 @@
             "terminal_board": "X3",
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "X3:35"
+            "terminal": "X3:35",
+            "terminal_coordinates": {
+              "x": 0.82574,
+              "y": 0.76312,
+              "pdf_page_number": 3
+            }
           },
           "end": null,
           "references": [

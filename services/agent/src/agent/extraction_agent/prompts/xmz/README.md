@@ -1,6 +1,6 @@
 # XMZ 大车卷盘图纸规则
 
-本地Profile为`zh_gantry_reel@0.1.1`，适配器`zh_gantry_reel_native`，资源目录为`prompts/xmz`。保持experimental，不上传或发布。
+本地Profile为`zh_gantry_reel@0.1.2`，适配器`zh_gantry_reel_native`，资源目录为`prompts/xmz`。保持experimental，不上传或发布。
 
 三份Prompt分别用于页面分类、Stage 2初扫和内部双图补全。初扫与ZH一致：放线斜杠 → 最近端子/跨页箭头 → 同段箭头定向；图中字段能读到什么就保留什么，未标针脚为空。颜色为空，terminal_strip由程序从实际X排号确定，不套用XA/XD分类。
 
@@ -19,3 +19,5 @@ SH.NO.原标和网格地址使用本模板独立规则：1E→GCR.1/5，1G45H→
 manifest保存资源checksum，结构使用共享Pydantic Schema。已删除的sheet-index、field-rules、schema和provenance文件不再作为运行依赖；页标索引由policy读取输入PDF建立。
 
 离线回归入口：`python -m pytest services/agent/tests/unit/test_zh_gantry_reel_profile.py -q`。本轮未运行测试、提取或真实模型，效果待用户验证；通用导出的原始SH.NO.展示仍是后续任务。
+
+2026-10-15：主表统一为ZH14列，含色标空列及两端坐标；初扫/补全expected按配套图实际端子符号或接点中心补齐人工目视坐标，未标针脚仍为空，待工程复核。无模型调用或数据库写入。

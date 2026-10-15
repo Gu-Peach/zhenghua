@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "profile_version": "0.1.1",
+  "version": 3,
+  "profile_version": "0.1.2",
   "description": "Image-only expected. Selected segments teach extraction; partial cases do not limit whole-page scanning. stage3_cases is the internal completion loader key.",
   "review_status": "image_checked_pending_user_validation",
   "stage2_cases": [
@@ -15,7 +15,7 @@
         }
       ],
       "checksums": {
-        "stage2/1e_sources.expected.json": "sha256:ff1bad3451ad78e394b3018aae4e875ced500ef82f27dfa4ba4e953ac5b7c19d",
+        "stage2/1e_sources.expected.json": "sha256:a5486507211cacbad1e24640a029e6933ed3713247379ec059e306e75023035c",
         "images/1E.png": "sha256:314c925258b16bfa436bcc071b65c312c26cd471a01f171b8a5b26d0f7a079f0"
       }
     },
@@ -30,7 +30,7 @@
         }
       ],
       "checksums": {
-        "stage2/1b_segments.expected.json": "sha256:3c40ed1436160ac1e8d24de12dd775f8e60c53ecdd566bdb814123d25499b828",
+        "stage2/1b_segments.expected.json": "sha256:183126c203e1148d73ad2c0fca2bf6a0cc59f873cbb69cef2765cfe44703a8e3",
         "images/1B.png": "sha256:09048041e2081b28d220581c6e3ad16040dee93adf3abbd14a61ae84f1124279"
       }
     },
@@ -45,7 +45,7 @@
         }
       ],
       "checksums": {
-        "stage2/1g_encoder.expected.json": "sha256:cff9344a2f6fbe304e6d27704642ec92197b0c6cacb2ab79caca5f1e9e0745d6",
+        "stage2/1g_encoder.expected.json": "sha256:dbc8973b5bfb7ae9e39072e4273dd8e9b44b8410182913e697c1d9efcf8d2dca",
         "images/1G.png": "sha256:57bb75d637a522a3ca323c7c008862a0ece2d84f4c8f001f73d9490c0944002a"
       }
     },
@@ -60,7 +60,7 @@
         }
       ],
       "checksums": {
-        "stage2/2a_pn2.expected.json": "sha256:dd41bf73fbf7ccd2cd1dbe8018a3adf2f56ce5c0d7fee731e5abd18dce48f758",
+        "stage2/2a_pn2.expected.json": "sha256:09f07a0ff40f806914533fe17fc4aa4b7356cc5bdcb1ed214302a8ad707f702e",
         "images/2A.png": "sha256:55572e06f377e4179085551012136c4bb0ddd52ccda27f35b310cf942aa943fc"
       }
     },
@@ -97,8 +97,8 @@
         }
       ],
       "checksums": {
-        "completion/pn2_to_cu320.expected.json": "sha256:1d453824ea8834afdd294443050c46c7fe52701375065eb62f71447281bbeda7",
-        "completion/pn2_to_cu320.task.json": "sha256:91bf455abc3f93764efc6438f146ee5b7268159c6fec809a8a4374b7ed7cf24d",
+        "completion/pn2_to_cu320.expected.json": "sha256:e7af9393486f29c051443769fd231a8b997e1fa1f0148846dd15a3fdc70f0b22",
+        "completion/pn2_to_cu320.task.json": "sha256:fb4ed269e232cce6996860a1bf803eef72e28c17e17abe8613e7afb075322ff8",
         "images/2A.png": "sha256:55572e06f377e4179085551012136c4bb0ddd52ccda27f35b310cf942aa943fc",
         "images/1F.png": "sha256:63c12ff23b6ba13fc9f40ad77c0da436e82c7fd4aba995abb9d343f317bd87d2"
       }
@@ -119,8 +119,8 @@
         }
       ],
       "checksums": {
-        "completion/abs_power.expected.json": "sha256:879d35ab071c9043cfb31190644ac0c47cad3efd5d613e3d23d3ea175e1e2bc8",
-        "completion/abs_power.task.json": "sha256:72051010b097f58ef6465562cd23b92da9e1f5b21656a001fc7f41969d96997c",
+        "completion/abs_power.expected.json": "sha256:8784011a4fed0e553157759568fed08cf18564c0ab5d73c9609deeefb9e36afb",
+        "completion/abs_power.task.json": "sha256:ddcf4b2c608f8a2243a6a328134b3f0e89cf5b09fc924089c902d8d4cc95fa18",
         "images/1B.png": "sha256:09048041e2081b28d220581c6e3ad16040dee93adf3abbd14a61ae84f1124279",
         "images/2A.png": "sha256:55572e06f377e4179085551012136c4bb0ddd52ccda27f35b310cf942aa943fc"
       }

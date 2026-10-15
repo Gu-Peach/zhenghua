@@ -1,5 +1,7 @@
 # 本地 002.C / 002.M Stage 2 测试
 
+2026-10-15起PDF入口和拆页入口主表均复用ZH14列输出契约，ABB/XMZ同样包含两端坐标列；业务备注只取remark，读取依据保留在记录JSON。坐标读取要求和图像expected已同步，旧结果不自动补坐标或改写。ABB1.1.4/XMZ0.1.2应使用新输出目录复测，避免混用旧Profile指纹。见[统一记录](./changelog/2026-10-15-unified-table-coordinates.md)。
+
 入口：`services/agent/scripts/run_stage2_groups.py`。读取已有拆分页和图纸索引，不调用 Stage 1、不重新渲染 PDF、不创建项目、数据库客户端、队列或 Storage 上传。
 
 该脚本默认绑定本地ZH，可用`--profile`切换本地规则键；模型适配器和确定性策略均按Profile.adapter绑定。其他模板资源缺失时告警后跳过，选中的规则无效仍停止。服务主入口的严格Profile加载不变，见[切换说明](./changelog/2026-10-15-local-profile-cli.md)。
@@ -58,7 +60,9 @@
 
 `--groups`、`--pages-dir`、`--index`、`--output-dir` 可覆盖默认范围；`--max-source-pages 1` 可缩小试跑，但不代表全组验收。`--run-id` 默认稳定，以便在同输出目录恢复完成页。Profile/模型/请求配置或图片改变会使旧完成页缓存失效。
 
-双图请求默认 `--completion-max-side 3000`，复用现有缩图工具将最长边按 2 的幂次缩至上限内，仅在 `model_images/` 保存临时请求图，不改原拆分页；初扫仍使用原图。0 表示保持原图，但可能超出模型视觉预算。成功模型响应以完整请求的模型/消息/选项摘要缓存，避免页内失败恢复反复付费；不会保存请求图片 URL 或密钥。每轮调用日志使用独立目录保留错误历史。
+双图请求默认`--completion-max-side 0`，关闭额外的前置缩放，统一按输入图优先的像素预算处理。0不代表绕过预算：实际图仍受`AGENT_MODEL_INPUT_MAX_IMAGE_SIDE`及总像素上限约束；Few-shot先压缩到`AGENT_MODEL_FEWSHOT_MIN_IMAGE_SIDE`下限，仍超预算则整组删例，实际图自身超预算才缩小它。显式设置`--completion-max-side`仍可额外预缩放。原拆分页不改，坐标保持归一化。
+
+成功响应按模型/消息/选项摘要缓存；图像预算策略与配置也进入完成页指纹，变更后不会复用旧完成页。复测使用新输出目录。`model_calls`记录实际发送尺寸、保留/删除案例数和是否因总预算缩小实际图，不保存请求图片URL或密钥。每轮日志使用独立目录保留历史。
 
 提取已完成、仅重新导出时：
 
@@ -92,3 +96,6 @@
 ```
 
 14 项离线冒烟覆盖来源范围、跨组同名图片、跨页目标、本地字段/空色标/空值与零、数据库隔离、目标页 0 占位归一化，以及 Stage 2 原有闭环边界。本次真实 12 页结果共 121 条，其中 31 条待复核；详见 [执行记录](./changelog/2026-10-13-local-stage2-groups.md)，不以此替代字段准确率验收。
+## 模型输出诊断补充（2026-10-15）
+
+PDF入口每次调用的响应保存在本次输出目录`model_calls/*.json`，包括`response_content`、`response_char_count`、`finish_reason`、`usage`与阶段/图片尺寸metadata。此文件只表示服务端返回，不表示内部JSON通过；不记录请求图片或认证，不写数据库。`finish_reason=length`配合不完整JSON可确认长度受限；缺失原因时不能仅看解析位置猜截断。ABB现在也收到共享JSON Schema，ZH特有说明仍隔离；不自动开启服务商JSON模式或增加token额度/付费重试次数。

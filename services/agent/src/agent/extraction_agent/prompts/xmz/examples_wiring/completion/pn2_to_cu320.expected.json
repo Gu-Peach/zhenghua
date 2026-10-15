@@ -7,7 +7,12 @@
     "terminal_board": "X150",
     "terminal_code": "X150",
     "terminal_strip": null,
-    "terminal": "X150:P1"
+    "terminal": "X150:P1",
+    "terminal_coordinates": {
+      "x": 0.66843,
+      "y": 0.5952,
+      "pdf_page_number": 7
+    }
   },
   "current": null,
   "current_basis": null,

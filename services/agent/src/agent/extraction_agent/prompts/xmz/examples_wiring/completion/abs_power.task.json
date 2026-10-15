@@ -21,7 +21,12 @@
       "terminal_board": "X3",
       "terminal_code": null,
       "terminal_strip": null,
-      "terminal": "X3:33"
+      "terminal": "X3:33",
+      "terminal_coordinates": {
+        "x": 0.79449,
+        "y": 0.76312,
+        "pdf_page_number": 3
+      }
     },
     "end": null,
     "references": [

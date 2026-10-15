@@ -12,6 +12,7 @@ from src.agent.extraction_agent.agents.page_classifier import PageClassifierAgen
 from src.agent.extraction_agent.agents.page_scanner import PageScannerAgent
 from src.config import AgentSettings
 from src.domain.enums import AgentStage
+from src.domain.ports import TraceStore
 from src.agent.extraction_agent.domain.models.extraction import ExtractionExecutionResult
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionRequest,
@@ -47,6 +48,7 @@ from src.agent.extraction_agent.application.document_extraction.settings import 
 )
 from src.agent.extraction_agent.application.extraction_stage_factory import build_extraction_stage_dispatcher
 from src.agent.extraction_agent.application.stage_persistence import DurableExtractionSession
+from src.agent.extraction_agent.infrastructure.document.model_images import IMAGE_BUDGET_POLICY_VERSION
 
 ProgressCallback = Callable[[str], None]
 
@@ -97,6 +99,7 @@ class ExtractionStageGraphClient:
         output_dir: Path,
         cancellation: CancellationToken | None = None,
         durable: DurableExtractionSession | None = None,
+        image_budget: dict[str, Any] | None = None,
     ) -> None:
         self._run_id = run_id
         self._project_id = project_id
@@ -104,13 +107,17 @@ class ExtractionStageGraphClient:
         self._output_dir = output_dir
         self._cancellation = cancellation
         self._durable = durable
+        self._image_budget = dict(image_budget or {})
         self._classified_page_paths: dict[int, Path] = {}
         self._classifier = PageClassifierAgent(stages=stages)
         self._scanner = PageScannerAgent(stages=stages)
 
     @property
     def workflow_fingerprint(self) -> dict[str, Any]:
-        return {"run_id": self._run_id, "profile": self._profile.profile.model_dump(mode="json")}
+        fingerprint: dict[str, Any] = {"run_id": self._run_id, "profile": self._profile.profile.model_dump(mode="json")}
+        if self._image_budget:
+            fingerprint["image_budget"] = self._image_budget
+        return fingerprint
 
     def check_cancelled(self) -> None:
         self._raise_if_cancelled()
@@ -296,6 +303,7 @@ async def run_page_workflow_extraction(
     progress: ProgressCallback | None = None,
     cancellation: CancellationToken | None = None,
     durable: DurableExtractionSession | None = None,
+    trace_store: TraceStore | None = None,
 ) -> PageWorkflowRunResult:
     """Run classification followed by the Agent's Stage 2 page workflow.
 
@@ -321,7 +329,10 @@ async def run_page_workflow_extraction(
 
     workflow_settings = DocumentExtractionSettings.from_agent(settings, max_pdf_pages=max_pdf_pages)
     policy = default_extraction_policies().resolve(profile.adapter)
-    stage_dispatcher = build_extraction_stage_dispatcher(settings)
+    stage_dispatcher = (
+        build_extraction_stage_dispatcher(settings, trace_store=trace_store)
+        if trace_store is not None else build_extraction_stage_dispatcher(settings)
+    )
     graph_client = ExtractionStageGraphClient(
         run_id=run_id,
         project_id=project_id,
@@ -330,6 +341,13 @@ async def run_page_workflow_extraction(
         output_dir=output_dir,
         cancellation=cancellation,
         durable=durable,
+        image_budget={
+            "policy": IMAGE_BUDGET_POLICY_VERSION,
+            "input_max_side": settings.model_input_max_image_side,
+            "max_total_pixels": settings.model_max_total_image_pixels,
+            "few_shot_max_side": settings.model_fewshot_max_image_side,
+            "few_shot_min_side": settings.model_fewshot_min_image_side,
+        },
     )
 
     report("starting PDF rendering and Stage 2 page extraction workflow")

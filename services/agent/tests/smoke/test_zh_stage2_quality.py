@@ -112,7 +112,11 @@ def test_fake_vlm_contract_and_receiver_filter(tmp_path: Path) -> None:
             ]
         )
         image = tmp_path / "source.png"
-        image.write_bytes(b"fake query image")
+        import pymupdf
+
+        query = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 32, 16), False)
+        query.clear_with(255)
+        image.write_bytes(query.tobytes("png"))
         adapter = ZhVlmExtractionStageAdapter(AgentSettings(default_model="fake"), gateway)
         result = await PageScannerAgent(stages=adapter).run(
             PageScanRequest(

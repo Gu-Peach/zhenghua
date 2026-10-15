@@ -43,7 +43,7 @@ def test_abb_resources_are_independent_and_ready(tmp_path: Path) -> None:
     registry.load_all()
     abb = registry.resolve("abb")
     assert abb.manifest.status == ProfileStatus.ACTIVE
-    assert abb.manifest.version == "1.1.3"
+    assert abb.manifest.version == "1.1.4"
     assert abb.manifest.adapter == "abb_native"
     assert "full_document_extraction" in abb.manifest.capabilities
     assert all("prompts/zh" not in str(path).replace("\\", "/") for path in abb.resolved_resources.values())
@@ -125,6 +125,10 @@ def test_abb_package_routes_all_three_stages_without_zh_rules() -> None:
         assert result1.drawing_page_number == 205
         assert result2.drawing_function == "LV11"
         assert result3.end and result3.end.terminal == "2"
+        schema = json.loads(gateway.calls[1].messages[0]["content"].split("输出 JSON Schema：\n", 1)[1])
+        assert "DrawingEndpoint" in schema["$defs"]
+        assert "ZH" not in schema["$defs"]["DrawingEndpoint"]["properties"]["device"].get("description", "")
+        assert "endpoint_role" not in schema["$defs"]["ScannedConnection"].get("required", [])
         assert all(call.metadata["profile"] == "abb" for call in gateway.calls)
         request_text = "\n".join(
             str(message["content"])
@@ -156,7 +160,7 @@ def test_page_scan_uses_one_full_page_with_cross_page_connections() -> None:
     assert len(examples) == 3
     example = examples[0]
     data = PageScanData.model_validate_json(example.expected_json)
-    assert data.pdf_page_number is None
+    assert data.pdf_page_number == 1
     assert len(example.images) == 1 and example.images[0].content == (RESOURCES / "1.png").read_bytes()
     assert example.images[0].note and "不是整页穷举结果" in example.images[0].note
     assert len(data.units) == 1 and data.units[0].wire_number is None
@@ -173,6 +177,8 @@ def test_page_scan_uses_one_full_page_with_cross_page_connections() -> None:
         assert connection.references[0].target_drawing_page == 241
         assert connection.references[0].target_function is None
         assert connection.current is None
+        assert connection.start and connection.start.terminal_coordinates
+        assert connection.start.terminal_coordinates.pdf_page_number == 1
 
 
 def test_circle_examples_keep_direct_segments_and_source_sheet_numbers() -> None:

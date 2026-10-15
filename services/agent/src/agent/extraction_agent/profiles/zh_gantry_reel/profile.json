@@ -1,7 +1,7 @@
 {
   "manifest_version": 1,
   "key": "zh_gantry_reel",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "display_name": "振华大车卷盘（SH.NO. 网格页标）",
   "description": "Local experimental grid-sheet drawing profile derived from 1002001693; no remote publication or real-VLM acceptance.",
   "status": "experimental",

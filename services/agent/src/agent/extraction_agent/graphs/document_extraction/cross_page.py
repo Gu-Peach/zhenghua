@@ -14,6 +14,7 @@ from src.agent.extraction_agent.domain.models.wiring import (
     WireRecord,
     parse_wire_unit,
 )
+from src.agent.extraction_agent.domain.table_output import TABLE_HEADERS as TABLE_HEADERS
 from src.agent.extraction_agent.graphs.document_extraction.helpers import (
     _find_connection,
     _is_fatal_model_request_error,
@@ -27,20 +28,6 @@ from src.agent.extraction_agent.infrastructure.document.checkpoint import (
     _load_cross_page_checkpoint,
     _write_cross_page_checkpoint,
 )
-
-TABLE_HEADERS = [
-    "页码",
-    "原理号",
-    "端子排",
-    "起点代号",
-    "起点描述",
-    "起点端子",
-    "终点代号",
-    "终点描述",
-    "终点端子",
-    "电流",
-    "备注",
-]
 
 
 def _build_cross_page_tasks_node(state: GraphState, runtime: GraphRuntime) -> dict[str, Any]:

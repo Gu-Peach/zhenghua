@@ -42,7 +42,7 @@ class NativeVlmStageTests(unittest.TestCase):
             )
             with tempfile.TemporaryDirectory() as temporary:
                 image = Path(temporary) / "source.png"
-                image.write_bytes(b"image")
+                image.write_bytes(_query_png())
                 with self.assertRaisesRegex(ModelGatewayError, "model rejected image"):
                     await adapter.classify_page(
                         PageClassificationRequest(
@@ -80,8 +80,8 @@ class NativeVlmStageTests(unittest.TestCase):
             with tempfile.TemporaryDirectory() as temporary:
                 source = Path(temporary) / "source.png"
                 target = Path(temporary) / "target.png"
-                source.write_bytes(b"source image")
-                target.write_bytes(b"target image")
+                source.write_bytes(_query_png())
+                target.write_bytes(_query_png())
                 source_page = DrawingPageInput(pdf_page_number=12, image_path=source)
                 target_page = DrawingPageInput(pdf_page_number=13, image_path=target)
 
@@ -144,7 +144,8 @@ class NativeVlmStageTests(unittest.TestCase):
             self.assertEqual(len(stage2_examples), 5)
             self.assertTrue(all(max(_png_dimensions(part)) <= 1800 for part in stage2_examples))
             stage2_input = gateway.calls[1].messages[-1]["content"][-1]
-            self.assertEqual(_decode_image_part(stage2_input), b"source image")
+            self.assertTrue(max(_png_dimensions(stage2_input)) <= 32)
+            self.assertLessEqual(gateway.calls[1].metadata["vision_total_pixels"], 6_000_000)
 
             stage3_examples = _example_image_parts(gateway.calls[2].messages)
             self.assertEqual(len(stage3_examples), 2)
@@ -163,12 +164,20 @@ class NativeVlmStageTests(unittest.TestCase):
                 ),
                 3,
             )
-            self.assertEqual(
-                [_decode_image_part(part) for part in gateway.calls[2].messages[-1]["content"][1:]],
-                [b"target image"],
-            )
+            self.assertTrue(all(
+                max(_png_dimensions(part)) <= 32
+                for part in gateway.calls[2].messages[-1]["content"][1:]
+            ))
 
         asyncio.run(run())
+
+
+def _query_png() -> bytes:
+    import pymupdf
+
+    pixmap = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 32, 16), False)
+    pixmap.clear_with(255)
+    return pixmap.tobytes("png")
 
 
 def _contains_image(message: dict) -> bool:

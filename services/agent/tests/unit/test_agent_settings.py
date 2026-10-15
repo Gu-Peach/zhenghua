@@ -49,6 +49,9 @@ class AgentSettingsTests(unittest.TestCase):
             "VLM_RETRY_MAX_BACKOFF_SECONDS": "4",
             "VLM_MAX_TOKENS": "4096",
             "AGENT_MODEL_FEWSHOT_MAX_IMAGE_SIDE": "1600",
+            "AGENT_MODEL_FEWSHOT_MIN_IMAGE_SIDE": "900",
+            "AGENT_MODEL_INPUT_MAX_IMAGE_SIDE": "2304",
+            "AGENT_MODEL_MAX_TOTAL_IMAGE_PIXELS": "5000000",
             "VLM_USE_RESPONSE_FORMAT": "true",
             "VLM_ENABLE_THINKING": "false",
             "VLM_PDF_RENDER_DPI": "360",
@@ -72,6 +75,9 @@ class AgentSettingsTests(unittest.TestCase):
         self.assertEqual(settings.model_retry_max_backoff_seconds, 4)
         self.assertEqual(settings.model_max_tokens, 4096)
         self.assertEqual(settings.model_fewshot_max_image_side, 1600)
+        self.assertEqual(settings.model_fewshot_min_image_side, 900)
+        self.assertEqual(settings.model_input_max_image_side, 2304)
+        self.assertEqual(settings.model_max_total_image_pixels, 5_000_000)
         self.assertTrue(settings.model_json_mode)
         self.assertFalse(settings.model_enable_thinking)
         self.assertEqual(settings.extraction_render_dpi, 360)

@@ -19,6 +19,7 @@ from src.agent.extraction_agent.application.page_workflow_extraction import (  #
 )
 from src.config import AgentSettings  # noqa: E402
 from src.domain.errors import AgentServiceError  # noqa: E402
+from src.agent.extraction_agent.infrastructure.document.model_traces import LocalModelTraceStore  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -63,6 +64,8 @@ async def main() -> int:
         "memory-only; database_upload=false, storage_upload=false; "
         f"timeout={settings.model_timeout_seconds}s"
     )
+    trace_store = LocalModelTraceStore(args.output_dir.resolve() / "model_calls")
+    print(f"Model response diagnostics: {trace_store.directory}")
     try:
         result = await run_page_workflow_extraction(
             pdf_path=pdf_path,
@@ -72,6 +75,7 @@ async def main() -> int:
             run_id=run_id,
             project_id=project_id,
             max_pdf_pages=max_pdf_pages,
+            trace_store=trace_store,
             progress=lambda message: print(f"[agent] {message}"),
         )
     except AgentServiceError as exc:

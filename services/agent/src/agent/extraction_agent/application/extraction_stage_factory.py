@@ -3,6 +3,7 @@ from __future__ import annotations
 from src.config import AgentSettings
 from src.harness.model_gateway import ModelGateway, OpenAICompatibleModelGateway
 from src.harness.retry import RetryPolicy
+from src.domain.ports import TraceStore
 from src.agent.extraction_agent.infrastructure.abb_vlm_stages import AbbVlmExtractionStageAdapter
 from src.agent.extraction_agent.infrastructure.zh_gantry_reel_vlm_stages import ZhGantryReelVlmAdapter
 from src.agent.extraction_agent.infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
@@ -13,6 +14,7 @@ def build_extraction_stage_dispatcher(
     settings: AgentSettings,
     *,
     gateway: ModelGateway | None = None,
+    trace_store: TraceStore | None = None,
 ) -> ProfileBoundStageDispatcher:
     """Build profile-specific stage adapters using the agent's own model gateway."""
     if not settings.model_configured and gateway is None:
@@ -23,6 +25,7 @@ def build_extraction_stage_dispatcher(
         api_key=settings.model_api_key,
         default_model=settings.default_model or "",
         timeout_seconds=settings.model_timeout_seconds,
+        trace_store=trace_store,
         retry_policy=RetryPolicy(
             max_retries=settings.model_max_retries,
             initial_backoff_seconds=settings.model_retry_initial_backoff_seconds,

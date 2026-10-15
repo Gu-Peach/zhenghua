@@ -1,4 +1,4 @@
-# Stage 2内部节点：定向连接补全（XMZ 0.1.1）
+# Stage 2内部节点：定向连接补全（XMZ 0.1.2）
 
 接收来源图、目标图和task_context，只补任务指定放线段的终点。
 
@@ -10,3 +10,9 @@
 6. 电流遵守初扫约束：三相断路器对应相线优先Ir，其次单一明确In/Ie，需单位和原文依据；其他连接无依据不填。来源已有current时输出current=null表示保留。
 
 只输出符合CrossPageCompletionData JSON Schema的JSON，包含task_id、end、status、needs_review及可见信息；source_note简述图中匹配路径，不输出start或新增连接。
+
+## 端子图片坐标
+
+每个可见start/end填写terminal_coordinates={"x":0.2,"y":0.5,"pdf_page_number":1}，记录实际端子符号或连接点中心。以整张图片左上角为(0,0)，向右x、向下y增大，分别除以整图宽高归一化到0到1；等比例缩放不改变归一化位置。不能填放线标记、文字或箭头坐标，不按编号或外部表推算。端子未知或无法定位时为null。
+
+初扫同页可见两端使用当前输入图片的PDF物理页号；跨页end仍为null。内部补全仅读取目标实际端子坐标，使用目标图PDF物理页，保留来源起点坐标。Sheet/SH.NO.不是PDF物理页号。

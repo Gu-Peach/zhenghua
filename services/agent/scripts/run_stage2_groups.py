@@ -47,25 +47,14 @@ from src.harness.model_gateway import (  # noqa: E402
 from src.harness.retry import RetryPolicy  # noqa: E402
 from src.agent.extraction_agent.infrastructure.document.checkpoint import _write_json_atomic  # noqa: E402
 from src.agent.extraction_agent.infrastructure.zh_vlm_stages import _prepare_few_shot_image  # noqa: E402
+from src.agent.extraction_agent.infrastructure.document.model_images import IMAGE_BUDGET_POLICY_VERSION  # noqa: E402
 from src.profiles import ProfileRegistry, ProfileRegistryError  # noqa: E402
 from src.agent.extraction_agent.profiles.extraction_policy import default_extraction_policies  # noqa: E402
 
-HEADERS = [
-    "页码",
-    "原理号",
-    "端子排",
-    "起点元件",
-    "起点描述",
-    "起点端子",
-    "终点元件",
-    "终点描述",
-    "终点端子",
-    "电流",
-    "色标",
-    "备注",
-    "起点端子坐标",
-    "终点端子坐标",
-]
+
+
+from src.agent.extraction_agent.domain.table_output import TABLE_HEADERS as HEADERS  # noqa: E402
+from src.agent.extraction_agent.domain.table_output import TABLE_STYLE, table_row  # noqa: E402
 
 
 def load_pages(
@@ -241,6 +230,7 @@ class RecordingGateway:
                     duration_seconds=0,
                     attempts=0,
                     usage={},
+                    finish_reason=saved.get("finish_reason"),
                 )
                 cache_hit = True
             else:
@@ -253,6 +243,7 @@ class RecordingGateway:
                             "content": result.content,
                             "model": result.model,
                             "usage": result.usage,
+                            "finish_reason": result.finish_reason,
                         },
                     )
             return result
@@ -276,12 +267,25 @@ class RecordingGateway:
                 "call": len(self.calls) + 1,
                 "model": result.model if result else self.model,
                 "stage": request.metadata.get("stage"),
+                "vision_images": request.metadata.get("vision_images"),
+                "vision_total_pixels": request.metadata.get("vision_total_pixels"),
+                "vision_budget_policy": request.metadata.get("vision_budget_policy"),
+                "vision_image_count": request.metadata.get("vision_image_count"),
+                "vision_input_max_side": request.metadata.get("vision_input_max_side"),
+                "vision_max_total_pixels": request.metadata.get("vision_max_total_pixels"),
+                "vision_few_shot_min_side": request.metadata.get("vision_few_shot_min_side"),
+                "vision_few_shot_cases_before": request.metadata.get("vision_few_shot_cases_before"),
+                "vision_few_shot_cases_after": request.metadata.get("vision_few_shot_cases_after"),
+                "vision_dropped_few_shot_cases": request.metadata.get("vision_dropped_few_shot_cases"),
+                "vision_input_reduced_for_budget": request.metadata.get("vision_input_reduced_for_budget"),
                 "item_id": request.metadata.get("item_id"),
                 "duration_seconds": round(perf_counter() - started, 3),
                 "error_type": error,
                 "error_details": diagnostic,
                 "cache_hit": cache_hit,
                 "usage": result.usage if result else {},
+                "finish_reason": result.finish_reason if result else None,
+                "response_char_count": len(result.content) if result else None,
                 "attempts": result.attempts if result else None,
                 "response_content": result.content if result else None,
             }
@@ -294,33 +298,7 @@ class RecordingGateway:
 
 
 def table_rows(records: list[dict[str, Any]]) -> list[list[Any]]:
-    rows = []
-    for record in records:
-        function, number = record.get("drawing_function"), record.get("drawing_page_number")
-        page = (
-            f"{str(function).replace('.', '')}{int(number):02d}" if function and number is not None else None
-        )
-        rows.append(
-            [
-                page,
-                record.get("line_number"),
-                record.get("terminal_strip"),
-                record.get("start_device") or record.get("start_location"),
-                record.get("start_name"),
-                record.get("start_terminal"),
-                record.get("end_device") or record.get("end_location"),
-                record.get("end_name"),
-                record.get("end_terminal"),
-                record.get("current"),
-                None,
-                record.get("remark"),
-                json.dumps(record["start_terminal_coordinates"], ensure_ascii=False)
-                if record.get("start_terminal_coordinates") is not None else None,
-                json.dumps(record["end_terminal_coordinates"], ensure_ascii=False)
-                if record.get("end_terminal_coordinates") is not None else None,
-            ]
-        )
-    return rows
+    return [table_row(record) for record in records]
 
 
 def model_statistics(output: Path) -> dict[str, Any]:
@@ -374,11 +352,11 @@ def template_style(path: Path) -> dict[str, Any]:
         font = styles.find("m:fonts", ns)[int(style.get("fontId", "0"))]
         name, size = font.find("m:name", ns), font.find("m:sz", ns)
         return {
-            "font": name.get("val") if name is not None else "宋体",
-            "size": float(size.get("val")) if size is not None else 9,
-            "widths": [*widths, 42, 42],
-            "body_height": 21.6,
-            "header_fill": "#C0C0C0",
+            "font": name.get("val") if name is not None else TABLE_STYLE["font"],
+            "size": float(size.get("val")) if size is not None else TABLE_STYLE["size"],
+            "widths": [*widths, *TABLE_STYLE["widths"][-2:]],
+            "body_height": TABLE_STYLE["body_height"],
+            "header_fill": TABLE_STYLE["header_fill"],
         }
 
 
@@ -513,7 +491,11 @@ async def execute(args: argparse.Namespace, *, stages: Any | None = None) -> dic
                 "max_tokens": settings.model_max_tokens,
                 "thinking": settings.model_enable_thinking,
                 "fewshot_side": settings.model_fewshot_max_image_side,
-                "completion_max_side": getattr(args, "completion_max_side", 3000),
+                "fewshot_min_side": settings.model_fewshot_min_image_side,
+                "image_budget_policy": IMAGE_BUDGET_POLICY_VERSION,
+                "input_max_side": settings.model_input_max_image_side,
+                "total_image_pixels": settings.model_max_total_image_pixels,
+                "completion_max_side": getattr(args, "completion_max_side", 0),
             },
             run_id=args.run_id,
             project_id="local-stage2-test",
@@ -607,8 +589,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--completion-max-side",
         type=int,
-        default=3000,
-        help="Limit the two completion query images; leave original page files unchanged",
+        default=0,
+        help="Optional extra completion pre-cap; 0 uses the common input and pixel limits only",
     )
     parser.add_argument(
         "--export-only", action="store_true", help="Export existing records without model calls"

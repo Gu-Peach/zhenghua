@@ -10,6 +10,7 @@ from src.agent.extraction_agent.application.document_extraction.runtime import (
 from src.agent.extraction_agent.domain.models.wiring import (
     WireRecord,
 )
+from src.agent.extraction_agent.domain.table_output import TABLE_HEADERS, table_row
 from src.agent.extraction_agent.graphs.document_extraction.helpers import (
     _attach_drawing_page,
 )
@@ -22,20 +23,6 @@ from src.agent.extraction_agent.infrastructure.document.checkpoint import (
 from src.agent.extraction_agent.infrastructure.document.excel import (
     table_to_xlsx_bytes,
 )
-
-TABLE_HEADERS = [
-    "页码",
-    "原理号",
-    "端子排",
-    "起点代号",
-    "起点描述",
-    "起点端子",
-    "终点代号",
-    "终点描述",
-    "终点端子",
-    "电流",
-    "备注",
-]
 
 
 def _assemble_table_node(state: GraphState, runtime: GraphRuntime) -> dict[str, Any]:
@@ -113,24 +100,8 @@ def _assemble_table_node(state: GraphState, runtime: GraphRuntime) -> dict[str, 
 
 
 def _record_to_table_row(record: WireRecord) -> list[Any]:
-    """Map one concrete connection to the exact 11-column frontend table."""
-    drawing_page = _table_page_label(record)
-    start_terminal = _table_terminal(record.start_device, record.start_terminal)
-    end_terminal = _table_terminal(record.end_device, record.end_terminal)
-    remark = record.remark or record.source_note
-    return [
-        drawing_page,
-        record.line_number or record.wire_number,
-        record.terminal_strip,
-        record.start_location or record.start_device,
-        record.start_name or record.start_part,
-        start_terminal,
-        record.end_location or record.end_device,
-        record.end_name or record.end_part,
-        end_terminal,
-        record.current,
-        remark,
-    ]
+    """Map a normalized connection to the shared 14-column main table."""
+    return table_row(record.model_dump(mode="json"))
 
 
 def _table_record_page_sort_key(record: WireRecord) -> tuple[str, int, int]:

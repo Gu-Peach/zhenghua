@@ -163,7 +163,19 @@ $env:PYTHONPATH="services/agent;."
 
 ## 三阶段提取
 
+所有模板主表统一为14列：页码、原理号、端子排、起点元件、起点描述、起点端子、终点元件、终点描述、终点端子、电流、色标（空）、备注、起点端子坐标、终点端子坐标。公共Graph、本地PDF/拆页入口及原生XLSX共用domain/table_output.py，默认样式沿用ZH基线，固定下游业务导入模板另保留自身格式。元件取device优先、位置为回退；描述不混入part，备注不自动混入source_note，实际端子值不在某个入口额外加设备前缀。
+
+ABB1.1.4、XMZ（zh_gantry_reel）0.1.2与ZH一样要求实际端子坐标：整张图左上为原点的0到1归一化x/y，以及该端所在图片PDF物理页号；补全目标来自目标图，起点坐标冻结。原图等比例缩放不改变坐标系，未知端子/无法定位时null。样例按图片目视标注近似位置，真实坐标精度待复测。旧结果不被覆盖，缺失坐标不能自动补回；新Profile版本应使用新输出目录，避免旧完成页指纹冲突。
+
+所有模板均接收共享Pydantic JSON Schema；`enforce_evidence_contract`仅控制ZH专属语义说明/校验，不再让ABB漏掉输出契约。服务商`response_format`仍由`AGENT_MODEL_JSON_MODE`显式控制，不自动打开。JSON语法重试包含错误位置；明确`finish_reason=length`且JSON不完整时停止并报告长度限制，不静默修补或截取部分结果。
+
+本地`run_page_workflow_extraction.py`在输出目录`model_calls/`保存每次模型原始响应、`finish_reason`、token用量及阶段/图片尺寸metadata，格式失败的返回也保留。日志为传输层结果，不表示内部提取JSON已校验通过；不保存请求消息、认证或图片base64，不写数据库。服务端未提供停止原因时为null，不能仅凭报错字符位置认定截断。旧失败运行没有保存的原始响应无法补回；需要用户重新运行，诊断文件不提交仓库。
+
 Stage 2/3 会保留 manifest 中的图像 Few-shot，但发送给模型前会将最长边超过 `AGENT_MODEL_FEWSHOT_MAX_IMAGE_SIDE` 的样例图按 2 的幂次缩小，默认最长边不超过 1800 像素。磁盘中的案例图片和待提取原图不变；该配置只控制 Few-shot 请求图像大小。
+
+2026-10-15图片预算改为实际输入优先：分类、初扫和双图补全先保留`AGENT_MODEL_INPUT_MAX_IMAGE_SIDE=2048`上限内的实际图，Few-shot分享`AGENT_MODEL_MAX_TOTAL_IMAGE_PIXELS=6000000`总预算的剩余部分。先压缩案例；其最长边缩到`AGENT_MODEL_FEWSHOT_MIN_IMAGE_SIDE=768`下限仍放不下时，从末尾整组移除案例图/任务与expected，保留现有manifest靠前顺序，不拆散双图或留下孤立答案。只有去掉所有案例后实际图自身仍超预算，才进一步缩小实际图。原图不放大/裁剪/改写，归一化坐标不变。
+
+metadata与本地日志记录`vision_budget_policy=input_first_v1`、实际发送尺寸、案例保留/删除数量和索引、实际图是否额外缩小；策略/配置进入完成页指纹。分组CLI默认`--completion-max-side 0`，由统一预算层处理实际图，显式设置该参数仍可额外预缩放。原图更小则不放大，当前2048px和600万像素上限未自动提高，像素预算仍不等于供应商私有patch公式。修改无需重新拆页，复测使用新输出目录；本轮未运行测试/真实模型。详见[设计/交付](../../docs/service/agent/model-image-budget-plan.md)。
 
 Stage 2 的完整入口为 `graphs/document_extraction/page_extraction.py` 中的 `run_page_extraction`，可包装为主 Agent 的工具/子 Agent；初扫模型节点 `run_page_scan` 不是完整提取入口。文档级入口为 `application/page_workflow_extraction.py::run_page_workflow_extraction`。
 

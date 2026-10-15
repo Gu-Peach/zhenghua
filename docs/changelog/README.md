@@ -2,6 +2,14 @@
 
 ## 2026-10-15
 
+- 公共提取图像预算改为实际图优先：压缩/整组减少Few-shot，输入自身超限才继续缩小；新增案例下限配置、删例metadata及缓存指纹，现有输入/总预算上限保留。仅静态检查，不运行模型或写库。见[Agent记录](../service/agent/changelog/2026-10-15-input-first-image-budget.md)。
+
+- 所有模板主表对齐ZH14列（含色标空列/两端坐标），公共Graph、原生XLSX及本地脚本共用行映射和默认样式；ABB1.1.4/XMZ0.1.2补齐通用坐标说明/图像expected，未知留空。仅静态检查，不改数据库、不发布或覆盖旧结果。见[ADR-0019](../adr/0019-unified-extraction-table.md)与[Agent记录](../service/agent/changelog/2026-10-15-unified-table-coordinates.md)。
+
+- 通用提取JSON Schema始终注入，ABB不再因关闭ZH专属约束而缺失字段契约；本地PDF入口新增文件型模型响应诊断，记录停止原因/用量，明确长度停止时避免重复格式重试。内部ModelResponse增加可选finish_reason，外部业务API不变；静态检查无新增lint，不跑测试/模型或写库。见[Agent记录](../service/agent/abb-output-contract-fix.md)。
+
+- 公共提取模型请求统一控制实际图与案例图预算：实际图最长边2048px，请求总像素默认600万，保留原图/整图归一化坐标并记录发送尺寸，支持配置调节。静态检查无新增lint，未运行测试/真实模型或写库，服务商patch预算仍待实际复测。见[Agent记录](../service/agent/model-image-budget-plan.md)。
+
 - ABB本地1.1.3按用户确认纠正为小圆圈放线、大圆圈端子，同段双标记只记一条；原理号标记数字或完整端子直接拼来源Sheet，更新图片expected及内部双图补全。静态检查通过，未运行测试/模型、不写库或发布。见[Agent修订记录](../service/agent/abb-circle-rule-update.md)。
 
 - 本地PDF/拆页测试CLI支持--profile/--model及对应策略，强制内存/本地资源、不写库；帮助命令和三种模板只读绑定通过，未运行模型或提取。见[Agent记录](../service/agent/changelog/2026-10-15-local-profile-cli.md)。

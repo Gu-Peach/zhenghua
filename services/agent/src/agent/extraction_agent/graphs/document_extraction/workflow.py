@@ -7,6 +7,7 @@ from collections.abc import Callable, Iterable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
+from src.agent.extraction_agent.domain.table_output import TABLE_HEADERS as TABLE_HEADERS
 from src.domain.enums import AgentStage
 
 if TYPE_CHECKING:
@@ -46,19 +47,6 @@ from src.agent.extraction_agent.profiles.extraction_policy import (
 
 ProgressCallback = Callable[[str], None]
 
-TABLE_HEADERS = [
-    "页码",
-    "原理号",
-    "端子排",
-    "起点代号",
-    "起点描述",
-    "起点端子",
-    "终点代号",
-    "终点描述",
-    "终点端子",
-    "电流",
-    "备注",
-]
 
 
 class _FallbackCompiledGraph:

@@ -1,6 +1,6 @@
 {
-  "version": 2,
-  "profile_version": "0.1.1",
+  "version": 3,
+  "profile_version": "0.1.2",
   "review_status": "image_checked_pending_user_validation",
   "cases": [
     {

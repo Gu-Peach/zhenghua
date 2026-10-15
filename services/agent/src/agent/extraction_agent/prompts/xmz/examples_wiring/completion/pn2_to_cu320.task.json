@@ -21,7 +21,12 @@
       "terminal_board": null,
       "terminal_code": null,
       "terminal_strip": null,
-      "terminal": "P2"
+      "terminal": "P2",
+      "terminal_coordinates": {
+        "x": 0.24047,
+        "y": 0.37931,
+        "pdf_page_number": 10
+      }
     },
     "end": null,
     "references": [

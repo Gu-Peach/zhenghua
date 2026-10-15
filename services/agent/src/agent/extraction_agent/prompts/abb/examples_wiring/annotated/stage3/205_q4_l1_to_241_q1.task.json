@@ -31,7 +31,12 @@
     "current": null,
     "current_basis": null,
     "current_source_text": null,
-    "start_name": "Lighting/heating panel"
+    "start_name": "Lighting/heating panel",
+    "start_terminal_coordinates": {
+      "x": 0.43389,
+      "y": 0.36136,
+      "pdf_page_number": 1
+    }
   },
   "needs_review": false
 }

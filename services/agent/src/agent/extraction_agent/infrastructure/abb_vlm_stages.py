@@ -13,6 +13,7 @@ class AbbVlmExtractionStageAdapter(ZhVlmExtractionStageAdapter):
     """ABB-only instructions with the package-bound ABB Prompt and Few-shot."""
 
     enforce_evidence_contract = False
+    zh_endpoint_semantics = False
 
     def completion_images(self, request: CrossPageCompletionRequest) -> list[DrawingPageInput]:
         return ([request.source_page] if request.source_page else []) + [request.target_page]
@@ -36,6 +37,8 @@ class AbbVlmExtractionStageAdapter(ZhVlmExtractionStageAdapter):
             "Sheet 为业务页，Cont 不是当前页；目标功能未知置空，不从源电位猜目标功能。"
             "current 仅保留直接证据的单一电流，范围、电压或系数不得推算。"
             "批注不作为业务值；没有证据置空并待复核。输出 PageScanData JSON。"
+            "可见start/end填写实际端子中心的整图归一化terminal_coordinates及当前PDF物理页，"
+            "小圆圈是放线标记，不能把它的坐标当成实际端子坐标。颜色暂不提取。"
             f"\nPDF物理页：{request.page.pdf_page_number}\n当前页上下文：{request.page_context or '无'}"
         )
 
@@ -47,5 +50,6 @@ class AbbVlmExtractionStageAdapter(ZhVlmExtractionStageAdapter):
             "遇到第一个实际端子即停止；大圆圈是端子，小圆圈不是端点。"
             "不扫描其他连接，不因目标页小圆圈重复创建连接。无法唯一确认时保留可见字段并待复核。"
             "已有电流不修改，没有直接证据不补电流。输出 CrossPageCompletionData JSON。"
+            "end.terminal_coordinates读取目标实际端子的整图归一化中心及目标PDF物理页；来源坐标冻结。"
             f"\n任务上下文：{request.task_context}\n目标PDF物理页：{request.target_page.pdf_page_number}"
         )

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 from collections.abc import Iterable, Mapping, Sequence
 from io import BytesIO
 from typing import Any
@@ -12,50 +13,9 @@ from openpyxl.utils import get_column_letter
 from src.agent.extraction_agent.domain.models.wiring import (
     WireRecord,
 )
+from src.agent.extraction_agent.domain.table_output import TABLE_HEADERS as WIRE_TABLE_HEADERS
+from src.agent.extraction_agent.domain.table_output import TABLE_STYLE, table_row
 from src.agent.extraction_agent.profiles.export_fields import PREPARED_EXPORT_FIELDS, ExportFields
-
-WIRE_TABLE_HEADERS = [
-    "线号",
-    "属性",
-    "型号",
-    "规格",
-    "长度",
-    "芯",
-    "色标",
-    "原理号",
-    "端子排",
-    "起点部位",
-    "起点元件",
-    "起点名称",
-    "起点端子",
-    "终点部位",
-    "终点元件",
-    "终点名称",
-    "终点端子",
-    "备 注",
-    "置信度",
-    "来源图片",
-    "识别依据",
-]
-
-WIRE_TABLE_HEADERS.extend(
-    [
-        "PDF source pages",
-        "source type",
-        "external source required",
-        "unit_id",
-        "connection_id",
-        "drawing source pages",
-        "status",
-        "起点端子排",
-        "终点端子排",
-        "中间端点",
-        "跨页引用",
-        "unit identity confidence",
-        "起点端子坐标",
-        "终点端子坐标",
-    ]
-)
 
 RAW_HEADERS = [
     "source_image",
@@ -154,49 +114,11 @@ def _write_wire_table(
     terminal_strip_mapping: Mapping[str, str] | None = None,
     export_fields: ExportFields = PREPARED_EXPORT_FIELDS,
 ) -> None:
+    """Write the common main table; Profiles normalize their own facts first."""
+    del terminal_strip_mapping, export_fields
     sheet.append(WIRE_TABLE_HEADERS)
     for record in records:
-        data = _record_dict(record)
-        row = [
-            _first(data, "wire_number", "wire_no", "cable_number", "cable_no"),
-            _first(data, "attribute", "property"),
-            _first(data, "model", "type", "cable_model"),
-            _first(data, "spec", "cable_spec"),
-            _first(data, "length", "cable_length"),
-            data.get("core_number"),
-            data.get("color"),
-            data.get("line_number"),
-            export_fields.terminal_strip(
-                data.get("start_device"), data.get("terminal_strip"), terminal_strip_mapping
-            ),
-            _first(data, "start_part", "start_area", "start_section"),
-            data.get("start_location") or data.get("start_device"),
-            _first(data, "start_name", "start_component_name"),
-            export_fields.terminal(data.get("start_device"), data.get("start_terminal")),
-            _first(data, "end_part", "end_area", "end_section"),
-            data.get("end_location") or data.get("end_device"),
-            _first(data, "end_name", "end_component_name"),
-            export_fields.terminal(data.get("end_device"), data.get("end_terminal")),
-            data.get("remark"),
-            data.get("confidence"),
-            data.get("source_image"),
-            data.get("source_note"),
-            _format_source_pages(data.get("source_pages")),
-            data.get("source_type"),
-            data.get("external_source_required"),
-            data.get("unit_id"),
-            data.get("connection_id"),
-            _format_string_list(data.get("drawing_source_pages")),
-            data.get("status"),
-            data.get("start_terminal_strip"),
-            data.get("end_terminal_strip"),
-            _format_json_cell(data.get("intermediate_points")),
-            _format_json_cell(data.get("references")),
-            data.get("unit_identity_confidence"),
-            _format_json_cell(data.get("start_terminal_coordinates")),
-            _format_json_cell(data.get("end_terminal_coordinates")),
-        ]
-        sheet.append([_clean_cell(value) for value in row])
+        sheet.append([_clean_cell(value) for value in table_row(_record_dict(record))])
     _style_table(sheet, len(WIRE_TABLE_HEADERS), freeze="A2")
 
 
@@ -224,6 +146,9 @@ def _write_raw_table(sheet: Any, records: Sequence[WireRecord]) -> None:
 
 
 def _style_table(sheet: Any, column_count: int, *, freeze: str) -> None:
+    if [sheet.cell(1, i).value for i in range(1, column_count + 1)] == WIRE_TABLE_HEADERS:
+        _style_main_table(sheet)
+        return
     header_fill = PatternFill("solid", fgColor="D9EAF7")
     thin = Side(style="thin", color="808080")
     border = Border(left=thin, right=thin, top=thin, bottom=thin)
@@ -243,6 +168,58 @@ def _style_table(sheet: Any, column_count: int, *, freeze: str) -> None:
         sheet.column_dimensions[letter].width = width
 
     sheet.freeze_panes = freeze
+    sheet.auto_filter.ref = sheet.dimensions
+
+
+def _style_main_table(sheet: Any) -> None:
+    """Match the ZH main-table baseline, including readable coordinate cells."""
+    border = Border(
+        **{
+            side: Side(style="thin", color="000000")
+            for side in ("left", "right", "top", "bottom")
+        }
+    )
+    for i, width in enumerate(TABLE_STYLE["widths"], start=1):
+        sheet.column_dimensions[get_column_letter(i)].width = width
+    for row in sheet.iter_rows():
+        for cell in row:
+            cell.border = border
+            cell.font = Font(
+                name=TABLE_STYLE["font"],
+                size=11 if cell.column == 12 and cell.row > 1 else TABLE_STYLE["size"],
+                bold=cell.row == 1,
+            )
+            cell.alignment = Alignment(
+                horizontal="center"
+                if cell.row == 1
+                else "right"
+                if cell.column == 10
+                else "left",
+                vertical="center" if cell.row == 1 else "top",
+                wrap_text=True,
+            )
+            if cell.column != 10:
+                cell.number_format = "@"
+            cell.fill = PatternFill(
+                "solid",
+                fgColor=TABLE_STYLE["header_fill"].lstrip("#")
+                if cell.row == 1
+                else "FFFFFF",
+            )
+        wrapped_lines = max(
+            max(
+                1,
+                math.ceil(
+                    sum(2 if ord(ch) > 255 else 1 for ch in str(cell.value or ""))
+                    / TABLE_STYLE["widths"][cell.column - 1]
+                ),
+            )
+            for cell in row
+        )
+        sheet.row_dimensions[row[0].row].height = max(
+            TABLE_STYLE["body_height"], wrapped_lines * 13 + 4
+        )
+    sheet.freeze_panes = "A2"
     sheet.auto_filter.ref = sheet.dimensions
 
 

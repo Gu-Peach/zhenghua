@@ -6,6 +6,10 @@
 
 ## 1. 重构结论
 
+2026-10-15公共图像传输策略改为输入图优先分配像素，案例先压缩/整组减少，输入自身超预算才继续缩小；无模板条件分支，原图及坐标含义不变。设计见[预算方案](./service/agent/model-image-budget-plan.md)，实现/未验收项见[记录](./service/agent/changelog/2026-10-15-input-first-image-budget.md)。
+
+2026-10-15用户要求所有模板主表对齐ZH14列，并补齐ABB/XMZ端子坐标说明/图像expected；公共Graph与CLI共用表头/行映射，固定导入模板保留独立格式。见[ADR-0019](./adr/0019-unified-extraction-table.md)，不重跑模型或覆盖旧结果。
+
 2026-10-15本地ABB1.1.3按用户确认修订为小圆圈放线、大圆圈端子，同段双标记一条连接，原理号数字或完整端子直接拼来源Sheet；跨页/Sheet.列行保持独立。设计与静态验收边界见[修订记录](./service/agent/abb-circle-rule-update.md)，未运行测试/模型或发布。
 
 2026-10-15本地ZH2.0.4以003C01替换旧接收/跨页样例，端点增加归一化坐标及本端图片物理页，最终记录/本地14列XLSX保留；坐标不影响连接身份，补全不改来源坐标。契约见[ADR-0016](./adr/0016-zh-direct-terminal-segments.md)，静态核对与未验收项见[记录](./service/agent/changelog/2026-10-15-zh-c01-terminal-coordinates.md)。

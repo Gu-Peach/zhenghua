@@ -1,5 +1,5 @@
 {
-  "pdf_page_number": null,
+  "pdf_page_number": 1,
   "drawing_function": "LV11",
   "drawing_page_number": 205,
   "drawing_object_location": "+EH.Q1.1",
@@ -29,7 +29,12 @@
             "terminal_board": null,
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "2"
+            "terminal": "2",
+            "terminal_coordinates": {
+              "x": 0.43389,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
           },
           "end": null,
           "intermediate_points": [],
@@ -73,7 +78,12 @@
             "terminal_board": null,
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "4"
+            "terminal": "4",
+            "terminal_coordinates": {
+              "x": 0.44877,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
           },
           "end": null,
           "intermediate_points": [],
@@ -117,7 +127,12 @@
             "terminal_board": null,
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "6"
+            "terminal": "6",
+            "terminal_coordinates": {
+              "x": 0.47167,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
           },
           "end": null,
           "intermediate_points": [],
@@ -161,7 +176,12 @@
             "terminal_board": null,
             "terminal_code": null,
             "terminal_strip": null,
-            "terminal": "8"
+            "terminal": "8",
+            "terminal_coordinates": {
+              "x": 0.49113,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
           },
           "end": null,
           "intermediate_points": [],

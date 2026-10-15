@@ -1,5 +1,13 @@
 # Agent 服务设计索引
 
+2026-10-15按用户要求优先保留实际输入图像素，再压缩/整组减少Few-shot；输入自身超预算才缩小，尺寸/删例metadata和缓存指纹同步。仅静态核对，未运行模型/测试。见[记录](./changelog/2026-10-15-input-first-image-budget.md)。
+
+2026-10-15所有模板主表统一ZH14列，共用表头/行映射/默认样式；ABB1.1.4/XMZ0.1.2补齐实际端子坐标Prompt与图像expected。仅静态核对，不跑测试/模型或覆盖旧结果。见[交付记录](./changelog/2026-10-15-unified-table-coordinates.md)与[ADR-0019](../../adr/0019-unified-extraction-table.md)。
+
+2026-10-15通用JSON Schema注入与ZH专属约束解耦，ABB收到完整字段契约；本地PDF入口保存原始模型响应、finish_reason和用量，明确length时不当普通JSON语法错误重试。仅静态检查无新增lint，未运行测试/模型或写库。见[修订记录](./abb-output-contract-fix.md)。
+
+2026-10-15公共提取请求补齐实际图最长边2048px与案例/实际图总计600万像素限制，保留原图和归一化坐标，metadata记录发送尺寸；仅静态检查，无新增lint，未运行测试/模型或写库。见[设计/交付](./model-image-budget-plan.md)。
+
 2026-10-15 ABB本地1.1.3纠正小圆圈放线/大圆圈端子、同段双标记只记一条，原理号数字或完整端子直接拼来源Sheet；Prompt/适配器/expected同步，未运行测试或模型。见[修订记录](./abb-circle-rule-update.md)。
 
 2026-10-15本地PDF/拆页测试入口支持--profile/--model切换规则与模型，强制内存模式；操作命令见[测试说明](./local-stage2-group-test.md)，静态验证与限制见[记录](./changelog/2026-10-15-local-profile-cli.md)。

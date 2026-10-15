@@ -3,6 +3,14 @@
 > 最后更新：2026-10-12
 > 状态含义：`planned`、`in progress`、`blocked`、`done`
 
+2026-10-15请求图片预算改为实际图优先，先压缩/整组减少案例，输入自身超限才缩小；配置、metadata和完成页指纹同步。静态语法/配置/CLI/预算模块类型与lint通过，未运行测试或模型，Phase 4质量验收仍in progress。见[记录](./service/agent/changelog/2026-10-15-input-first-image-budget.md)。
+
+2026-10-15 ZH/ABB/XMZ主表14列及默认样式统一，ABB1.1.4/XMZ0.1.2坐标契约与图像expected完成；只做静态核对，未运行测试/模型，准确率与布局仍待新目录复测，Phase 4仍in progress。见[记录](./service/agent/changelog/2026-10-15-unified-table-coordinates.md)。
+
+2026-10-15 ABB通用输出Schema与本地响应诊断修订文件完成：9份Python语法/只读绑定/Schema检查通过，无新增lint；未运行测试或真实模型，当前长JSON失败根因和修复效果仍待用户复测，Phase 4仍in progress。见[记录](./service/agent/abb-output-contract-fix.md)。
+
+2026-10-15分类/初扫/跨页补全的模型请求图片控制文件完成：实际图2048px、总计600万像素，可配置、不改原图；语法/配置与新增代码lint静态检查通过，未执行测试/真实模型，实际服务端预算与识别质量待复测，Phase 4仍in progress。见[记录](./service/agent/model-image-budget-plan.md)。
+
 2026-10-15 ABB本地1.1.3小圆圈放线、双标记合并和直接拼Sheet原理号规则/图像样例文件完成；仅静态检查，不跑测试/模型、不写库或发布，Phase 4质量验收仍in progress。见[修订记录](./service/agent/abb-circle-rule-update.md)。
 
 2026-10-15本地PDF/拆页CLI支持切换规则与模型并强制内存模式；--help及ZH/ABB/XMZ只读绑定通过，未运行测试或真实提取，Phase 4质量验收仍in progress。见[记录](./service/agent/changelog/2026-10-15-local-profile-cli.md)。

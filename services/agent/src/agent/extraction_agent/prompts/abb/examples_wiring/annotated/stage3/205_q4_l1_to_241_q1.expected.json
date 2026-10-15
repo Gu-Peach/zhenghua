@@ -8,7 +8,12 @@
     "terminal_board": "Q1",
     "terminal_code": null,
     "terminal_strip": null,
-    "terminal": "2"
+    "terminal": "2",
+    "terminal_coordinates": {
+      "x": 0.1012,
+      "y": 0.24272,
+      "pdf_page_number": 2
+    }
   },
   "intermediate_points": [],
   "current": null,

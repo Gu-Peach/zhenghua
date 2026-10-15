@@ -1,4 +1,4 @@
-# ABB Stage 2：小圆圈放线扫描（1.1.3）
+# ABB Stage 2：小圆圈放线扫描（1.1.4）
 
 只读取当前图片和页面上下文，输出PageScanData JSON。
 
@@ -28,3 +28,9 @@
 本页两端可读时填start/end；需要目标图时保留本页start，end=null、is_cross_page=cross_page、status=needs_reference，交给Stage 2内部补全。不按引用或常识猜终点。
 
 Few-shot中部分案例只示范标题指定的连接，不是整页穷举。真实任务扫描整页全部符合规则的连接。
+
+## 端子图片坐标
+
+每个可见start/end填写terminal_coordinates={"x":0.2,"y":0.5,"pdf_page_number":1}，记录实际端子符号或连接点中心。以整张图片左上角为(0,0)，向右x、向下y增大，分别除以整图宽高归一化到0到1；等比例缩放不改变归一化位置。不能填放线标记、文字或箭头坐标，不按编号或外部表推算。端子未知或无法定位时为null。
+
+初扫同页可见两端使用当前输入图片的PDF物理页号；跨页end仍为null。内部补全仅读取目标实际端子坐标，使用目标图PDF物理页，保留来源起点坐标。Sheet/SH.NO.不是PDF物理页号。

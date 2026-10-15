@@ -108,6 +108,9 @@ class AgentSettings:
     model_retry_max_backoff_seconds: float = 30.0
     model_max_tokens: int | None = None
     model_fewshot_max_image_side: int = 1800
+    model_fewshot_min_image_side: int = 768
+    model_input_max_image_side: int = 2048
+    model_max_total_image_pixels: int = 6_000_000
     model_enable_thinking: bool | None = None
     model_json_mode: bool = False
     extraction_max_pdf_pages: int = 0
@@ -232,6 +235,15 @@ class AgentSettings:
             model_fewshot_max_image_side=max(
                 1,
                 _as_int(os.getenv("AGENT_MODEL_FEWSHOT_MAX_IMAGE_SIDE"), 1800),
+            ),
+            model_fewshot_min_image_side=max(
+                1, _as_int(os.getenv("AGENT_MODEL_FEWSHOT_MIN_IMAGE_SIDE"), 768),
+            ),
+            model_input_max_image_side=max(
+                1, _as_int(os.getenv("AGENT_MODEL_INPUT_MAX_IMAGE_SIDE"), 2048),
+            ),
+            model_max_total_image_pixels=max(
+                1, _as_int(os.getenv("AGENT_MODEL_MAX_TOTAL_IMAGE_PIXELS"), 6_000_000),
             ),
             model_enable_thinking=_as_optional_bool(
                 os.getenv("AGENT_MODEL_ENABLE_THINKING", os.getenv("VLM_ENABLE_THINKING"))
