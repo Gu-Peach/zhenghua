@@ -22,5 +22,5 @@
   "current": null,
   "current_basis": null,
   "current_source_text": null,
-  "source_note": "来源中间FC12组XA:11下方斜杠沿出页引用+10F01/31.1定位同一工作区003.C/31，按003C0111匹配，入页后先到XD10:1，不继续到FC1。来源已读取Ie160A，补全current=null保留已有电流。"
+  "source_note": "以初扫保存的来源事实匹配目标图。任务中间FC12组XA:11按保存的出页引用+10F01/31.1定位同一工作区003.C/31，按003C0111匹配，入页后先到XD10:1，不继续到FC1。来源已读取Ie160A，补全current=null保留已有电流。"
 }

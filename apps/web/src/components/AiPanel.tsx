@@ -14,9 +14,10 @@ export interface AiPanelProps {
   onReconnect?: () => void;
   onClose?: () => void;
   isVisible?: boolean;
+  unavailableReason?: string;
 }
 
-export function AiPanel({ events, isRunning, hasPendingUpload, simulationEnabled, onSimulationToggle, onRunRepair, onReconnect, onClose, isVisible = true }: AiPanelProps) {
+export function AiPanel({ events, isRunning, hasPendingUpload, simulationEnabled, onSimulationToggle, onRunRepair, onReconnect, onClose, isVisible = true, unavailableReason }: AiPanelProps) {
   const [request, setRequest] = useState("");
   const feed = useRef<HTMLDivElement>(null);
   const followTail = useRef(true);
@@ -39,18 +40,18 @@ export function AiPanel({ events, isRunning, hasPendingUpload, simulationEnabled
     <aside className="ai-panel">
       <div className="ai-heading">
         <div><span className="ai-mark"><Sparkles size={17} /></span><span><strong>电气图纸与线表智能助手</strong><small>图纸解读、连接提取与线表核对</small></span></div>
-        <div className="ai-heading-actions"><span className={`agent-run-status ${isRunning ? "running" : hasPendingUpload ? "queued" : ""}`}><i />{isRunning ? "执行中" : hasPendingUpload ? "待启动" : "已就绪"}</span>{onClose ? <button type="button" onClick={onClose} aria-label="收起聊天窗口" title="收起聊天窗口"><X size={18} /></button> : null}</div>
+        <div className="ai-heading-actions"><span className={`agent-run-status ${isRunning ? "running" : hasPendingUpload ? "queued" : ""}`}><i />{unavailableReason ? "未接入" : isRunning ? "执行中" : hasPendingUpload ? "待启动" : "已就绪"}</span>{onClose ? <button type="button" onClick={onClose} aria-label="收起聊天窗口" title="收起聊天窗口"><X size={18} /></button> : null}</div>
       </div>
       <div ref={feed} className="agent-feed" role="log" aria-live="polite" aria-label="智能助手对话和任务进度" onScroll={e => { const node = e.currentTarget; followTail.current = node.scrollHeight - node.scrollTop - node.clientHeight < 80; }}>
         <div className="agent-feed-label"><span><Activity size={13} />对话与任务进度</span><small>{isRunning ? "实时更新" : ""}</small></div>
         {visibleEvents.map((event) => <AgentFeedItem key={event.id} event={event} onPlanComplete={finishPlan} />)}
-        {!events.length ? <div className="agent-feed-empty"><Activity size={22} /><strong>{hasPendingUpload ? "PDF 已上传，等待确认" : "你好，我是电气图纸与线表智能助手"}</strong><span>可以直接聊天、询问图纸知识，或上传 PDF 提取连接信息。</span></div> : null}
+        {!events.length ? <div className="agent-feed-empty"><Activity size={22} /><strong>{unavailableReason ? "提取功能待接入" : hasPendingUpload ? "PDF 已上传，等待确认" : "你好，我是电气图纸与线表智能助手"}</strong><span>{unavailableReason ?? "可以直接聊天、询问图纸知识，或上传 PDF 提取连接信息。"}</span></div> : null}
         {isRunning ? <div className="agent-streaming"><Loader2 size={14} className="spin" />助手正在回复或处理任务</div> : null}
       </div>
       <form className="agent-composer" onSubmit={submitRequest}>
-        <div className="agent-composer-heading"><span>向主 Agent 提出需求</span>{onReconnect ? <button type="button" disabled={isRunning} onClick={onReconnect}>重新连接进度</button> : null}<button type="button" disabled={isRunning} onClick={() => onSimulationToggle(true)}>新任务</button></div>
-        <textarea value={request} onChange={(event) => setRequest(event.target.value)} rows={3} placeholder="例如：线号 021M0115 的终点可能识别错了，请帮我修复" aria-label="向主 Agent 提出自然语言需求" />
-        <div className="agent-composer-footer"><small>Agent :8100 · 数据与规则修改需人工确认</small><button type="submit" disabled={!simulationEnabled || !request.trim() || isRunning} aria-label="发送给主 Agent" title="发送给主 Agent"><Send size={16} /></button></div>
+        <div className="agent-composer-heading"><span>向主 Agent 提出需求</span>{onReconnect ? <button type="button" disabled={isRunning} onClick={onReconnect}>重新连接进度</button> : null}<button type="button" disabled={isRunning || !!unavailableReason} onClick={() => onSimulationToggle(true)}>新任务</button></div>
+        <textarea disabled={!!unavailableReason} value={request} onChange={(event) => setRequest(event.target.value)} rows={3} placeholder={unavailableReason ? "提取与AI对话尚未接入" : "例如：线号 021M0115 的终点可能识别错了，请帮我修复"} aria-label="向主 Agent 提出自然语言需求" />
+        <div className="agent-composer-footer"><small>{unavailableReason ? "当前可管理项目、文件和线表" : "Agent :8100 · 数据与规则修改需人工确认"}</small><button type="submit" disabled={!!unavailableReason || !simulationEnabled || !request.trim() || isRunning} aria-label="发送给主 Agent" title="发送给主 Agent"><Send size={16} /></button></div>
       </form>
     </aside>
   );

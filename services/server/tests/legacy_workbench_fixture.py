@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+# Historical old-table/Supervisor contract fixture. New management tests live separately.
+
 import copy
 import importlib.util
 import json

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field, field_validator, model_validator
 
@@ -67,6 +68,7 @@ class ProfileExtractionRules(FrozenModel):
     dynamic_resources: dict[str, list[str]]
     business_rules: list[str] = Field(default_factory=list)
     output_contract: str = Field(min_length=1)
+    cross_page_input_mode: Literal["source_and_target", "target_only"] = "source_and_target"
 
 
 class ProfileRuleSet(FrozenModel):

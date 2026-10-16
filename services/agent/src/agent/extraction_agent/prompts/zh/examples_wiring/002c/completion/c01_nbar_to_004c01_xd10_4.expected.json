@@ -19,7 +19,7 @@
   },
   "status": "resolved",
   "needs_review": false,
-  "source_note": "来源FC13组N-BAR下方放线斜杠对应=004.C+01F35/1.1，目标入页002C0600先到XD10:4，不借用另外两组同原理号N线。",
+  "source_note": "以初扫保存的来源事实匹配目标图。来源FC13组N-BAR下方放线斜杠对应=004.C+01F35/1.1，目标入页002C0600先到XD10:4，不借用另外两组同原理号N线。",
   "current": null,
   "current_basis": null,
   "current_source_text": null

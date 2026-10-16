@@ -81,6 +81,7 @@ class DrawingEndpoint(StrictModel):
 
 class DrawingReference(StrictModel):
     raw: str | None = None
+    source_index_raw: str | None = Field(default=None, description="程序核对的来源页PDF引用原文，模型留null")
     target_function: str | None = None
     target_drawing_page: int | None = Field(default=None, ge=1)
     target_internal_page: int | None = Field(default=None, ge=1)
@@ -101,6 +102,7 @@ class ScannedConnection(StrictModel):
     core_number: int | str | None = None
     color: str | None = None
     line_number: str | None = None
+    signal_name: str | None = Field(default=None, description="对应导线或箭头旁可见的信号/电位名称，未知为空")
     current: str | int | float | None = None
     current_basis: str | None = None
     current_source_text: str | None = None

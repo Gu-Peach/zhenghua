@@ -1,5 +1,9 @@
 # Web 前端
 
+登录后直接进入工作区：有项目默认打开首个项目，无项目显示完整空工作区并可上传/登记规则。重命名和删除在左侧项目树，独立项目目录页已取消。见[入口记录](../../docs/apps/web/changelog/2026-10-16-workspace-entry.md)。
+
+2026-10-16当前为三表数据管理界面：选择规则后保存PDF、项目/JSON图纸目录、批次线表/行级CRUD与规则引用预览。上传不会启动Agent，AI输入明确未接入。刷新前需重启8000后端加载新接口；详见[交付](../../docs/apps/web/changelog/2026-10-16-simple-management.md)。下文旧聊天/规则发布说明仅为历史记录。
+
 2026-10-13 聊天微调：主面板改为“电气图纸与线表智能助手”，日常回复通过 SSE 累积到同一条对话，不显示确认卡片或刷新线表；任务说明逐字显示完后才呈现后续任务/确认卡片。上传提示使用 Stage 1/2 提取路线，流中断保留已收到文字并停止光标。详见[记录](../../docs/apps/web/changelog/2026-10-13-supervisor-chat.md)。
 
 线表智能提取系统的新前端，使用 React + Vite + TypeScript。当前默认读取真实 Server 数据，不依赖旧 `frontend/`。旧 Mock 资产保留但不参与运行。
@@ -89,6 +93,6 @@ corepack pnpm lint:web
 corepack pnpm build:web
 ```
 
-浏览器回归：`corepack pnpm --filter @wiring/web exec playwright test`。使用显式 HTTP 测试夹具与本地 Chrome，截图存于忽略的 `.runtime/web-tests`，不调用模型；不是实时 Supabase 全链路验收。生成接口类型：先执行 `apps/api/scripts/export_openapi.py`，再执行 `openapi-typescript ../api/openapi.json -o src/apis/generated.ts`。
+浏览器回归：`corepack pnpm --filter @wiring/web exec playwright test`。使用显式HTTP夹具、本地Chrome和独立5186端口，截图存于忽略的`.runtime/simple-management-browser`，不调用模型。旧业务表/Agent合约留在tests/legacy-workbench.fixture.ts，不计入当前回归。生成接口类型：先执行`apps/api/scripts/export_openapi.py`，再执行`openapi-typescript ../api/openapi.json -o src/apis/generated.ts`。
 
 旧 Vite 前端继续使用 `5173`，新前端使用 `5174`，迁移期间可以同时运行。

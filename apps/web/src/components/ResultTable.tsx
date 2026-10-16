@@ -46,7 +46,7 @@ export function ResultTable({ rows, onOpenDrawing, onOpenTarget, onHoverTarget, 
   if (!rows.length && !editor) return <div className="table-empty"><span>0</span><strong>当前范围没有线表记录</strong><p>请选择包含已提取结果的图纸或工作区。</p></div>;
   return (
     <div className="inline-table">
-      {editor ? <div className="table-edit-notice" role="status">{saving ? "正在保存…" : "表格编辑中 · Enter 保存 · Esc 取消"}<span>电压等级和端子排修改会应用于同线号记录</span></div> : null}
+      {editor ? <div className="table-edit-notice" role="status">{saving ? "正在保存…" : "表格编辑中 · Enter 保存 · Esc 取消"}<span>修改仅应用于本行，并保留修改前后记录</span></div> : null}
       {editor && !editorVisible ? <div className="table-edit-error" role="alert"><span>正在编辑的记录已不在当前结果中。</span><button type="button" disabled={saving} onClick={() => { cancel(); onRefresh?.(); }}>取消本次编辑</button></div> : null}
       {error ? <div className="table-edit-error" role="alert"><span>{error}</span>{onRefresh ? <button type="button" disabled={saving} onClick={() => { cancel(); onRefresh(); }}>取消编辑并刷新</button> : null}</div> : null}
     <div className="result-table-shell">

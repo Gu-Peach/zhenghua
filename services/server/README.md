@@ -1,109 +1,51 @@
 # Server 业务服务
 
-真实工作台业务代码位于 `src/wiring_server`，FastAPI HTTP 入口位于 `apps/api/src/main.py`。不依赖旧 backend/frontend，不新增数据库 migration，不执行模型提取。
+当前为三表数据管理模式（2026-10-16）：项目、规则引用、私有PDF登记、JSON图纸目录/预览、批次线表分页及行级增改删。HTTP入口位于apps/api/src/main.py，应用逻辑位于src/wiring_server/simple_*和profile_references.py。
+
+业务表：extraction_profiles、extraction_projects、extraction_connection_rows。Supabase Auth和暂留Agent表保持独立；旧业务表已删除。本轮不执行Agent提取，上传后只保存文件，AI入口明确未接入。
+
+结果行保留可空start_terminal_coordinates/end_terminal_coordinates JSONB：{x,y,pdf_page_number}为每端独立的归一化位置及所属PDF物理页。20261016010000已在本地部署，API/前端类型同步；修改端子/页号会清理对应旧坐标。定位高亮后续实现，详见[坐标契约](../../docs/service/server/terminal-coordinate-contract.md)。
 
 ## 启动
 
-以下命令使用 Windows PowerShell，从仓库根目录执行；克隆路径不同时调整 `Set-Location`。业务 HTTP 入口是 `apps/api/src/main.py`，默认端口 `8000`。完整联调先启动 [Agent](../agent/README.md#启动)，再启动本服务，最后启动 [Web](../../apps/web/README.md#启动)，各用独立终端。
-
-首次准备 Python 3.10+ 虚拟环境、依赖和配置（已有环境和配置时保留）：
-
-```powershell
-Set-Location E:\project\zhenghua_test
-if (-not (Test-Path .venv\Scripts\python.exe)) { python -m venv .venv }
-.\.venv\Scripts\python.exe -m pip install -e services/server
-if (-not (Test-Path services\server\.env)) { Copy-Item services\server\.env.example services\server\.env }
-```
-
-编辑 `services/server/.env`，填写 `SERVER_SUPABASE_URL`、`SERVER_SUPABASE_SERVICE_ROLE_KEY`，确认 `SERVER_AGENT_URL=http://127.0.0.1:8100`。`AGENT_INTERNAL_TOKEN` 必须与 Agent 使用的值一致。端子新增/删除还需要 `SERVER_DATABASE_URL`；使用本地 Docker Supabase 时也可以采用下方的容器启动命令。
-
-常规启动：
+从仓库根目录，在原有后端终端按Ctrl+C后重新启动以加载新路由：
 
 ```powershell
 Set-Location E:\project\zhenghua_test
 .\.venv\Scripts\python.exe -m uvicorn main:app --app-dir apps/api/src --host 127.0.0.1 --port 8000
 ```
 
-本地 Docker Supabase 已启动、需要完整端子增删事务能力时，使用以下命令替代上面的 Uvicorn 命令；容器名按实际环境调整：
+首次安装依赖时使用`.\.venv\Scripts\python.exe -m pip install -e services/server`，包含PyMuPDF。配置仅需SERVER_SUPABASE_URL、SERVER_SUPABASE_SERVICE_ROLE_KEY及可选SERVER_WEB_ORIGIN，放services/server/.env；本地可沿用services/agent/.env中的SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY。密钥始终留在后端。当前无需启动Agent，也不需要SERVER_DATABASE_URL；旧Agent/直连配置保留为后续接入用。
+
+默认本地Supabase为127.0.0.1:54321，Web为5174。规则引用目录默认services/agent/src/agent/extraction_agent/profiles，路径安全检查限制在工作区内；本地规则不完整时从可选列表排除，不阻塞项目列表。
+
+数据库需已有20261014000000/20261014010000及20261016000000迁移。当前zhenghua_test已部署，不要重复执行create function/table。其他环境通过新migration创建三表并安装行管理RPC；不恢复旧业务表。
+
+## API
+
+- `/api/v1/auth/*`：Supabase账号登录、刷新和退出，JWT与Cookie来源校验保留。
+- `/api/v1/projects`及`/{id}`：所有者项目列表、详情、创建、重命名、确认删除；`/{id}/source`生成原PDF签名URL。
+- `/{project}/connections`：batch_id、分页、工作区/图纸过滤、搜索；来源PDF物理页/row_order/id排序。
+- `/api/v1/connections/{id}`：基于record_version和Idempotency-Key的本行编辑，目标图从`/{id}/target`读取。
+- 项目connections的POST/DELETE：来源/目标页必须在项目JSON索引中；删除需确认和行版本。before/after及回执保留到项目JSON，不增加审计表。
+- `/api/v1/rule-library`、`/local`、`/{id}`：登记/删除本地规则引用和查看Prompt/Few-shot，不修改规则文件，不再调用旧候选/发布表。
+- `/api/v1/imports`：原始PDF请求体，需profile_key、project_name、filename和Idempotency-Key；返回extraction_started=false。
+- `/api/v1/capabilities`：数据管理可用，extraction/supervisor为false。旧Supervisor入口明确503，其他旧任务接口不纳入当前契约。
+
+项目删除先归档，再清理经边界检查的登记文件路径，最后删DB行；失败保留归档状态供刷新重试，不删除别的项目对象。上传失败可使用相同标识/内容重试，文件未保存成功不会标记source_saved。
+
+## 验证与契约生成
 
 ```powershell
-Set-Location E:\project\zhenghua_test
-.\.venv\Scripts\python.exe services/server/scripts/run_local_api.py --supabase-container supabase_db_zhenghua_test --port 8000
-```
-
-该脚本读取容器连接配置并在内存中传给 Server，不把数据库密码写入文件。两种启动方式选一种，同一端口只运行一个实例。访问 `http://127.0.0.1:8000/docs` 查看接口；健康检查：
-
-```powershell
-Invoke-RestMethod http://127.0.0.1:8000/health
-```
-
-`/health` 是进程探活，不代表数据库和 Agent 已可用；开发服务可在所属终端按 `Ctrl+C` 停止。
-
-本地可复用 `services/agent/.env` 中的 `SUPABASE_URL`、`SUPABASE_SERVICE_ROLE_KEY` 和内部 Agent Token；Server 不读取 `AGENT_SUPABASE_*` 别名，仅配置这类别名时需要填写上述 `SERVER_SUPABASE_*`。`services/server/.env` 可覆盖同名文件配置，进程变量优先于同名文件值。配置模板见 `.env.example`。生产环境单独配置，不将 service-role 或内部 Token 提供给 Web。
-
-## 能力与边界
-
-- 规则库新建/删除：`GET /api/v1/rule-library` 向所有已登录用户返回每个 key 的最新可用手工规则包；`POST` 基于任一未停用模板克隆新 key，确认后立即注册；`DELETE /{id}?confirmed=true` 仅创建者可执行。删除为停用，历史 checksum 保留；Improvement 隔离候选不进入规则库。共享契约见 [ADR-0012](../../docs/adr/0012-shared-ready-rule-library.md)。
-- Supabase Auth 登录、JWT 在线校验、HttpOnly refresh cookie、续期与退出。
-- 项目列表/创建/重命名/删除，发布后项目树，业务页/PDF 页独立。
-- 项目目录按 `created_at.asc,id.asc` 固定顺序展示，选择或更新时间变化不置顶；切换时 Web 原位更新摘要，不重复拉取整个目录。
-- 线表服务端分页、工作区/图纸/文字过滤、线号与原理号独立返回。
-- 手工表格修改调用既有原位 RPC；before/after、record_version/revision 和幂等 receipt 保留。电压等级/端子排是同线号共享字段；页码/线号是只读索引。
-- 单条端子新增/删除已接入既有表的 Server PostgreSQL 原子事务（ADR-0011）。新增归入现有线号并指定来源/跨页目标；删除归档完整记录及证据。保留空单元、其他 ID/线号/排序及结果代次，revision 递增；权限/过期拒绝/重放审计不绕过。
-- 图纸签名图片地址，跨页目标查询。当前引用/target evidence 优先；缺失时完全匹配来源图纸/原理号/起点/设备并检查历史 target evidence 一致性，返回历史来源提示；有歧义拒绝猜测。
-- 真实 Bucket Profile 包，文字 checksum 校验、图片签名 URL，遵循已有包 RLS。
-- 内部 Agent 8100 HTTP/SSE 代理；从 JWT 强制 user_id，不接受客户端伪造身份，run/proposal/附件校验项目权限。公开计划/诊断，不转发内部推理链。
-
-项目删除必须 owner 明确确认且没有 QUEUED/RUNNING/WAITING_INPUT 任务。先归档，再清理项目路径 Storage，最后使用已有数据库级联删除。Storage/DB 没有统一事务；中途失败项目保留为 archived，禁止业务写入，刷新后可重试删除。不要绕过 Server 直接向已归档项目创建任务。
-
-Agent 类型确认、结果 proposal 确认、规则候选授权仍由 Agent 决策，Server 不替用户批准。当前 Agent 会话只在进程内保留；浏览器刷新可恢复现有会话/run，Agent 重启后的会话恢复不在本轮范围，已持久任务和结果仍可读取。
-
-## 验证
-
-```powershell
-.\.venv\Scripts\python.exe -m pytest services/server/tests -q
+.\.venv\Scripts\python.exe -m pytest services/server/tests -q -p no:cacheprovider
 .\.venv\Scripts\python.exe apps/api/scripts/export_openapi.py
-corepack pnpm --filter @wiring/web exec openapi-typescript ../api/openapi.json -o src/apis/generated.ts
+.\apps\web\node_modules\.bin\openapi-typescript.CMD apps/api/openapi.json -o apps/web/src/apis/generated.ts
 ```
 
-只读真实库冒烟（显式填写项目与用户）：
+真实本地HTTP/Storage验收会创建并清理一次性账号、项目和文件，须显式执行：
 
 ```powershell
-.\.venv\Scripts\python.exe services/server/tests/inspect_local_read.py --project-id <UUID> --user-id <UUID>
+.\.venv\Scripts\python.exe services/server/scripts/verify_simple_management.py --allow-local-write
 ```
 
-默认测试 Fake HTTP，不调用真实 VLM。真实 Auth、端子增改删/幂等/越权/过期/回滚与浏览器双图已在一次性项目验收并清理。真实 Bucket 三阶段资源面板和图纸索引已通过。用户授权后的真实浏览器上传/检测/确认已产生成功的三阶段结果（5 页/13 连接）；浏览器结果刷新/纠错/确认/归因仍待续跑，见联调记录。共享队列有其他消费者时不要运行真实队列 Fake 测试，以免任务被其他 Worker 消费。
-
-## 端子增删的事务连接
-
-生产配置 `SERVER_DATABASE_URL` 为 Supabase PostgreSQL 的服务端 DSN，连接角色需有既有业务表权限；不要下发浏览器。不执行 DDL，不新增 migration。没有事务连接时增删明确返回 503，既有查询和编辑不受影响。
-
-本地已运行 Docker Supabase 时，可不用保存或打印密码：
-
-```powershell
-.\.venv\Scripts\python.exe services/server/scripts/run_local_api.py --supabase-container supabase_db_zhenghua_test --port 8000
-```
-
-显式真实一次性验收（用户已允许临时数据）：
-
-```powershell
-.\.venv\Scripts\python.exe services/server/scripts/verify_connection_crud.py --allow-temporary-data --local-container supabase_db_zhenghua_test --browser
-```
-
-创建并清理随机 UUID 项目/账号/Storage，对真实 Auth 登录/续期、API 增改删/越权/幂等/过期/审计失败回滚及真实浏览器操作验收。不动 test0，不调用模型或向 Agent 入队。临时 API/Web 使用随机端口，仅关闭本脚本创建的进程树。真实截图在忽略的 `.runtime/real-browser/real-crud.png`，HTTP 夹具截图在 `.runtime/web-tests`。
-
-## 显式真实模型浏览器联调
-
-必须有用户对真实模型和一次性数据的授权；脚本通过现有 8100 服务运行，不启动或停止 Agent。正常 UI 输入保留类型/修订确认，不批准规则发布。首次运行省略 `--resume-project` 会新建项目；下面恢复已有一次性项目的成功提取，避免重复模型提取：
-
-```powershell
-$env:SERVER_ACCEPTANCE_ALLOW_REAL_MODEL="true"
-$env:PYTHONIOENCODING="utf-8"
-.\.venv\Scripts\python.exe services/server/scripts/verify_live_agent_workbench.py `
-  --allow-real-model --allow-temporary-data `
-  --local-container supabase_db_zhenghua_test `
-  --pdf services/agent/agent_test/0.detection_test/test0.pdf `
-  --resume-project 633ecd53-f4a7-50f9-be33-cc78cd4f7916
-```
-
-续跑仅允许本脚本随机创建的验收账号；密码在内存中重设，查询既有成功提取后恢复订阅。需要本地 Docker 配置读取与浏览器执行权限。仅清理该一次性账号拥有的终态项目/Storage；活跃任务保留并报告，已有 test0 不改。成功截图位于 `.runtime/real-agent/`。当前续跑尚未执行，自动审批服务配置故障需解决或由用户在自己的终端执行。
+该验收限定127.0.0.1:54321，不调用Agent或模型。旧合约位于tests/legacy_workbench_fixture.py，保留参考但不作为当前业务回归；其Auth用例仍在test_auth_api.py执行。当前验证及数据库异常探针记录见[交付记录](../../docs/service/server/changelog/2026-10-16-simple-management.md)。

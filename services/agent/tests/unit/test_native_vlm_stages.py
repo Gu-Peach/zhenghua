@@ -109,10 +109,10 @@ class NativeVlmStageTests(unittest.TestCase):
                         task_id="task-1",
                         target_page=target_page,
                         task_context=(
-                            '{"task_id":"task-1","line_number":"002C0601",'
-                            '"source_record":{"drawing_function":"002.C",'
-                            '"start_terminal":"XA:1","current":"400A"},'
-                            '"references":[{"target_function":"002.C"}]}'
+                            '{"task_id":"task-1","line_number":"003C0101",'
+                            '"source_record":{"drawing_function":"003.C",'
+                            '"start_terminal":"XA:8","current":"160A"},'
+                            '"references":[{"target_function":"080.C","target_drawing_page":10}]}'
                         ),
                     )
                 )
@@ -141,17 +141,17 @@ class NativeVlmStageTests(unittest.TestCase):
             )
 
             stage2_examples = _example_image_parts(gateway.calls[1].messages)
-            self.assertEqual(len(stage2_examples), 5)
+            self.assertEqual(len(stage2_examples), 1)
             self.assertTrue(all(max(_png_dimensions(part)) <= 1800 for part in stage2_examples))
             stage2_input = gateway.calls[1].messages[-1]["content"][-1]
             self.assertTrue(max(_png_dimensions(stage2_input)) <= 32)
             self.assertLessEqual(gateway.calls[1].metadata["vision_total_pixels"], 6_000_000)
 
             stage3_examples = _example_image_parts(gateway.calls[2].messages)
-            self.assertEqual(len(stage3_examples), 2)
+            self.assertEqual(len(stage3_examples), 1)
             self.assertTrue(all(max(_png_dimensions(part)) <= 1800 for part in stage3_examples))
             self.assertIn(
-                "002c01-w1-l1-to-q1",
+                "c01_xa8_to_080c10_xd10_1",
                 gateway.calls[2].messages[-2]["content"],
             )
             self.assertEqual(
@@ -162,7 +162,7 @@ class NativeVlmStageTests(unittest.TestCase):
                     for part in message["content"]
                     if isinstance(part, dict) and part.get("type") == "image_url"
                 ),
-                3,
+                2,
             )
             self.assertTrue(all(
                 max(_png_dimensions(part)) <= 32

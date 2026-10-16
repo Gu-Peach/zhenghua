@@ -19,7 +19,11 @@ def endpoint_identity_warnings(terminal: Any, device: Any, board: Any) -> list[s
         warnings.append("PLC address is not a physical terminal")
     elif re.search(r"(?:^|:)\w+_(?:L\d?|N|PE|\+|-)(?:\.\d+)?$", value, re.IGNORECASE):
         warnings.append("potential label is not a physical terminal")
-    if not str(device or board or "").strip() and ":" not in value and value.upper() != "N-BAR":
+    if (
+        not str(device or board or "").strip()
+        and ":" not in value
+        and value.upper() not in {"N-BAR", "PE-BAR"}
+    ):
         warnings.append("missing device or terminal board identity")
     return warnings
 
@@ -69,8 +73,9 @@ def _collect_consistency_warnings(
             warnings.append("SPARE record has a non-* terminal")
         return warnings
     if line_number == "PE":
+        allowed = {"PE", "PE-BAR"} if require_endpoint_identity else {"PE"}
         if any(
-            value and str(value).rsplit(":", 1)[-1].upper() != "PE"
+            value and str(value).rsplit(":", 1)[-1].upper() not in allowed
             for value in (record.start_terminal, record.end_terminal)
         ):
             warnings.append("PE record has a non-PE terminal")

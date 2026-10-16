@@ -35,7 +35,7 @@ export function LoginView() {
         <div className="login-brand"><span className="brand-symbol">线</span><div><strong>线表智能提取系统</strong><span>Electrical Drawing Intelligence</span></div></div>
         <div className="login-visual-copy">
           <span className="eyebrow">ENGINEERING WORKSPACE</span><h1>让每一条连接都可追溯</h1><p>从原始图纸到结构化线表，保留工作区、图纸页与提取证据。</p>
-          <ul><li><ScanLine size={18} />阶段化识别与跨页补全</li><li><ShieldCheck size={18} />项目级权限与结果版本</li><li><CheckCircle2 size={18} />结构化校验与人工复核</li></ul>
+          <ul><li><ScanLine size={18} />阶段化识别与跨页补全</li><li><ShieldCheck size={18} />项目级权限与批次管理</li><li><CheckCircle2 size={18} />结构化校验与人工复核</li></ul>
         </div>
       </section>
       <section className="login-panel">

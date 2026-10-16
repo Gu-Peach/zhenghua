@@ -5,8 +5,8 @@ export type ConnectionChanges = components["schemas"]["ConnectionFields"];
 
 export const editableConnectionFields = [
   { key: "principle_number", view: "lineNumber", label: "原理号", maxLength: 500, shared: false },
-  { key: "voltage_level", view: "voltageLevel", label: "电压等级", maxLength: 100, shared: true },
-  { key: "terminal_strip", view: "terminalStrip", label: "端子排", maxLength: 100, shared: true },
+  { key: "voltage_level", view: "voltageLevel", label: "电压等级", maxLength: 100, shared: false },
+  { key: "terminal_strip", view: "terminalStrip", label: "端子排", maxLength: 100, shared: false },
   { key: "start_code", view: "startCode", label: "起点代号", maxLength: 500, shared: false },
   { key: "start_description", view: "startDescription", label: "起点描述", maxLength: 4000, shared: false },
   { key: "start_terminal", view: "startTerminal", label: "起点端子", maxLength: 500, shared: false },

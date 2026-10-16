@@ -35,6 +35,8 @@ class CrossPageTask(TypedDict, total=False):
     line_number: str | None
     core_number: int | str | None
     source_record: dict[str, Any]
+    source_page_context: dict[str, Any]
+    target_page_context: dict[str, Any]
     needs_review: bool
 
 

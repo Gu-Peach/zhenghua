@@ -22,7 +22,7 @@ export function ruleStages(data: RulePackage): RuleStage[] {
   return [
     { title: "Stage 1 页面分类", promptKey: "classification_prompt", root: classificationRoot, section: "cases" },
     { title: "Stage 2 当前页扫描", promptKey: "page_scan_prompt", root: wiringRoot, section: "stage2_cases" },
-    { title: "Stage 3 跨页补全", promptKey: "cross_page_prompt", root: wiringRoot, section: "stage3_cases" },
+    { title: "Stage 2 内部连接补全", promptKey: "cross_page_prompt", root: wiringRoot, section: "stage3_cases" },
   ].map(stage => {
     const manifest = parsed(files.get(`${stage.root}/manifest.json`));
     const list = manifest[stage.section];

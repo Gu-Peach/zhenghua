@@ -365,18 +365,6 @@ def test_fixed_actual_image_cases_validate_fields_and_manifest_paths() -> None:
             .connections
         )
 
-    c02 = connections("stage2/002c02.expected.json")
-    assert [(c.start.device, c.line_number, c.references[0].target_drawing_page) for c in c02] == [
-        (device, prefix + str(i) if i < 4 else "PE", page)
-        for device, prefix, page in [("+02", "002C020", 5), ("+02", "002C021", 6)]
-        for i in range(1, 5)
-    ]
-    m03 = connections("stage2/002m03_branches.expected.json")
-    assert len({c.local_connection_id for c in m03}) == 2
-    assert [(c.start.terminal, c.references[0].target_drawing_page) for c in m03] == [
-        ("XD3:16", 5),
-        ("XD3:16", 6),
-    ]
     c01 = connections("stage2/003c01.expected.json")
     assert len(c01) == 17
     assert (c01[0].start.terminal, c01[0].end) == ("XA:8", None)
@@ -487,7 +475,7 @@ def test_terminal_coordinates_bind_to_input_image_and_do_not_change_connection_i
 
 def test_quality_asset_and_validator_checksums() -> None:
     provenance = json.loads((ASSETS / "quality-provenance.json").read_text(encoding="utf-8"))
-    assert provenance["version"] == binding().profile.version == "2.0.5"
+    assert provenance["version"] == binding().profile.version == "2.1.1"
     for section, directory in [("assets", ASSETS), ("policy_sources", ROOT), ("prompt_sources", ROOT)]:
         for entry in provenance[section]:
             assert (

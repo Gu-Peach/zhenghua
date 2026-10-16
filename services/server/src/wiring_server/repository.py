@@ -42,12 +42,12 @@ class Repository:
                 pass
             status = (
                 409
-                if code == "PT409"
+                if code in {"PT409", "23505", "23503"}
                 else 403
                 if code == "PT403"
                 else 503
                 if response.status_code >= 500
-                else 400
+                else 404 if code == "PT404" else 422 if code == "PT422" else 400
             )
             raise ServiceError(
                 status,
@@ -132,7 +132,7 @@ class Repository:
     async def require_project(
         self, project: str, user: str, *, write: bool = False, owner: bool = False
     ) -> dict[str, Any]:
-        rows = await self.rows("projects", {"id": f"eq.{project}", "limit": "1"})
+        rows = await self.rows("extraction_projects", {"id": f"eq.{project}", "limit": "1"})
         if not rows:
             raise ServiceError(404, "PROJECT_NOT_FOUND", "项目不存在")
         if write and rows[0]["status"] == "archived":
@@ -141,13 +141,4 @@ class Repository:
             )
         if rows[0]["owner_id"] == user:
             return rows[0]
-        members = await self.rows(
-            "project_members", {"project_id": f"eq.{project}", "user_id": f"eq.{user}"}
-        )
-        if (
-            owner
-            or not members
-            or (write and members[0]["role"] not in {"owner", "editor"})
-        ):
-            raise ServiceError(403, "ACCESS_DENIED", "没有项目操作权限")
-        return rows[0]
+        raise ServiceError(403, "ACCESS_DENIED", "没有项目操作权限")

@@ -22,6 +22,7 @@ from src.agent.extraction_agent.graphs.document_extraction.helpers import (
 )
 from src.agent.extraction_agent.graphs.document_extraction.state import (
     GraphState,
+    PageMeta,
 )
 from src.agent.extraction_agent.infrastructure.document.checkpoint import (
     _cross_page_checkpoint_path,
@@ -130,6 +131,8 @@ def _build_cross_page_tasks_node(state: GraphState, runtime: GraphRuntime) -> di
                             "line_number": connection.line_number,
                             "core_number": connection.core_number,
                             "source_record": target_record,
+                            "source_page_context": _page_context(source_page),
+                            "target_page_context": _page_context(page_by_number.get(target_pdf_page)),
                             "needs_review": False,
                         }
                     )
@@ -148,6 +151,7 @@ def _build_cross_page_tasks_node(state: GraphState, runtime: GraphRuntime) -> di
                         "line_number": connection.line_number,
                         "core_number": connection.core_number,
                         "source_record": unresolved_record,
+                        "source_page_context": _page_context(source_page),
                         "needs_review": True,
                     }
                 )
@@ -158,6 +162,18 @@ def _build_cross_page_tasks_node(state: GraphState, runtime: GraphRuntime) -> di
     row_count = sum(len(rows) for rows in state.get("table_rows_by_unit", {}).values())
     runtime.log(f"build_cross_page_tasks: rows={row_count} terminal_tasks={len(tasks)}")
     return {"wire_units": raw_units, "cross_page_tasks": tasks}
+
+
+def _page_context(page: PageMeta | None) -> dict[str, Any]:
+    """Keep business addresses separate from physical image-page identifiers."""
+    if page is None:
+        return {}
+    return {
+        "pdf_page_number": page.get("page_number"),
+        "drawing_function": page.get("function"),
+        "drawing_page_number": page.get("internal_page"),
+        "object_location": page.get("object_loc"),
+    }
 
 
 def _apply_cross_page_completion(
@@ -336,8 +352,10 @@ async def _resolve_cross_page_node(
             completed[task_id] = result
             return task_id, result
         target_image = runtime.payload_for(target_page["image_path"])
-        source_page = page_by_number[int(task["source_pdf_page"])]
-        source_image = runtime.payload_for(source_page["image_path"])
+        source_image = None
+        if getattr(runtime.extraction_client, "completion_uses_source_image", True):
+            source_page = page_by_number[int(task["source_pdf_page"])]
+            source_image = runtime.payload_for(source_page["image_path"])
         try:
             pending = resolver(
                 target_image,

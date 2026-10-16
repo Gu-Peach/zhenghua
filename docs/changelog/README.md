@@ -1,6 +1,24 @@
 # Changelog
 
+2026-10-16三表结果新增start_terminal_coordinates/end_terminal_coordinates可空JSONB，API和前端类型同步，端点变更清理旧坐标；20项后端/Web检查/真实SQL与HTTP验证通过，本地迁移已部署，无Agent模型调用。图像高亮后续接入，见[Server记录](../service/server/changelog/2026-10-16-terminal-coordinates.md)。
+
+2026-10-16登录后直接进入工作区，取消独立项目目录页；空库显示完整工作区和上传入口，项目管理移至侧栏。13项浏览器与Web检查通过，不改数据库/提取规则。见[Web记录](../apps/web/changelog/2026-10-16-workspace-entry.md)。
+
+## 2026-10-16
+
+- 明确先独立开发extraction/explain/profile能力、后接主调度的方向，整理旧Supervisor及冗余链路92文件审阅清单。自动审批拒绝批量删除/核心入口改写，尚未实施清理；仅新增设计和职责文档，不操作数据库或重启服务。见[ADR-0021](../adr/0021-independent-agents-before-orchestration.md)和[清单](../service/agent/independent-agents-retirement-inventory.md)。
+
+- 按用户精简的ZH manifest保留003C01的1组初扫及5组补全/负例，清理未引用6图/12JSON，manifest v13和资源checksum同步；Profile仍2.1.1，不改变提取规则。仅静态核对，未运行测试/模型或写库。见[Agent记录](../service/agent/changelog/2026-10-16-zh-c01-example-cleanup.md)。
+
+- 前后端接入三张新业务表：项目/规则引用/PDF保存、JSON图纸索引、批次结果与事务行级CRUD；API v2/OpenAPI/TS同步，上传不启动Agent，AI明确待接入。14项后端/10项浏览器、类型/lint/build和真实本地Auth/Storage/CRUD验收通过，合成数据清理，行管理RPC已部署。旧提取持久化另行接入，用户需重启8000加载新路由。见[ADR-0020](../adr/0020-three-table-management-contract.md)、[Server交付](../service/server/changelog/2026-10-16-simple-management.md)、[Web交付](../apps/web/changelog/2026-10-16-simple-management.md)。
+
+## 2026-10-16
+
+- 本地ZH2.1.1增强跨页读图：上下文v2不传来源端子/坐标/方向描述，允许任意边界回指，分别读取目标接口与针脚；唯一来源页PDF引用核对不可用地址并保留证据，补齐模块/母排案例。仅静态核对，不运行测试/模型或写库。见[Agent记录](../service/agent/changelog/2026-10-16-zh-cross-page-reading.md)。
+
 ## 2026-10-15
+
+- 本地ZH2.1.0跨页补全改为目标图加state来源事实，初扫增加可选signal_name，保留业务页/Object Loc与原始引用；Profile控制输入模式，ABB/XMZ继续双图。仅静态核对，不运行测试/模型或写库。见[Agent记录](../service/agent/changelog/2026-10-15-zh-target-only-completion.md)。
 
 - 公共提取图像预算改为实际图优先：压缩/整组减少Few-shot，输入自身超限才继续缩小；新增案例下限配置、删例metadata及缓存指纹，现有输入/总预算上限保留。仅静态检查，不运行模型或写库。见[Agent记录](../service/agent/changelog/2026-10-15-input-first-image-budget.md)。
 

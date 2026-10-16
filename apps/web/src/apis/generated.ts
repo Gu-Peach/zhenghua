@@ -72,6 +72,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Capabilities */
+        get: operations["capabilities_api_v1_capabilities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects": {
         parameters: {
             query?: never;
@@ -79,8 +96,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** List Projects */
-        get: operations["list_projects_api_v1_projects_get"];
+        /** Projects */
+        get: operations["projects_api_v1_projects_get"];
         put?: never;
         /** Create Project */
         post: operations["create_project_api_v1_projects_post"];
@@ -97,16 +114,33 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Project Detail */
-        get: operations["project_detail_api_v1_projects__project_id__get"];
+        /** Project */
+        get: operations["project_api_v1_projects__project_id__get"];
         put?: never;
         post?: never;
-        /** Delete Project */
-        delete: operations["delete_project_api_v1_projects__project_id__delete"];
+        /** Remove Project */
+        delete: operations["remove_project_api_v1_projects__project_id__delete"];
         options?: never;
         head?: never;
-        /** Rename Project */
-        patch: operations["rename_project_api_v1_projects__project_id__patch"];
+        /** Rename */
+        patch: operations["rename_api_v1_projects__project_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/source": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Source */
+        get: operations["source_api_v1_projects__project_id__source_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/projects/{project_id}/connections": {
@@ -116,28 +150,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Connections */
-        get: operations["connections_api_v1_projects__project_id__connections_get"];
+        /** Results */
+        get: operations["results_api_v1_projects__project_id__connections_get"];
         put?: never;
-        /** Add Connection */
-        post: operations["add_connection_api_v1_projects__project_id__connections_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/projects/{project_id}/wiring-units": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Wiring Units */
-        get: operations["wiring_units_api_v1_projects__project_id__wiring_units_get"];
-        put?: never;
-        post?: never;
+        /** Add */
+        post: operations["add_api_v1_projects__project_id__connections_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -154,8 +171,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** Delete Connection */
-        delete: operations["delete_connection_api_v1_projects__project_id__connections__connection_id__delete"];
+        /** Remove */
+        delete: operations["remove_api_v1_projects__project_id__connections__connection_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -174,8 +191,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** Edit Connection */
-        patch: operations["edit_connection_api_v1_connections__connection_id__patch"];
+        /** Edit */
+        patch: operations["edit_api_v1_connections__connection_id__patch"];
         trace?: never;
     };
     "/api/v1/connections/{connection_id}/target": {
@@ -185,8 +202,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Connection Target */
-        get: operations["connection_target_api_v1_connections__connection_id__target_get"];
+        /** Target */
+        get: operations["target_api_v1_connections__connection_id__target_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -212,6 +229,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/rule-library/local": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Available Profiles */
+        get: operations["available_profiles_api_v1_rule_library_local_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/rule-library": {
         parameters: {
             query?: never;
@@ -219,28 +253,30 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Rules */
-        get: operations["rules_api_v1_rule_library_get"];
+        /** Profiles */
+        get: operations["profiles_api_v1_rule_library_get"];
         put?: never;
-        post: operations["create_rule_api_v1_rule_library_post"];
+        /** Register */
+        post: operations["register_api_v1_rule_library_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/rule-library/{package_id}": {
+    "/api/v1/rule-library/{profile_id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Package */
-        get: operations["package_api_v1_rule_library__package_id__get"];
+        /** Profile Package */
+        get: operations["profile_package_api_v1_rule_library__profile_id__get"];
         put?: never;
         post?: never;
-        delete: operations["delete_rule_api_v1_rule_library__package_id__delete"];
+        /** Remove Profile */
+        delete: operations["remove_profile_api_v1_rule_library__profile_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -255,110 +291,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Import Pdf */
-        post: operations["import_pdf_api_v1_imports_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/supervisor/turns/stream": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Supervisor Turn */
-        post: operations["supervisor_turn_api_v1_supervisor_turns_stream_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/supervisor/conversations/{conversation_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Conversation */
-        get: operations["conversation_api_v1_supervisor_conversations__conversation_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/runs/{run_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Run */
-        get: operations["run_api_v1_runs__run_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/runs/{run_id}/events/stream": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Run Events */
-        get: operations["run_events_api_v1_runs__run_id__events_stream_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/runs/{run_id}/artifacts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Artifacts */
-        get: operations["artifacts_api_v1_runs__run_id__artifacts_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/proposals/{proposal_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Proposal */
-        get: operations["proposal_api_v1_proposals__proposal_id__get"];
-        put?: never;
-        post?: never;
+        /** Upload */
+        post: operations["upload_api_v1_imports_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -369,59 +303,6 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** ConnectionCreate */
-        ConnectionCreate: {
-            /**
-             * Result Version Id
-             * Format: uuid
-             */
-            result_version_id: string;
-            /** Result Revision */
-            result_revision: number;
-            /**
-             * Wiring Unit Id
-             * Format: uuid
-             */
-            wiring_unit_id: string;
-            /**
-             * Source Drawing Id
-             * Format: uuid
-             */
-            source_drawing_id: string;
-            /** Target Drawing Id */
-            target_drawing_id?: string | null;
-            fields: components["schemas"]["ConnectionFields"];
-        };
-        /** ConnectionDelete */
-        ConnectionDelete: {
-            /**
-             * Result Version Id
-             * Format: uuid
-             */
-            result_version_id: string;
-            /** Result Revision */
-            result_revision: number;
-            /** Record Version */
-            record_version: number;
-            /**
-             * Confirmed
-             * @constant
-             */
-            confirmed: true;
-        };
-        /** ConnectionEdit */
-        ConnectionEdit: {
-            /**
-             * Result Version Id
-             * Format: uuid
-             */
-            result_version_id: string;
-            /** Result Revision */
-            result_revision: number;
-            /** Record Version */
-            record_version: number;
-            changes: components["schemas"]["ConnectionFields"];
-        };
         /** ConnectionFields */
         ConnectionFields: {
             /** Voltage Level */
@@ -451,114 +332,6 @@ export interface components {
             /** Is Cross Page */
             is_cross_page?: ("same_page" | "cross_page" | "unknown") | null;
         };
-        /** ConnectionMutationReceipt */
-        ConnectionMutationReceipt: {
-            /** Result Version Id */
-            result_version_id: string;
-            /** Result Version */
-            result_version: number;
-            /** Result Revision */
-            result_revision: number;
-            /** Connection Id */
-            connection_id: string;
-            /**
-             * Action
-             * @enum {string}
-             */
-            action: "add" | "remove";
-            /** Wire Number */
-            wire_number: number;
-            /** Proposal Id */
-            proposal_id: string;
-            /**
-             * Idempotent
-             * @default false
-             */
-            idempotent: boolean;
-        };
-        /** ConnectionPage */
-        ConnectionPage: {
-            /** Items */
-            items: components["schemas"]["ConnectionRow"][];
-            /** Result Version Id */
-            result_version_id?: string | null;
-            /** Result Version */
-            result_version?: number | null;
-            /** Result Revision */
-            result_revision?: number | null;
-            /** Offset */
-            offset: number;
-            /** Limit */
-            limit: number;
-            /** Has More */
-            has_more: boolean;
-        };
-        /** ConnectionRow */
-        ConnectionRow: {
-            /** Connection Id */
-            connection_id: string;
-            /** Project Id */
-            project_id: string;
-            /** Workspace Id */
-            workspace_id: string;
-            /** Workspace Name */
-            workspace_name: string;
-            /** Drawing Id */
-            drawing_id?: string | null;
-            /** Workspace Page */
-            workspace_page?: string | null;
-            /** Pdf Page Number */
-            pdf_page_number?: number | null;
-            /** Wiring Unit Id */
-            wiring_unit_id: string;
-            /** Wire Number */
-            wire_number: number;
-            /** Core Order */
-            core_order: number;
-            /** Result Version Id */
-            result_version_id: string;
-            /** Result Version */
-            result_version: number;
-            /** Result Revision */
-            result_revision: number;
-            /** Record Version */
-            record_version: number;
-            /** Principle Number */
-            principle_number?: string | null;
-            /** Voltage Level */
-            voltage_level?: string | null;
-            /** Terminal Strip */
-            terminal_strip?: string | null;
-            /** Start Code */
-            start_code?: string | null;
-            /** Start Description */
-            start_description?: string | null;
-            /** Start Terminal */
-            start_terminal?: string | null;
-            /** End Code */
-            end_code?: string | null;
-            /** End Description */
-            end_description?: string | null;
-            /** End Terminal */
-            end_terminal?: string | null;
-            /** Current Value */
-            current_value?: string | null;
-            /** Remark */
-            remark?: string | null;
-            /** Color Mark */
-            color_mark?: string | null;
-            /**
-             * Is Cross Page
-             * @enum {string}
-             */
-            is_cross_page: "same_page" | "cross_page" | "unknown";
-            /** Confidence */
-            confidence?: number | null;
-            /** Needs Review */
-            needs_review: boolean;
-            /** Status */
-            status: string;
-        };
         /** DrawingRead */
         DrawingRead: {
             /** Id */
@@ -578,54 +351,21 @@ export interface components {
             /** Reference Note */
             reference_note?: string | null;
         };
-        /** EditReceipt */
-        EditReceipt: {
-            /**
-             * Changed
-             * @default true
-             */
-            changed: boolean;
-            /** Result Version Id */
-            result_version_id?: string | null;
-            /** Result Version */
-            result_version?: number | null;
-            /** Result Revision */
-            result_revision: number;
-            /**
-             * Update Mode
-             * @default in_place
-             * @enum {string}
-             */
-            update_mode: "in_place" | "snapshot";
-            /** Updated Connection Ids */
-            updated_connection_ids?: string[];
-        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
-        /** ImportResponse */
-        ImportResponse: {
-            /** Project Id */
-            project_id: string;
-            /** Source Document Id */
-            source_document_id: string;
-            /** Attachment Id */
-            attachment_id: string;
-            /** Filename */
-            filename: string;
+        /** LocalProfileOption */
+        LocalProfileOption: {
+            /** Profile Key */
+            profile_key: string;
+            /** Profile Version */
+            profile_version: string;
+            /** Display Name */
+            display_name: string;
             /** Checksum */
             checksum: string;
-            /** Size */
-            size: number;
-            /** Page Count */
-            page_count: number;
-            /**
-             * Persistence Backend
-             * @default supabase
-             */
-            persistence_backend: string;
         };
         /** LoginInput */
         LoginInput: {
@@ -634,31 +374,35 @@ export interface components {
             /** Password */
             password: string;
         };
-        /** ProjectInput */
-        ProjectInput: {
-            /** Name */
-            name: string;
+        /** ProfileReferenceCreate */
+        ProfileReferenceCreate: {
+            /** Profile Key */
+            profile_key: string;
         };
-        /** ProjectRead */
-        ProjectRead: {
+        /** ProfileReferenceRead */
+        ProfileReferenceRead: {
             /** Id */
             id: string;
-            /** Name */
-            name: string;
-            /** Owner Id */
-            owner_id: string;
-            /** Status */
-            status: string;
-            /** Standard Profile */
-            standard_profile?: string | null;
-            /** Updated At */
-            updated_at: string;
-            /** Workspaces */
-            workspaces?: components["schemas"]["WorkspaceRead"][];
-            /** Sources */
-            sources?: components["schemas"]["SourceRead"][];
-            result?: components["schemas"]["ResultRead"] | null;
-            latest_run?: components["schemas"]["RunRead"] | null;
+            /** Profile Key */
+            profile_key: string;
+            /** Profile Version */
+            profile_version: string;
+            /** Checksum */
+            checksum: string;
+            /** Display Name */
+            display_name: string;
+            /** Resource Ref */
+            resource_ref: string;
+            /**
+             * Created At
+             * @default
+             */
+            created_at: string;
+            /**
+             * Can Delete
+             * @default false
+             */
+            can_delete: boolean;
         };
         /** ResourceImage */
         ResourceImage: {
@@ -685,80 +429,6 @@ export interface components {
             /** Content */
             content: string;
         };
-        /** ResultRead */
-        ResultRead: {
-            /** Id */
-            id: string;
-            /** Version */
-            version: number;
-            /** Revision */
-            revision: number;
-            /**
-             * Status
-             * @default draft
-             */
-            status: string;
-            /** Profile */
-            profile?: {
-                [key: string]: unknown;
-            } | null;
-        };
-        /** RuleCreate */
-        RuleCreate: {
-            base_package_id: string;
-            profile_key: string;
-            display_name: string;
-            description?: string;
-            detection_summary: string;
-            strong_signals: string[];
-            prompts?: { [key: string]: string };
-            confirmed: true;
-        };
-        /** RuleCreateReceipt */
-        RuleCreateReceipt: {
-            id: string;
-            profile_key: string;
-            status: "active";
-            registered: true;
-        };
-        /** RuleDeleteReceipt */
-        RuleDeleteReceipt: {
-            id: string;
-            status: "retired";
-            historical_resources_retained: true;
-        };
-        /** RuleRead */
-        RuleRead: {
-            /** Id */
-            id: string;
-            /** Profile Key */
-            profile_key: string;
-            /** Profile Version */
-            profile_version: string;
-            /** Source Profile Checksum */
-            source_profile_checksum: string;
-            /** Package Checksum */
-            package_checksum: string;
-            /** Status */
-            status: string;
-            /** Created At */
-            created_at: string;
-            /** Published At */
-            published_at?: string | null;
-            /** Can Delete */
-            can_delete?: boolean;
-        };
-        /** RunRead */
-        RunRead: {
-            /** Id */
-            id: string;
-            /** Status */
-            status: string;
-            /** Current Stage */
-            current_stage?: string | null;
-            /** Run Type */
-            run_type: string;
-        };
         /** SessionResponse */
         SessionResponse: {
             /** Accesstoken */
@@ -778,32 +448,211 @@ export interface components {
             /** Role */
             role: string;
         };
-        /** SourceRead */
-        SourceRead: {
+        /** SimpleConnectionCreate */
+        SimpleConnectionCreate: {
+            /** Batch Id */
+            batch_id: string;
+            /**
+             * Source Drawing Id
+             * Format: uuid
+             */
+            source_drawing_id: string;
+            /** Target Drawing Id */
+            target_drawing_id?: string | null;
+            /** Wire Number */
+            wire_number?: string | null;
+            fields: components["schemas"]["ConnectionFields"];
+        };
+        /** SimpleConnectionDelete */
+        SimpleConnectionDelete: {
+            /** Record Version */
+            record_version: number;
+            /**
+             * Confirmed
+             * @constant
+             */
+            confirmed: true;
+        };
+        /** SimpleConnectionEdit */
+        SimpleConnectionEdit: {
+            /** Record Version */
+            record_version: number;
+            changes: components["schemas"]["ConnectionFields"];
+        };
+        /** SimpleConnectionPage */
+        SimpleConnectionPage: {
+            /** Items */
+            items: components["schemas"]["SimpleConnectionRead"][];
+            /** Batch Id */
+            batch_id?: string | null;
+            /** Offset */
+            offset: number;
+            /** Limit */
+            limit: number;
+            /** Has More */
+            has_more: boolean;
+        };
+        /** SimpleConnectionRead */
+        SimpleConnectionRead: {
+            /** Connection Id */
+            connection_id: string;
+            /** Project Id */
+            project_id: string;
+            /** Batch Id */
+            batch_id: string;
+            /** Workspace Id */
+            workspace_id: string;
+            /** Workspace Name */
+            workspace_name: string;
+            /** Drawing Id */
+            drawing_id: string;
+            /** Workspace Page */
+            workspace_page?: string | null;
+            /** Pdf Page Number */
+            pdf_page_number: number;
+            /** Wire Number */
+            wire_number?: string | null;
+            /** Row Order */
+            row_order: number;
+            /** Record Version */
+            record_version: number;
+            /** Principle Number */
+            principle_number?: string | null;
+            /** Voltage Level */
+            voltage_level?: string | null;
+            /** Terminal Strip */
+            terminal_strip?: string | null;
+            /** Start Code */
+            start_code?: string | null;
+            /** Start Description */
+            start_description?: string | null;
+            /** Start Terminal */
+            start_terminal?: string | null;
+            /** End Code */
+            end_code?: string | null;
+            /** End Description */
+            end_description?: string | null;
+            /** End Terminal */
+            end_terminal?: string | null;
+            start_terminal_coordinates?: components["schemas"]["TerminalCoordinates"] | null;
+            end_terminal_coordinates?: components["schemas"]["TerminalCoordinates"] | null;
+            /** Current Value */
+            current_value?: string | null;
+            /** Color Mark */
+            color_mark?: string | null;
+            /** Remark */
+            remark?: string | null;
+            /** Is Cross Page */
+            is_cross_page: boolean;
+            /** Needs Review */
+            needs_review: boolean;
+        };
+        /** SimpleImportRead */
+        SimpleImportRead: {
+            /** Project Id */
+            project_id: string;
+            /** Source Document Id */
+            source_document_id: string;
+            /** Attachment Id */
+            attachment_id: string;
+            /** Filename */
+            filename: string;
+            /** Checksum */
+            checksum: string;
+            /** Size */
+            size: number;
+            /** Page Count */
+            page_count: number;
+            /**
+             * Extraction Started
+             * @default false
+             * @constant
+             */
+            extraction_started: false;
+        };
+        /** SimpleMutationReceipt */
+        SimpleMutationReceipt: {
+            /** Connection Id */
+            connection_id: string;
+            /** Batch Id */
+            batch_id: string;
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "add" | "edit" | "remove";
+            /** Record Version */
+            record_version: number;
+            /**
+             * Idempotent
+             * @default false
+             */
+            idempotent: boolean;
+        };
+        /** SimpleProjectInput */
+        SimpleProjectInput: {
+            /** Name */
+            name: string;
+            /** Profile Id */
+            profile_id?: string | null;
+        };
+        /** SimpleProjectRead */
+        SimpleProjectRead: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string;
+            /** Owner Id */
+            owner_id: string;
+            /** Status */
+            status: string;
+            /** Profile Id */
+            profile_id: string;
+            /** Standard Profile */
+            standard_profile?: string | null;
+            /** Updated At */
+            updated_at: string;
+            /** Workspaces */
+            workspaces?: components["schemas"]["WorkspaceRead"][];
+            /** Sources */
+            sources?: components["schemas"]["SimpleSourceRead"][];
+            /** Batch Id */
+            batch_id?: string | null;
+            /**
+             * Extraction Available
+             * @default false
+             * @constant
+             */
+            extraction_available: false;
+            /**
+             * Source Saved
+             * @default false
+             */
+            source_saved: boolean;
+        };
+        /** SimpleSourceRead */
+        SimpleSourceRead: {
             /** Id */
             id: string;
             /** Original Filename */
             original_filename: string;
-        };
-        /** SupervisorTurn */
-        SupervisorTurn: {
-            /** Conversation Id */
-            conversation_id: string;
             /**
-             * Turn Id
-             * Format: uuid
+             * Page Count
+             * @default 0
              */
-            turn_id: string;
-            /** Project Id */
-            project_id?: string | null;
-            /** Message */
-            message: string;
-            /** Target Hint */
-            target_hint?: {
-                [key: string]: string;
-            };
-            /** Attachment Ids */
-            attachment_ids?: string[];
+            page_count: number;
+        };
+        /**
+         * TerminalCoordinates
+         * @description Normalized terminal center on its own full-page image, not a business page number.
+         */
+        TerminalCoordinates: {
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+            /** Pdf Page Number */
+            pdf_page_number: number;
         };
         /** ValidationError */
         ValidationError: {
@@ -817,21 +666,6 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
-        };
-        /** WiringUnitRead */
-        WiringUnitRead: {
-            /** Id */
-            id: string;
-            /** Workspace Id */
-            workspace_id: string;
-            /** Drawing Id */
-            drawing_id?: string | null;
-            /** Wire Number */
-            wire_number: number;
-            /** Voltage Level */
-            voltage_level?: string | null;
-            /** Terminal Strip */
-            terminal_strip?: string | null;
         };
         /** WorkspaceRead */
         WorkspaceRead: {
@@ -957,7 +791,7 @@ export interface operations {
             };
         };
     };
-    list_projects_api_v1_projects_get: {
+    capabilities_api_v1_capabilities_get: {
         parameters: {
             query?: never;
             header?: {
@@ -974,7 +808,40 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectRead"][];
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    projects_api_v1_projects_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimpleProjectRead"][];
                 };
             };
             /** @description Validation Error */
@@ -999,7 +866,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProjectInput"];
+                "application/json": components["schemas"]["SimpleProjectInput"];
             };
         };
         responses: {
@@ -1009,7 +876,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectRead"];
+                    "application/json": components["schemas"]["SimpleProjectRead"];
                 };
             };
             /** @description Validation Error */
@@ -1023,7 +890,7 @@ export interface operations {
             };
         };
     };
-    project_detail_api_v1_projects__project_id__get: {
+    project_api_v1_projects__project_id__get: {
         parameters: {
             query?: never;
             header?: {
@@ -1042,7 +909,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectRead"];
+                    "application/json": components["schemas"]["SimpleProjectRead"];
                 };
             };
             /** @description Validation Error */
@@ -1056,7 +923,7 @@ export interface operations {
             };
         };
     };
-    delete_project_api_v1_projects__project_id__delete: {
+    remove_project_api_v1_projects__project_id__delete: {
         parameters: {
             query: {
                 expected_updated_at: string;
@@ -1090,7 +957,7 @@ export interface operations {
             };
         };
     };
-    rename_project_api_v1_projects__project_id__patch: {
+    rename_api_v1_projects__project_id__patch: {
         parameters: {
             query?: never;
             header?: {
@@ -1103,7 +970,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ProjectInput"];
+                "application/json": components["schemas"]["SimpleProjectInput"];
             };
         };
         responses: {
@@ -1113,7 +980,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProjectRead"];
+                    "application/json": components["schemas"]["SimpleProjectRead"];
                 };
             };
             /** @description Validation Error */
@@ -1127,14 +994,47 @@ export interface operations {
             };
         };
     };
-    connections_api_v1_projects__project_id__connections_get: {
+    source_api_v1_projects__project_id__source_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    results_api_v1_projects__project_id__connections_get: {
         parameters: {
             query?: {
                 offset?: number;
                 limit?: number;
+                batch_id?: string | null;
                 workspace_id?: string | null;
                 drawing_id?: string | null;
-                result_version_id?: string | null;
                 search?: string;
             };
             header?: {
@@ -1153,7 +1053,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ConnectionPage"];
+                    "application/json": components["schemas"]["SimpleConnectionPage"];
                 };
             };
             /** @description Validation Error */
@@ -1167,7 +1067,7 @@ export interface operations {
             };
         };
     };
-    add_connection_api_v1_projects__project_id__connections_post: {
+    add_api_v1_projects__project_id__connections_post: {
         parameters: {
             query?: never;
             header: {
@@ -1181,7 +1081,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ConnectionCreate"];
+                "application/json": components["schemas"]["SimpleConnectionCreate"];
             };
         };
         responses: {
@@ -1191,7 +1091,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ConnectionMutationReceipt"];
+                    "application/json": components["schemas"]["SimpleMutationReceipt"];
                 };
             };
             /** @description Validation Error */
@@ -1205,40 +1105,7 @@ export interface operations {
             };
         };
     };
-    wiring_units_api_v1_projects__project_id__wiring_units_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path: {
-                project_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WiringUnitRead"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_connection_api_v1_projects__project_id__connections__connection_id__delete: {
+    remove_api_v1_projects__project_id__connections__connection_id__delete: {
         parameters: {
             query?: never;
             header: {
@@ -1253,7 +1120,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ConnectionDelete"];
+                "application/json": components["schemas"]["SimpleConnectionDelete"];
             };
         };
         responses: {
@@ -1263,7 +1130,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ConnectionMutationReceipt"];
+                    "application/json": components["schemas"]["SimpleMutationReceipt"];
                 };
             };
             /** @description Validation Error */
@@ -1277,7 +1144,7 @@ export interface operations {
             };
         };
     };
-    edit_connection_api_v1_connections__connection_id__patch: {
+    edit_api_v1_connections__connection_id__patch: {
         parameters: {
             query?: never;
             header: {
@@ -1291,7 +1158,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ConnectionEdit"];
+                "application/json": components["schemas"]["SimpleConnectionEdit"];
             };
         };
         responses: {
@@ -1301,7 +1168,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["EditReceipt"];
+                    "application/json": components["schemas"]["SimpleMutationReceipt"];
                 };
             };
             /** @description Validation Error */
@@ -1315,7 +1182,7 @@ export interface operations {
             };
         };
     };
-    connection_target_api_v1_connections__connection_id__target_get: {
+    target_api_v1_connections__connection_id__target_get: {
         parameters: {
             query?: never;
             header?: {
@@ -1381,7 +1248,7 @@ export interface operations {
             };
         };
     };
-    rules_api_v1_rule_library_get: {
+    available_profiles_api_v1_rule_library_local_get: {
         parameters: {
             query?: never;
             header?: {
@@ -1398,7 +1265,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RuleRead"][];
+                    "application/json": components["schemas"]["LocalProfileOption"][];
                 };
             };
             /** @description Validation Error */
@@ -1412,54 +1279,80 @@ export interface operations {
             };
         };
     };
-    create_rule_api_v1_rule_library_post: {
+    profiles_api_v1_rule_library_get: {
         parameters: {
             query?: never;
-            header?: { authorization?: string | null };
+            header?: {
+                authorization?: string | null;
+            };
             path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: { "application/json": components["schemas"]["RuleCreate"] };
-        };
-        responses: {
-            201: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["RuleCreateReceipt"] };
-            };
-            422: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["HTTPValidationError"] };
-            };
-        };
-    };
-    delete_rule_api_v1_rule_library__package_id__delete: {
-        parameters: {
-            query?: { confirmed?: boolean };
-            header?: { authorization?: string | null };
-            path: { package_id: string };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
+            /** @description Successful Response */
             200: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["RuleDeleteReceipt"] };
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileReferenceRead"][];
+                };
             };
+            /** @description Validation Error */
             422: {
-                headers: { [name: string]: unknown };
-                content: { "application/json": components["schemas"]["HTTPValidationError"] };
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
             };
         };
     };
-    package_api_v1_rule_library__package_id__get: {
+    register_api_v1_rule_library_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileReferenceCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileReferenceRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    profile_package_api_v1_rule_library__profile_id__get: {
         parameters: {
             query?: never;
             header?: {
                 authorization?: string | null;
             };
             path: {
-                package_id: string;
+                profile_id: string;
             };
             cookie?: never;
         };
@@ -1485,10 +1378,43 @@ export interface operations {
             };
         };
     };
-    import_pdf_api_v1_imports_post: {
+    remove_profile_api_v1_rule_library__profile_id__delete: {
+        parameters: {
+            query?: {
+                confirmed?: boolean;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_api_v1_imports_post: {
         parameters: {
             query: {
-                conversation_id: string;
+                profile_key: string;
                 project_name: string;
                 filename: string;
             };
@@ -1507,217 +1433,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    supervisor_turn_api_v1_supervisor_turns_stream_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SupervisorTurn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    conversation_api_v1_supervisor_conversations__conversation_id__get: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path: {
-                conversation_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    run_api_v1_runs__run_id__get: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path: {
-                run_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    run_events_api_v1_runs__run_id__events_stream_get: {
-        parameters: {
-            query?: {
-                after_seq?: number;
-            };
-            header?: {
-                authorization?: string | null;
-            };
-            path: {
-                run_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    artifacts_api_v1_runs__run_id__artifacts_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path: {
-                run_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    proposal_api_v1_proposals__proposal_id__get: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path: {
-                proposal_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        [key: string]: unknown;
-                    };
+                    "application/json": components["schemas"]["SimpleImportRead"];
                 };
             };
             /** @description Validation Error */

@@ -41,7 +41,8 @@
           "status": "needs_reference",
           "current": "160A",
           "current_basis": "Ie",
-          "current_source_text": "Ie:(0.7-1)*160A"
+          "current_source_text": "Ie:(0.7-1)*160A",
+          "signal_name": "+01F12.1-FC11_L1"
         },
         {
           "local_connection_id": "003c01-fc11-l2",
@@ -75,7 +76,8 @@
           "status": "needs_reference",
           "current": "160A",
           "current_basis": "Ie",
-          "current_source_text": "Ie:(0.7-1)*160A"
+          "current_source_text": "Ie:(0.7-1)*160A",
+          "signal_name": "+01F12.1-FC11_L2"
         },
         {
           "local_connection_id": "003c01-fc11-l3",
@@ -109,7 +111,8 @@
           "status": "needs_reference",
           "current": "160A",
           "current_basis": "Ie",
-          "current_source_text": "Ie:(0.7-1)*160A"
+          "current_source_text": "Ie:(0.7-1)*160A",
+          "signal_name": "+01F12.1-FC11_L3"
         },
         {
           "local_connection_id": "003c01-fc11-n",
@@ -143,7 +146,8 @@
           "status": "needs_reference",
           "current": null,
           "current_basis": null,
-          "current_source_text": null
+          "current_source_text": null,
+          "signal_name": "+01F12.1-FC11_N"
         },
         {
           "local_connection_id": "003c01-fc11-pe",
@@ -177,7 +181,8 @@
           "status": "needs_reference",
           "current": null,
           "current_basis": null,
-          "current_source_text": null
+          "current_source_text": null,
+          "signal_name": "+01F12.1-FC11_PE"
         },
         {
           "local_connection_id": "003c01-fc12-l1",
@@ -211,7 +216,8 @@
           "status": "needs_reference",
           "current": "160A",
           "current_basis": "Ie",
-          "current_source_text": "Ie:(0.7-1)*160A"
+          "current_source_text": "Ie:(0.7-1)*160A",
+          "signal_name": "+10F01-FC12_L1"
         },
         {
           "local_connection_id": "003c01-fc12-l2",
@@ -245,7 +251,8 @@
           "status": "needs_reference",
           "current": "160A",
           "current_basis": "Ie",
-          "current_source_text": "Ie:(0.7-1)*160A"
+          "current_source_text": "Ie:(0.7-1)*160A",
+          "signal_name": "+10F01-FC12_L2"
         },
         {
           "local_connection_id": "003c01-fc12-l3",
@@ -279,7 +286,8 @@
           "status": "needs_reference",
           "current": "160A",
           "current_basis": "Ie",
-          "current_source_text": "Ie:(0.7-1)*160A"
+          "current_source_text": "Ie:(0.7-1)*160A",
+          "signal_name": "+10F01-FC12_L3"
         },
         {
           "local_connection_id": "003c01-fc12-n",
@@ -313,7 +321,8 @@
           "status": "needs_reference",
           "current": null,
           "current_basis": null,
-          "current_source_text": null
+          "current_source_text": null,
+          "signal_name": "+10F01-FC12_N"
         },
         {
           "local_connection_id": "003c01-fc12-pe",
@@ -347,7 +356,8 @@
           "status": "needs_reference",
           "current": null,
           "current_basis": null,
-          "current_source_text": null
+          "current_source_text": null,
+          "signal_name": "+10F01-FC12_PE"
         },
         {
           "local_connection_id": "003c01-fc13-l1",
@@ -381,7 +391,8 @@
           "status": "needs_reference",
           "current": "80A",
           "current_basis": "Ie",
-          "current_source_text": "Ie:(0.7-1)*80A"
+          "current_source_text": "Ie:(0.7-1)*80A",
+          "signal_name": "+01F35-FC13_L1"
         },
         {
           "local_connection_id": "003c01-fc13-l2",
@@ -415,7 +426,8 @@
           "status": "needs_reference",
           "current": "80A",
           "current_basis": "Ie",
-          "current_source_text": "Ie:(0.7-1)*80A"
+          "current_source_text": "Ie:(0.7-1)*80A",
+          "signal_name": "+01F35-FC13_L2"
         },
         {
           "local_connection_id": "003c01-fc13-l3",
@@ -449,7 +461,8 @@
           "status": "needs_reference",
           "current": "80A",
           "current_basis": "Ie",
-          "current_source_text": "Ie:(0.7-1)*80A"
+          "current_source_text": "Ie:(0.7-1)*80A",
+          "signal_name": "+01F35-FC13_L3"
         },
         {
           "local_connection_id": "003c01-fc13-n",
@@ -483,7 +496,8 @@
           "status": "needs_reference",
           "current": null,
           "current_basis": null,
-          "current_source_text": null
+          "current_source_text": null,
+          "signal_name": "+01F35-FC13_N"
         },
         {
           "local_connection_id": "003c01-fc13-pe",
@@ -517,7 +531,8 @@
           "status": "needs_reference",
           "current": null,
           "current_basis": null,
-          "current_source_text": null
+          "current_source_text": null,
+          "signal_name": "+01F35-FC13_PE"
         },
         {
           "local_connection_id": "003c01-control-1",

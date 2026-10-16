@@ -5,7 +5,7 @@ import { logout } from "@/apis/auth";
 import type { ProjectDetail } from "@/apis/types";
 import { useSessionStore } from "@/stores/session-store";
 
-export function AppHeader({ project }: { project: ProjectDetail }) {
+export function AppHeader({ project }: { project?: ProjectDetail }) {
   const navigate = useNavigate();
   const clearSession = useSessionStore((state) => state.clearSession);
   const user = useSessionStore((state) => state.session?.user);
@@ -32,9 +32,9 @@ export function AppHeader({ project }: { project: ProjectDetail }) {
         <span className="app-brand-copy"><strong>线表智能提取系统</strong><small>Drawing Intelligence</small></span>
       </Link>
       <div className="header-divider" />
-      <div className="header-project"><span>当前项目</span><strong>{project.name}</strong></div>
+      <div className="header-project"><span>{project ? "当前项目" : "工作区"}</span><strong>{project?.name ?? "未选择项目"}</strong></div>
       <div className="header-actions">
-        <span className={`run-state run-state-${project.status}`}><Check size={14} />{{ completed: "处理完成", review: "待复核", failed: "处理失败", processing: "处理中", queued: "等待处理" }[project.status]}</span>
+        <span className={`run-state run-state-${project?.status ?? "queued"}`}><Check size={14} />{project ? { completed: "处理完成", review: "待复核", failed: "处理失败", processing: "处理中", queued: "等待处理" }[project.status] : "暂无项目"}</span>
         <button className="header-icon-button" type="button" aria-label="通知" title="通知"><Bell size={19} /><span className="notification-dot" /></button>
         <div className="account-menu" ref={menuRef}>
           <button className="account-trigger" type="button" onClick={() => setMenuOpen((open) => !open)} aria-expanded={menuOpen}>

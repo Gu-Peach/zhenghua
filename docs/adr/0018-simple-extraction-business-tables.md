@@ -6,6 +6,8 @@
 
 ## 范围
 
+2026-10-16更新：按用户限定范围，Server/Web数据管理已适配新三表，batch_id/record_version和项目JSON索引契约见ADR-0020；原始PDF上传只保存，不触发Agent。以下旧应用依赖说明为10月14日部署时的状态，Agent正式提取仍待接入。
+
 核心提取业务数据拟集中为public.extraction_profiles、public.extraction_projects、public.extraction_connection_rows。使用独立表名，使用户可先创建核对；现有projects与wiring_connection_rows视图保持，不通过删除底层表腾出名称。Auth与已决定暂留的agent_*表不属于这三张业务表。
 
 规则表只保存key/version/checksum和资源引用，Prompt/图片继续放文件或私有Storage。项目直接外键关联规则，保存所有者、源PDF路径和图纸索引JSON，不增加项目结果关联表。连接表保存可查询的线表列、来源/目标业务页及PDF物理页、批次和页内项标识、复核状态及可选证据JSON。

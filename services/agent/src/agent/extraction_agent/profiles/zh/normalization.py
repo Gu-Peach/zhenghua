@@ -54,6 +54,8 @@ def parse_page_scan_result(content: str, *, default_pdf_page: int | None = None)
 def normalize_wire_record(
     record: WireRecord,
     terminal_strip_mapping: Mapping[str, str] | None = None,
+    *,
+    require_pin: bool = False,
 ) -> WireRecord:
     line_number = _text(record.line_number)
     if line_number and line_number.upper() == "SPARE":
@@ -71,8 +73,11 @@ def normalize_wire_record(
                 getattr(record, f"{side}_terminal"),
                 getattr(record, f"{side}_terminal_board"),
                 getattr(record, f"{side}_device"),
+                require_pin=require_pin,
             ),
         )
+        if require_pin and getattr(record, f"{side}_terminal") is None:
+            setattr(record, f"{side}_terminal_coordinates", None)
     # Business classification is deterministic; never trust model-provided strips.
     start_strip = _mapped_endpoint_strip(record, "start", terminal_strip_mapping)
     end_strip = _mapped_endpoint_strip(record, "end", terminal_strip_mapping)
@@ -126,15 +131,24 @@ def _normalize_connection(value: dict[str, Any], index: int) -> dict[str, Any]:
     return connection
 
 
-def complete_terminal_identifier(terminal: Any, board: Any = None, device: Any = None) -> Any:
+def complete_terminal_identifier(
+    terminal: Any, board: Any = None, device: Any = None, *, require_pin: bool = False,
+) -> Any:
     """Combine an observed X-family board with a pin, preserving complete labels."""
     value = _text(terminal)
     if not value or value in {"*", "PE"}:
         return terminal
     value = value.replace("：", ":")
+    if require_pin:
+        if value.upper() in {"N-BAR", "PE-BAR"}:
+            return value.upper()
+        if re.fullmatch(r"-?X(?:D\d+|\d+|[A-Z])", value, re.IGNORECASE):
+            return None
     if ":" in value:
         prefix, pin = value.split(":", 1)
         prefix = prefix.strip().lstrip("-").upper()
+        if require_pin and (not pin.strip() or prefix == pin.strip().lstrip("-").upper()):
+            return None
         return f"{prefix}:{pin.strip()}"
     for candidate in (board, device):
         code = (_text(candidate) or "").lstrip("-").upper()

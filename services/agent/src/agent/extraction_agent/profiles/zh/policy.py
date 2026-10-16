@@ -46,7 +46,7 @@ class ZhExtractionPolicy:
         return prepare_reference(raw, source_page=source_page, drawing_index=drawing_index)
 
     def normalize_record(self, record: WireRecord, mapping: Mapping[str, str]) -> WireRecord:
-        record = normalize_wire_record(record, mapping)
+        record = normalize_wire_record(record, mapping, require_pin=self.enforce_evidence_contract)
         return record
 
     def orient_connection(self, connection: WireConnection) -> tuple[WireConnection | None, bool]:
@@ -64,8 +64,10 @@ class ZhExtractionPolicy:
             endpoint = getattr(connection, side)
             if endpoint is not None:
                 endpoint.terminal = complete_terminal_identifier(
-                    endpoint.terminal, endpoint.terminal_board, endpoint.device
+                    endpoint.terminal, endpoint.terminal_board, endpoint.device, require_pin=True,
                 )
+                if endpoint.terminal is None:
+                    endpoint.terminal_coordinates = None
                 endpoint.terminal_strip = None
                 endpoint_issues = endpoint_identity_warnings(
                     endpoint.terminal, endpoint.device, endpoint.terminal_board
@@ -74,6 +76,7 @@ class ZhExtractionPolicy:
                 if any("not a physical terminal" in warning for warning in endpoint_issues):
                     issues.append(f"{side}: rejected terminal label {endpoint.terminal}")
                     endpoint.terminal = None
+                    endpoint.terminal_coordinates = None
         if connection.endpoint_role == "unknown":
             issues.append("direction unconfirmed")
         if connection.start is None:

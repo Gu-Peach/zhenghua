@@ -1,7 +1,7 @@
 {
   "manifest_version": 1,
   "key": "zh",
-  "version": "2.0.5",
+  "version": "2.1.1",
   "display_name": "振华电气图纸",
   "description": "Evidence-driven classification and Stage 2 page extraction workflow.",
   "status": "active",

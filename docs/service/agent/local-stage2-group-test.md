@@ -1,12 +1,14 @@
 # 本地 002.C / 002.M Stage 2 测试
 
+ZH2.1.1补全只发送目标图及来源匹配事实（不传起点端子/坐标），`--profile zh`自动使用；命令参数不变，复测请使用新输出目录和run_id。ABB/XMZ仍双图，详见[修正记录](./changelog/2026-10-16-zh-cross-page-reading.md)。
+
 2026-10-15起PDF入口和拆页入口主表均复用ZH14列输出契约，ABB/XMZ同样包含两端坐标列；业务备注只取remark，读取依据保留在记录JSON。坐标读取要求和图像expected已同步，旧结果不自动补坐标或改写。ABB1.1.4/XMZ0.1.2应使用新输出目录复测，避免混用旧Profile指纹。见[统一记录](./changelog/2026-10-15-unified-table-coordinates.md)。
 
 入口：`services/agent/scripts/run_stage2_groups.py`。读取已有拆分页和图纸索引，不调用 Stage 1、不重新渲染 PDF、不创建项目、数据库客户端、队列或 Storage 上传。
 
 该脚本默认绑定本地ZH，可用`--profile`切换本地规则键；模型适配器和确定性策略均按Profile.adapter绑定。其他模板资源缺失时告警后跳过，选中的规则无效仍停止。服务主入口的严格Profile加载不变，见[切换说明](./changelog/2026-10-15-local-profile-cli.md)。
 
-默认来源目录`docs/test/pages`，索引`docs/test/pages/agent/drawing_index.json`，已按用户移动后的实际位置更新。默认只扫描002.C的7页和002.M的5页，跨页可读取其他本地目标页。当前本地ZH为2.0.5；旧run_stage2产物来自2.0.0，run_stage2_v201来自2.0.1，不查询远端规则包。[电流规则](./changelog/2026-10-15-zh-ie-current.md)允许端点冻结后沿相线读取Ie明确A值；[坐标及样例记录](./changelog/2026-10-15-zh-c01-terminal-coordinates.md)明确归一化坐标与003C01案例，元件、直接端子段及程序分类规则沿用。
+默认来源目录`docs/test/pages`，索引`docs/test/pages/agent/drawing_index.json`，已按用户移动后的实际位置更新。默认只扫描002.C的7页和002.M的5页，跨页可读取其他本地目标页。当前本地ZH为2.1.1；旧run_stage2产物来自2.0.0，run_stage2_v201来自2.0.1，不查询远端规则包。[电流规则](./changelog/2026-10-15-zh-ie-current.md)允许端点冻结后沿相线读取Ie明确A值；[坐标及样例记录](./changelog/2026-10-15-zh-c01-terminal-coordinates.md)明确归一化坐标与003C01案例，元件、直接端子段及程序分类规则沿用。
 
 ## 命令
 

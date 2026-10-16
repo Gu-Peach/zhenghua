@@ -87,6 +87,7 @@ class WireRecord(BaseModel):
     current_source_text: str | None = None
 
     line_number: str | None = Field(default=None, description="图纸原理号，如 003G0121、082R5001")
+    signal_name: str | None = None
     core_number: int | str | None = None
     color: str | None = None
     spec: str | None = None
@@ -137,6 +138,7 @@ class WireRecord(BaseModel):
         "attribute",
         "model",
         "line_number",
+        "signal_name",
         "color",
         "spec",
         "start_part",

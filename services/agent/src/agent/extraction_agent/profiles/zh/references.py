@@ -13,6 +13,47 @@ ADDRESS_RE = re.compile(
 LOCAL_ADDRESS_RE = re.compile(r"^\s*(?P<page>\d{1,3})\.(?P<column>\d{1,2})(?=\s*(?:/|$))")
 
 
+def _function_identity(value: Any, source_function: str | None) -> str:
+    text = str(value or "").strip().lstrip("=").upper()
+    if re.fullmatch(r"\d{3}[A-Z]", text):
+        return f"{text[:3]}.{text[3:]}"
+    if source_function and re.fullmatch(r"\.?[A-Z]", text):
+        return f"{source_function.split('.', 1)[0]}.{text.lstrip('.')}"
+    return text
+
+
+def _unique_indexed_address(
+    reference: Mapping[str, Any], source_page: Mapping[str, Any], drawing_index: Mapping[str, Any],
+) -> dict[str, Any] | None:
+    """Recover only an unavailable address with unique evidence on this source PDF page."""
+    function = _function_identity(reference.get("target_function"), source_page.get("function"))
+    target_object = str(reference.get("target_object") or "").strip().upper()
+    if not function or not target_object:
+        return None
+    candidates: dict[tuple[Any, ...], dict[str, Any]] = {}
+    for item in drawing_index.get("references", []):
+        if str(item.get("source_pdf_page")) != str(source_page["page_number"]):
+            continue
+        raw = str(item.get("raw") or "")
+        parsed = _raw_address(raw, source_page.get("function")) if raw else None
+        if not parsed or parsed["target_function"] != function:
+            continue
+        if str(parsed.get("target_object") or "").strip().upper() != target_object:
+            continue
+        if reference.get("target_column") not in (None, parsed["target_column"]):
+            continue
+        physical = drawing_index.get("page_lookup", {}).get(f"{function}:{parsed['target_drawing_page']}")
+        identity = (function, parsed["target_drawing_page"], parsed["target_column"], target_object)
+        candidates[identity] = {
+            **parsed, "target_pdf_page": int(physical) if physical is not None else None,
+            "source_index_raw": raw,
+        }
+    if len(candidates) != 1:
+        return None
+    selected = next(iter(candidates.values()))
+    return selected if selected["target_pdf_page"] is not None else None
+
+
 def _raw_address(raw: str, source_function: str | None) -> dict[str, Any] | None:
     """Parse one wire address; a cabinet code never supplies the function number."""
     matches = list(ADDRESS_RE.finditer(raw))
@@ -45,6 +86,8 @@ def prepare_reference(
 ) -> dict[str, Any]:
     """Resolve literal address evidence before model-derived function/page fields."""
     reference = dict(raw_reference)
+    # Only the local PDF index can establish this evidence, never a model claim.
+    reference["source_index_raw"] = None
     raw = str(reference.get("raw") or "")
     if len(list(ADDRESS_RE.finditer(raw))) + bool(LOCAL_ADDRESS_RE.search(raw)) > 1:
         # Multiple literal arrows are ambiguous unless the scanner has split their branches.
@@ -99,6 +142,13 @@ def prepare_reference(
                 target_pdf_page = int(value)
                 break
     reference["target_pdf_page"] = int(target_pdf_page) if target_pdf_page is not None else None
+    if reference["target_pdf_page"] is None:
+        verified = _unique_indexed_address(reference, source_page, drawing_index)
+        if verified is not None:
+            reference.update(verified)
+            reference["external"] = False
+            reference["reason"] = "address verified by a unique reference on the same source PDF page"
+            return reference
     if reference["target_pdf_page"] is None:
         reference["external"] = True
         reference["reason"] = reference.get("reason") or "target page not found in deterministic page index"

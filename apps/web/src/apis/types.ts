@@ -38,6 +38,7 @@ export interface ProjectDetail extends ProjectSummary {
   projectNo: string;
   resultVersion: string;
   workspaces: Workspace[];
+  sourceAvailable?: boolean;
 }
 
 export interface WiringRow {
@@ -59,6 +60,8 @@ export interface WiringRow {
   endCode: string;
   endDescription: string;
   endTerminal: string;
+  startTerminalCoordinates?: components["schemas"]["TerminalCoordinates"] | null;
+  endTerminalCoordinates?: components["schemas"]["TerminalCoordinates"] | null;
   current: string;
   remark: string;
   status: "confirmed" | "review";

@@ -207,10 +207,10 @@ def test_page_save_failure_stops_before_next_source_page(tmp_path: Path) -> None
     asyncio.run(check())
 
 
-def test_double_image_completion_and_manifest_paths(tmp_path: Path) -> None:
+def test_target_image_completion_and_manifest_paths(tmp_path: Path) -> None:
     async def check() -> None:
         profile = binding()
-        assert profile.profile.version == "2.0.5"
+        assert profile.profile.version == "2.1.1"
         gateway = FakeModelGateway(['{"end":{"device":"-Q1","terminal":"L1"},"status":"resolved"}'])
         adapter = ZhVlmExtractionStageAdapter(AgentSettings(default_model="fake"), gateway)
         pages = []
@@ -230,7 +230,7 @@ def test_double_image_completion_and_manifest_paths(tmp_path: Path) -> None:
             )
         )
         content = gateway.calls[0].messages[-1]["content"]
-        assert sum(part.get("type") == "image_url" for part in content) == 2
+        assert sum(part.get("type") == "image_url" for part in content) == 1
         assert gateway.calls[0].metadata["stage"] == "page_scan"
         manifest_root = profile.resource("wiring_examples")
         manifest = json.loads((manifest_root / "manifest.json").read_text(encoding="utf-8"))

@@ -1,5 +1,11 @@
 # Agent 服务设计索引
 
+2026-10-16按用户精简后的manifest保留003C01的1组初扫、5组补全/负例和4张图，删除独占未引用6图/12JSON；manifest v13、资源摘要与测试引用同步，Profile保持2.1.1。仅静态核对，未运行测试/模型。见[清理记录](./changelog/2026-10-16-zh-c01-example-cleanup.md)。
+
+2026-10-16本地ZH2.1.1修正003.C/004.C跨页读取：上下文v2移除起点端子/坐标/方向文字，允许页底朝外回指，接口/针脚分别读取，缺失地址只用唯一来源页PDF证据核对。5初扫/9补全/10图，补全仍每次1例；仅静态核对。见[方案](./zh-cross-page-reading-fix-plan.md)与[记录](./changelog/2026-10-16-zh-cross-page-reading.md)。
+
+2026-10-15本地ZH2.1.0定向补全改为只发送目标图和初扫来源事实，扫描增加可见signal_name，ABB/XMZ保持双图。资源/Schema/语法/类型与CLI静态核对，未运行测试或模型。见[设计](./zh-target-only-completion-plan.md)与[记录](./changelog/2026-10-15-zh-target-only-completion.md)。
+
 2026-10-15按用户要求优先保留实际输入图像素，再压缩/整组减少Few-shot；输入自身超预算才缩小，尺寸/删例metadata和缓存指纹同步。仅静态核对，未运行模型/测试。见[记录](./changelog/2026-10-15-input-first-image-budget.md)。
 
 2026-10-15所有模板主表统一ZH14列，共用表头/行映射/默认样式；ABB1.1.4/XMZ0.1.2补齐实际端子坐标Prompt与图像expected。仅静态核对，不跑测试/模型或覆盖旧结果。见[交付记录](./changelog/2026-10-15-unified-table-coordinates.md)与[ADR-0019](../../adr/0019-unified-extraction-table.md)。

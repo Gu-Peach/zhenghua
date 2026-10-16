@@ -14,6 +14,7 @@ class Settings:
     web_origin: str = "http://localhost:5174"
     max_pdf_bytes: int = 200 * 1024 * 1024
     database_url: str = ""
+    profile_root: Path | None = None
 
     @classmethod
     def from_env(cls) -> Settings:

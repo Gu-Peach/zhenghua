@@ -1,0 +1,11 @@
+# 起终点坐标字段接入
+
+用户要求保存提取Agent已有坐标，供后续前端图像定位。extraction_connection_rows新增start_terminal_coordinates/end_terminal_coordinates两列可空JSONB，结构与Agent的{x,y,pdf_page_number}一致；x/y为完整图片左上起算0～1归一化端子中心，页号为该端坐标所属PDF物理页，两端独立，不用业务页号或来源页替代。未知NULL，不填零点占位。
+
+新增20261016010000迁移，已在本地supabase_db_zhenghua_test部署并登记。数据库约束验证对象结构、数字类型、坐标范围和正整数页号；触发器在端子/关联物理页改变而未提供新坐标时清理旧点，不相关备注/描述修改保留坐标，显式新坐标可保留。现有CRUD无需改写已应用migration，RETURNING及before/after审计包含实际坐标变化。
+
+Server新增独立Pydantic TerminalCoordinates边界，读接口返回同名两键，旧行默认null。OpenAPI/generated.ts同步；前端WiringRow映射到startTerminalCoordinates/endTerminalCoordinates供后续定位。坐标属于读取元数据，不加入普通端子编辑表单，本轮不绘制标记或接通Agent正式落库。
+
+验证：新增接口透传回归先复现坐标丢失，再修正通过；20项Server默认/Fake用例、类型/Ruff通过，Web typecheck/lint/生产构建通过。真实本地SQL事务验证格式/上下界/页号/未知值/失效清理及CRUD审计兼容；真实HTTP通过合成记录验证两端坐标和不同物理页返回、终点变更只清终点。一次性账号/规则引用/项目/文件均清理，三业务表仍0行，Auth用户3、Storage对象358。
+
+未重跑Agent、修改提取Prompt/Graph、生成新提取结果或实现图片高亮。用户当前后端进程需重启加载新的响应字段；数据库列已经生效。契约详见../terminal-coordinate-contract.md。

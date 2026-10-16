@@ -1,2 +1,2 @@
 import { defineConfig } from "@playwright/test";
-export default defineConfig({ testDir: "./tests", use: { baseURL: "http://127.0.0.1:5174", browserName: "chromium", channel: "chrome" }, webServer: { command: "corepack pnpm dev", url: "http://127.0.0.1:5174", reuseExistingServer: true }, reporter: "list", outputDir: "../../.runtime/web-tests" });
+export default defineConfig({ testDir: "./tests", use: { baseURL: "http://127.0.0.1:5186", browserName: "chromium", channel: "chrome" }, webServer: { command: "node ./node_modules/vite/bin/vite.js --host 127.0.0.1 --port 5186", url: "http://127.0.0.1:5186", reuseExistingServer: false }, reporter: "list", outputDir: "../../.runtime/simple-management-browser", workers: 2 });

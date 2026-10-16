@@ -172,7 +172,7 @@ class LocalImageClient(ExtractionStageGraphClient):
     async def resolve_cross_page(
         self, target_image: Any, *, source_image: Any | None = None, task_context: str = ""
     ) -> Any:
-        self._completion_mode = bool(source_image)
+        self._completion_mode = True
         try:
             return await super().resolve_cross_page(
                 target_image, source_image=source_image, task_context=task_context

@@ -1,7 +1,21 @@
 # 开发路线
 
-> 最后更新：2026-10-12
+> 最后更新：2026-10-16
 > 状态含义：`planned`、`in progress`、`blocked`、`done`
+
+2026-10-16 独立Agent清理已完成依赖审阅和92文件清单，自动审批拒绝批量删除及入口改写；旧代码尚未删除或停用，等待用户确认具体范围。explain/profile仅有职责文档，未实现或新增服务；提取和现有改动保留，开发阶段状态不变。见[待确认清单](./service/agent/independent-agents-retirement-inventory.md)。
+
+2026-10-16结果表起终点JSONB坐标及API/前端类型已接入，独立保留归一化x/y与本端PDF物理页；20项后端、Web检查及真实SQL/HTTP验证通过，迁移已部署。图像定位高亮和Agent写库仍后续接入，阶段状态不变。见[坐标记录](./service/server/changelog/2026-10-16-terminal-coordinates.md)。
+
+2026-10-16按用户manifest清理ZH样例为1初扫/5补全/4图，删除未引用6图/12JSON并同步资源摘要和测试引用。仅静态核对、不运行测试或模型，重复生成改善待用户复测，Phase 4保持in progress。见[清理记录](./service/agent/changelog/2026-10-16-zh-c01-example-cleanup.md)。
+
+2026-10-16登录后直达工作区，空库保留完整布局；侧栏项目管理保留，13项浏览器与类型/lint/build通过，数据库与Agent阶段状态不变。见[Web记录](./apps/web/changelog/2026-10-16-workspace-entry.md)。
+
+2026-10-16前后端三表数据管理已完成：项目/规则引用/PDF登记、JSON图纸预览、批次线表和事务行CRUD，上传不启动Agent。14项后端、10项浏览器、Web检查、真实本地Auth/Storage/CRUD验收通过，合成数据清理；提取持久化后续接入，Phase 4/5仍in progress。见[Server](./service/server/changelog/2026-10-16-simple-management.md)和[Web](./apps/web/changelog/2026-10-16-simple-management.md)。
+
+2026-10-16本地ZH2.1.1跨页读取文件完成：目标回指不限入页方向、接口/针脚分读、上下文去除起点数据与唯一PDF引用核对，案例及回归文件同步。仅静态核对，未运行测试/模型，真实精度与缺页恢复仍待用户新目录复测，Phase 4保持in progress。见[记录](./service/agent/changelog/2026-10-16-zh-cross-page-reading.md)。
+
+2026-10-15本地ZH2.1.0目标图定向补全与来源事实契约文件完成，5初扫/4补全案例、模板模式隔离及回归文件同步；静态语法/Schema/路径/类型与CLI检查，未运行测试或模型。实际精度/耗时待用户新目录复测，Phase 4仍in progress。见[记录](./service/agent/changelog/2026-10-15-zh-target-only-completion.md)。
 
 2026-10-15请求图片预算改为实际图优先，先压缩/整组减少案例，输入自身超限才缩小；配置、metadata和完成页指纹同步。静态语法/配置/CLI/预算模块类型与lint通过，未运行测试或模型，Phase 4质量验收仍in progress。见[记录](./service/agent/changelog/2026-10-15-input-first-image-budget.md)。
 

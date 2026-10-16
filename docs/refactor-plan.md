@@ -6,6 +6,18 @@
 
 ## 1. 重构结论
 
+2026-10-16 用户授权清理旧Supervisor/纠错/自完善等失效控制面，先独立开发extraction/explain/profile能力，未来再统一主Deep Agent；共享服务保留最小探活/本地规则只读能力，不启用旧业务表任务链路。见 [ADR-0021](./adr/0021-independent-agents-before-orchestration.md)。
+
+2026-10-16结果表新增可空起终点JSONB坐标，API/前端类型沿用Agent的x/y归一化点及所属PDF物理页，端点变更清理旧坐标；图片高亮及Agent落库仍后续接入。见[坐标契约](./service/server/terminal-coordinate-contract.md)。
+
+2026-10-16前后端三表数据管理已完成：API v2的batch_id/record_version、项目JSON图纸索引和事务行级RPC；上传仅保存，Agent入口禁用待接入。14项后端、10项浏览器和真实本地Auth/Storage/CRUD验收通过，详见[ADR-0020](./adr/0020-three-table-management-contract.md)及[交付](./service/server/changelog/2026-10-16-simple-management.md)。
+
+2026-10-16本地ZH2.1.1补全上下文v2只传来源匹配事实与元件元数据，起点端子/坐标/方向留在state；不限制目标回指箭头朝向，沿线分别读接口与针脚。不可定位地址只以唯一来源页PDF引用核对，新增可选source_index_raw保留依据。Graph拓扑和14列表格不变，见[方案](./service/agent/zh-cross-page-reading-fix-plan.md)。
+
+2026-10-16用户确认先将前后端数据管理适配三表，Agent上传后提取/落库后续再改。本轮使用批次与行版本契约、项目JSON图纸索引，上传只登记并保存文件；见[接入计划](./service/server/simple-schema-management-plan.md)。
+
+2026-10-15本地ZH2.1.0采用目标图加初扫来源事实完成定向连接；公共Graph由Profile输入模式控制是否加载来源图，默认双图保持ABB/XMZ及旧包兼容，不改变阶段拓扑。内部增加可选signal_name及版本化上下文，业务页匹配与图片物理页坐标分离。见[设计](./service/agent/zh-target-only-completion-plan.md)。
+
 2026-10-15公共图像传输策略改为输入图优先分配像素，案例先压缩/整组减少，输入自身超预算才继续缩小；无模板条件分支，原图及坐标含义不变。设计见[预算方案](./service/agent/model-image-budget-plan.md)，实现/未验收项见[记录](./service/agent/changelog/2026-10-15-input-first-image-budget.md)。
 
 2026-10-15用户要求所有模板主表对齐ZH14列，并补齐ABB/XMZ端子坐标说明/图像expected；公共Graph与CLI共用表头/行映射，固定导入模板保留独立格式。见[ADR-0019](./adr/0019-unified-extraction-table.md)，不重跑模型或覆盖旧结果。

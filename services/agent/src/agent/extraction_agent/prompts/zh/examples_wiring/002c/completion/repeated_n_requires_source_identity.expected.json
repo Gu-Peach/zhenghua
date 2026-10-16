@@ -1,0 +1,11 @@
+{
+  "task_id": "repeated_n_requires_source_identity",
+  "end": null,
+  "source_component": null,
+  "status": "needs_review",
+  "needs_review": true,
+  "current": null,
+  "current_basis": null,
+  "current_source_text": null,
+  "source_note": "目标003C01有三组标注002C0600的N线；任务缺少来源业务页、对象和对应线路引用，不能唯一匹配，终点留空。"
+}

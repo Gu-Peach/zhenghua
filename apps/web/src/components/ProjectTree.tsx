@@ -1,11 +1,11 @@
-import { ChevronDown, ChevronRight, FileImage, Folder, FolderOpen, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, FileImage, Folder, FolderOpen, Pencil, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { AgentStageProgress } from "@/apis/agent";
 import type { EntityStatus, ProjectDetail, ProjectSummary } from "@/apis/types";
 
 interface ProjectTreeProps {
-  project: ProjectDetail;
+  project: ProjectDetail | null;
   loading?: boolean;
   projects: ProjectSummary[];
   selectedWorkspaceId: string | null;
@@ -15,25 +15,27 @@ interface ProjectTreeProps {
   simulationEnabled: boolean;
   onSelectWorkspace: (workspaceId: string) => void;
   onSelectDrawing: (workspaceId: string, drawingId: string) => void;
+  onRename?: (project: ProjectSummary) => void;
+  onDelete?: (project: ProjectSummary) => void;
 }
 
-export function ProjectTree({ project, projects, loading = false, selectedWorkspaceId, selectedDrawingId, stageProgress, uploadedFilename, simulationEnabled, onSelectWorkspace, onSelectDrawing }: ProjectTreeProps) {
+export function ProjectTree({ project, projects, loading = false, selectedWorkspaceId, selectedDrawingId, stageProgress, uploadedFilename, simulationEnabled, onSelectWorkspace, onSelectDrawing, onRename, onDelete }: ProjectTreeProps) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<string[]>([]);
-  const [expandedProjects, setExpandedProjects] = useState<string[]>([project.id]);
+  const [expandedProjects, setExpandedProjects] = useState<string[]>(project ? [project.id] : []);
   const visibleProjects = useMemo(() => projects.filter((item) => `${item.name} ${item.company}`.toLowerCase().includes(query.toLowerCase())), [projects, query]);
   const stage1 = stageProgress.find((stage) => stage.stage === "Stage 1");
   const stage1Complete = stage1?.status === "done";
   const stage2 = stageProgress.find((stage) => stage.stage === "Stage 2");
-  const hasWorkspaceIndex = project.workspaces.length > 0 || stage1Complete || stageProgress.some((stage) => stage.stage === "数据库查询");
+  const hasWorkspaceIndex = (project?.workspaces.length ?? 0) > 0 || stage1Complete || stageProgress.some((stage) => stage.stage === "数据库查询");
 
   function toggleWorkspace(workspaceId: string) {
     setCollapsed((current) => current.includes(workspaceId) ? current.filter((id) => id !== workspaceId) : [...current, workspaceId]);
   }
 
   function toggleProject(projectId: string) {
-    if (projectId !== project.id) { navigate(`/projects/${projectId}`); return; }
+    if (projectId !== project?.id) { navigate(`/projects/${projectId}`); return; }
     setExpandedProjects(ids => ids.includes(projectId) ? ids.filter(id => id !== projectId) : [...ids, projectId]);
   }
 
@@ -43,7 +45,7 @@ export function ProjectTree({ project, projects, loading = false, selectedWorksp
       <label className="tree-search"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索项目或公司" aria-label="搜索项目或公司" /></label>
       <nav className="project-tree" aria-label="项目、工作区和图纸">
         {visibleProjects.map((item) => {
-          const active = item.id === project.id;
+          const active = item.id === project?.id;
           const expanded = expandedProjects.includes(item.id);
           const childrenId = `project-children-${item.id}`;
           return (
@@ -55,10 +57,12 @@ export function ProjectTree({ project, projects, loading = false, selectedWorksp
                     <span className="tree-row-copy"><strong title={item.name}>{item.name}</strong></span>
                     <StatusDot status={item.status} />
                     </Link>
+                    {onRename ? <button type="button" className="project-action" aria-label={`重命名项目 ${item.name}`} title="重命名项目" onClick={() => onRename(item)}><Pencil size={13} /></button> : null}
+                    {onDelete ? <button type="button" className="project-action" aria-label={`删除项目 ${item.name}`} title="删除项目" onClick={() => onDelete(item)}><Trash2 size={13} /></button> : null}
                   </div>
-                  {active && expanded ? <div id={childrenId} className="workspace-tree">
+                  {project && active && expanded ? <div id={childrenId} className="workspace-tree">
                   {loading ? <p className="tree-empty">正在读取工作区…</p> : null}
-                  {uploadedFilename && !hasWorkspaceIndex ? <p className="tree-empty">{simulationEnabled ? "等待 Agent 分类并发布图纸索引" : "等待处理"}</p> : null}
+                  {uploadedFilename && !hasWorkspaceIndex ? <p className="tree-empty">{simulationEnabled ? "等待 Agent 分类并发布图纸索引" : "尚无图纸索引"}</p> : null}
                   {hasWorkspaceIndex && project.workspaces.length === 0 ? <p className="tree-empty">Stage 1 正在识别工作区</p> : null}
                   {hasWorkspaceIndex ? project.workspaces.map((workspace) => {
                     const isExpanded = !collapsed.includes(workspace.id);
@@ -86,6 +90,7 @@ export function ProjectTree({ project, projects, loading = false, selectedWorksp
             </div>
           );
         })}
+        {!projects.length ? <p className="tree-empty">{loading ? "正在读取项目…" : "暂无项目"}</p> : null}
       </nav>
       <div className="sidebar-footer"><span className="legend-dot completed" />已完成 <span className="legend-dot processing" />处理中 <span className="legend-dot review" />待复核</div>
     </aside>

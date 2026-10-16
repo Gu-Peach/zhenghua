@@ -113,6 +113,10 @@ class ExtractionStageGraphClient:
         self._scanner = PageScannerAgent(stages=stages)
 
     @property
+    def completion_uses_source_image(self) -> bool:
+        return self._profile.rules.extraction.cross_page_input_mode != "target_only"
+
+    @property
     def workflow_fingerprint(self) -> dict[str, Any]:
         fingerprint: dict[str, Any] = {"run_id": self._run_id, "profile": self._profile.profile.model_dump(mode="json")}
         if self._image_budget:

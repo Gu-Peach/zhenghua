@@ -19,7 +19,7 @@
   },
   "status": "resolved",
   "needs_review": false,
-  "source_note": "来源XA:8下方斜杠和出页引用=080.C+01F12.1/10.1与目标003C0101对应，目标入页后第一个端子是XD10:1，不继续到FC10。 来源相线已从FC11的Ie标注读取160A，补全current=null表示保留。",
+  "source_note": "以初扫保存的来源事实匹配目标图。来源XA:8下方斜杠和出页引用=080.C+01F12.1/10.1与目标003C0101对应，目标入页后第一个端子是XD10:1，不继续到FC10。 来源相线已从FC11的Ie标注读取160A，补全current=null表示保留。",
   "current": null,
   "current_basis": null,
   "current_source_text": null

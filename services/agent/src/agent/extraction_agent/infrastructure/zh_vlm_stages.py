@@ -28,6 +28,7 @@ from src.domain.ports import ExtractionStageAdapter
 from src.harness.model_gateway import ModelGateway, ModelGatewayError, ModelRequest
 from src.agent.extraction_agent.infrastructure.document.json_response import _extract_json_candidate
 from src.agent.extraction_agent.infrastructure.document.model_images import prepare_vision_messages
+from src.agent.extraction_agent.profiles.zh.completion_context import target_only_context
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -129,6 +130,22 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
         self,
         request: CrossPageCompletionRequest,
     ) -> CrossPageCompletionData:
+        preserve_current = False
+        if request.profile.rules.extraction.cross_page_input_mode == "target_only":
+            context = target_only_context(request)
+            preserve_current = context.current not in (None, "")
+            request = request.model_copy(update={"task_context": context.model_dump_json(exclude_none=True)})
+
+        def normalize(value: Any) -> dict[str, Any]:
+            result = _normalize_cross_page(
+                value, request.task_id, require_evidence=self.enforce_evidence_contract,
+                target_pdf_page=request.target_page.pdf_page_number,
+            )
+            if preserve_current:
+                for field in ("current", "current_basis", "current_source_text"):
+                    result[field] = None
+            return result
+
         user_text = self.cross_page_instruction(request)
         return await self._invoke_stage(
             stage="page_scan",
@@ -141,14 +158,33 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             images=self.completion_images(request),
             user_text=user_text,
             output_model=CrossPageCompletionData,
-            normalize=lambda value: _normalize_cross_page(
-                value, request.task_id, require_evidence=self.enforce_evidence_contract,
-                target_pdf_page=request.target_page.pdf_page_number,
-            ),
+            normalize=normalize,
             item_id=request.task_id,
         )
 
     def cross_page_instruction(self, request: CrossPageCompletionRequest) -> str:
+        if request.profile.rules.extraction.cross_page_input_mode == "target_only":
+            return (
+                "这是Stage2内部定向补全，只提供目标图和初扫保存的来源事实。"
+                "source_page是来源业务工作区/页号/Object Loc，target_page是当前目标图；"
+                "PDF物理页用于图片坐标，不代替业务页回指。"
+                "先从目标图找到对应来源页的回指标识，再结合line_number、signal_name和references"
+                "核对同一条线，从对应箭头沿实际导线向页内到第一个端子。"
+                "回指可在页底且箭头朝外，按任务归属补终点，不重新定向。PE/N或重复原理号不能单独确定匹配；"
+                "同页多路信号还要核对线路名、对象或列号，不按左右顺序配对。"
+                "无法唯一确认的字段留null并needs_review。"
+                "来源端子和坐标由工作流保存，当前上下文只含来源元件元数据，终点必须独立读目标图。"
+                "沿匹配线路到实际接点，先分别读接口标识和针脚，再组合完整端子；"
+                "X21旁的5为X21:5，N_230/HTR_L等文字是线路功能，N-BAR/PE-BAR按原文读取。"
+                "references有source_index_raw时按其核对后的地址字段定位，raw保留原始识别文本。"
+                "终点元件按任务对应出页引用→目标端附近→目标页Object Loc读取，"
+                "来源元件补充按目标回指→已存起点元件→来源页Object Loc读取。"
+                "end.terminal填写完整实际端子，terminal_strip留null；"
+                "end.terminal_coordinates是目标整图归一化坐标及目标PDF物理页。"
+                "电流沿用系统硬约束，有已存current时返回null表示保留。\n"
+                f"任务上下文：{request.task_context}\n"
+                "严格输出CrossPageCompletionData JSON，只处理这条任务。"
+            )
         return (
             "这是Stage2内部双图补全，只处理任务指定的放线段。"
             "按原始引用、原理号和实线定位目标图，读取直接相连的端子，遇到端子停止。\n"
@@ -172,6 +208,8 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
         )
 
     def completion_images(self, request: CrossPageCompletionRequest) -> list[DrawingPageInput]:
+        if request.profile.rules.extraction.cross_page_input_mode == "target_only":
+            return [request.target_page]
         return ([request.source_page] if request.source_page else []) + [request.target_page]
 
     async def _invoke_stage(
@@ -198,6 +236,11 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             input_json=input_json,
         )
         contract = output_model.model_json_schema()
+        if not self.zh_endpoint_semantics and "ScannedConnection" in contract.get("$defs", {}):
+            # The optional matching hint is requested only by the ZH scan Prompt.
+            contract["$defs"]["ScannedConnection"]["properties"].pop("signal_name", None)
+        if not self.zh_endpoint_semantics and "DrawingReference" in contract.get("$defs", {}):
+            contract["$defs"]["DrawingReference"]["properties"].pop("source_index_raw", None)
         if "DrawingEndpoint" in contract.get("$defs", {}):
             endpoint_schema = contract["$defs"]["DrawingEndpoint"]
             endpoint_schema["properties"]["terminal_coordinates"]["description"] = (
@@ -250,6 +293,8 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             max_total_pixels=self._settings.model_max_total_image_pixels,
             few_shot_min_side=self._settings.model_fewshot_min_image_side,
         )
+        if example_section == "stage3_cases":
+            image_metadata["completion_input_mode"] = profile.rules.extraction.cross_page_input_mode
         last_error: Exception | None = None
         for schema_attempt in range(2):
             attempt_messages = list(messages)
@@ -450,6 +495,20 @@ def _stage3_example_score(current: Mapping[str, Any], example: Mapping[str, Any]
         score += 3
     if current_features["cross_function"] == candidate_features["cross_function"]:
         score += 1
+    if current.get("context_version") == 2:
+        if (
+            current_features["signal_name"]
+            and current_features["signal_name"] == candidate_features["signal_name"]
+        ):
+            score += 12
+        for side in ("source", "target"):
+            if (
+                current_features[f"{side}_function"]
+                and current_features[f"{side}_function"] == candidate_features[f"{side}_function"]
+                and current_features[f"{side}_page"] is not None
+                and current_features[f"{side}_page"] == candidate_features[f"{side}_page"]
+            ):
+                score += 4
     return score
 
 
@@ -459,16 +518,29 @@ def _stage3_task_features(task: Mapping[str, Any]) -> dict[str, Any]:
     references = task.get("references")
     references = references if isinstance(references, list) else []
     first_reference = next((item for item in references if isinstance(item, Mapping)), {})
-    start_terminal = str(source_record.get("start_terminal") or "").strip().upper()
+    start = task.get("start")
+    start = start if isinstance(start, Mapping) else {}
+    source_page = task.get("source_page")
+    source_page = source_page if isinstance(source_page, Mapping) else {}
+    target_page = task.get("target_page")
+    target_page = target_page if isinstance(target_page, Mapping) else {}
+    start_terminal = str(source_record.get("start_terminal") or start.get("terminal") or "").strip().upper()
     start_code = start_terminal.split(":", 1)[0] if start_terminal else ""
-    source_function = str(source_record.get("drawing_function") or "").strip().upper()
-    target_function = str(first_reference.get("target_function") or "").strip().upper()
+    source_function = str(
+        source_record.get("drawing_function") or source_page.get("drawing_function") or ""
+    ).strip().upper()
+    target_function = str(
+        target_page.get("drawing_function") or first_reference.get("target_function") or ""
+    ).strip().upper()
     return {
         "line_number": str(task.get("line_number") or source_record.get("line_number") or "").strip().upper(),
         "start_terminal": start_terminal,
         "start_code": start_code,
         "source_function": source_function,
         "target_function": target_function,
+        "signal_name": str(task.get("signal_name") or source_record.get("signal_name") or "").strip().upper(),
+        "source_page": source_page.get("drawing_page_number") or source_record.get("drawing_page_number"),
+        "target_page": target_page.get("drawing_page_number") or first_reference.get("target_drawing_page"),
         "cross_function": bool(source_function and target_function and source_function != target_function),
     }
 

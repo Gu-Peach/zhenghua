@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 
+// Historical old-table/Supervisor contract. Current regression: simple-management.spec.ts.
+
 // Explicit HTTP fixtures, never a production fallback. No paid models or real user data.
 const project = "10000000-0000-4000-8000-000000000001";
 const source = "10000000-0000-4000-8000-000000000002";

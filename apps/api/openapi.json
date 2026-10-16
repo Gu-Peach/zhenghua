@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Wiring Workbench Server",
-    "version": "1.0.0"
+    "version": "2.0.0"
   },
   "paths": {
     "/api/v1/auth/login": {
@@ -122,10 +122,60 @@
         }
       }
     },
+    "/api/v1/capabilities": {
+      "get": {
+        "summary": "Capabilities",
+        "operationId": "capabilities_api_v1_capabilities_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response Capabilities Api V1 Capabilities Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects": {
       "get": {
-        "summary": "List Projects",
-        "operationId": "list_projects_api_v1_projects_get",
+        "summary": "Projects",
+        "operationId": "projects_api_v1_projects_get",
         "parameters": [
           {
             "name": "authorization",
@@ -152,9 +202,9 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ProjectRead"
+                    "$ref": "#/components/schemas/SimpleProjectRead"
                   },
-                  "title": "Response List Projects Api V1 Projects Get"
+                  "title": "Response Projects Api V1 Projects Get"
                 }
               }
             }
@@ -197,7 +247,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProjectInput"
+                "$ref": "#/components/schemas/SimpleProjectInput"
               }
             }
           }
@@ -208,7 +258,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProjectRead"
+                  "$ref": "#/components/schemas/SimpleProjectRead"
                 }
               }
             }
@@ -228,8 +278,8 @@
     },
     "/api/v1/projects/{project_id}": {
       "get": {
-        "summary": "Project Detail",
-        "operationId": "project_detail_api_v1_projects__project_id__get",
+        "summary": "Project",
+        "operationId": "project_api_v1_projects__project_id__get",
         "parameters": [
           {
             "name": "project_id",
@@ -264,7 +314,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProjectRead"
+                  "$ref": "#/components/schemas/SimpleProjectRead"
                 }
               }
             }
@@ -282,8 +332,8 @@
         }
       },
       "patch": {
-        "summary": "Rename Project",
-        "operationId": "rename_project_api_v1_projects__project_id__patch",
+        "summary": "Rename",
+        "operationId": "rename_api_v1_projects__project_id__patch",
         "parameters": [
           {
             "name": "project_id",
@@ -317,7 +367,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ProjectInput"
+                "$ref": "#/components/schemas/SimpleProjectInput"
               }
             }
           }
@@ -328,7 +378,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProjectRead"
+                  "$ref": "#/components/schemas/SimpleProjectRead"
                 }
               }
             }
@@ -346,8 +396,8 @@
         }
       },
       "delete": {
-        "summary": "Delete Project",
-        "operationId": "delete_project_api_v1_projects__project_id__delete",
+        "summary": "Remove Project",
+        "operationId": "remove_project_api_v1_projects__project_id__delete",
         "parameters": [
           {
             "name": "project_id",
@@ -412,10 +462,66 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/source": {
+      "get": {
+        "summary": "Source",
+        "operationId": "source_api_v1_projects__project_id__source_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Source Api V1 Projects  Project Id  Source Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/connections": {
       "get": {
-        "summary": "Connections",
-        "operationId": "connections_api_v1_projects__project_id__connections_get",
+        "summary": "Results",
+        "operationId": "results_api_v1_projects__project_id__connections_get",
         "parameters": [
           {
             "name": "project_id",
@@ -448,6 +554,24 @@
               "minimum": 1,
               "default": 100,
               "title": "Limit"
+            }
+          },
+          {
+            "name": "batch_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Batch Id"
             }
           },
           {
@@ -485,23 +609,6 @@
             }
           },
           {
-            "name": "result_version_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Result Version Id"
-            }
-          },
-          {
             "name": "search",
             "in": "query",
             "required": false,
@@ -535,7 +642,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ConnectionPage"
+                  "$ref": "#/components/schemas/SimpleConnectionPage"
                 }
               }
             }
@@ -553,8 +660,8 @@
         }
       },
       "post": {
-        "summary": "Add Connection",
-        "operationId": "add_connection_api_v1_projects__project_id__connections_post",
+        "summary": "Add",
+        "operationId": "add_api_v1_projects__project_id__connections_post",
         "parameters": [
           {
             "name": "project_id",
@@ -599,7 +706,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ConnectionCreate"
+                "$ref": "#/components/schemas/SimpleConnectionCreate"
               }
             }
           }
@@ -610,67 +717,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ConnectionMutationReceipt"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/projects/{project_id}/wiring-units": {
-      "get": {
-        "summary": "Wiring Units",
-        "operationId": "wiring_units_api_v1_projects__project_id__wiring_units_get",
-        "parameters": [
-          {
-            "name": "project_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Project Id"
-            }
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/WiringUnitRead"
-                  },
-                  "title": "Response Wiring Units Api V1 Projects  Project Id  Wiring Units Get"
+                  "$ref": "#/components/schemas/SimpleMutationReceipt"
                 }
               }
             }
@@ -690,8 +737,8 @@
     },
     "/api/v1/projects/{project_id}/connections/{connection_id}": {
       "delete": {
-        "summary": "Delete Connection",
-        "operationId": "delete_connection_api_v1_projects__project_id__connections__connection_id__delete",
+        "summary": "Remove",
+        "operationId": "remove_api_v1_projects__project_id__connections__connection_id__delete",
         "parameters": [
           {
             "name": "project_id",
@@ -746,7 +793,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ConnectionDelete"
+                "$ref": "#/components/schemas/SimpleConnectionDelete"
               }
             }
           }
@@ -757,7 +804,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ConnectionMutationReceipt"
+                  "$ref": "#/components/schemas/SimpleMutationReceipt"
                 }
               }
             }
@@ -777,8 +824,8 @@
     },
     "/api/v1/connections/{connection_id}": {
       "patch": {
-        "summary": "Edit Connection",
-        "operationId": "edit_connection_api_v1_connections__connection_id__patch",
+        "summary": "Edit",
+        "operationId": "edit_api_v1_connections__connection_id__patch",
         "parameters": [
           {
             "name": "connection_id",
@@ -823,7 +870,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/ConnectionEdit"
+                "$ref": "#/components/schemas/SimpleConnectionEdit"
               }
             }
           }
@@ -834,7 +881,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/EditReceipt"
+                  "$ref": "#/components/schemas/SimpleMutationReceipt"
                 }
               }
             }
@@ -854,8 +901,8 @@
     },
     "/api/v1/connections/{connection_id}/target": {
       "get": {
-        "summary": "Connection Target",
-        "operationId": "connection_target_api_v1_connections__connection_id__target_get",
+        "summary": "Target",
+        "operationId": "target_api_v1_connections__connection_id__target_get",
         "parameters": [
           {
             "name": "connection_id",
@@ -964,10 +1011,10 @@
         }
       }
     },
-    "/api/v1/rule-library": {
+    "/api/v1/rule-library/local": {
       "get": {
-        "summary": "Rules",
-        "operationId": "rules_api_v1_rule_library_get",
+        "summary": "Available Profiles",
+        "operationId": "available_profiles_api_v1_rule_library_local_get",
         "parameters": [
           {
             "name": "authorization",
@@ -994,9 +1041,59 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/RuleRead"
+                    "$ref": "#/components/schemas/LocalProfileOption"
                   },
-                  "title": "Response Rules Api V1 Rule Library Get"
+                  "title": "Response Available Profiles Api V1 Rule Library Local Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rule-library": {
+      "get": {
+        "summary": "Profiles",
+        "operationId": "profiles_api_v1_rule_library_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ProfileReferenceRead"
+                  },
+                  "title": "Response Profiles Api V1 Rule Library Get"
                 }
               }
             }
@@ -1014,8 +1111,8 @@
         }
       },
       "post": {
-        "summary": "Create Rule",
-        "operationId": "create_rule_api_v1_rule_library_post",
+        "summary": "Register",
+        "operationId": "register_api_v1_rule_library_post",
         "parameters": [
           {
             "name": "authorization",
@@ -1039,7 +1136,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RuleCreate"
+                "$ref": "#/components/schemas/ProfileReferenceCreate"
               }
             }
           }
@@ -1050,7 +1147,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RuleCreateReceipt"
+                  "$ref": "#/components/schemas/ProfileReferenceRead"
                 }
               }
             }
@@ -1068,19 +1165,19 @@
         }
       }
     },
-    "/api/v1/rule-library/{package_id}": {
+    "/api/v1/rule-library/{profile_id}": {
       "delete": {
-        "summary": "Delete Rule",
-        "operationId": "delete_rule_api_v1_rule_library__package_id__delete",
+        "summary": "Remove Profile",
+        "operationId": "remove_profile_api_v1_rule_library__profile_id__delete",
         "parameters": [
           {
-            "name": "package_id",
+            "name": "profile_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
-              "title": "Package Id"
+              "title": "Profile Id"
             }
           },
           {
@@ -1111,15 +1208,8 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RuleDeleteReceipt"
-                }
-              }
-            }
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -1134,17 +1224,17 @@
         }
       },
       "get": {
-        "summary": "Package",
-        "operationId": "package_api_v1_rule_library__package_id__get",
+        "summary": "Profile Package",
+        "operationId": "profile_package_api_v1_rule_library__profile_id__get",
         "parameters": [
           {
-            "name": "package_id",
+            "name": "profile_id",
             "in": "path",
             "required": true,
             "schema": {
               "type": "string",
               "format": "uuid",
-              "title": "Package Id"
+              "title": "Profile Id"
             }
           },
           {
@@ -1190,18 +1280,17 @@
     },
     "/api/v1/imports": {
       "post": {
-        "summary": "Import Pdf",
-        "operationId": "import_pdf_api_v1_imports_post",
+        "summary": "Upload",
+        "operationId": "upload_api_v1_imports_post",
         "parameters": [
           {
-            "name": "conversation_id",
+            "name": "profile_key",
             "in": "query",
             "required": true,
             "schema": {
               "type": "string",
-              "minLength": 1,
-              "maxLength": 200,
-              "title": "Conversation Id"
+              "pattern": "^[a-z][a-z0-9_-]*$",
+              "title": "Profile Key"
             }
           },
           {
@@ -1212,6 +1301,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 200,
+              "pattern": "\\S",
               "title": "Project Name"
             }
           },
@@ -1260,356 +1350,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ImportResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/supervisor/turns/stream": {
-      "post": {
-        "summary": "Supervisor Turn",
-        "operationId": "supervisor_turn_api_v1_supervisor_turns_stream_post",
-        "parameters": [
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SupervisorTurn"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/supervisor/conversations/{conversation_id}": {
-      "get": {
-        "summary": "Conversation",
-        "operationId": "conversation_api_v1_supervisor_conversations__conversation_id__get",
-        "parameters": [
-          {
-            "name": "conversation_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Conversation Id"
-            }
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Conversation Api V1 Supervisor Conversations  Conversation Id  Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/runs/{run_id}": {
-      "get": {
-        "summary": "Run",
-        "operationId": "run_api_v1_runs__run_id__get",
-        "parameters": [
-          {
-            "name": "run_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Run Id"
-            }
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Run Api V1 Runs  Run Id  Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/runs/{run_id}/events/stream": {
-      "get": {
-        "summary": "Run Events",
-        "operationId": "run_events_api_v1_runs__run_id__events_stream_get",
-        "parameters": [
-          {
-            "name": "run_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Run Id"
-            }
-          },
-          {
-            "name": "after_seq",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "minimum": -1,
-              "default": -1,
-              "title": "After Seq"
-            }
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/runs/{run_id}/artifacts": {
-      "get": {
-        "summary": "Artifacts",
-        "operationId": "artifacts_api_v1_runs__run_id__artifacts_get",
-        "parameters": [
-          {
-            "name": "run_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid",
-              "title": "Run Id"
-            }
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Artifacts Api V1 Runs  Run Id  Artifacts Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/proposals/{proposal_id}": {
-      "get": {
-        "summary": "Proposal",
-        "operationId": "proposal_api_v1_proposals__proposal_id__get",
-        "parameters": [
-          {
-            "name": "proposal_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Proposal Id"
-            }
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Proposal Api V1 Proposals  Proposal Id  Get"
+                  "$ref": "#/components/schemas/SimpleImportRead"
                 }
               }
             }
@@ -1630,119 +1371,6 @@
   },
   "components": {
     "schemas": {
-      "ConnectionCreate": {
-        "properties": {
-          "result_version_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Result Version Id"
-          },
-          "result_revision": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Result Revision"
-          },
-          "wiring_unit_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Wiring Unit Id"
-          },
-          "source_drawing_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Source Drawing Id"
-          },
-          "target_drawing_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Target Drawing Id"
-          },
-          "fields": {
-            "$ref": "#/components/schemas/ConnectionFields"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "result_version_id",
-          "result_revision",
-          "wiring_unit_id",
-          "source_drawing_id",
-          "fields"
-        ],
-        "title": "ConnectionCreate"
-      },
-      "ConnectionDelete": {
-        "properties": {
-          "result_version_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Result Version Id"
-          },
-          "result_revision": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Result Revision"
-          },
-          "record_version": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Record Version"
-          },
-          "confirmed": {
-            "type": "boolean",
-            "const": true,
-            "title": "Confirmed"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "result_version_id",
-          "result_revision",
-          "record_version",
-          "confirmed"
-        ],
-        "title": "ConnectionDelete"
-      },
-      "ConnectionEdit": {
-        "properties": {
-          "result_version_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Result Version Id"
-          },
-          "result_revision": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Result Revision"
-          },
-          "record_version": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Record Version"
-          },
-          "changes": {
-            "$ref": "#/components/schemas/ConnectionFields"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "result_version_id",
-          "result_revision",
-          "record_version",
-          "changes"
-        ],
-        "title": "ConnectionEdit"
-      },
       "ConnectionFields": {
         "properties": {
           "voltage_level": {
@@ -1910,69 +1538,25 @@
         "type": "object",
         "title": "ConnectionFields"
       },
-      "ConnectionMutationReceipt": {
+      "DrawingRead": {
         "properties": {
-          "result_version_id": {
+          "id": {
             "type": "string",
-            "title": "Result Version Id"
+            "title": "Id"
           },
-          "result_version": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "workspace_id": {
+            "type": "string",
+            "title": "Workspace Id"
+          },
+          "pdf_page_number": {
             "type": "integer",
-            "title": "Result Version"
+            "title": "Pdf Page Number"
           },
-          "result_revision": {
-            "type": "integer",
-            "title": "Result Revision"
-          },
-          "connection_id": {
-            "type": "string",
-            "title": "Connection Id"
-          },
-          "action": {
-            "type": "string",
-            "enum": [
-              "add",
-              "remove"
-            ],
-            "title": "Action"
-          },
-          "wire_number": {
-            "type": "integer",
-            "title": "Wire Number"
-          },
-          "proposal_id": {
-            "type": "string",
-            "title": "Proposal Id"
-          },
-          "idempotent": {
-            "type": "boolean",
-            "title": "Idempotent",
-            "default": false
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "result_version_id",
-          "result_version",
-          "result_revision",
-          "connection_id",
-          "action",
-          "wire_number",
-          "proposal_id"
-        ],
-        "title": "ConnectionMutationReceipt"
-      },
-      "ConnectionPage": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/ConnectionRow"
-            },
-            "type": "array",
-            "title": "Items"
-          },
-          "result_version_id": {
+          "workspace_page": {
             "anyOf": [
               {
                 "type": "string"
@@ -1981,29 +1565,404 @@
                 "type": "null"
               }
             ],
-            "title": "Result Version Id"
+            "title": "Workspace Page"
           },
-          "result_version": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "image_url": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Result Version"
+            "title": "Image Url"
           },
-          "result_revision": {
+          "reference_note": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Result Revision"
+            "title": "Reference Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "project_id",
+          "workspace_id",
+          "pdf_page_number",
+          "status"
+        ],
+        "title": "DrawingRead"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "LocalProfileOption": {
+        "properties": {
+          "profile_key": {
+            "type": "string",
+            "title": "Profile Key"
+          },
+          "profile_version": {
+            "type": "string",
+            "title": "Profile Version"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "checksum": {
+            "type": "string",
+            "title": "Checksum"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "profile_key",
+          "profile_version",
+          "display_name",
+          "checksum"
+        ],
+        "title": "LocalProfileOption"
+      },
+      "LoginInput": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "maxLength": 320,
+            "minLength": 3,
+            "title": "Email"
+          },
+          "password": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "title": "Password"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "LoginInput"
+      },
+      "ProfileReferenceCreate": {
+        "properties": {
+          "profile_key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]*$",
+            "title": "Profile Key"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "profile_key"
+        ],
+        "title": "ProfileReferenceCreate"
+      },
+      "ProfileReferenceRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "profile_key": {
+            "type": "string",
+            "title": "Profile Key"
+          },
+          "profile_version": {
+            "type": "string",
+            "title": "Profile Version"
+          },
+          "checksum": {
+            "type": "string",
+            "title": "Checksum"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "resource_ref": {
+            "type": "string",
+            "title": "Resource Ref"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At",
+            "default": ""
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "profile_key",
+          "profile_version",
+          "checksum",
+          "display_name",
+          "resource_ref"
+        ],
+        "title": "ProfileReferenceRead"
+      },
+      "ResourceImage": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "path",
+          "url"
+        ],
+        "title": "ResourceImage"
+      },
+      "ResourcePackage": {
+        "properties": {
+          "manifest": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Manifest"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/ResourceText"
+            },
+            "type": "array",
+            "title": "Files"
+          },
+          "images": {
+            "items": {
+              "$ref": "#/components/schemas/ResourceImage"
+            },
+            "type": "array",
+            "title": "Images"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "manifest",
+          "files",
+          "images"
+        ],
+        "title": "ResourcePackage"
+      },
+      "ResourceText": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "path",
+          "content"
+        ],
+        "title": "ResourceText"
+      },
+      "SessionResponse": {
+        "properties": {
+          "accessToken": {
+            "type": "string",
+            "title": "Accesstoken"
+          },
+          "expiresIn": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Expiresin"
+          },
+          "user": {
+            "$ref": "#/components/schemas/SessionUser"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "accessToken",
+          "expiresIn",
+          "user"
+        ],
+        "title": "SessionResponse"
+      },
+      "SessionUser": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "email",
+          "name",
+          "role"
+        ],
+        "title": "SessionUser"
+      },
+      "SimpleConnectionCreate": {
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Batch Id"
+          },
+          "source_drawing_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Drawing Id"
+          },
+          "target_drawing_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Drawing Id"
+          },
+          "wire_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wire Number"
+          },
+          "fields": {
+            "$ref": "#/components/schemas/ConnectionFields"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "batch_id",
+          "source_drawing_id",
+          "fields"
+        ],
+        "title": "SimpleConnectionCreate"
+      },
+      "SimpleConnectionDelete": {
+        "properties": {
+          "record_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Record Version"
+          },
+          "confirmed": {
+            "type": "boolean",
+            "const": true,
+            "title": "Confirmed"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "record_version",
+          "confirmed"
+        ],
+        "title": "SimpleConnectionDelete"
+      },
+      "SimpleConnectionEdit": {
+        "properties": {
+          "record_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Record Version"
+          },
+          "changes": {
+            "$ref": "#/components/schemas/ConnectionFields"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "record_version",
+          "changes"
+        ],
+        "title": "SimpleConnectionEdit"
+      },
+      "SimpleConnectionPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SimpleConnectionRead"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "batch_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Id"
           },
           "offset": {
             "type": "integer",
@@ -2026,9 +1985,9 @@
           "limit",
           "has_more"
         ],
-        "title": "ConnectionPage"
+        "title": "SimpleConnectionPage"
       },
-      "ConnectionRow": {
+      "SimpleConnectionRead": {
         "properties": {
           "connection_id": {
             "type": "string",
@@ -2037,6 +1996,10 @@
           "project_id": {
             "type": "string",
             "title": "Project Id"
+          },
+          "batch_id": {
+            "type": "string",
+            "title": "Batch Id"
           },
           "workspace_id": {
             "type": "string",
@@ -2047,14 +2010,7 @@
             "title": "Workspace Name"
           },
           "drawing_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
             "title": "Drawing Id"
           },
           "workspace_page": {
@@ -2069,39 +2025,23 @@
             "title": "Workspace Page"
           },
           "pdf_page_number": {
+            "type": "integer",
+            "title": "Pdf Page Number"
+          },
+          "wire_number": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Pdf Page Number"
-          },
-          "wiring_unit_id": {
-            "type": "string",
-            "title": "Wiring Unit Id"
-          },
-          "wire_number": {
-            "type": "integer",
             "title": "Wire Number"
           },
-          "core_order": {
+          "row_order": {
             "type": "integer",
-            "title": "Core Order"
-          },
-          "result_version_id": {
-            "type": "string",
-            "title": "Result Version Id"
-          },
-          "result_version": {
-            "type": "integer",
-            "title": "Result Version"
-          },
-          "result_revision": {
-            "type": "integer",
-            "title": "Result Revision"
+            "title": "Row Order"
           },
           "record_version": {
             "type": "integer",
@@ -2206,6 +2146,26 @@
             ],
             "title": "End Terminal"
           },
+          "start_terminal_coordinates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TerminalCoordinates"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "end_terminal_coordinates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TerminalCoordinates"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "current_value": {
             "anyOf": [
               {
@@ -2216,17 +2176,6 @@
               }
             ],
             "title": "Current Value"
-          },
-          "remark": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Remark"
           },
           "color_mark": {
             "anyOf": [
@@ -2239,190 +2188,43 @@
             ],
             "title": "Color Mark"
           },
-          "is_cross_page": {
-            "type": "string",
-            "enum": [
-              "same_page",
-              "cross_page",
-              "unknown"
-            ],
-            "title": "Is Cross Page"
-          },
-          "confidence": {
+          "remark": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Confidence"
+            "title": "Remark"
+          },
+          "is_cross_page": {
+            "type": "boolean",
+            "title": "Is Cross Page"
           },
           "needs_review": {
             "type": "boolean",
             "title": "Needs Review"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
           }
         },
         "type": "object",
         "required": [
           "connection_id",
           "project_id",
+          "batch_id",
           "workspace_id",
           "workspace_name",
-          "wiring_unit_id",
-          "wire_number",
-          "core_order",
-          "result_version_id",
-          "result_version",
-          "result_revision",
+          "drawing_id",
+          "pdf_page_number",
+          "row_order",
           "record_version",
           "is_cross_page",
-          "needs_review",
-          "status"
+          "needs_review"
         ],
-        "title": "ConnectionRow"
+        "title": "SimpleConnectionRead"
       },
-      "DrawingRead": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "project_id": {
-            "type": "string",
-            "title": "Project Id"
-          },
-          "workspace_id": {
-            "type": "string",
-            "title": "Workspace Id"
-          },
-          "pdf_page_number": {
-            "type": "integer",
-            "title": "Pdf Page Number"
-          },
-          "workspace_page": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Workspace Page"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "image_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Url"
-          },
-          "reference_note": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reference Note"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "project_id",
-          "workspace_id",
-          "pdf_page_number",
-          "status"
-        ],
-        "title": "DrawingRead"
-      },
-      "EditReceipt": {
-        "properties": {
-          "changed": {
-            "type": "boolean",
-            "title": "Changed",
-            "default": true
-          },
-          "result_version_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Result Version Id"
-          },
-          "result_version": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Result Version"
-          },
-          "result_revision": {
-            "type": "integer",
-            "title": "Result Revision"
-          },
-          "update_mode": {
-            "type": "string",
-            "enum": [
-              "in_place",
-              "snapshot"
-            ],
-            "title": "Update Mode",
-            "default": "in_place"
-          },
-          "updated_connection_ids": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Updated Connection Ids"
-          }
-        },
-        "type": "object",
-        "required": [
-          "result_revision"
-        ],
-        "title": "EditReceipt"
-      },
-      "HTTPValidationError": {
-        "properties": {
-          "detail": {
-            "items": {
-              "$ref": "#/components/schemas/ValidationError"
-            },
-            "type": "array",
-            "title": "Detail"
-          }
-        },
-        "type": "object",
-        "title": "HTTPValidationError"
-      },
-      "ImportResponse": {
+      "SimpleImportRead": {
         "properties": {
           "project_id": {
             "type": "string",
@@ -2446,18 +2248,17 @@
           },
           "size": {
             "type": "integer",
-            "exclusiveMinimum": 0.0,
             "title": "Size"
           },
           "page_count": {
             "type": "integer",
-            "exclusiveMinimum": 0.0,
             "title": "Page Count"
           },
-          "persistence_backend": {
-            "type": "string",
-            "title": "Persistence Backend",
-            "default": "supabase"
+          "extraction_started": {
+            "type": "boolean",
+            "const": false,
+            "title": "Extraction Started",
+            "default": false
           }
         },
         "additionalProperties": false,
@@ -2471,38 +2272,67 @@
           "size",
           "page_count"
         ],
-        "title": "ImportResponse"
+        "title": "SimpleImportRead"
       },
-      "LoginInput": {
+      "SimpleMutationReceipt": {
         "properties": {
-          "email": {
+          "connection_id": {
             "type": "string",
-            "maxLength": 320,
-            "minLength": 3,
-            "title": "Email"
+            "title": "Connection Id"
           },
-          "password": {
+          "batch_id": {
             "type": "string",
-            "maxLength": 1000,
-            "minLength": 1,
-            "title": "Password"
+            "title": "Batch Id"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "add",
+              "edit",
+              "remove"
+            ],
+            "title": "Action"
+          },
+          "record_version": {
+            "type": "integer",
+            "title": "Record Version"
+          },
+          "idempotent": {
+            "type": "boolean",
+            "title": "Idempotent",
+            "default": false
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "email",
-          "password"
+          "connection_id",
+          "batch_id",
+          "action",
+          "record_version"
         ],
-        "title": "LoginInput"
+        "title": "SimpleMutationReceipt"
       },
-      "ProjectInput": {
+      "SimpleProjectInput": {
         "properties": {
           "name": {
             "type": "string",
             "maxLength": 200,
             "minLength": 1,
+            "pattern": "\\S",
             "title": "Name"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Id"
           }
         },
         "additionalProperties": false,
@@ -2510,9 +2340,9 @@
         "required": [
           "name"
         ],
-        "title": "ProjectInput"
+        "title": "SimpleProjectInput"
       },
-      "ProjectRead": {
+      "SimpleProjectRead": {
         "properties": {
           "id": {
             "type": "string",
@@ -2529,6 +2359,10 @@
           "status": {
             "type": "string",
             "title": "Status"
+          },
+          "profile_id": {
+            "type": "string",
+            "title": "Profile Id"
           },
           "standard_profile": {
             "anyOf": [
@@ -2554,30 +2388,32 @@
           },
           "sources": {
             "items": {
-              "$ref": "#/components/schemas/SourceRead"
+              "$ref": "#/components/schemas/SimpleSourceRead"
             },
             "type": "array",
             "title": "Sources"
           },
-          "result": {
+          "batch_id": {
             "anyOf": [
               {
-                "$ref": "#/components/schemas/ResultRead"
+                "type": "string"
               },
               {
                 "type": "null"
               }
-            ]
+            ],
+            "title": "Batch Id"
           },
-          "latest_run": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/RunRead"
-              },
-              {
-                "type": "null"
-              }
-            ]
+          "extraction_available": {
+            "type": "boolean",
+            "const": false,
+            "title": "Extraction Available",
+            "default": false
+          },
+          "source_saved": {
+            "type": "boolean",
+            "title": "Source Saved",
+            "default": false
           }
         },
         "type": "object",
@@ -2586,394 +2422,12 @@
           "name",
           "owner_id",
           "status",
+          "profile_id",
           "updated_at"
         ],
-        "title": "ProjectRead"
+        "title": "SimpleProjectRead"
       },
-      "ResourceImage": {
-        "properties": {
-          "path": {
-            "type": "string",
-            "title": "Path"
-          },
-          "url": {
-            "type": "string",
-            "title": "Url"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "path",
-          "url"
-        ],
-        "title": "ResourceImage"
-      },
-      "ResourcePackage": {
-        "properties": {
-          "manifest": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Manifest"
-          },
-          "files": {
-            "items": {
-              "$ref": "#/components/schemas/ResourceText"
-            },
-            "type": "array",
-            "title": "Files"
-          },
-          "images": {
-            "items": {
-              "$ref": "#/components/schemas/ResourceImage"
-            },
-            "type": "array",
-            "title": "Images"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "manifest",
-          "files",
-          "images"
-        ],
-        "title": "ResourcePackage"
-      },
-      "ResourceText": {
-        "properties": {
-          "path": {
-            "type": "string",
-            "title": "Path"
-          },
-          "content": {
-            "type": "string",
-            "title": "Content"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "path",
-          "content"
-        ],
-        "title": "ResourceText"
-      },
-      "ResultRead": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "version": {
-            "type": "integer",
-            "title": "Version"
-          },
-          "revision": {
-            "type": "integer",
-            "title": "Revision"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status",
-            "default": "draft"
-          },
-          "profile": {
-            "anyOf": [
-              {
-                "additionalProperties": true,
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "version",
-          "revision"
-        ],
-        "title": "ResultRead"
-      },
-      "RuleCreate": {
-        "properties": {
-          "base_package_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Base Package Id"
-          },
-          "profile_key": {
-            "type": "string",
-            "pattern": "^[a-z][a-z0-9_-]{0,63}$",
-            "title": "Profile Key"
-          },
-          "display_name": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Display Name"
-          },
-          "description": {
-            "type": "string",
-            "maxLength": 4000,
-            "title": "Description",
-            "default": ""
-          },
-          "detection_summary": {
-            "type": "string",
-            "maxLength": 4000,
-            "minLength": 1,
-            "title": "Detection Summary"
-          },
-          "strong_signals": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "maxItems": 30,
-            "minItems": 1,
-            "title": "Strong Signals"
-          },
-          "prompts": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "propertyNames": {
-              "enum": [
-                "classification_prompt",
-                "page_scan_prompt",
-                "cross_page_prompt"
-              ]
-            },
-            "type": "object",
-            "title": "Prompts"
-          },
-          "confirmed": {
-            "type": "boolean",
-            "const": true,
-            "title": "Confirmed"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "base_package_id",
-          "profile_key",
-          "display_name",
-          "detection_summary",
-          "strong_signals",
-          "confirmed"
-        ],
-        "title": "RuleCreate"
-      },
-      "RuleCreateReceipt": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "profile_key": {
-            "type": "string",
-            "title": "Profile Key"
-          },
-          "status": {
-            "type": "string",
-            "const": "active",
-            "title": "Status"
-          },
-          "registered": {
-            "type": "boolean",
-            "const": true,
-            "title": "Registered"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "id",
-          "profile_key",
-          "status",
-          "registered"
-        ],
-        "title": "RuleCreateReceipt"
-      },
-      "RuleDeleteReceipt": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "status": {
-            "type": "string",
-            "const": "retired",
-            "title": "Status"
-          },
-          "historical_resources_retained": {
-            "type": "boolean",
-            "const": true,
-            "title": "Historical Resources Retained"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "id",
-          "status",
-          "historical_resources_retained"
-        ],
-        "title": "RuleDeleteReceipt"
-      },
-      "RuleRead": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "profile_key": {
-            "type": "string",
-            "title": "Profile Key"
-          },
-          "profile_version": {
-            "type": "string",
-            "title": "Profile Version"
-          },
-          "source_profile_checksum": {
-            "type": "string",
-            "title": "Source Profile Checksum"
-          },
-          "package_checksum": {
-            "type": "string",
-            "title": "Package Checksum"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "created_at": {
-            "type": "string",
-            "title": "Created At"
-          },
-          "published_at": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Published At"
-          },
-          "can_delete": {
-            "type": "boolean",
-            "title": "Can Delete",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "profile_key",
-          "profile_version",
-          "source_profile_checksum",
-          "package_checksum",
-          "status",
-          "created_at"
-        ],
-        "title": "RuleRead"
-      },
-      "RunRead": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "current_stage": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Current Stage"
-          },
-          "run_type": {
-            "type": "string",
-            "title": "Run Type"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "status",
-          "run_type"
-        ],
-        "title": "RunRead"
-      },
-      "SessionResponse": {
-        "properties": {
-          "accessToken": {
-            "type": "string",
-            "title": "Accesstoken"
-          },
-          "expiresIn": {
-            "type": "integer",
-            "exclusiveMinimum": 0.0,
-            "title": "Expiresin"
-          },
-          "user": {
-            "$ref": "#/components/schemas/SessionUser"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "accessToken",
-          "expiresIn",
-          "user"
-        ],
-        "title": "SessionResponse"
-      },
-      "SessionUser": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "email": {
-            "type": "string",
-            "title": "Email"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "role": {
-            "type": "string",
-            "title": "Role"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "id",
-          "email",
-          "name",
-          "role"
-        ],
-        "title": "SessionUser"
-      },
-      "SourceRead": {
+      "SimpleSourceRead": {
         "properties": {
           "id": {
             "type": "string",
@@ -2982,72 +2436,50 @@
           "original_filename": {
             "type": "string",
             "title": "Original Filename"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "original_filename"
-        ],
-        "title": "SourceRead"
-      },
-      "SupervisorTurn": {
-        "properties": {
-          "conversation_id": {
-            "type": "string",
-            "maxLength": 200,
-            "minLength": 1,
-            "title": "Conversation Id"
           },
-          "turn_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Turn Id"
-          },
-          "project_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Project Id"
-          },
-          "message": {
-            "type": "string",
-            "maxLength": 8000,
-            "minLength": 1,
-            "title": "Message"
-          },
-          "target_hint": {
-            "additionalProperties": {
-              "type": "string"
-            },
-            "type": "object",
-            "maxProperties": 20,
-            "title": "Target Hint"
-          },
-          "attachment_ids": {
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            },
-            "type": "array",
-            "maxItems": 10,
-            "title": "Attachment Ids"
+          "page_count": {
+            "type": "integer",
+            "title": "Page Count",
+            "default": 0
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "conversation_id",
-          "turn_id",
-          "message"
+          "id",
+          "original_filename"
         ],
-        "title": "SupervisorTurn"
+        "title": "SimpleSourceRead"
+      },
+      "TerminalCoordinates": {
+        "properties": {
+          "x": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "X"
+          },
+          "y": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Y"
+          },
+          "pdf_page_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Pdf Page Number"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "x",
+          "y",
+          "pdf_page_number"
+        ],
+        "title": "TerminalCoordinates",
+        "description": "Normalized terminal center on its own full-page image, not a business page number."
       },
       "ValidationError": {
         "properties": {
@@ -3088,62 +2520,6 @@
           "type"
         ],
         "title": "ValidationError"
-      },
-      "WiringUnitRead": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "workspace_id": {
-            "type": "string",
-            "title": "Workspace Id"
-          },
-          "drawing_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Drawing Id"
-          },
-          "wire_number": {
-            "type": "integer",
-            "title": "Wire Number"
-          },
-          "voltage_level": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Voltage Level"
-          },
-          "terminal_strip": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Terminal Strip"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "workspace_id",
-          "wire_number"
-        ],
-        "title": "WiringUnitRead"
       },
       "WorkspaceRead": {
         "properties": {
