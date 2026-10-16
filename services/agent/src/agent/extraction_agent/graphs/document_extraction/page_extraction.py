@@ -11,14 +11,6 @@ from typing import Any, cast
 from langgraph.graph import END, START, StateGraph
 
 from src.agent.extraction_agent.application.document_extraction.runtime import GraphRuntime
-from src.domain.enums import ErrorCode
-from src.domain.errors import AgentServiceError
-from src.domain.models.stage_persistence import digest
-from src.agent.extraction_agent.infrastructure.document.checkpoint import (
-    _diagnostics_dir,
-    _read_json_object,
-    _write_json_atomic,
-)
 from src.agent.extraction_agent.graphs.document_extraction.cross_page import (
     _build_cross_page_tasks_node,
     _resolve_cross_page_node,
@@ -28,6 +20,14 @@ from src.agent.extraction_agent.graphs.document_extraction.normalization import 
 )
 from src.agent.extraction_agent.graphs.document_extraction.pages import _page_scan_loop_node
 from src.agent.extraction_agent.graphs.document_extraction.state import GraphState
+from src.agent.extraction_agent.infrastructure.document.checkpoint import (
+    _diagnostics_dir,
+    _read_json_object,
+    _write_json_atomic,
+)
+from src.domain.enums import ErrorCode
+from src.domain.errors import AgentServiceError
+from src.domain.models.stage_persistence import digest
 
 
 def build_page_extraction_graph(runtime: GraphRuntime, *, pdf_page_number: int) -> Any:
@@ -41,23 +41,23 @@ def build_page_extraction_graph(runtime: GraphRuntime, *, pdf_page_number: int) 
         finally:
             runtime.scan_page_numbers = previous
 
-    def plan(state: GraphState) -> dict[str, Any]:
-        update = _normalize_and_deduplicate_node(state, runtime)
+    async def plan(state: GraphState) -> dict[str, Any]:
+        update = _normalize_and_deduplicate_node(state, runtime, review_phase="scan")
         combined = cast(GraphState, {**state, **update})
-        return {**update, **_build_cross_page_tasks_node(combined, runtime)}
+        result = {**update, **_build_cross_page_tasks_node(combined, runtime)}
+        if getattr(runtime.durable, "incremental", False):
+            await runtime.durable.publish_rows({**state, **result}, pdf_page_number, "scan", "initial")
+        return result
 
     async def complete(state: GraphState) -> dict[str, Any]:
         return await _resolve_cross_page_node(state, runtime, use_checkpoint=False)
 
     def validate(state: GraphState) -> dict[str, Any]:
-        for unit in state.get("wire_units", {}).values():
-            for connection in unit.get("connections", []):
-                if (connection.get("end") or {}).get("terminal") in (None, ""):
-                    connection["status"] = "needs_review"
         update = _normalize_and_deduplicate_node(state, runtime)
         # A scan with no results is different from a successfully scanned empty page.
         scan_result = state.get("page_scan_results", {}).get(str(pdf_page_number), {})
-        needs_review = bool(scan_result.get("needs_review")) or any(
+        page = next(p for p in state["pages"] if p["page_number"] == pdf_page_number)
+        needs_review = bool(scan_result.get("uncertainties") or page.get("needs_review")) or any(
             connection.get("status") not in {"complete", "resolved"}
             or (connection.get("end") or {}).get("terminal") in (None, "")
             for unit in update["wire_units"].values()

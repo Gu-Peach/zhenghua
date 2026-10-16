@@ -13,8 +13,6 @@ import pytest
 
 from src.agent.extraction_agent.application.page_workflow_extraction import run_page_workflow_extraction
 from src.agent.extraction_agent.application.stage_persistence import STAGES, DurableExtractionSession
-from src.config import AgentSettings
-from src.domain.enums import AgentStage
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
     CrossPageCompletionRequest,
@@ -25,12 +23,14 @@ from src.agent.extraction_agent.domain.models.extraction_stages import (
     ScannedConnection,
     ScannedWireUnit,
 )
-from src.domain.models.stage_persistence import StageInput, StageItem
 from src.agent.extraction_agent.domain.models.wiring import WireRecord
-from src.harness.model_gateway import FakeModelGateway
 from src.agent.extraction_agent.infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
-from src.profiles import ProfileRegistry
 from src.agent.extraction_agent.profiles.zh.policy import ZhExtractionPolicy
+from src.config import AgentSettings
+from src.domain.enums import AgentStage
+from src.domain.models.stage_persistence import StageInput, StageItem
+from src.harness.model_gateway import FakeModelGateway
+from src.profiles import ProfileRegistry
 
 ROOT = Path(__file__).resolve().parents[4]
 
@@ -109,7 +109,7 @@ class FakeStages:
         )
 
     async def resolve_cross_page(self, request):
-        assert request.source_page.pdf_page_number == 1
+        assert request.source_page is None
         assert request.target_page.pdf_page_number == 2
         self.calls.append("complete:1->2")
         return CrossPageCompletionData(
@@ -216,7 +216,8 @@ def test_target_image_completion_and_manifest_paths(tmp_path: Path) -> None:
         pages = []
         for number in (1, 2):
             path = tmp_path / f"{number}.png"
-            path.write_bytes(f"fake-image-{number}".encode())
+            import pymupdf
+            path.write_bytes(pymupdf.Pixmap(pymupdf.csRGB, (0, 0, 8, 8), False).tobytes("png"))
             pages.append(DrawingPageInput(pdf_page_number=number, image_path=path))
         await adapter.resolve_cross_page(
             CrossPageCompletionRequest(
@@ -352,6 +353,8 @@ def test_unclear_cross_page_output_keeps_null_and_continues(tmp_path: Path) -> N
 
 
 def test_cross_page_correction_uses_stage2_internal_completion(tmp_path: Path) -> None:
+    from src.agent.extraction_agent.domain.models.extraction_stages import PageScanRequest
+    from src.agent.extraction_agent.tools.extraction_runner import ScopedExtractionRunner
     from src.domain.enums import CorrectionIssueKind, CrossPageState, ScopeType
     from src.domain.models.correction import (
         CorrectionConstraints,
@@ -360,9 +363,7 @@ def test_cross_page_correction_uses_stage2_internal_completion(tmp_path: Path) -
         CorrectionFacts,
         FeedbackTarget,
     )
-    from src.agent.extraction_agent.domain.models.extraction_stages import PageScanRequest
     from src.tools.correction_router import CorrectionRoutePlanner
-    from src.agent.extraction_agent.tools.extraction_runner import ScopedExtractionRunner
 
     class Stages:
         async def scan_page(self, request):

@@ -90,7 +90,13 @@ class ManagementService:
         )
         if requested and not rows:
             raise ServiceError(404, "BATCH_NOT_FOUND", "结果批次不存在")
-        return str(rows[0]["batch_id"]) if rows else None
+        return (
+            str(rows[0]["batch_id"])
+            if rows
+            else str(chosen)
+            if chosen and not requested
+            else None
+        )
 
     async def results(
         self,
@@ -244,6 +250,10 @@ class ManagementService:
         body: SimpleConnectionCreate | SimpleConnectionDelete | SimpleConnectionEdit,
     ) -> dict[str, Any]:
         row = await self.db.require_project(project, user, write=True)
+        if row["status"] == "processing":
+            raise ServiceError(
+                409, "EXTRACTION_IN_PROGRESS", "提取期间结果只读，请等待处理完成"
+            )
         payload = body.model_dump(mode="json", exclude_unset=True)
         if isinstance(body, SimpleConnectionCreate):
             source = self.find_drawing(row, str(body.source_drawing_id))
@@ -362,10 +372,7 @@ class ManagementService:
             raise ServiceError(
                 503, "UPLOAD_FAILED", "PDF保存失败，可使用相同上传标识重试"
             ) from exc
-        if (
-            project["drawing_index"].get("upload_state") != "saved"
-            or project["status"] == "failed"
-        ):
+        if project["drawing_index"].get("upload_state") != "saved":
             updated = await self.db.update(
                 "extraction_projects",
                 {
@@ -383,6 +390,7 @@ class ManagementService:
             )
             if not updated:
                 raise ServiceError(409, "IMPORT_CONFLICT", "项目已变化，请刷新后重试")
+        run = await self.start_extraction(identifier, user)
         return {
             "project_id": identifier,
             "source_document_id": identifier,
@@ -391,8 +399,48 @@ class ManagementService:
             "checksum": checksum,
             "size": len(content),
             "page_count": pages,
-            "extraction_started": False,
+            "extraction_started": True,
+            "run_id": run["run_id"],
         }
+
+    async def start_extraction(
+        self, project: str, user: str, *, retry: bool = False
+    ) -> dict[str, Any]:
+        await self.db.require_project(project, user, write=True)
+        return await self.db.rpc(
+            "start_simple_extraction",
+            {
+                "project": project,
+                "actor": user,
+                "requested_run": str(
+                    uuid5(NAMESPACE_URL, f"simple-extraction:{project}")
+                ),
+                "retry": retry,
+            },
+        )
+
+    async def extraction_progress(
+        self, project: str, user: str
+    ) -> dict[str, Any] | None:
+        row = await self.db.require_project(project, user)
+        return row.get("drawing_index", {}).get("processing")
+
+    async def extraction_events(
+        self, project: str, user: str, cursor: int
+    ) -> list[dict[str, Any]]:
+        row = await self.db.require_project(project, user)
+        run = row.get("drawing_index", {}).get("processing", {}).get("run_id")
+        if not run:
+            return []
+        return await self.db.rows(
+            "agent_events",
+            {
+                "agent_run_id": f"eq.{run}",
+                "seq": f"gt.{cursor}",
+                "order": "seq.asc",
+                "limit": "100",
+            },
+        )
 
     async def save_pdf(self, path: str, content: bytes, checksum: str) -> None:
         """Immutable upload with checksum verification after duplicate/lost responses."""
@@ -448,6 +496,15 @@ class ManagementService:
                 assets.setdefault(page["image_bucket"], []).append(
                     self.asset_path(project, page["image_path"])
                 )
+        progress = row.get("drawing_index", {}).get("processing") or {}
+        if progress.get("run_id"):
+            # Include assets uploaded before a lost metadata response, plus the frozen Profile.
+            run = str(progress["run_id"])
+            prefix = self.asset_path(project, f"projects/{project}/runs/{run}")
+            paths = assets.setdefault("project-assets", [])
+            paths.append(f"{prefix}/profile.zip")
+            total = int(row.get("drawing_index", {}).get("source", {}).get("page_count", 0))
+            paths.extend(f"{prefix}/pages/{number}.png" for number in range(1, total + 1))
         archived = await self.db.update(
             "extraction_projects",
             {

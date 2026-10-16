@@ -4,6 +4,7 @@
 
 ## 进行中
 
+
 - [ ] 清理旧Supervisor、纠错/自完善/评测Agent及独占Graph/API/编排/失效脚本：依赖核对及92文件审阅清单已整理，自动审批拒绝大范围删除与入口改写，尚未执行代码删除/入口停用，等待用户明确确认范围。保留独立提取、用户现有改动、样例/结果与共享基础；仅新增方案/开发边界文档，不操作数据库或重启服务。见 `docs/service/agent/independent-agents-cleanup-plan.md` 与 `independent-agents-retirement-inventory.md`。
 
 - [x] 为三表结果增加start_terminal_coordinates/end_terminal_coordinates：沿用Agent{x,y,pdf_page_number}，可空JSONB/校验/失效清理与API/前端类型同步。20项后端、Web检查、真实本地SQL/HTTP坐标及CRUD兼容验证通过，migration已部署，合成数据清理；不重跑Agent或实现高亮。见Server坐标记录。
@@ -204,6 +205,10 @@
 - [ ] 生产部署采用自管 Redis/Celery，还是托管队列。
 
 ## 已完成
+
+- [x] 2026-10-16修复Worker启动404：仅将20261016020000部署到本地zhenghua_test库，原函数/桶配置备份在被忽略的.runtime/migrations，迁移历史同事务登记；只读HTTP核对四个RPC可见及8000 API为2.1.0。未领取任务、未重启服务、未调用模型；用户重新运行Worker。
+
+- [x] 2026-10-16接通上传入队、独立Stage1/2 Worker、逐页图片/分类/初扫/跨页补全发布与前端SSE刷新；程序统一生成review原因，支持租约恢复、稳定行ID和处理期只读。62项Agent、19项API、15项浏览器、两种隔离库迁移/事务场景及Web检查通过。未运行付费模型、未部署当前项目库或重启服务；启用见Agent/Server README。见ADR 0022和增量交付记录。
 
 - [x] 修复 ImprovementDiagnoser 输出契约：system 动态注入完整 Diagnosis JSON Schema，明确字段/枚举且保留严格校验与端点兼容；24 项相关离线测试、全包 strict mypy 和修改文件 Ruff 通过。原三条修订已提交，未重提取/重新提交/注错，也未写数据库、调用真实模型或重启服务；用户重载后仅恢复失败的归因 run。
 

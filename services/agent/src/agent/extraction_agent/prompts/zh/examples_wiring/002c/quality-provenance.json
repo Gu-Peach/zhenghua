@@ -1,6 +1,6 @@
 {
   "version": "2.1.1",
-  "review_basis": "2026-10-16: user reduced the manifest to one 003C01 scan and five C01-related target-only completion/negative cases. Pruned 6 unused example images and 12 unused task/expected JSON files. Manifest v13, Profile version stays 2.1.1; static checks only, no test/model/DB invocation.",
+  "review_basis": "2026-10-16: retain the user-confirmed manifest v13 and Profile 2.1.1; common review contract 1.0.0 now owns final review decisions. Updated source checksums and replayed actual-image fixtures through Fake VLM with field-level comparisons; no paid VLM or current project database writes.",
   "assets": [
     {
       "path": "completion/c01_nbar_to_003c31_nbar.expected.json",
@@ -82,11 +82,11 @@
     },
     {
       "path": "services/agent/src/agent/extraction_agent/infrastructure/zh_vlm_stages.py",
-      "checksum": "sha256:51b09d3571b6af610511bd20a63e6e10eff7c59e80dd89850f546fe4af5688be"
+      "checksum": "sha256:287e571b01198e0906908bd840aa23abe596712c3a16385bf1555da442767afb"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/graphs/document_extraction/helpers.py",
-      "checksum": "sha256:b167df8eef287318c5c855fb2b23bdd60fcd55ab2c4df846ca87710796b0cb6c"
+      "checksum": "sha256:a5d070f4448af7e3460abd7ccf6b049762c5bd287e7fa3ef4a853095436e24a7"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/profiles/zh/normalization.py",
@@ -98,15 +98,15 @@
     },
     {
       "path": "services/agent/src/agent/extraction_agent/domain/models/extraction_stages.py",
-      "checksum": "sha256:46425b24b82108e5acf217b0348338ab9a823be8f80644f9f8e480b834b85416"
+      "checksum": "sha256:770357686bb746550a98f75af50f28931ec1aaf7109fa3bd91de81648f5e8dbc"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/graphs/document_extraction/cross_page.py",
-      "checksum": "sha256:cc69dc00292c3f79bc6e64347258a20aae24df97bcdcbd4ef054278bf33780b3"
+      "checksum": "sha256:38c7c031daa4eeaa5052f49b6cc54cba40260a2d8a5b91f101a26f06c035d6e5"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/domain/models/wiring.py",
-      "checksum": "sha256:a9764000ba866be431d47b7d038a533cc9fdb58f98d32049bf633896c6ad8024"
+      "checksum": "sha256:d71356339c23870ea15ffd2361989fc7f37d4c44abc967ad5449fcddbafb4ac1"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/infrastructure/document/excel.py",
@@ -126,7 +126,7 @@
     },
     {
       "path": "services/agent/src/agent/extraction_agent/application/page_workflow_extraction.py",
-      "checksum": "sha256:246f111577e7d5d34fe1fb89cbe6b2a9a7bc514f4c89a258520d4b2683104f00"
+      "checksum": "sha256:164e10bab2979ec9b32430195085b2230acf9cf12f1ae0e74e51898d013bb48f"
     },
     {
       "path": "services/agent/src/config.py",
@@ -139,6 +139,10 @@
     {
       "path": "services/agent/src/domain/models/profiles.py",
       "checksum": "sha256:87bd5857023ed85024323167c8035b58c47e95542e7fd58a686f8ed9bdbef383"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/application/review.py",
+      "checksum": "sha256:f89882ffc80584893d109fdaaebf57579e29edc53ee01c870ddbaa3521e6665a"
     }
   ],
   "prompt_sources": [
@@ -158,5 +162,6 @@
       "path": "services/agent/src/agent/extraction_agent/profiles/zh/rules.json",
       "checksum": "sha256:f9dbf19fc25a41052bf1c1b2cfc569e2071786c400af7668b132e73e06079660"
     }
-  ]
+  ],
+  "review_contract_version": "1.0.0"
 }

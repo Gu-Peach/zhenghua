@@ -126,6 +126,9 @@ def build_document_graph(
         return wrapped
 
     async def render_pages(state: GraphState) -> dict[str, Any]:
+        if getattr(runtime.durable, "incremental", False):
+            from .pages import render_pages_incrementally
+            return await render_pages_incrementally(state, runtime)
         if runtime.durable:
             return await asyncio.to_thread(_pdf_to_images_node, state, runtime)
         return _pdf_to_images_node(state, runtime)

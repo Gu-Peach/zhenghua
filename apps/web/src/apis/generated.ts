@@ -89,6 +89,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/extraction": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Extraction Progress */
+        get: operations["extraction_progress_api_v1_projects__project_id__extraction_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/extraction/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Retry Extraction */
+        post: operations["retry_extraction_api_v1_projects__project_id__extraction_retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project_id}/extraction/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Extraction Events */
+        get: operations["extraction_events_api_v1_projects__project_id__extraction_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects": {
         parameters: {
             query?: never;
@@ -351,6 +402,49 @@ export interface components {
             /** Reference Note */
             reference_note?: string | null;
         };
+        /** ExtractionProgress */
+        ExtractionProgress: {
+            /** Run Id */
+            run_id: string;
+            /** Stage */
+            stage: string;
+            /**
+             * Total Pages
+             * @default 0
+             */
+            total_pages: number;
+            /**
+             * Rendered Pages
+             * @default 0
+             */
+            rendered_pages: number;
+            /**
+             * Classified Pages
+             * @default 0
+             */
+            classified_pages: number;
+            /**
+             * Completed Pages
+             * @default 0
+             */
+            completed_pages: number;
+            /**
+             * Row Count
+             * @default 0
+             */
+            row_count: number;
+            /**
+             * Needs Review Count
+             * @default 0
+             */
+            needs_review_count: number;
+            /** Current Page */
+            current_page?: number | null;
+            /** Error */
+            error?: {
+                [key: string]: string;
+            } | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -428,6 +522,15 @@ export interface components {
             path: string;
             /** Content */
             content: string;
+        };
+        /** ReviewReason */
+        ReviewReason: {
+            /** Code */
+            code: string;
+            /** Field */
+            field?: string | null;
+            /** Message */
+            message: string;
         };
         /** SessionResponse */
         SessionResponse: {
@@ -546,6 +649,13 @@ export interface components {
             is_cross_page: boolean;
             /** Needs Review */
             needs_review: boolean;
+            /**
+             * Processing Status
+             * @default completed
+             */
+            processing_status: string;
+            /** Review Reasons */
+            review_reasons?: components["schemas"]["ReviewReason"][];
         };
         /** SimpleImportRead */
         SimpleImportRead: {
@@ -566,9 +676,10 @@ export interface components {
             /**
              * Extraction Started
              * @default false
-             * @constant
              */
-            extraction_started: false;
+            extraction_started: boolean;
+            /** Run Id */
+            run_id?: string | null;
         };
         /** SimpleMutationReceipt */
         SimpleMutationReceipt: {
@@ -620,10 +731,10 @@ export interface components {
             batch_id?: string | null;
             /**
              * Extraction Available
-             * @default false
-             * @constant
+             * @default true
              */
-            extraction_available: false;
+            extraction_available: boolean;
+            processing?: components["schemas"]["ExtractionProgress"] | null;
             /**
              * Source Saved
              * @default false
@@ -811,6 +922,109 @@ export interface operations {
                     "application/json": {
                         [key: string]: boolean;
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    extraction_progress_api_v1_projects__project_id__extraction_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtractionProgress"] | null;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_extraction_api_v1_projects__project_id__extraction_retry_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    extraction_events_api_v1_projects__project_id__extraction_events_get: {
+        parameters: {
+            query?: {
+                cursor?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
                 };
             };
             /** @description Validation Error */

@@ -10,6 +10,8 @@ from src.domain.models.common import StrictModel
 from src.domain.models.profiles import ProfileBinding
 from src.domain.models.runs import ProfileRef
 
+from .review import ReviewReason, VisualUncertainty
+
 
 class DrawingPageInput(StrictModel):
     """A rendered source page; physical and drawing-local numbering stay distinct."""
@@ -50,6 +52,7 @@ class CrossPageCompletionRequest(ExtractionStageRequest):
 
 
 class PageClassificationData(StrictModel):
+    uncertainties: list[VisualUncertainty] = Field(default_factory=list)
     plant_function: str | None = None
     drawing_page_number: int | None = Field(default=None, ge=1)
     blank: bool = False
@@ -93,6 +96,12 @@ class DrawingReference(StrictModel):
 
 
 class ScannedConnection(StrictModel):
+    uncertainties: list[VisualUncertainty] = Field(default_factory=list)
+    review_reasons: list[ReviewReason] = Field(default_factory=list)
+    needs_review: bool = False
+    processing_status: str = "scanned"
+    completion_state: str = "not_requested"
+    completion_evidence: str | None = None
     endpoint_role: Literal["source", "receiver", "unknown"] = "source"
     direction_basis: str | None = None
     connection_id: str | None = None
@@ -140,6 +149,7 @@ class ScannedWireUnit(StrictModel):
 
 
 class PageScanData(StrictModel):
+    uncertainties: list[VisualUncertainty] = Field(default_factory=list)
     pdf_page_number: int | None = Field(default=None, ge=1)
     drawing_function: str | None = None
     drawing_page_number: int | None = Field(default=None, ge=1)
@@ -160,6 +170,7 @@ class SourceComponent(StrictModel):
 
 
 class CrossPageCompletionData(StrictModel):
+    uncertainties: list[VisualUncertainty] = Field(default_factory=list)
     task_id: str | None = None
     end: DrawingEndpoint | None = None
     source_component: SourceComponent | None = None
@@ -181,6 +192,7 @@ class StageResultMetadata(StrictModel):
 
 
 class PageClassificationResult(StageResultMetadata):
+    uncertainties: list[VisualUncertainty] = Field(default_factory=list)
     pdf_page_number: int = Field(ge=1)
     plant_function: str | None = None
     drawing_page_number: int | None = Field(default=None, ge=1)
@@ -192,6 +204,7 @@ class PageClassificationResult(StageResultMetadata):
 
 
 class PageScanResult(StageResultMetadata):
+    uncertainties: list[VisualUncertainty] = Field(default_factory=list)
     pdf_page_number: int = Field(ge=1)
     drawing_function: str | None = None
     drawing_page_number: int | None = Field(default=None, ge=1)
@@ -204,6 +217,7 @@ class PageScanResult(StageResultMetadata):
 
 
 class CrossPageCompletionResult(StageResultMetadata):
+    uncertainties: list[VisualUncertainty] = Field(default_factory=list)
     task_id: str
     end: DrawingEndpoint | None = None
     source_component: SourceComponent | None = None

@@ -1,5 +1,9 @@
 # 开发路线
 
+2026-10-16后续启动排障：已部署本地20261016020000迁移并原子登记历史，确认四个提取RPC可见及8000 API为2.1.0；原Worker 404缺失前置条件已解决。未领取任务或调用模型，Phase 4/5的真实模型联调仍待验证。
+
+2026-10-16上传入队与Stage1/2独立Worker增量发布已实现，程序判定review，前端展示阶段、初扫/补全结果和失败恢复；62项Agent、19项API、15项浏览器、隔离库空表/旧结果迁移及Web检查通过。当前项目库未部署、服务未重启，真实模型精度/成本/性能未验收，Phase 4/5保持in progress。见[ADR 0022](./adr/0022-incremental-extraction.md)和[增量交付](./service/agent/changelog/2026-10-16-incremental-extraction.md)。
+
 > 最后更新：2026-10-16
 > 状态含义：`planned`、`in progress`、`blocked`、`done`
 

@@ -1,5 +1,7 @@
 # ZH Prompt 变更记录
 
+2026-10-16：Profile保持2.1.1、Few-shot图像/提取事实不变；公共review契约1.0.0由程序生成裁决，模型Schema和示例隐藏裁决字段，uncertainties保留识图歧义。quality-provenance同步公共源码摘要，固定图像通过Fake VLM逐字段回放；未发布远端规则或运行付费模型。详见[增量提取记录](../../../../../../../docs/service/agent/changelog/2026-10-16-incremental-extraction.md)。
+
 ## 2026-10-15：补齐003C01中间组补全样例
 
 - manifest v10新增XA:11→003C31 XD10:1的task/expected及003c31.png，保持本地Profile2.0.5；现在5组初扫/3组补全/8张图片。

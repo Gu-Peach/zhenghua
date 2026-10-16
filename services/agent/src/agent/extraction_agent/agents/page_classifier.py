@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+from src.agent.extraction_agent.agents._extraction_stage import require_stage_resources
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     PageClassificationData,
     PageClassificationRequest,
     PageClassificationResult,
 )
 from src.domain.ports import ExtractionStageAdapter
-from src.agent.extraction_agent.agents._extraction_stage import require_stage_resources
 
 
 class PageClassifierAgent:
@@ -38,6 +38,7 @@ class PageClassifierAgent:
             blank=result.blank,
             non_wiring=result.non_wiring,
             confidence=result.confidence,
-            needs_review=result.needs_review,
+            needs_review=bool(result.uncertainties) or not result.plant_function or result.drawing_page_number is None,
+            uncertainties=result.uncertainties,
             reason=result.reason,
         )

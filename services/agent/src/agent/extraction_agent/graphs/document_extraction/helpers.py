@@ -11,9 +11,6 @@ from typing import Any, cast
 from src.agent.extraction_agent.application.document_extraction.runtime import (
     GraphRuntime,
 )
-from src.domain.enums import (
-    ErrorCode,
-)
 from src.agent.extraction_agent.domain.models.drawing_index import (
     DrawingIndex,
     DrawingPage,
@@ -30,6 +27,9 @@ from src.agent.extraction_agent.domain.models.wiring import (
 )
 from src.agent.extraction_agent.graphs.document_extraction.state import (
     PageMeta,
+)
+from src.domain.enums import (
+    ErrorCode,
 )
 
 logger = logging.getLogger(__name__)
@@ -233,6 +233,9 @@ def _wire_record_from_connection(
         "direction_basis": connection.direction_basis,
     }
     return WireRecord(
+        uncertainties=connection.uncertainties,
+        completion_state=connection.completion_state,
+        completion_evidence=connection.completion_evidence,
         **direction_metadata,
         wire_number=unit.wire_number,
         attribute=unit.attribute,

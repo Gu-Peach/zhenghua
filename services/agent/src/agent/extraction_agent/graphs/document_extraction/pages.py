@@ -80,7 +80,10 @@ def _pdf_to_images_node(state: GraphState, runtime: GraphRuntime) -> dict[str, A
     assert runtime.payload_by_path is not None
     for index, payload in enumerate(payloads, start=1):
         path = page_dir / f"page_{index:03d}.png"
-        path.write_bytes(payload.content)
+        if payload.content:
+            path.write_bytes(payload.content)
+        elif not path.is_file():
+            raise FileNotFoundError(path)
         normalized_payload = replace(payload, name=path.name, content=b"", page_number=index)
         runtime.payload_by_path[str(path.resolve())] = normalized_payload
         runtime.payload_by_path[str(path)] = normalized_payload
@@ -144,6 +147,40 @@ def _pdf_to_images_node(state: GraphState, runtime: GraphRuntime) -> dict[str, A
         "pages": pages,
         "drawing_index": drawing_index.to_dict() if drawing_index else {},
     }
+
+
+async def render_pages_incrementally(state: GraphState, runtime: GraphRuntime) -> dict[str, Any]:
+    """Render one page at a time; publish only after its private image is durable."""
+    import pymupdf
+
+    from src.agent.extraction_agent.domain.models.image_payload import ImagePayload
+    from src.agent.extraction_agent.infrastructure.document.images import _is_blank_page
+
+    def count() -> int:
+        with pymupdf.open(state["pdf_path"]) as document:
+            return document.page_count
+
+    def render(number: int) -> ImagePayload:
+        with pymupdf.open(state["pdf_path"]) as document:
+            page = document[number - 1]
+            return ImagePayload(name=f"page_{number:03d}.png", mime_type="image/png",
+                                content=page.get_pixmap(matrix=pymupdf.Matrix(runtime.settings.pdf_render_scale,
+                                                                            runtime.settings.pdf_render_scale), alpha=False).tobytes("png"),
+                                page_number=number, blank=_is_blank_page(pymupdf, page), page_text=page.get_text())
+
+    total = await asyncio.to_thread(count)
+    directory = Path(state["output_path"]) / "pages" / ".incoming"
+    directory.mkdir(parents=True, exist_ok=True)
+    payloads = []
+    for number in range(1, total + 1):
+        runtime.extraction_client.check_cancelled()
+        payload = await asyncio.to_thread(render, number)
+        path = directory / payload.name
+        await asyncio.to_thread(path.write_bytes, payload.content)
+        payloads.append(replace(payload, content=b""))
+        await runtime.durable.publish_page({"page_number": number, "image_path": str(path)}, "rendered")
+    runtime.preloaded_images = payloads
+    return await asyncio.to_thread(_pdf_to_images_node, state, runtime)
 
 
 async def _classify_pages_node(state: GraphState, runtime: GraphRuntime) -> dict[str, Any]:
@@ -261,6 +298,8 @@ async def _classify_pages_node(state: GraphState, runtime: GraphRuntime) -> dict
                 runtime.payload_by_path[str(destination.resolve())] = updated_payload
                 runtime.payload_by_path[str(destination)] = updated_payload
         classified_pages.append(page)
+        if getattr(runtime.durable, "incremental", False):
+            await runtime.durable.publish_page(page, "classified")
 
     for function, pdf_pages in function_groups.items():
         function_groups[function] = sorted(

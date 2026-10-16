@@ -12,8 +12,7 @@ from typing import Any, TypeVar, get_args, get_origin
 
 from pydantic import BaseModel, ValidationError
 
-from src.config import AgentSettings
-from src.domain.enums import ErrorCode
+from src.agent.extraction_agent.application.review import REVIEW_CONTRACT_VERSION, facts_only
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
     CrossPageCompletionRequest,
@@ -23,12 +22,14 @@ from src.agent.extraction_agent.domain.models.extraction_stages import (
     PageScanData,
     PageScanRequest,
 )
-from src.domain.models.profiles import ProfileBinding
-from src.domain.ports import ExtractionStageAdapter
-from src.harness.model_gateway import ModelGateway, ModelGatewayError, ModelRequest
 from src.agent.extraction_agent.infrastructure.document.json_response import _extract_json_candidate
 from src.agent.extraction_agent.infrastructure.document.model_images import prepare_vision_messages
 from src.agent.extraction_agent.profiles.zh.completion_context import target_only_context
+from src.config import AgentSettings
+from src.domain.enums import ErrorCode
+from src.domain.models.profiles import ProfileBinding
+from src.domain.ports import ExtractionStageAdapter
+from src.harness.model_gateway import ModelGateway, ModelGatewayError, ModelRequest
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -279,6 +280,12 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             )
         # The output protocol is shared. The switch above only changes the
         # ZH-specific semantics, never whether ABB receives a JSON contract.
+        contract = facts_only(contract)
+        prompt += (
+            "\n复核职责：只输出识别事实与依据。不输出status、needs_review、review_reasons、processing_status，"
+            "这些字段由后处理决定。视觉歧义用uncertainties=[{field:direction/start/end/page/connection,"
+            "detail:具体不确定证据}]报告；跨页尚未读取终点属于待补全，不能据此判断人工复核。"
+        )
         system_prompt = prompt + "\n输出 JSON Schema：\n" + json.dumps(contract)
         input_content = await asyncio.to_thread(_multimodal_content, user_text, images)
         messages = [
@@ -323,6 +330,7 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
                             "prompt_checksum": (
                                 f"sha256:{hashlib.sha256(system_prompt.encode('utf-8')).hexdigest()}"
                             ),
+                            "review_contract_version": REVIEW_CONTRACT_VERSION,
                             "input_pdf_pages": [image.pdf_page_number for image in images],
                             "item_id": item_id,
                             "stage": stage,
@@ -383,7 +391,7 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             messages.extend(
                 [
                     {"role": "user", "content": [{"type": "text", "text": text}, *images]},
-                    {"role": "assistant", "content": example["expected_json"]},
+                    {"role": "assistant", "content": json.dumps(facts_only(json.loads(example["expected_json"])), ensure_ascii=False)},
                 ]
             )
         return messages
@@ -601,7 +609,7 @@ def _normalize_classification(payload: Any) -> dict[str, Any]:
         payload = payload["result"]
     if not isinstance(payload, dict):
         raise ValueError("Page classification must be a JSON object.")
-    normalized = dict(payload)
+    normalized = facts_only(dict(payload))
     normalized["plant_function"] = (
         normalized.get("plant_function") or normalized.get("drawing_function") or normalized.get("function")
     )
@@ -620,7 +628,7 @@ def _normalize_page_scan(
         payload = payload["result"]
     if not isinstance(payload, dict):
         raise ValueError("Page scan must be a JSON object or array.")
-    normalized = dict(payload)
+    normalized = facts_only(dict(payload))
     # A legacy model occasionally used drawing_function for a numeric page.
     # Preserve real function codes such as 002.C or LV11.
     function_value = normalized.get("drawing_function")
@@ -739,7 +747,7 @@ def _normalize_cross_page(
         payload = payload.get("completion") or payload.get("result") or payload
     if not isinstance(payload, dict):
         raise ValueError("Cross-page completion must be a JSON object.")
-    normalized = dict(payload)
+    normalized = facts_only(dict(payload))
     normalized.setdefault("task_id", task_id)
     if normalized.get("end") is None and any(key.startswith("end_") for key in normalized):
         normalized["end"] = {

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Wiring Workbench Server",
-    "version": "2.0.0"
+    "version": "2.1.0"
   },
   "paths": {
     "/api/v1/auth/login": {
@@ -155,6 +155,197 @@
                     "type": "boolean"
                   },
                   "title": "Response Capabilities Api V1 Capabilities Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/extraction": {
+      "get": {
+        "summary": "Extraction Progress",
+        "operationId": "extraction_progress_api_v1_projects__project_id__extraction_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ExtractionProgress"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Extraction Progress Api V1 Projects  Project Id  Extraction Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/extraction/retry": {
+      "post": {
+        "summary": "Retry Extraction",
+        "operationId": "retry_extraction_api_v1_projects__project_id__extraction_retry_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Retry Extraction Api V1 Projects  Project Id  Extraction Retry Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/extraction/events": {
+      "get": {
+        "summary": "Extraction Events",
+        "operationId": "extraction_events_api_v1_projects__project_id__extraction_events_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": -1,
+              "default": -1,
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -1604,6 +1795,80 @@
         ],
         "title": "DrawingRead"
       },
+      "ExtractionProgress": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage"
+          },
+          "total_pages": {
+            "type": "integer",
+            "title": "Total Pages",
+            "default": 0
+          },
+          "rendered_pages": {
+            "type": "integer",
+            "title": "Rendered Pages",
+            "default": 0
+          },
+          "classified_pages": {
+            "type": "integer",
+            "title": "Classified Pages",
+            "default": 0
+          },
+          "completed_pages": {
+            "type": "integer",
+            "title": "Completed Pages",
+            "default": 0
+          },
+          "row_count": {
+            "type": "integer",
+            "title": "Row Count",
+            "default": 0
+          },
+          "needs_review_count": {
+            "type": "integer",
+            "title": "Needs Review Count",
+            "default": 0
+          },
+          "current_page": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Page"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "stage"
+        ],
+        "title": "ExtractionProgress"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -1800,6 +2065,36 @@
           "content"
         ],
         "title": "ResourceText"
+      },
+      "ReviewReason": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ReviewReason"
       },
       "SessionResponse": {
         "properties": {
@@ -2206,6 +2501,18 @@
           "needs_review": {
             "type": "boolean",
             "title": "Needs Review"
+          },
+          "processing_status": {
+            "type": "string",
+            "title": "Processing Status",
+            "default": "completed"
+          },
+          "review_reasons": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewReason"
+            },
+            "type": "array",
+            "title": "Review Reasons"
           }
         },
         "type": "object",
@@ -2256,9 +2563,19 @@
           },
           "extraction_started": {
             "type": "boolean",
-            "const": false,
             "title": "Extraction Started",
             "default": false
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
           }
         },
         "additionalProperties": false,
@@ -2406,9 +2723,18 @@
           },
           "extraction_available": {
             "type": "boolean",
-            "const": false,
             "title": "Extraction Available",
-            "default": false
+            "default": true
+          },
+          "processing": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExtractionProgress"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "source_saved": {
             "type": "boolean",

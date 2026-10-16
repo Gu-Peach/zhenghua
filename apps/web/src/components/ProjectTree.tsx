@@ -62,7 +62,7 @@ export function ProjectTree({ project, projects, loading = false, selectedWorksp
                   </div>
                   {project && active && expanded ? <div id={childrenId} className="workspace-tree">
                   {loading ? <p className="tree-empty">正在读取工作区…</p> : null}
-                  {uploadedFilename && !hasWorkspaceIndex ? <p className="tree-empty">{simulationEnabled ? "等待 Agent 分类并发布图纸索引" : "尚无图纸索引"}</p> : null}
+                  {uploadedFilename && !hasWorkspaceIndex ? <p className="tree-empty">{project.status === "processing" || simulationEnabled ? "正在拆分并识别图纸…" : "尚无图纸索引"}</p> : null}
                   {hasWorkspaceIndex && project.workspaces.length === 0 ? <p className="tree-empty">Stage 1 正在识别工作区</p> : null}
                   {hasWorkspaceIndex ? project.workspaces.map((workspace) => {
                     const isExpanded = !collapsed.includes(workspace.id);

@@ -1,5 +1,32 @@
 # Agent Service
 
+2026-10-16新增三表增量提取Worker：上传由8000 API入队，图片/分类/初扫/每组补全/页完成分别发布。review由程序计算，模型只报告事实与不确定性。新入口独立于旧Supervisor；旧`src.main`不消费此队列。详见[交付](../../docs/service/agent/changelog/2026-10-16-incremental-extraction.md)。随后启动排障已将20261016020000部署到本地zhenghua_test库，四个RPC可见；未启动付费提取。
+
+## 当前增量提取的启动方式
+
+本地zhenghua_test已应用`20261016020000`，8000 API已核对为2.1.0，无需重复执行迁移。新环境仍需先按Server说明应用`supabase/migrations/20261016020000_incremental_extraction.sql`并重载8000 API。配置`services/agent/.env`中的`AGENT_SUPABASE_URL`、`AGENT_SUPABASE_SERVICE_ROLE_KEY`、`AGENT_MODEL_BASE_URL`（或完整chat completions地址）、`AGENT_MODEL_API_KEY`和`AGENT_DEFAULT_MODEL`。使用本地Profile目录，不要求远端Profile控制面。
+
+如果出现`claim_simple_extraction`的HTTP 404，先核对该数据库是否应用上述迁移及PostgREST是否重载Schema；这不是模型权限错误。
+
+从仓库根目录运行独立Worker（推荐，无HTTP端口）：
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e services/agent
+Set-Location services/agent
+..\..\.venv\Scripts\python.exe -m src.agent.extraction_agent.application.incremental_worker
+```
+
+或从仓库根目录运行带探活的开发主机（二选一）：
+
+```powershell
+$env:AGENT_INLINE_WORKER = "true"
+.\.venv\Scripts\python.exe -m uvicorn src.extraction_main:app --app-dir services/agent --host 127.0.0.1 --port 8100
+```
+
+`GET http://127.0.0.1:8100/health`的`worker_running`反映inline Worker状态。前端仍只请求8000。真实上传会触发已配置模型调用；本地CLI的`--allow-real-model`保护仍保留，测试默认使用Fake模型。任务产物位于被忽略的`.runtime/incremental-extraction/<run_id>`。失败后在工作台点“重试提取”，成功模型响应和完成页复用；恢复需要原模型/图片配置，冻结Profile从私有Storage读取。
+
+以下较早Supervisor/旧表/规则发布内容为历史运行说明，当前增量链路使用上面的入口。
+
 2026-10-14目录迁移：独立提取实现位于[src/agent/extraction_agent](./src/agent/extraction_agent/README.md)，共享服务包按当前目录改为src，API入口为src.main:app。算法、Prompt和expected不改，只调整引用；静态比对完成，未运行模型/业务测试。现有测试脚本参数不变，见[迁移记录](../../docs/service/agent/changelog/2026-10-14-extraction-agent-directory.md)。
 
 2026-10-14本地ZH2.0.2按用户新口径精简规则，读取放线段两侧直接端子，业务端子排仅后处理映射，保留电流约束。用户自行测试，本轮未运行测试/模型，不写数据库或发布；见[记录](../../docs/service/agent/changelog/2026-10-14-zh-direct-terminals.md)。

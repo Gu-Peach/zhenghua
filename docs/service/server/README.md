@@ -1,5 +1,7 @@
 # Server 文档
 
+- [上传入队、鉴权SSE、增量事务及隔离库验证](./changelog/2026-10-16-incremental-extraction.md)。
+
 - [起终点坐标字段及验证](./changelog/2026-10-16-terminal-coordinates.md)、[坐标契约](./terminal-coordinate-contract.md)
 
 - [2026-10-16 三表数据管理接入与验证](./changelog/2026-10-16-simple-management.md)、[ADR-0020](../../adr/0020-three-table-management-contract.md)

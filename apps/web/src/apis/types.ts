@@ -34,6 +34,7 @@ export interface ProjectSummary {
 }
 
 export interface ProjectDetail extends ProjectSummary {
+  processing?: components["schemas"]["ExtractionProgress"] | null;
   sourceFilename: string;
   projectNo: string;
   resultVersion: string;
@@ -42,6 +43,8 @@ export interface ProjectDetail extends ProjectSummary {
 }
 
 export interface WiringRow {
+  processingStatus?: string;
+  reviewReasons?: components["schemas"]["ReviewReason"][];
   id: string;
   workspaceId: string;
   drawingId: string;

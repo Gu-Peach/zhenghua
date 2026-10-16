@@ -2,21 +2,23 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import json
 import struct
 import tempfile
 import unittest
 from pathlib import Path
 
-from src.config import AgentSettings
-from src.domain.enums import ErrorCode
+from src.agent.extraction_agent.application.review import facts_only
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionRequest,
     DrawingPageInput,
     PageClassificationRequest,
     PageScanRequest,
 )
-from src.harness.model_gateway import FakeModelGateway, ModelGatewayError
 from src.agent.extraction_agent.infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
+from src.config import AgentSettings
+from src.domain.enums import ErrorCode
+from src.harness.model_gateway import FakeModelGateway, ModelGatewayError
 from src.profiles import ProfileRegistry
 
 AGENT_ROOT = Path(__file__).resolve().parents[2]
@@ -121,6 +123,13 @@ class NativeVlmStageTests(unittest.TestCase):
             self.assertEqual(scan.units[0].wire_number, "0272")
             self.assertEqual(cross_page.task_id, "task-1")
             self.assertEqual(len(gateway.calls), 3)
+            for request in gateway.calls:
+                schema = json.loads(request.messages[0]["content"].split("\n输出 JSON Schema：\n")[-1])
+                self.assertEqual(facts_only(schema), schema)
+                for message in request.messages:
+                    if message["role"] == "assistant":
+                        example = json.loads(message["content"])
+                        self.assertEqual(facts_only(example), example)
             image_parts = [
                 part
                 for request in gateway.calls

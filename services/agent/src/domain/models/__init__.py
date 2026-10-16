@@ -1,53 +1,7 @@
-from src.domain.models.correction import CorrectionContext, CorrectionFacts, CorrectionPlan, FeedbackTarget
-from src.agent.extraction_agent.domain.models.extraction import (
-    ExtractionExecutionResult,
-    LegacyExtractionRequest,
-)
-from src.agent.extraction_agent.domain.models.extraction_stages import (
-    CrossPageCompletionRequest,
-    CrossPageCompletionResult,
-    DrawingPageInput,
-    PageClassificationRequest,
-    PageClassificationResult,
-    PageScanRequest,
-    PageScanResult,
-)
-from src.domain.models.improvement import (
-    AcceptedFeedback,
-    Diagnosis,
-    EvalMetrics,
-    EvalReport,
-    EvaluationJudgement,
-    ImprovementCase,
-    ProfileCandidate,
-)
-from src.domain.models.profile_detection import (
-    ProfileAssignment,
-    ProfileCandidateScore,
-    ProfileDetectionResult,
-    ProfileRouterModelOutput,
-)
-from src.domain.models.profiles import ProfileBinding, ProfileManifest, ProfileRuleSet, ProfileSnapshot
-from src.domain.models.proposals import (
-    ProposalOperation,
-    ProposalValidation,
-    ResultPatchProposal,
-    ResultProposal,
-)
-from src.domain.models.result_data import (
-    ConnectionSearchQuery,
-    ConnectionSearchResult,
-    PrepareCorrectionRequest,
-    PreparedCorrection,
-    ResultCommitResult,
-)
-from src.domain.models.runs import AgentEvent, AgentRun, CreateRunRequest, ProfileRef, RunScope
-from src.domain.models.supervisor import (
-    ConversationTurn,
-    SupervisorDecision,
-    SupervisorUserEvent,
-    WorkflowCommand,
-)
+"""Lazy public model exports avoid cycles with independently imported agents."""
+
+from importlib import import_module
+from typing import Any
 
 __all__ = [
     "AgentEvent",
@@ -97,3 +51,79 @@ __all__ = [
     "SupervisorUserEvent",
     "WorkflowCommand",
 ]
+
+_EXPORTS = {
+    "CorrectionContext": ("src.domain.models.correction", "CorrectionContext"),
+    "CorrectionFacts": ("src.domain.models.correction", "CorrectionFacts"),
+    "CorrectionPlan": ("src.domain.models.correction", "CorrectionPlan"),
+    "FeedbackTarget": ("src.domain.models.correction", "FeedbackTarget"),
+    "ExtractionExecutionResult": (
+        "src.agent.extraction_agent.domain.models.extraction",
+        "ExtractionExecutionResult",
+    ),
+    "LegacyExtractionRequest": (
+        "src.agent.extraction_agent.domain.models.extraction",
+        "LegacyExtractionRequest",
+    ),
+    "CrossPageCompletionRequest": (
+        "src.agent.extraction_agent.domain.models.extraction_stages",
+        "CrossPageCompletionRequest",
+    ),
+    "CrossPageCompletionResult": (
+        "src.agent.extraction_agent.domain.models.extraction_stages",
+        "CrossPageCompletionResult",
+    ),
+    "DrawingPageInput": ("src.agent.extraction_agent.domain.models.extraction_stages", "DrawingPageInput"),
+    "PageClassificationRequest": (
+        "src.agent.extraction_agent.domain.models.extraction_stages",
+        "PageClassificationRequest",
+    ),
+    "PageClassificationResult": (
+        "src.agent.extraction_agent.domain.models.extraction_stages",
+        "PageClassificationResult",
+    ),
+    "PageScanRequest": ("src.agent.extraction_agent.domain.models.extraction_stages", "PageScanRequest"),
+    "PageScanResult": ("src.agent.extraction_agent.domain.models.extraction_stages", "PageScanResult"),
+    "AcceptedFeedback": ("src.domain.models.improvement", "AcceptedFeedback"),
+    "Diagnosis": ("src.domain.models.improvement", "Diagnosis"),
+    "EvalMetrics": ("src.domain.models.improvement", "EvalMetrics"),
+    "EvalReport": ("src.domain.models.improvement", "EvalReport"),
+    "EvaluationJudgement": ("src.domain.models.improvement", "EvaluationJudgement"),
+    "ImprovementCase": ("src.domain.models.improvement", "ImprovementCase"),
+    "ProfileCandidate": ("src.domain.models.improvement", "ProfileCandidate"),
+    "ProfileAssignment": ("src.domain.models.profile_detection", "ProfileAssignment"),
+    "ProfileCandidateScore": ("src.domain.models.profile_detection", "ProfileCandidateScore"),
+    "ProfileDetectionResult": ("src.domain.models.profile_detection", "ProfileDetectionResult"),
+    "ProfileRouterModelOutput": ("src.domain.models.profile_detection", "ProfileRouterModelOutput"),
+    "ProfileBinding": ("src.domain.models.profiles", "ProfileBinding"),
+    "ProfileManifest": ("src.domain.models.profiles", "ProfileManifest"),
+    "ProfileRuleSet": ("src.domain.models.profiles", "ProfileRuleSet"),
+    "ProfileSnapshot": ("src.domain.models.profiles", "ProfileSnapshot"),
+    "ProposalOperation": ("src.domain.models.proposals", "ProposalOperation"),
+    "ProposalValidation": ("src.domain.models.proposals", "ProposalValidation"),
+    "ResultPatchProposal": ("src.domain.models.proposals", "ResultPatchProposal"),
+    "ResultProposal": ("src.domain.models.proposals", "ResultProposal"),
+    "ConnectionSearchQuery": ("src.domain.models.result_data", "ConnectionSearchQuery"),
+    "ConnectionSearchResult": ("src.domain.models.result_data", "ConnectionSearchResult"),
+    "PrepareCorrectionRequest": ("src.domain.models.result_data", "PrepareCorrectionRequest"),
+    "PreparedCorrection": ("src.domain.models.result_data", "PreparedCorrection"),
+    "ResultCommitResult": ("src.domain.models.result_data", "ResultCommitResult"),
+    "AgentEvent": ("src.domain.models.runs", "AgentEvent"),
+    "AgentRun": ("src.domain.models.runs", "AgentRun"),
+    "CreateRunRequest": ("src.domain.models.runs", "CreateRunRequest"),
+    "ProfileRef": ("src.domain.models.runs", "ProfileRef"),
+    "RunScope": ("src.domain.models.runs", "RunScope"),
+    "ConversationTurn": ("src.domain.models.supervisor", "ConversationTurn"),
+    "SupervisorDecision": ("src.domain.models.supervisor", "SupervisorDecision"),
+    "SupervisorUserEvent": ("src.domain.models.supervisor", "SupervisorUserEvent"),
+    "WorkflowCommand": ("src.domain.models.supervisor", "WorkflowCommand"),
+}
+
+
+def __getattr__(name: str) -> Any:
+    if name not in _EXPORTS:
+        raise AttributeError(name)
+    module, symbol = _EXPORTS[name]
+    value = getattr(import_module(module), symbol)
+    globals()[name] = value
+    return value

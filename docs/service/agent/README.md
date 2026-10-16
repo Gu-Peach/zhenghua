@@ -1,5 +1,7 @@
 # Agent 服务设计索引
 
+- [上传提取、增量发布及复核后处理](./changelog/2026-10-16-incremental-extraction.md)；[ADR 0022](../../adr/0022-incremental-extraction.md)。
+
 2026-10-16按用户精简后的manifest保留003C01的1组初扫、5组补全/负例和4张图，删除独占未引用6图/12JSON；manifest v13、资源摘要与测试引用同步，Profile保持2.1.1。仅静态核对，未运行测试/模型。见[清理记录](./changelog/2026-10-16-zh-c01-example-cleanup.md)。
 
 2026-10-16本地ZH2.1.1修正003.C/004.C跨页读取：上下文v2移除起点端子/坐标/方向文字，允许页底朝外回指，接口/针脚分别读取，缺失地址只用唯一来源页PDF证据核对。5初扫/9补全/10图，补全仍每次1例；仅静态核对。见[方案](./zh-cross-page-reading-fix-plan.md)与[记录](./changelog/2026-10-16-zh-cross-page-reading.md)。

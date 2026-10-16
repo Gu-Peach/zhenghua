@@ -41,7 +41,7 @@ class ZhGantryReelVlmAdapter(ZhVlmExtractionStageAdapter):
             "这是 Stage 2 内部双图补全，只处理冻结连接，不改起点、不扫描目标页其他线路。"
             "按原始 SH.NO. + 数字列 + 字母行、原理号/回指和实际路径匹配目标入页线路。"
             "从对应入页箭头沿线读取第一个实际端子，遇端子停止，不追到下游设备。"
-            "正常回指是匹配证据。电位/信号名不能冒充针脚；设备或端子未标注则该字段 null 并 needs_review。"
+            "正常回指是匹配证据。电位/信号名不能冒充针脚；设备或端子未标注则该字段 null 并通过uncertainties报告依据。"
             "终点以图中标注为准，terminal_strip留null由程序处理，不从人工表猜终点。"
             "只输出 CrossPageCompletionData JSON。"
             "end.terminal_coordinates读取目标实际端子中心的整图归一化x/y和目标PDF物理页，不改来源坐标。"

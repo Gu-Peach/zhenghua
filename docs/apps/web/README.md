@@ -1,5 +1,7 @@
 # apps/web 前端归档
 
+- [提取阶段等待、增量目录与线表展示](./changelog/2026-10-16-incremental-extraction.md)。
+
 2026-10-16结果接口的两端坐标已透传到WiringRow类型，保留独立PDF物理页；本轮仅元数据，无可视布局变化或图片高亮。见[Server坐标记录](../../service/server/changelog/2026-10-16-terminal-coordinates.md)。
 
 2026-10-16登录入口改为直接进入工作区，空库也保留完整工作区布局；13项浏览器与Web检查通过，见[记录](./changelog/2026-10-16-workspace-entry.md)。

@@ -1,12 +1,16 @@
 import asyncio
+import json
+from time import monotonic
 from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, Header, Query, Request
+from fastapi.responses import StreamingResponse
 
 from .models import DrawingRead, ResourcePackage
 from .repository import ServiceError
 from .simple_models import (
+    ExtractionProgress,
     LocalProfileOption,
     ProfileReferenceCreate,
     ProfileReferenceRead,
@@ -27,7 +31,69 @@ def install_management_routes(app: FastAPI, identity: Any) -> None:
 
     @app.get("/api/v1/capabilities")
     async def capabilities(user: User) -> dict[str, bool]:
-        return {"data_management": True, "extraction": False, "supervisor": False}
+        return {"data_management": True, "extraction": True, "supervisor": False}
+
+    @app.get(
+        "/api/v1/projects/{project_id}/extraction",
+        response_model=ExtractionProgress | None,
+    )
+    async def extraction_progress(
+        project_id: UUID, request: Request, user: User
+    ) -> Any:
+        return await request.app.state.management.extraction_progress(
+            str(project_id), user
+        )
+
+    @app.post(
+        "/api/v1/projects/{project_id}/extraction/retry", response_model=dict[str, str]
+    )
+    async def retry_extraction(project_id: UUID, request: Request, user: User) -> Any:
+        return await request.app.state.management.start_extraction(
+            str(project_id), user, retry=True
+        )
+
+    @app.get(
+        "/api/v1/projects/{project_id}/extraction/events",
+        response_class=StreamingResponse,
+        responses={
+            200: {"content": {"text/event-stream": {"schema": {"type": "string"}}}}
+        },
+    )
+    async def extraction_events(
+        project_id: UUID, request: Request, user: User, cursor: int = Query(-1, ge=-1)
+    ) -> StreamingResponse:
+        service = request.app.state.management
+        await service.extraction_progress(str(project_id), user)
+
+        async def stream():
+            position = cursor
+            deadline = monotonic() + 55
+            yield "event: refresh\ndata: {}\n\n"
+            while monotonic() < deadline and not await request.is_disconnected():
+                try:
+                    events = await service.extraction_events(
+                        str(project_id), user, position
+                    )
+                    for event in events:
+                        position = int(event["seq"])
+                        yield f"id: {position}\nevent: refresh\ndata: {json.dumps({'seq': position})}\n\n"
+                    progress = await service.extraction_progress(str(project_id), user)
+                except ServiceError as exc:
+                    event = "access_revoked" if exc.status in {403, 404} else "unavailable"
+                    yield f"event: {event}\ndata: {{}}\n\n"
+                    return
+                if progress and progress["stage"] in {"finished", "failed"}:
+                    yield "event: done\ndata: {}\n\n"
+                    return
+                if len(events) < 100:
+                    yield ": heartbeat\n\n"
+                    await asyncio.sleep(1)
+
+        return StreamingResponse(
+            stream(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
 
     @app.get("/api/v1/projects", response_model=list[SimpleProjectRead])
     async def projects(request: Request, user: User) -> Any:

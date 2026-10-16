@@ -11,7 +11,7 @@ import httpx
 import pytest
 
 from src.agent.extraction_agent.application.extraction_stage_factory import build_extraction_stage_dispatcher
-from src.config import AgentSettings
+from src.agent.extraction_agent.application.review import facts_only
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
     CrossPageCompletionRequest,
@@ -22,8 +22,6 @@ from src.agent.extraction_agent.domain.models.extraction_stages import (
     PageScanRequest,
 )
 from src.agent.extraction_agent.domain.models.wiring import WireRecord
-from src.harness.model_gateway import FakeModelGateway
-from src.profiles import ProfileRegistry
 from src.agent.extraction_agent.profiles.extraction_policy import default_extraction_policies
 from src.agent.extraction_agent.profiles.zh_gantry_reel.policy import (
     ZhGantryReelPolicy,
@@ -31,6 +29,9 @@ from src.agent.extraction_agent.profiles.zh_gantry_reel.policy import (
     encode_sheet,
     parse_title_block,
 )
+from src.config import AgentSettings
+from src.harness.model_gateway import FakeModelGateway
+from src.profiles import ProfileRegistry
 
 ROOT = Path(__file__).resolve().parents[4]
 ASSETS = ROOT / "services/agent/src/agent/extraction_agent/prompts/xmz"
@@ -188,6 +189,6 @@ def test_image_examples_replay_field_by_field_through_fake_adapter() -> None:
             expected_warnings = expected_data.pop("warnings", [])
             actual_warnings = actual_data.pop("warnings", [])
             assert set(expected_warnings).issubset(actual_warnings), case["id"]
-            assert actual_data == expected_data, case["id"]
+            assert facts_only(actual_data) == facts_only(expected_data), case["id"]
 
     asyncio.run(check())

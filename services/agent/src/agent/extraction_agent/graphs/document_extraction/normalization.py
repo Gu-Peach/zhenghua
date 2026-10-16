@@ -5,6 +5,8 @@ from typing import Any
 from src.agent.extraction_agent.application.document_extraction.runtime import (
     GraphRuntime,
 )
+from src.agent.extraction_agent.application.review import evaluate_review
+from src.agent.extraction_agent.domain.models.review import ReviewPhase
 from src.agent.extraction_agent.domain.models.wiring import (
     WireConnection,
     WireRecord,
@@ -24,7 +26,9 @@ from src.agent.extraction_agent.graphs.document_extraction.state import (
 )
 
 
-def _normalize_and_deduplicate_node(state: GraphState, runtime: GraphRuntime) -> dict[str, Any]:
+def _normalize_and_deduplicate_node(
+    state: GraphState, runtime: GraphRuntime, *, review_phase: ReviewPhase = "final",
+) -> dict[str, Any]:
     """Flatten logical units into one XLSX/API row per concrete connection."""
 
     page_by_number = {int(page["page_number"]): page for page in state.get("pages", [])}
@@ -68,7 +72,6 @@ def _normalize_and_deduplicate_node(state: GraphState, runtime: GraphRuntime) ->
         unit.source_drawing_pages = _unique_strings(unit.source_drawing_pages)
         if any(connection.status not in {"complete", "resolved"} for connection in unique_connections):
             unit.status = "needs_review"
-        normalized_units[unit_id] = unit.model_dump(mode="json", exclude_none=False)
 
         records: list[WireRecord] = []
         for connection in unique_connections:
@@ -79,11 +82,24 @@ def _normalize_and_deduplicate_node(state: GraphState, runtime: GraphRuntime) ->
                 terminal_strip_mapping=runtime.settings.terminal_strip_mapping,
             )
             record = runtime.policy.normalize_record(record, runtime.settings.terminal_strip_mapping)
-            runtime.validation_warnings.extend(
-                runtime.policy.validate_record(record, runtime.settings.terminal_strip_mapping)
-            )
+            warnings = runtime.policy.validate_record(record, runtime.settings.terminal_strip_mapping)
+            if review_phase == "scan" and not record.end_terminal and record.references:
+                warnings = [warning for warning in warnings if not warning.startswith("end:")
+                            and "cross-page review" not in warning]
+            decision = evaluate_review(record.model_dump(mode="python"), phase=review_phase,
+                                       strict_evidence=getattr(runtime.policy, "enforce_evidence_contract", False),
+                                       warnings=warnings)
+            for key in ("needs_review", "review_reasons", "processing_status"):
+                value = getattr(decision, key)
+                setattr(record, key, value)
+                setattr(connection, key, value)
+            record.status = connection.status = "needs_review" if decision.needs_review else (
+                "needs_reference" if decision.processing_status == "pending_completion" else "complete")
+            runtime.validation_warnings.extend(warnings)
             records.append(record)
             connection_records.append(record.model_dump(mode="json", exclude_none=False))
+        unit.status = "needs_review" if any(item.needs_review for item in records) else "complete"
+        normalized_units[unit_id] = unit.model_dump(mode="json", exclude_none=False)
         records_by_unit[unit_id] = records
 
     runtime.log(

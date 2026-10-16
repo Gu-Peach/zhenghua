@@ -1,5 +1,21 @@
 # Server 业务服务
 
+2026-10-16增量提取已接入代码：上传PDF保存后创建提取任务，工作台通过Server SSE刷新已提交的图纸索引和线表。AI聊天仍未开放。启用前需部署新增迁移并启动[独立提取Worker](../agent/README.md#当前增量提取的启动方式)，原数据管理API继续使用8000。见[交付及验证](../../docs/service/server/changelog/2026-10-16-incremental-extraction.md)。
+
+## 启用增量提取
+
+按时间顺序应用现有迁移及新增`supabase/migrations/20261016020000_incremental_extraction.sql`，不要重复执行已应用迁移。新增迁移先通过隔离临时库验证；随后因Worker启动404，已应用本地zhenghua_test库并登记历史。无需重复应用。它增加四个内部RPC、领取/活动任务唯一索引、私有ZIP上传能力并兼容旧guard/行CRUD函数，不创建新业务表。
+
+重载8000 API后启动新Worker；前端不需要Agent内部令牌或service-role。上传失败不入队，Worker未启动时显示排队等待，处理期间线表只读。失败保留已保存结果，可从工作台重试。
+
+本地SQL验收命令（创建并移除一次性测试库，不修改当前项目库）：
+
+```powershell
+.\.venv\Scripts\python.exe services/server/scripts/verify_incremental_migration.py --allow-local-database-test
+```
+
+旧`verify_simple_management.py`描述仅保存文件的历史验收，不再用于验证上传自动提取；当前验收使用新增SQL脚本、API测试及Agent Fake VLM测试。下文此前“无需Agent/上传不提取”说明为历史状态。
+
 当前为三表数据管理模式（2026-10-16）：项目、规则引用、私有PDF登记、JSON图纸目录/预览、批次线表分页及行级增改删。HTTP入口位于apps/api/src/main.py，应用逻辑位于src/wiring_server/simple_*和profile_references.py。
 
 业务表：extraction_profiles、extraction_projects、extraction_connection_rows。Supabase Auth和暂留Agent表保持独立；旧业务表已删除。本轮不执行Agent提取，上传后只保存文件，AI入口明确未接入。

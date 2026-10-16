@@ -1,5 +1,9 @@
 # Changelog
 
+2026-10-16修复独立Worker启动404：本地缺少20261016020000迁移，现已单独部署并登记历史，原函数/桶配置已备份；只读确认PostgREST四个RPC可见与API 2.1.0。未启动提取或模型调用，见[启动排障记录](../service/server/changelog/2026-10-16-incremental-extraction.md#后续启动排障)。
+
+2026-10-16完成上传即提取的代码链路：独立Worker、三表增量发布、程序review后处理及JWT SSE工作台刷新；保留Stage2内部定向补全，无独立Stage3。API 2.1.0/OpenAPI/TS同步。62项Agent、19项API、15项浏览器、两种隔离库场景及Web检查通过；新增迁移尚未部署当前项目库，未调用付费模型或重启服务。见[Agent](../service/agent/changelog/2026-10-16-incremental-extraction.md)、[Server](../service/server/changelog/2026-10-16-incremental-extraction.md)、[Web](../apps/web/changelog/2026-10-16-incremental-extraction.md)。
+
 2026-10-16三表结果新增start_terminal_coordinates/end_terminal_coordinates可空JSONB，API和前端类型同步，端点变更清理旧坐标；20项后端/Web检查/真实SQL与HTTP验证通过，本地迁移已部署，无Agent模型调用。图像高亮后续接入，见[Server记录](../service/server/changelog/2026-10-16-terminal-coordinates.md)。
 
 2026-10-16登录后直接进入工作区，取消独立项目目录页；空库显示完整工作区和上传入口，项目管理移至侧栏。13项浏览器与Web检查通过，不改数据库/提取规则。见[Web记录](../apps/web/changelog/2026-10-16-workspace-entry.md)。

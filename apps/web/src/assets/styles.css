@@ -660,3 +660,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .debug-form textarea { font-size: 11px; }
   .debug-scenario-grid button { font-size: 10px; }
 }
+.extraction-progress { display:flex; gap:12px; align-items:flex-start; padding:16px 20px; border-bottom:1px solid #dbe4ed; background:#f4fafb; color:#235463; }
+.extraction-progress p { margin:6px 0; font-size:13px; }
+.extraction-progress small { color:#637587; }
+.row-state { display:inline-block; font-size:11px; color:#65768b; margin-right:6px; white-space:nowrap; }
+.row-state.review { color:#96561d; }

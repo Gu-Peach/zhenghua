@@ -5,7 +5,6 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from src.domain.enums import CrossPageState
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData as CrossPageCompletion,
 )
@@ -25,6 +24,9 @@ from src.agent.extraction_agent.domain.models.extraction_stages import (
     ScannedWireUnit as WireUnit,
 )
 from src.agent.extraction_agent.domain.models.extraction_stages import TerminalCoordinates
+from src.domain.enums import CrossPageState
+
+from .review import ProcessingStatus, ReviewReason, VisualUncertainty
 
 __all__ = [
     "CrossPageCompletion",
@@ -66,6 +68,7 @@ class PageClassification(BaseModel):
 
     model_config = ConfigDict(extra="allow", populate_by_name=True)
 
+    uncertainties: list[VisualUncertainty] = Field(default_factory=list)
     plant_function: str | None = None
     page_number: int | None = None
     blank: bool = False
@@ -77,6 +80,12 @@ class PageClassification(BaseModel):
 
 class WireRecord(BaseModel):
     model_config = ConfigDict(extra="allow", populate_by_name=True)
+    uncertainties: list[VisualUncertainty] = Field(default_factory=list)
+    review_reasons: list[ReviewReason] = Field(default_factory=list)
+    needs_review: bool = False
+    processing_status: ProcessingStatus = "scanned"
+    completion_state: str = "not_requested"
+    completion_evidence: str | None = None
 
     wire_number: str | None = Field(default=None, description="放线表线号，如 0272、4111")
     attribute: str | None = Field(default=None, description="放线表属性，如 D")

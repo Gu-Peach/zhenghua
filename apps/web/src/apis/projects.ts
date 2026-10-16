@@ -1,4 +1,4 @@
-import { request } from "./client";
+import { authenticatedFetch, request } from "./client";
 import type { components } from "./generated";
 import type { Drawing, ProjectDetail, ProjectSummary, RuleLibraryItem, WiringRow } from "./types";
 
@@ -12,19 +12,54 @@ function summary(row: Schema["SimpleProjectRead"]): ProjectSummary {
   return { id: row.id, name: row.name, company: "", profile: row.standard_profile ?? "未指定", status, progress: row.status === "ready" ? 100 : 0, workspaceCount: row.workspaces?.length ?? 0, drawingCount: row.workspaces?.reduce((n, w) => n + (w.drawings?.length ?? 0), 0) ?? 0, updatedAt: row.updated_at };
 }
 export function drawingFromDb(d: Schema["DrawingRead"]): Drawing {
-  return { id: d.id, drawingPage: d.workspace_page ?? "未识别", name: `PDF 第 ${d.pdf_page_number} 页`, pdfPage: d.pdf_page_number, status: d.status === "failed" ? "failed" : d.status === "needs_review" ? "review" : "completed", recordCount: 0, imageUrl: d.image_url ?? undefined, referenceNote: d.reference_note ?? undefined };
+  return { id: d.id, drawingPage: d.workspace_page ?? "未识别", name: `PDF 第 ${d.pdf_page_number} 页`, pdfPage: d.pdf_page_number, status: d.status === "failed" ? "failed" : d.status === "needs_review" ? "review" : ["rendered", "classified", "scan", "completion"].includes(d.status) ? "processing" : "completed", recordCount: 0, imageUrl: d.image_url ?? undefined, referenceNote: d.reference_note ?? undefined };
 }
 function connection(row: Schema["SimpleConnectionRead"]): WiringRow {
-  return { id: row.connection_id, workspaceId: row.workspace_id, drawingId: row.drawing_id, page: row.workspace_page ?? `${row.workspace_name} / PDF ${row.pdf_page_number}`, wireNumber: row.wire_number ?? "", lineNumber: row.principle_number ?? "", voltageLevel: row.voltage_level ?? "", terminalStrip: row.terminal_strip ?? "", startCode: row.start_code ?? "", startDescription: row.start_description ?? "", startTerminal: row.start_terminal ?? "", endCode: row.end_code ?? "", endDescription: row.end_description ?? "", endTerminal: row.end_terminal ?? "", startTerminalCoordinates: row.start_terminal_coordinates ?? null, endTerminalCoordinates: row.end_terminal_coordinates ?? null, current: row.current_value ?? "", remark: row.remark ?? "", colorMark: row.color_mark ?? "", status: row.needs_review ? "review" : "confirmed", confidence: 0, isCrossPage: row.is_cross_page, recordVersion: row.record_version, raw: row as unknown as Record<string, unknown> };
+  return { processingStatus: row.processing_status, reviewReasons: row.review_reasons, id: row.connection_id, workspaceId: row.workspace_id, drawingId: row.drawing_id, page: row.workspace_page ?? `${row.workspace_name} / PDF ${row.pdf_page_number}`, wireNumber: row.wire_number ?? "", lineNumber: row.principle_number ?? "", voltageLevel: row.voltage_level ?? "", terminalStrip: row.terminal_strip ?? "", startCode: row.start_code ?? "", startDescription: row.start_description ?? "", startTerminal: row.start_terminal ?? "", endCode: row.end_code ?? "", endDescription: row.end_description ?? "", endTerminal: row.end_terminal ?? "", startTerminalCoordinates: row.start_terminal_coordinates ?? null, endTerminalCoordinates: row.end_terminal_coordinates ?? null, current: row.current_value ?? "", remark: row.remark ?? "", colorMark: row.color_mark ?? "", status: row.needs_review ? "review" : "confirmed", confidence: 0, isCrossPage: row.is_cross_page, recordVersion: row.record_version, raw: row as unknown as Record<string, unknown> };
 }
 
 export const projectApi = {
+  async retryExtraction(id: string): Promise<void> { await request(`/api/v1/projects/${id}/extraction/retry`, { method: "POST" }); },
+  async watchExtraction(id: string, signal: AbortSignal, changed: () => void, connectivity: (disconnected: boolean) => void): Promise<void> {
+    let cursor = -1;
+    while (!signal.aborted) {
+      try {
+        const response = await authenticatedFetch(`/api/v1/projects/${id}/extraction/events?cursor=${cursor}`, { signal, headers: { Accept: "text/event-stream" } });
+        if (!response.ok || !response.body) {
+          if ([401, 403, 404].includes(response.status)) { changed(); connectivity(true); return; }
+          throw new Error("事件流暂不可用");
+        }
+        connectivity(false);
+        const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = "";
+        try {
+          while (!signal.aborted) {
+            const { value, done } = await reader.read(); if (done) break;
+            buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
+            let boundary: number;
+            while ((boundary = buffer.indexOf("\n\n")) >= 0) {
+              const packet = buffer.slice(0, boundary); buffer = buffer.slice(boundary + 2);
+              const event = packet.match(/^event: (.+)$/m)?.[1]; const seq = packet.match(/^id: (\d+)$/m)?.[1];
+              if (seq) cursor = Number(seq);
+              if (event === "refresh" || event === "done") changed();
+              if (event === "unavailable") throw new Error("事件流暂不可用");
+              if (event === "access_revoked") { connectivity(true); changed(); return; }
+              if (event === "done") return;
+            }
+          }
+        } finally { await reader.cancel(); reader.releaseLock(); }
+      } catch { if (!signal.aborted) { connectivity(true); changed(); } }
+      if (!signal.aborted) await new Promise<void>(resolve => {
+        const finish = () => { clearTimeout(timer); signal.removeEventListener("abort", finish); resolve(); };
+        const timer = setTimeout(finish, 3000); signal.addEventListener("abort", finish, { once: true });
+      });
+    }
+  },
   async rename(id: string, name: string): Promise<void> { await request(`/api/v1/projects/${id}`, { method: "PATCH", body: JSON.stringify({ name }) }); },
   async remove(project: ProjectSummary): Promise<void> { await request(`/api/v1/projects/${project.id}?${new URLSearchParams({ confirmed: "true", expected_updated_at: project.updatedAt })}`, { method: "DELETE" }); },
   async list(): Promise<ProjectSummary[]> { return (await request<Schema["SimpleProjectRead"][]>("/api/v1/projects")).map(summary); },
   async get(id: string): Promise<ProjectDetail> {
     const row = await request<Schema["SimpleProjectRead"]>(`/api/v1/projects/${id}`);
-    return { ...summary(row), sourceAvailable: row.source_saved, sourceFilename: row.sources?.[0]?.original_filename ?? "", projectNo: row.id, resultVersion: row.batch_id ? `批次 ${row.batch_id}` : "暂无结果", workspaces: (row.workspaces ?? []).map(w => ({ id: w.id, code: w.code ?? w.name, name: w.name, status: "completed", drawings: (w.drawings ?? []).map(drawingFromDb) })) };
+    return { ...summary(row), processing: row.processing, sourceAvailable: row.source_saved, sourceFilename: row.sources?.[0]?.original_filename ?? "", projectNo: row.id, resultVersion: row.batch_id ? `批次 ${row.batch_id}` : "暂无结果", workspaces: (row.workspaces ?? []).map(w => ({ id: w.id, code: w.code ?? w.name, name: w.name, status: "completed", drawings: (w.drawings ?? []).map(drawingFromDb) })) };
   },
   async connections(id: string, options: { offset?: number; workspaceId?: string | null; drawingId?: string | null; search?: string; batchId?: string | null } = {}): Promise<ResultPage> {
     const params = new URLSearchParams({ offset: String(options.offset ?? 0), limit: "100" });

@@ -69,7 +69,8 @@ def project_read(
         if source
         else [],
         "batch_id": index.active_batch_id,
-        "extraction_available": False,
+        "extraction_available": True,
+        "processing": project.get("drawing_index", {}).get("processing"),
         "source_saved": project.get("drawing_index", {}).get("upload_state") == "saved",
     }
 
@@ -86,4 +87,6 @@ def connection_read(row: dict[str, Any]) -> dict[str, Any]:
         "workspace_page": row.get("source_drawing_page"),
         "pdf_page_number": row["source_pdf_page_number"],
         "voltage_level": (row.get("evidence") or {}).get("voltage_level"),
+        "processing_status": (row.get("evidence") or {}).get("processing_status", "completed"),
+        "review_reasons": (row.get("evidence") or {}).get("review_reasons", []),
     }

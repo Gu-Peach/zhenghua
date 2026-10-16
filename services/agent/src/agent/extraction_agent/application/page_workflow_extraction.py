@@ -10,9 +10,11 @@ from typing import Any
 
 from src.agent.extraction_agent.agents.page_classifier import PageClassifierAgent
 from src.agent.extraction_agent.agents.page_scanner import PageScannerAgent
-from src.config import AgentSettings
-from src.domain.enums import AgentStage
-from src.domain.ports import TraceStore
+from src.agent.extraction_agent.application.document_extraction.settings import (
+    Settings as DocumentExtractionSettings,
+)
+from src.agent.extraction_agent.application.extraction_stage_factory import build_extraction_stage_dispatcher
+from src.agent.extraction_agent.application.stage_persistence import DurableExtractionSession
 from src.agent.extraction_agent.domain.models.extraction import ExtractionExecutionResult
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionRequest,
@@ -29,7 +31,6 @@ from src.agent.extraction_agent.domain.models.extraction_stages import (
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     PageScanResult as ScanAgentResult,
 )
-from src.domain.models.profiles import ProfileBinding
 from src.agent.extraction_agent.domain.models.wiring import (
     CrossPageCompletion,
     PageClassification,
@@ -41,14 +42,14 @@ from src.agent.extraction_agent.graphs.extraction import (
     run_page_scan,
 )
 from src.agent.extraction_agent.graphs.extraction.page_scan import complete_page_connection
-from src.harness.stores import CancellationToken
-from src.agent.extraction_agent.profiles.extraction_policy import default_extraction_policies
-from src.agent.extraction_agent.application.document_extraction.settings import (
-    Settings as DocumentExtractionSettings,
-)
-from src.agent.extraction_agent.application.extraction_stage_factory import build_extraction_stage_dispatcher
-from src.agent.extraction_agent.application.stage_persistence import DurableExtractionSession
 from src.agent.extraction_agent.infrastructure.document.model_images import IMAGE_BUDGET_POLICY_VERSION
+from src.agent.extraction_agent.profiles.extraction_policy import default_extraction_policies
+from src.config import AgentSettings
+from src.domain.enums import AgentStage, ErrorCode
+from src.domain.errors import AgentServiceError
+from src.domain.models.profiles import ProfileBinding
+from src.domain.ports import TraceStore
+from src.harness.stores import CancellationToken
 
 ProgressCallback = Callable[[str], None]
 
@@ -156,6 +157,7 @@ class ExtractionStageGraphClient:
             non_wiring=result.non_wiring,
             confidence=result.confidence,
             needs_review=result.needs_review,
+            uncertainties=result.uncertainties,
             reason=result.reason,
         )
 
@@ -258,6 +260,8 @@ class ExtractionStageGraphClient:
         )
 
     def _raise_if_cancelled(self) -> None:
+        if getattr(self._durable, "lost", False):
+            raise AgentServiceError(ErrorCode.CHECKPOINT_CONFLICT, "Extraction lease was replaced")
         if self._cancellation is not None:
             self._cancellation.raise_if_cancelled()
 

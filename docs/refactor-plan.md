@@ -6,6 +6,8 @@
 
 ## 1. 重构结论
 
+2026-10-16 提取复核改为统一后处理：VLM报告事实/不确定性，程序输出复核标志、原因和阶段状态，待补全与最终缺失分别处理；设计见[复核计划](./service/agent/extraction-review-plan.md)。用户已确认同时实施上传即提取、逐步写库和前端实时展示，见[ADR 0022](./adr/0022-incremental-extraction.md)；不执行此前待确认的旧Agent清理。
+
 2026-10-16 用户授权清理旧Supervisor/纠错/自完善等失效控制面，先独立开发extraction/explain/profile能力，未来再统一主Deep Agent；共享服务保留最小探活/本地规则只读能力，不启用旧业务表任务链路。见 [ADR-0021](./adr/0021-independent-agents-before-orchestration.md)。
 
 2026-10-16结果表新增可空起终点JSONB坐标，API/前端类型沿用Agent的x/y归一化点及所属PDF物理页，端点变更清理旧坐标；图片高亮及Agent落库仍后续接入。见[坐标契约](./service/server/terminal-coordinate-contract.md)。

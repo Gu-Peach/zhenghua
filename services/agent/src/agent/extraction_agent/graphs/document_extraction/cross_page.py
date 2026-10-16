@@ -192,6 +192,11 @@ def _apply_cross_page_completion(
     end = result.get("end")
     if isinstance(end, dict) and end.get("terminal") not in (None, ""):
         raw_connection["end"] = end
+        raw_connection["completion_state"] = "resolved"
+        raw_connection["completion_evidence"] = result.get("source_note")
+        raw_connection["uncertainties"] = [
+            item for item in raw_connection.get("uncertainties", []) if item.get("field") != "end"
+        ] + list(result.get("uncertainties") or [])
         raw_connection["intermediate_points"] = list(result.get("intermediate_points") or [])
         raw_connection["status"] = result.get("status") or "resolved"
         raw_connection["external_source_required"] = False
@@ -204,6 +209,7 @@ def _apply_cross_page_completion(
         )
     else:
         raw_connection["end"] = None
+        raw_connection["completion_state"] = "unavailable"
         raw_connection["status"] = "needs_review"
         raw_connection["external_source_required"] = True
         reasons = list(result.get("warnings") or []) + [
@@ -282,6 +288,7 @@ def _apply_terminal_task_results(
         raw_connection["references"] = _unique_task_references(candidates)
         raw_connection["status"] = "needs_review"
         raw_connection["external_source_required"] = True
+        raw_connection["completion_state"] = "conflicting"
         raw_connection["source_note"] = (
             "Multiple target pages produced conflicting endpoints; manual review is required."
         )
@@ -392,12 +399,22 @@ async def _resolve_cross_page_node(
             _write_cross_page_checkpoint(checkpoint_path, tasks, completed, runtime.extraction_errors or {})
         return task_id, result
 
-    pairs = []
-    for task in tasks:
-        pairs.append(await resolve_one(task))
-    results = {task_id: result for task_id, result in pairs}
     wire_units = dict(state.get("wire_units") or {})
-    _apply_terminal_task_results(wire_units, tasks, results)
+    results: dict[str, dict[str, Any]] = {}
+    for index, task in enumerate(tasks):
+        task_id, result = await resolve_one(task)
+        results[task_id] = result
+        group = [t for t in tasks if (t.get("unit_id"), t.get("connection_id")) ==
+                 (task.get("unit_id"), task.get("connection_id"))]
+        if all(str(t["task_id"]) in results for t in group):
+            _apply_terminal_task_results(wire_units, group, results)
+            if getattr(runtime.durable, "incremental", False):
+                from .normalization import _normalize_and_deduplicate_node
+                combined = {**state, "wire_units": wire_units, "cross_page_results": results}
+                # Other connections on this page may still be waiting for their targets.
+                normalized = _normalize_and_deduplicate_node(combined, runtime, review_phase="scan")
+                await runtime.durable.publish_rows({**combined, **normalized}, int(task["source_pdf_page"]),
+                                                   "completion", str(index))
     if use_checkpoint and not runtime.durable:
         _write_cross_page_checkpoint(checkpoint_path, tasks, results, runtime.extraction_errors or {})
     runtime.log(f"resolve_cross_page: completed tasks={len(tasks)}")

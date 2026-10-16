@@ -9,12 +9,15 @@ const workspaceId = "00000000-0000-0000-0000-000000000014";
 const rowId = "00000000-0000-0000-0000-000000000015";
 const drawing = (id: string, page: number) => ({ id, project_id: projectId, workspace_id: workspaceId, pdf_page_number: page, workspace_page: `003C0${page}`, status: "scanned", image_url: "/fixture.png" });
 
-async function fixture(page: Page, options: { empty?: boolean; failList?: boolean; denied?: boolean; failSave?: boolean; noIndex?: boolean; longName?: boolean; loading?: Promise<void> } = {}) {
+async function fixture(page: Page, options: { empty?: boolean; failList?: boolean; denied?: boolean; failSave?: boolean; noIndex?: boolean; longName?: boolean; loading?: Promise<void>; realtime?: boolean; streamFailures?: number } = {}) {
   let exists = !options.empty;
   let failSave = options.failSave;
   const calls: string[] = []; const keys: string[] = [];
   const detail = { id: projectId, name: options.longName ? "超长项目名称用于验证布局和换行".repeat(10) : "三表回归夹具项目", owner_id: "owner", status: "ready", profile_id: profileId, standard_profile: "zh", updated_at: "2026-10-16", source_saved: true, sources: [{ id: projectId, original_filename: "fixture.pdf", page_count: 2 }], workspaces: options.noIndex ? [] : [{ id: workspaceId, code: "003.C", name: "003.C", drawings: [drawing(sourceId, 1), drawing(targetId, 2)] }], batch_id: options.noIndex ? null : "run-one", extraction_available: false };
   const row = { connection_id: rowId, project_id: projectId, batch_id: "run-one", workspace_id: workspaceId, workspace_name: "003.C", drawing_id: sourceId, workspace_page: "003C01", pdf_page_number: 1, row_order: 0, wire_number: null, record_version: 1, start_code: "+01F10", start_terminal: "XA:8", end_code: "+01F12.1", end_terminal: "XD10:1", is_cross_page: true, needs_review: false };
+  let phase = 0; let streamFailures = options.streamFailures ?? 0;
+  const progress = () => ({ run_id: "run-one", stage: phase === 0 ? "render" : phase === 1 ? "scan" : phase === 2 ? "completion" : "finished", total_pages: 2, rendered_pages: phase === 0 ? 1 : 2, classified_pages: phase === 0 ? 0 : 2, completed_pages: phase === 3 ? 2 : 0, row_count: phase ? 1 : 0 });
+  const payload = () => options.realtime ? { ...detail, status: phase === 3 ? "ready" : "processing", processing: progress(), workspaces: phase === 0 ? [] : detail.workspaces } : detail;
   await page.route("**/fixture.png", route => route.fulfill({ contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aYyQAAAAASUVORK5CYII=", "base64") }));
   await page.route("**/api/v1/**", async route => {
     const request = route.request(); const url = new URL(request.url()); const path = url.pathname;
@@ -23,18 +26,20 @@ async function fixture(page: Page, options: { empty?: boolean; failList?: boolea
     if (path.includes("/auth/")) return route.fulfill({ json: { user: { id: "owner", name: "回归测试工程师", email: "fixture@example.invalid", role: "工程师" }, accessToken: "fixture", expiresIn: 3600 } });
     if (path === "/api/v1/projects") {
       if (options.loading) await options.loading;
-      return options.failList ? route.fulfill({ status: 503, json: { detail: { message: "数据服务暂不可用" } } }) : route.fulfill({ json: exists ? [detail] : [] });
+      return options.failList ? route.fulfill({ status: 503, json: { detail: { message: "数据服务暂不可用" } } }) : route.fulfill({ json: exists ? [payload()] : [] });
     }
     if (path === "/api/v1/rule-library/local") return route.fulfill({ json: [{ profile_key: "zh", profile_version: "2.1.0", display_name: "振华规则", checksum: "sha256:" + "0".repeat(64) }] });
     if (path === "/api/v1/rule-library") return route.fulfill({ json: [{ id: profileId, profile_key: "zh", profile_version: "2.1.0", display_name: "振华规则", checksum: "sha256:" + "0".repeat(64), resource_ref: "local://zh/profile.json", created_at: "2026-10-16", can_delete: true }] });
     if (path === `/api/v1/rule-library/${profileId}`) return route.fulfill({ json: { manifest: {}, files: ["classification", "page_scan", "cross_page"].map(stage => ({ path: `resources/${stage}_prompt.md`, content: `夹具 ${stage} 规则` })), images: [] } });
-    if (path === "/api/v1/imports") { exists = true; detail.workspaces = []; detail.batch_id = null; return route.fulfill({ status: 201, json: { project_id: projectId, source_document_id: projectId, attachment_id: projectId, filename: "fixture.pdf", checksum: "sha256:fixture", size: 100, page_count: 2, extraction_started: false } }); }
+    if (path === "/api/v1/imports") { exists = true; detail.workspaces = []; detail.batch_id = null; return route.fulfill({ status: 201, json: { project_id: projectId, source_document_id: projectId, attachment_id: projectId, filename: "fixture.pdf", checksum: "sha256:fixture", size: 100, page_count: 2, extraction_started: true } }); }
     if (path === `/api/v1/projects/${projectId}`) {
       if (request.method() === "PATCH") detail.name = request.postDataJSON().name;
       if (request.method() === "DELETE") { exists = false; return route.fulfill({ status: 204 }); }
-      return options.denied ? route.fulfill({ status: 403, json: { detail: { message: "没有项目操作权限" } } }) : route.fulfill({ json: detail });
+      return options.denied ? route.fulfill({ status: 403, json: { detail: { message: "没有项目操作权限" } } }) : route.fulfill({ json: payload() });
     }
-    if (path === `/api/v1/projects/${projectId}/connections`) return route.fulfill({ json: { items: options.noIndex || !detail.workspaces.length ? [] : [row], batch_id: detail.batch_id, offset: 0, limit: 100, has_more: false } });
+    if (path.endsWith("/extraction/events") && streamFailures-- > 0) return route.fulfill({ contentType: "text/event-stream", body: "event: unavailable\ndata: {}\n\n" });
+    if (path.endsWith("/extraction/events")) return route.fulfill({ contentType: "text/event-stream", body: `id: ${phase}\nevent: refresh\ndata: {}\n\n${phase === 3 ? "event: done\ndata: {}\n\n" : ""}` });
+    if (path === `/api/v1/projects/${projectId}/connections`) return route.fulfill({ json: { items: options.noIndex || !detail.workspaces.length || (options.realtime && phase === 0) ? [] : [{ ...row, ...(options.realtime ? { end_terminal: phase >= 2 ? "XD21:7" : null, processing_status: phase === 1 ? "pending_completion" : phase === 2 ? "scanned" : "completed" } : {}) }], batch_id: detail.batch_id, offset: 0, limit: 100, has_more: false } });
     if (path === `/api/v1/connections/${rowId}` && request.method() === "PATCH") {
       keys.push(request.headers()["idempotency-key"]);
       if (failSave) { failSave = false; return route.fulfill({ status: 409, json: { detail: { message: "数据已变更，请刷新后重试" } } }); }
@@ -45,7 +50,7 @@ async function fixture(page: Page, options: { empty?: boolean; failList?: boolea
     if (path.startsWith("/api/v1/drawings/")) return route.fulfill({ json: drawing(path.endsWith(sourceId) ? sourceId : targetId, path.endsWith(sourceId) ? 1 : 2) });
     return route.fulfill({ status: 404, json: { detail: { message: "未配置的夹具请求" } } });
   });
-  return { calls, keys };
+  return { calls, keys, advance: (next: number) => { phase = next; } };
 }
 
 test("空数据库直接显示完整工作区", async ({ page }) => {
@@ -117,17 +122,17 @@ for (const narrow of [false, true]) {
   });
 }
 
-test("上传只保存文件，不启动提取和AI", async ({ page }) => {
+test("上传保存后启动提取，AI聊天仍未开放", async ({ page }) => {
   const { calls } = await fixture(page, { empty: true }); await page.goto("/projects");
   await page.locator('input[type="file"]').setInputFiles({ name: "fixture.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-fixture") });
-  await expect(page.getByRole("dialog")).toContainText("上传后不会启动提取任务");
+  await expect(page.getByRole("dialog")).toContainText("文件保存成功后将自动拆页并提取线表");
   await expect(page.getByRole("button", { name: "保存到项目", exact: true })).toBeDisabled();
   await page.getByRole("combobox", { name: "图纸规则" }).selectOption("zh");
   await page.getByRole("button", { name: "保存到项目", exact: true }).click();
   await expect(page).toHaveURL(`/projects/${projectId}`);
-  await expect(page.getByText("PDF 已保存，尚无图纸索引和提取结果。自动提取待接入。")).toBeVisible();
+  await expect(page.getByText("PDF 已保存，尚无图纸索引和提取结果。")).toBeVisible();
   await page.getByRole("button", { name: "打开 AI 聊天面板" }).click();
-  await expect(page.getByText("提取功能待接入", { exact: true })).toBeVisible();
+  await expect(page.getByText("AI 对话暂未接入", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "发送给主 Agent" })).toBeDisabled();
   expect(calls.some(path => path.includes("/supervisor/") || path.includes("/runs/"))).toBe(false);
 });
@@ -160,4 +165,38 @@ test("规则引用与Stage2内部补全预览", async ({ page }) => {
   await page.getByRole("button", { name: "查看规则", exact: true }).click();
   await page.getByRole("button", { name: "Stage 2 内部连接补全", exact: true }).click();
   await expect(page.getByText("夹具 cross_page 规则")).toBeVisible();
+});
+
+
+test("拆页等待、初扫与补全结果实时更新且处理期间只读", async ({ page }) => {
+  const state = await fixture(page, { realtime: true });
+  await page.goto(`/projects/${projectId}`);
+  await expect(page.locator(".extraction-progress")).toContainText("正在进行第一阶段处理");
+  await expect(page.getByText("当前范围没有线表记录", { exact: true })).toHaveCount(0);
+  await page.screenshot({ path: test.info().outputPath("rendering.png"), fullPage: true });
+  state.advance(1);
+  await expect(page.getByRole("cell", { name: "XA:8", exact: true })).toBeVisible({ timeout: 10000 });
+  await expect(page.locator(".row-state")).toHaveText("待补全");
+  await expect(page.getByRole("button", { name: "编辑 XA:8", exact: true })).toBeDisabled();
+  await expect(page.locator(".workspace-node")).toHaveCount(1);
+  state.advance(2);
+  await expect(page.getByRole("button", { name: "XD21:7", exact: false })).toBeVisible({ timeout: 10000 });
+  await expect(page.locator(".result-table tbody tr")).toHaveCount(1);
+  await page.screenshot({ path: test.info().outputPath("completion.png"), fullPage: true });
+  state.advance(3);
+  await expect(page.locator(".extraction-progress")).toHaveCount(0, { timeout: 10000 });
+  await expect(page.locator(".row-state")).toHaveText("已完成");
+  await expect(page.getByRole("button", { name: "编辑 XA:8", exact: true })).toBeEnabled();
+});
+
+
+test("服务端暂时不可用后重连事件流并补读快照", async ({ page }) => {
+  const state = await fixture(page, { realtime: true, streamFailures: 3 });
+  await page.goto(`/projects/${projectId}`);
+  // React development mounting can abort an initial subscription. Require more than
+  // those initial attempts so this verifies an actual reconnect after an unavailable event.
+  await expect.poll(() => state.calls.filter(path => path.endsWith("/extraction/events")).length, { timeout: 15000 }).toBeGreaterThan(3);
+  state.advance(1);
+  await expect(page.getByRole("cell", { name: "XA:8", exact: true })).toBeVisible({ timeout: 10000 });
+  await expect(page.locator(".extraction-progress")).not.toContainText("实时连接中断");
 });

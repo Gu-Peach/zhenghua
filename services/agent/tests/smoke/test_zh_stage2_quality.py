@@ -13,7 +13,7 @@ import pytest
 
 from src.agent.extraction_agent.agents.page_scanner import PageScannerAgent
 from src.agent.extraction_agent.application.page_workflow_extraction import run_page_workflow_extraction
-from src.config import AgentSettings
+from src.agent.extraction_agent.application.review import facts_only
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
     DrawingPageInput,
@@ -29,7 +29,6 @@ from src.agent.extraction_agent.graphs.document_extraction.helpers import (
     _connection_identity,
     _wire_record_from_connection,
 )
-from src.harness.model_gateway import FakeModelGateway
 from src.agent.extraction_agent.infrastructure.abb_vlm_stages import AbbVlmExtractionStageAdapter
 from src.agent.extraction_agent.infrastructure.zh_gantry_reel_vlm_stages import ZhGantryReelVlmAdapter
 from src.agent.extraction_agent.infrastructure.zh_vlm_stages import (
@@ -37,9 +36,11 @@ from src.agent.extraction_agent.infrastructure.zh_vlm_stages import (
     _normalize_cross_page,
     _normalize_page_scan,
 )
-from src.profiles import ProfileRegistry
 from src.agent.extraction_agent.profiles.zh.policy import ZhExtractionPolicy
 from src.agent.extraction_agent.profiles.zh.references import prepare_reference
+from src.config import AgentSettings
+from src.harness.model_gateway import FakeModelGateway
+from src.profiles import ProfileRegistry
 
 ROOT = Path(__file__).resolve().parents[4]
 ASSETS = ROOT / "services/agent/src/agent/extraction_agent/prompts/zh/examples_wiring/002c"
@@ -131,7 +132,7 @@ def test_fake_vlm_contract_and_receiver_filter(tmp_path: Path) -> None:
         schema = json.loads(prompt.split("输出 JSON Schema：\n", 1)[1])
         assert {"endpoint_role", "direction_basis"} <= set(schema["$defs"]["ScannedConnection"]["required"])
         assert not AbbVlmExtractionStageAdapter.enforce_evidence_contract
-        assert not ZhGantryReelVlmAdapter.enforce_evidence_contract
+        assert ZhGantryReelVlmAdapter.enforce_evidence_contract
 
     asyncio.run(check())
 
@@ -335,7 +336,7 @@ def test_fan_out_survives_full_page_graph_and_saved_resume(tmp_path: Path) -> No
                 ("XD3:16", "-TA1", "X1:6"),
                 ("XD3:16", "-TA2", "X1:6"),
             ]
-            assert all(r.status == "resolved" for r in records)
+            assert all(r.status == "complete" and not r.needs_review for r in records)
             assert len({r.connection_id for r in records}) == 2
             assert stages.calls == ["scan:1", "complete:2", "complete:3", "scan:2", "scan:3"]
             await run_page_workflow_extraction(**kwargs)
@@ -470,7 +471,7 @@ def test_terminal_coordinates_bind_to_input_image_and_do_not_change_connection_i
     first = WireConnection(start={"terminal": "XA:8", "terminal_coordinates": {"x": 0.2, "y": 0.4, "pdf_page_number": 60}})
     second = first.model_copy(deep=True)
     second.start.terminal_coordinates.x = 0.21
-    assert _connection_identity(first) == _connection_identity(second)
+    assert _connection_identity("unit", first) == _connection_identity("unit", second)
 
 
 def test_quality_asset_and_validator_checksums() -> None:
@@ -508,8 +509,8 @@ def test_fixed_cases_survive_fake_adapter_without_field_loss() -> None:
                     ),
                 )
             )
-            assert [c.model_dump(mode="json") for u in result.units for c in u.connections] == [
+            assert facts_only([c.model_dump(mode="json") for u in result.units for c in u.connections]) == facts_only([
                 c.model_dump(mode="json") for u in gold.units for c in u.connections
-            ], case["id"]
+            ]), case["id"]
 
     asyncio.run(check())

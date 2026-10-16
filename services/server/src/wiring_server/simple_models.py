@@ -41,6 +41,25 @@ class SimpleSourceRead(Model):
     page_count: int = 0
 
 
+class ExtractionProgress(Model):
+    run_id: str
+    stage: str
+    total_pages: int = 0
+    rendered_pages: int = 0
+    classified_pages: int = 0
+    completed_pages: int = 0
+    row_count: int = 0
+    needs_review_count: int = 0
+    current_page: int | None = None
+    error: dict[str, str] | None = None
+
+
+class ReviewReason(Model):
+    code: str
+    field: str | None = None
+    message: str
+
+
 class SimpleProjectRead(ReadModel):
     id: str
     name: str
@@ -52,7 +71,8 @@ class SimpleProjectRead(ReadModel):
     workspaces: list[WorkspaceRead] = Field(default_factory=list)
     sources: list[SimpleSourceRead] = Field(default_factory=list)
     batch_id: str | None = None
-    extraction_available: Literal[False] = False
+    extraction_available: bool = True
+    processing: ExtractionProgress | None = None
     source_saved: bool = False
 
 
@@ -92,6 +112,8 @@ class SimpleConnectionRead(ReadModel):
     remark: str | None = None
     is_cross_page: bool
     needs_review: bool
+    processing_status: str = "completed"
+    review_reasons: list[ReviewReason] = Field(default_factory=list)
 
 
 class SimpleConnectionPage(Model):
@@ -136,7 +158,8 @@ class SimpleImportRead(Model):
     checksum: str
     size: int
     page_count: int
-    extraction_started: Literal[False] = False
+    extraction_started: bool = False
+    run_id: str | None = None
 
 
 class DrawingIndexPage(ReadModel):

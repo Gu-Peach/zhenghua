@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from src.domain.enums import ErrorCode
-from src.domain.errors import AgentServiceError
+from src.agent.extraction_agent.agents._extraction_stage import require_stage_resources
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionRequest,
     CrossPageCompletionResult,
@@ -9,8 +8,9 @@ from src.agent.extraction_agent.domain.models.extraction_stages import (
     PageScanRequest,
     PageScanResult,
 )
+from src.domain.enums import ErrorCode
+from src.domain.errors import AgentServiceError
 from src.domain.ports import ExtractionStageAdapter
-from src.agent.extraction_agent.agents._extraction_stage import require_stage_resources
 
 
 class PageScannerAgent:
@@ -48,7 +48,8 @@ class PageScannerAgent:
             drawing_page_number=page.drawing_page_number or result.drawing_page_number,
             drawing_object_location=page.object_location or result.drawing_object_location,
             blank=result.blank,
-            needs_review=result.needs_review,
+            needs_review=bool(result.uncertainties) or any(c.endpoint_role == "unknown" for u in result.units for c in u.connections),
+            uncertainties=result.uncertainties,
             units=[] if result.blank else result.units,
             page_references=result.page_references,
             warnings=result.warnings,
@@ -77,10 +78,11 @@ class PageScannerAgent:
         else:
             result = await self._stages.resolve_cross_page(request)
         needs_review = (
-            result.needs_review
+            bool(result.uncertainties)
             or result.end is None
             or result.end.terminal in (None, "")
-            or result.status != "resolved"
+            or (getattr(request.profile.rules.extraction, "cross_page_input_mode", None) == "target_only"
+                and not result.source_note)
         )
         return CrossPageCompletionResult(
             run_id=request.run_id,
