@@ -6,6 +6,12 @@
 
 ## 1. 重构结论
 
+2026-10-17 Profile补全聊天允许受控返回初扫生成修正候选，解决同页误判后仍反复索要目标图；保持显式确认与依赖失效，见[ADR-0031](./adr/0031-profile-scan-correction.md)。
+
+2026-10-17 Profile分类聊天增加PDF随机两页抽样：只渲染选中页并保留草稿证据，原PDF及其余页不落盘，后两阶段仍由用户提供图片。见[ADR-0030](./adr/0030-profile-pdf-sampling.md)。
+
+2026-10-17 Profile规则创建将迁移为Agent引导的多轮聊天，复用三阶段候选/确认及发布，新增持久对话与SSE；见[ADR-0029](./adr/0029-profile-conversation.md)。
+
 2026-10-17 Profile 三步向导和手动发布实施中，见 [ADR-0028](./adr/0028-profile-creation-publication.md)：阶段候选与人工确认分离，私有固定版本规则包接通目录、预览和提取 Worker；原本地规则兼容。
 
 2026-10-17前端智能体中心/提取Skills及双模式校验工作台见[ADR-0027](./adr/0027-agent-center-and-preview-workbench.md)：用户菜单集中Agent与规则入口，线表按需压缩并在右侧显示原/目标图及端点坐标。本轮只改前端，不改变Profile key、API/数据库或提取顺序；Agent运行元数据缺口明确说明。

@@ -42,7 +42,7 @@ async function fixture(page: Page, options: { publishFail?: boolean; conflict?: 
   return { confirmations, publications, getState: state };
 }
 async function start(page: Page) {
-  await page.goto("/agents/profile");
+  await page.goto("/agents/profile?editor=form");
   await page.getByLabel("规则名称", { exact: true }).fill("新图纸规则");
   await page.getByLabel("规则标识", { exact: true }).fill("new_drawing");
   await page.getByRole("button", { name: "新建草稿", exact: true }).click();
@@ -54,6 +54,8 @@ async function confirm(page: Page) { await page.getByRole("button", { name: "确
 
 test("三步生成、表格修正、刷新恢复和手动发布", async ({ page }) => {
   const state = await fixture(page); await start(page); await upload(page, "上传样例图片");
+  await expect(page.getByText("负例可选：提供后会保留并使用，未提供也可发布规则。", { exact: true })).toBeVisible();
+  await expect(page.getByText("发布需至少一个负例", { exact: false })).toHaveCount(0);
   await generate(page, "标题栏识别工作区和页号"); await confirm(page);
   await page.getByRole("button", { name: "2. 本页提取", exact: false }).click();
   await generate(page, "斜线为放线标记，箭头确定来源");
@@ -84,13 +86,13 @@ test("生成中等待状态与草稿无权限", async ({ page }) => {
 });
 
 test("规则草稿无权限时如实显示失败", async ({ page }) => {
-  await fixture(page, { denied: true }); await page.goto("/agents/profile"); await expect(page.getByRole("alert")).toContainText("无权访问");
+  await fixture(page, { denied: true }); await page.goto("/agents/profile?editor=form"); await expect(page.getByRole("alert")).toContainText("无权访问");
 });
 
 test("发布失败可重试且不显示成功", async ({ page }) => {
   const state = await fixture(page, { publishFail: true });
   Object.assign(state.getState().confirmed, { classification: "a", scan: "b", completion: "c" });
-  await page.goto("/agents/profile"); await page.getByLabel("继续已有草稿").selectOption(draftId);
+  await page.goto("/agents/profile?editor=form"); await page.getByLabel("继续已有草稿").selectOption(draftId);
   await page.getByRole("button", { name: "发布规则", exact: true }).click(); await expect(page.getByRole("alert")).toContainText("规则存储暂不可用");
   await expect(page.getByText("已发布：", { exact: false })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "发布规则", exact: true })).toBeEnabled();
@@ -99,7 +101,7 @@ test("发布失败可重试且不显示成功", async ({ page }) => {
 
 test("未登录保护及登录页桌面窄屏", async ({ page }) => {
   await page.route("**/api/v1/**", route => route.fulfill({ status: 401, json: { detail: "请先登录" } }));
-  await page.goto("/agents/profile"); await expect(page.getByRole("heading", { name: "登录工程工作台" })).toBeVisible();
+  await page.goto("/agents/profile?editor=form"); await expect(page.getByRole("heading", { name: "登录工程工作台" })).toBeVisible();
   await page.screenshot({ path: test.info().outputPath("profile-login-desktop.png") });
   await page.setViewportSize({ width: 390, height: 844 }); await page.screenshot({ path: test.info().outputPath("profile-login-mobile.png") });
 });

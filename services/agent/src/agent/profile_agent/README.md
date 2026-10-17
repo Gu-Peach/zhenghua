@@ -1,5 +1,15 @@
 # Profile Agent
 
+用户更换原页时，内部`replace_scan_source`会使用新图重建第二阶段候选并要求重新确认，不再把新图描述和旧图Expected混用；跨页补全前核对结构化引用。支持从原对话继续使用已上传图片，需重载8100。见[换图修复](../../../../../docs/service/agent/changelog/2026-10-17-profile-source-replacement.md)。
+
+补全阶段发现初扫同页/跨页判断错误时，聊天可通过内部`revise_scan`动作使用原图回到第二阶段生成修正候选；保留分类确认，重新确认初扫与后续补全。不会为已确认同页连接继续索要目标图，真实跨页规则仍需相应样例。重载8100后生效，见[重复确认修复](../../../../../docs/service/agent/changelog/2026-10-17-profile-repeated-clarification.md)。
+
+模型失败诊断：真实gateway会将公开响应、finish_reason和Schema信息写入`.runtime/profile-agent/model-traces`，并在8100终端记录错误码/阶段/诊断编号；不保存请求、图片Base64或凭据。前端显示具体错误类别及编号，诊断文件应保持私有且不提交。历史未启用诊断的失败无法事后恢复，需重载8100后通过同轮重试记录。见[排障记录](../../../../../docs/service/agent/changelog/2026-10-17-profile-model-errors.md)。
+
+第一阶段支持上传PDF并自动随机取两页：`pdf_sampling.py`负责内存抽样/渲染，`store.attach_pdf_sample`一次修订保存选中样图与幂等回执。原PDF及未选中页不保存，选中页作为长期案例证据保留。`StageGenerate.sample_images`为两图分别建立Expected；`Attachment.origin`防止后两阶段自动使用PDF样本。默认PDF上限50MiB，单页仅取一页；详见[抽样交付](../../../../../docs/service/agent/changelog/2026-10-17-profile-pdf-sampling.md)。
+
+当前界面已改为Agent引导的多轮聊天：先以名称创建草稿，在同一窗口提供文字/图片、核对分类/初扫/跨页补全的公开证据与结构化答案，确认后才保存规则/Expected。`conversation.py`维护持久对话与LangGraph，`prompts/conversation.md`维护提问策略；`wizard.py`继续负责候选生成及确定性确认。草稿和聊天沿用`.runtime/profile-agent`，支持旧草稿恢复。见[对话交付](../../../../../docs/service/agent/changelog/2026-10-17-profile-conversation.md)。原表单/SDK/API仍兼容；规则诊断工具循环与创建聊天是不同入口。
+
 独立规则助手：填充图纸模板、维护图片/Expected、诊断规则问题，并通过受控工具修改草稿。三步创建向导已接入智能体中心，复用共享8100宿主；正式发布由8000业务Server执行。没有新增端口，不依赖Supervisor/旧自完善或评测表。见[创建发布交付](../../../../../docs/service/agent/changelog/2026-10-17-profile-wizard.md)。启用前需应用新增发布迁移并重新加载8000、8100和提取Worker，此轮未部署或调用真实模型。
 
 ## 行为
@@ -103,7 +113,7 @@ Agent路由提供原有对话工具及新增三步向导。业务Server只开放
 
 ## 校验与限制
 
-- 导出前要求三个阶段的实际图片案例、至少一个初扫正例和负例、所有引用可解析、Expected符合当前Schema且经用户确认。旧分类答案`page_number`在副本中规范化为`drawing_page_number`，不改原文件或事实。
+- 导出前要求三个阶段的实际图片案例、至少一个初扫正例、所有引用可解析、Expected符合当前Schema且经用户确认。负例可选：用户提供就校验并保留到规则包，未提供不拦截发布、不要求补齐。旧分类答案`page_number`在副本中规范化为`drawing_page_number`，不改原文件或事实。
 - `stage3_cases`/Schema中的stage3沿用现有资源包兼容名称，表示Stage2内部定向补全案例。
 - `reference_mode/page_number_mode=adapter_change_required`会阻止就绪包输出。模板只能使用现有adapter；Prompt无法替代新的确定性解析代码。命名字段描述向function/正整数页号的映射，实际文件名仍沿用当前提取器，不支持任意文件命名算法的自动改造。
 - 就绪仅表示结构、引用和确认有效，不证明实际识别准确率。当前不运行自动提取评测或生产发布。

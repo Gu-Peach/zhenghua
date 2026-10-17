@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Wiring Workbench Server",
-    "version": "2.3.0"
+    "version": "2.5.0"
   },
   "paths": {
     "/api/v1/auth/login": {
@@ -1776,6 +1776,199 @@
         }
       }
     },
+    "/api/v1/profile/drafts/{draft}/conversation": {
+      "get": {
+        "summary": "Conversation State",
+        "operationId": "conversation_state_api_v1_profile_drafts__draft__conversation_get",
+        "parameters": [
+          {
+            "name": "draft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/drafts/{draft}/pdf-samples": {
+      "post": {
+        "summary": "Sample Pdf",
+        "operationId": "sample_pdf_api_v1_profile_drafts__draft__pdf_samples_post",
+        "parameters": [
+          {
+            "name": "draft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PdfSampleRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PdfSampleResult"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/drafts/{draft}/conversation/turns/stream": {
+      "post": {
+        "summary": "Conversation Stream",
+        "operationId": "conversation_stream_api_v1_profile_drafts__draft__conversation_turns_stream_post",
+        "parameters": [
+          {
+            "name": "draft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConversationTurn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "公开对话SSE事件",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationEvent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/profile/drafts/{draft}/images": {
       "post": {
         "summary": "Image",
@@ -2163,6 +2356,15 @@
           "mime_type": {
             "type": "string",
             "title": "Mime Type"
+          },
+          "origin": {
+            "type": "string",
+            "enum": [
+              "upload",
+              "pdf_sample"
+            ],
+            "title": "Origin",
+            "default": "upload"
           }
         },
         "additionalProperties": false,
@@ -2175,6 +2377,43 @@
           "mime_type"
         ],
         "title": "Attachment"
+      },
+      "CaseReading": {
+        "properties": {
+          "case_id": {
+            "type": "string",
+            "title": "Case Id"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "default": ""
+          },
+          "wire_marker": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wire Marker"
+          },
+          "evidence_steps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Steps"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "case_id"
+        ],
+        "title": "CaseReading"
       },
       "ConnectionFacts": {
         "properties": {
@@ -2765,6 +3004,228 @@
         "type": "object",
         "title": "ConnectionQuery",
         "description": "AND-combined exact filters; drawing_page always means the source business page."
+      },
+      "ConversationEvent": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "progress",
+              "answer_delta",
+              "completed"
+            ],
+            "title": "Type"
+          },
+          "turn_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Turn Id"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "delta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationState"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "turn_id"
+        ],
+        "title": "ConversationEvent"
+      },
+      "ConversationMessage": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role"
+          },
+          "text": {
+            "type": "string",
+            "title": "Text"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "classification",
+              "scan",
+              "completion"
+            ],
+            "title": "Stage"
+          },
+          "attachment_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Attachment Ids"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "role",
+          "text",
+          "stage",
+          "created_at"
+        ],
+        "title": "ConversationMessage"
+      },
+      "ConversationState": {
+        "properties": {
+          "wizard": {
+            "$ref": "#/components/schemas/WizardState"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "classification",
+              "scan",
+              "completion"
+            ],
+            "title": "Stage"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ConversationMessage"
+            },
+            "type": "array",
+            "title": "Messages"
+          },
+          "publish_ready": {
+            "type": "boolean",
+            "title": "Publish Ready",
+            "default": false
+          },
+          "issues": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Issues"
+          },
+          "pdf_sample": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PdfSampleInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "wizard",
+          "stage"
+        ],
+        "title": "ConversationState"
+      },
+      "ConversationTurn": {
+        "properties": {
+          "turn_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Turn Id"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 8000,
+            "title": "Message",
+            "default": ""
+          },
+          "attachment_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 4,
+            "title": "Attachment Ids"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "classification",
+                  "scan",
+                  "completion"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage"
+          },
+          "confirmation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StageConfirm"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "revision"
+        ],
+        "title": "ConversationTurn"
       },
       "DraftCreate": {
         "properties": {
@@ -3633,6 +4094,115 @@
         ],
         "title": "LoginInput"
       },
+      "PdfSampleInfo": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "checksum": {
+            "type": "string",
+            "title": "Checksum"
+          },
+          "page_count": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page Count"
+          },
+          "pages": {
+            "items": {
+              "$ref": "#/components/schemas/SampledPdfPage"
+            },
+            "type": "array",
+            "maxItems": 2,
+            "minItems": 1,
+            "title": "Pages"
+          },
+          "notice": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notice"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "filename",
+          "checksum",
+          "page_count",
+          "pages"
+        ],
+        "title": "PdfSampleInfo"
+      },
+      "PdfSampleRequest": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          },
+          "filename": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Filename"
+          },
+          "content_base64": {
+            "type": "string",
+            "maxLength": 73400320,
+            "minLength": 1,
+            "title": "Content Base64"
+          },
+          "stage": {
+            "type": "string",
+            "const": "classification",
+            "title": "Stage",
+            "default": "classification"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "revision",
+          "filename",
+          "content_base64"
+        ],
+        "title": "PdfSampleRequest"
+      },
+      "PdfSampleResult": {
+        "properties": {
+          "draft": {
+            "$ref": "#/components/schemas/DraftView"
+          },
+          "sample": {
+            "$ref": "#/components/schemas/PdfSampleInfo"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "draft",
+          "sample"
+        ],
+        "title": "PdfSampleResult"
+      },
       "ProfileEvidence": {
         "properties": {
           "key": {
@@ -3889,6 +4459,27 @@
           "message"
         ],
         "title": "ReviewReason"
+      },
+      "SampledPdfPage": {
+        "properties": {
+          "attachment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attachment Id"
+          },
+          "pdf_page_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Pdf Page Number"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "attachment_id",
+          "pdf_page_number"
+        ],
+        "title": "SampledPdfPage"
       },
       "SearchCoverage": {
         "properties": {
@@ -4710,6 +5301,13 @@
                 "type": "null"
               }
             ]
+          },
+          "readings": {
+            "items": {
+              "$ref": "#/components/schemas/CaseReading"
+            },
+            "type": "array",
+            "title": "Readings"
           }
         },
         "additionalProperties": false,
@@ -4786,6 +5384,15 @@
             "type": "string",
             "format": "uuid",
             "title": "Source Image"
+          },
+          "sample_images": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 2,
+            "title": "Sample Images"
           },
           "targets": {
             "items": {

@@ -192,7 +192,6 @@ def validate_draft(root: Path, metadata: dict[str, Any]) -> ValidationReport:
             )
     cases = case_files(root)
     stages = set()
-    negative = False
     positive_scan = False
     for case in cases:
         stages.add(case["stage"])
@@ -206,7 +205,6 @@ def validate_draft(root: Path, metadata: dict[str, Any]) -> ValidationReport:
             or case["stage"] == "classification"
             and (payload.get("blank") or payload.get("non_wiring"))
         )
-        negative = negative or case["kind"] == "negative" or bool(inferred_negative)
         if metadata.get("wizard") and case["kind"] == "negative" and not inferred_negative:
             issues.append(
                 ValidationIssue(
@@ -250,12 +248,6 @@ def validate_draft(root: Path, metadata: dict[str, Any]) -> ValidationReport:
                 issues.append(
                     ValidationIssue(code="RULE_UNCONFIRMED", message=f"{stage}规则已改变，需要重新确认")
                 )
-    if not negative:
-        issues.append(
-            ValidationIssue(
-                code="NEGATIVE_CASE_MISSING", message="需提供至少一个不应提取或无法唯一补全的负例"
-            )
-        )
     if not positive_scan:
         issues.append(
             ValidationIssue(code="POSITIVE_CASE_MISSING", message="需提供至少一个包含实际来源端子的初扫正例")

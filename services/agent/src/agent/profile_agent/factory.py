@@ -2,11 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from src.agent.extraction_agent.infrastructure.document.model_traces import LocalModelTraceStore
 from src.config import AgentSettings
 from src.harness.model_gateway import ModelGateway, ModelRequest, ModelResponse, OpenAICompatibleModelGateway
 from src.harness.retry import RetryPolicy
 from src.profiles.registry import ProfileRegistry
 
+from .diagnostics import ProfileModelGateway
 from .models import ProfileError
 from .service import ProfileAgent
 from .store import DraftStore
@@ -26,6 +28,7 @@ def create_profile_agent(
 ) -> ProfileAgent:
     """Build a standalone agent without opening a port, business DB or production rule writer."""
     config = settings or AgentSettings.from_env()
+    draft_root = state_root or config.workspace_root / ".runtime" / "profile-agent"
     if registry is None:
         registry = ProfileRegistry(
             profile_root=config.profile_root,
@@ -35,7 +38,8 @@ def create_profile_agent(
         registry.load_all(strict=False)
     if gateway is None:
         if config.model_configured:
-            gateway = OpenAICompatibleModelGateway(
+            traces = LocalModelTraceStore(draft_root / "model-traces")
+            delegate = OpenAICompatibleModelGateway(
                 base_url=config.model_base_url or config.model_chat_completions_url or "",
                 chat_completions_url=config.model_chat_completions_url,
                 default_model=config.default_model or "",
@@ -46,8 +50,13 @@ def create_profile_agent(
                     initial_backoff_seconds=config.model_retry_initial_backoff_seconds,
                     max_backoff_seconds=config.model_retry_max_backoff_seconds,
                 ),
+                trace_store=traces,
+            )
+            gateway = ProfileModelGateway(
+                delegate, traces, enable_thinking=config.model_enable_thinking,
+                json_mode=config.model_json_mode, default_model=config.default_model,
             )
         else:
             gateway = _UnconfiguredModel()
-    store = DraftStore(state_root or config.workspace_root / ".runtime" / "profile-agent", registry)
+    store = DraftStore(draft_root, registry)
     return ProfileAgent(store, gateway, max_tokens=config.model_max_tokens or 8000)

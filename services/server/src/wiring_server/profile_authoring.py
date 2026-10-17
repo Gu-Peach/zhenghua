@@ -68,15 +68,24 @@ class ProfileAuthoring:
             existing = await object_request(self.db, "GET", url)
             if existing.is_error or digest(existing.content) != package["checksum"]:
                 raise ServiceError(409, "PROFILE_STORAGE_CONFLICT", "规则包存储冲突")
-        row = await self.db.rpc(
-            "publish_extraction_profile",
-            {
-                "actor": user,
-                "profile_key_value": key,
-                "version_value": version,
-                "name_value": manifest["display_name"],
-                "checksum_value": package["checksum"],
-                "ref_value": "storage://project-assets/" + path,
-            },
-        )
+        try:
+            row = await self.db.rpc(
+                "publish_extraction_profile",
+                {
+                    "actor": user,
+                    "profile_key_value": key,
+                    "version_value": version,
+                    "name_value": manifest["display_name"],
+                    "checksum_value": package["checksum"],
+                    "ref_value": "storage://project-assets/" + path,
+                },
+            )
+        except ServiceError as exc:
+            if exc.code == "DATABASE_FUNCTION_MISSING":
+                raise ServiceError(
+                    503,
+                    "PROFILE_PUBLICATION_NOT_READY",
+                    "规则发布接口尚未部署，请应用数据库迁移并刷新Schema缓存后重试；草稿无需重做",
+                ) from exc
+            raise
         return {**row, "can_delete": row["created_by"] == user}

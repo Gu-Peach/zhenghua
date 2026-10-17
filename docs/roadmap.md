@@ -1,5 +1,19 @@
 # 开发路线
 
+2026-10-17 Profile发布失败已定位并补齐本地20261017010000迁移：已上传包摘要匹配，发布RPC/权限/REST缓存就绪，项目/线表/规则/Storage摘要不变。26项后端与2项独立SQL及Ruff/mypy通过；未代发用户规则或启停服务，用户直接重试发布，最终业务发布状态待确认，整体阶段状态不变。见[排障记录](./service/server/changelog/2026-10-17-profile-publication-missing-migration.md)。
+
+2026-10-17按用户要求取消Profile发布的负例数量门槛：有负例继续校验/使用，没负例不阻塞；34项Agent离线、17项浏览器及类型/lint/build、Ruff/mypy通过。未代为发布、改业务库或操作用户服务，整体阶段状态不变。见[负例可选记录](./service/agent/changelog/2026-10-17-profile-optional-negative.md)。
+
+2026-10-17 Profile换原页后NO_CROSS_PAGE_TASK修复完成：区分同图纠正/换图重扫，隔离旧Expected与反馈，先重新确认新初扫再补全。29项Agent离线回归、1项既有浏览器冒烟及Ruff/mypy通过；实际草稿/服务未操作，真实图纸质量待用户重载8100复验，整体阶段状态不变。见[换图交付](./service/agent/changelog/2026-10-17-profile-source-replacement.md)。
+
+2026-10-17 Profile重复确认修复完成：只读确认模型ready=false与原初扫状态未更新形成循环，新增受控返回初扫生成修正候选、原图复用和明确确认。24项相关回归、11项规则聊天浏览器及类型/lint/build通过；真实读图质量仍待用户复试，未操作实际草稿/服务，整体阶段状态不变。见[ADR-0031](./adr/0031-profile-scan-correction.md)。
+
+2026-10-17 Profile第二阶段失败排障：已修复错误被通用提示隐藏、没有终端日志/响应诊断的问题，并补充生成外层Schema与配置传递；9项诊断及相关回归、10项聊天浏览器和静态检查通过。未调用真实模型/改业务数据或运行服务，历史模型根因须重载8100复试确认；整体阶段状态不变。见[排障记录](./service/agent/changelog/2026-10-17-profile-model-errors.md)。
+
+2026-10-17 Profile第一阶段PDF抽样代码/离线验收完成：只渲染随机两页、来源回执和独立Expected，后两阶段禁止使用PDF样图，原PDF/其余页不缓存。25项相关Agent/Server、33项原Profile及60项浏览器回归与类型/lint/build通过，实际PDF选中PNG检查完成。未运行真实模型/写业务库或操作用户服务，需加载8000 API2.5.0和8100；整体阶段状态不变。见[ADR-0030](./adr/0030-profile-pdf-sampling.md)。
+
+2026-10-17 Profile引导式规则聊天代码/离线验收完成：LangGraph追问与三阶段读图候选、图片上传/粘贴、纠正/确认、对话恢复与手动发布；57项浏览器及最后12项入口回归、相关Agent/Server Fake回归和类型/lint/build通过。未运行真实模型/写业务库或重启用户服务，需加载8000 API2.4.0和8100后使用。真实图纸质量仍待用户核验，整体阶段状态不变。见[ADR-0029](./adr/0029-profile-conversation.md)。
+
 2026-10-17新建规则草稿404已定位为8000旧进程2.2.0未加载2.3.0路由，8100接口已具备；3项Mock创建/发布链路通过，需用户重载8000后重试。未改运行服务/业务数据，阶段状态不变。见[排障记录](./service/server/changelog/2026-10-17-profile-draft-404.md)。
 
 2026-10-17 Profile创建/发布代码与离线验收完成：智能体中心三步填写规则与Expected、人工表格确认/依赖失效、手动发布及Storage规则供提取使用。47项Agent相关、29项后端、2项隔离SQL及51项浏览器通过，类型/lint/build及截图已核对。迁移和实际服务未部署，真实模型效果与目标Supabase扩展环境发布待验收；不将整个规则诊断/编辑阶段标为完成。见[ADR-0028](./adr/0028-profile-creation-publication.md)和[执行记录](./service/agent/profile-wizard-plan.md)。

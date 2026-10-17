@@ -27,9 +27,198 @@ from wiring_server.profile_packages import digest, download, unpack
 from wiring_server.repository import Repository, ServiceError
 
 
+def test_conversation_contract_and_authenticated_stream(tmp_path):
+    from src.agent.profile_agent.conversation import (
+        ConversationEvent,
+        ConversationState,
+        ConversationTurn,
+    )
+    from wiring_server.profile_contract import ConversationEvent as PublicEvent
+    from wiring_server.profile_contract import ConversationState as PublicState
+    from wiring_server.profile_contract import ConversationTurn as PublicTurn
+
+    assert ConversationTurn.model_json_schema() == PublicTurn.model_json_schema()
+    assert ConversationState.model_json_schema() == PublicState.model_json_schema()
+    assert ConversationEvent.model_json_schema() == PublicEvent.model_json_schema()
+    gateway = FakeModelGateway(
+        [json.dumps({"reply": "请上传标题栏样图，我会先核对分页规则。"})]
+    )
+    agent = create_profile_agent(
+        AgentSettings(), state_root=tmp_path / "drafts", gateway=gateway
+    )
+    host = create_host(
+        AgentSettings(environment="test", internal_token="trusted"), profile_agent=agent
+    )
+    backend = Backend()
+    forwarded = []
+    with TestClient(host) as agent_http:
+
+        def handle(request):
+            if request.url.host == "agent":
+                forwarded.append(request)
+                response = agent_http.request(
+                    request.method,
+                    request.url.path,
+                    content=request.content,
+                    headers={
+                        "Authorization": request.headers["Authorization"],
+                        "X-Profile-User-Id": request.headers["X-Profile-User-Id"],
+                        "Content-Type": "application/json",
+                    },
+                )
+                return httpx.Response(
+                    response.status_code,
+                    content=response.content,
+                    headers=response.headers,
+                )
+            return backend.respond(request)
+
+        settings = api.Settings(
+            "http://database",
+            "private-key",
+            agent_url="http://agent",
+            agent_token="trusted",
+        )
+        with TestClient(
+            api.create_app(settings, httpx.MockTransport(handle))
+        ) as client:
+            headers = {"Authorization": "Bearer owner"}
+            draft = client.post(
+                "/api/v1/profile/drafts",
+                headers=headers,
+                json={"key": "chat_demo", "display_name": "聊天规则"},
+            ).json()
+            path = f"/api/v1/profile/drafts/{draft['draft_id']}/conversation"
+            assert client.get(path).status_code == 401
+            assert (
+                client.get(path, headers={"Authorization": "Bearer other"}).status_code
+                == 403
+            )
+            state = client.get(path, headers=headers).json()
+            assert state["messages"] == [] and state["stage"] == "classification"
+            response = client.post(
+                path + "/turns/stream",
+                headers=headers,
+                json={
+                    "turn_id": str(uuid4()),
+                    "revision": draft["revision"],
+                    "message": "创建分类规则",
+                },
+            )
+            assert (
+                response.status_code == 200
+                and "text/event-stream" in response.headers["content-type"]
+            )
+            assert (
+                "event: progress" in response.text
+                and "event: answer_delta" in response.text
+            )
+            assert (
+                "event: completed" in response.text
+                and "data:image" not in response.text
+            )
+            restored = client.get(path, headers=headers).json()
+            assert (
+                len(restored["messages"]) == 2 and restored["wizard"]["confirmed"] == {}
+            )
+    assert all(r.headers["Authorization"] == "Bearer trusted" for r in forwarded)
+
+
 def test_authoring_public_contract_is_generated_from_agent():
     assert StageGenerate.model_json_schema() == ServerGenerate.model_json_schema()
     assert WizardState.model_json_schema() == ServerState.model_json_schema()
+
+
+def test_pdf_sampling_contract_and_authenticated_proxy(tmp_path):
+    from src.agent.profile_agent.models import PdfSampleRequest, PdfSampleResult
+    from wiring_server.profile_contract import PdfSampleRequest as PublicRequest
+    from wiring_server.profile_contract import PdfSampleResult as PublicResult
+
+    assert PdfSampleRequest.model_json_schema() == PublicRequest.model_json_schema()
+    assert PdfSampleResult.model_json_schema() == PublicResult.model_json_schema()
+    gateway = FakeModelGateway([])
+    agent = create_profile_agent(
+        AgentSettings(), state_root=tmp_path / "drafts", gateway=gateway
+    )
+    host = create_host(
+        AgentSettings(environment="test", internal_token="trusted"), profile_agent=agent
+    )
+    backend = Backend()
+    with TestClient(host) as agent_http:
+
+        def handle(request):
+            if request.url.host == "agent":
+                response = agent_http.request(
+                    request.method,
+                    request.url.path,
+                    content=request.content,
+                    headers={
+                        "Authorization": request.headers["Authorization"],
+                        "X-Profile-User-Id": request.headers["X-Profile-User-Id"],
+                        "Content-Type": "application/json",
+                    },
+                )
+                return httpx.Response(
+                    response.status_code,
+                    content=response.content,
+                    headers=response.headers,
+                )
+            return backend.respond(request)
+
+        with TestClient(
+            api.create_app(
+                api.Settings(
+                    "http://database",
+                    "private-key",
+                    agent_url="http://agent",
+                    agent_token="trusted",
+                ),
+                httpx.MockTransport(handle),
+            )
+        ) as client:
+            headers = {"Authorization": "Bearer owner"}
+            draft = client.post(
+                "/api/v1/profile/drafts",
+                headers=headers,
+                json={"key": "pdf_demo", "display_name": "PDF规则"},
+            ).json()
+            with pymupdf.open() as document:
+                for number in range(3):
+                    document.new_page().insert_text((40, 50), f"Sample {number + 1}")
+                content = document.tobytes()
+            path = f"/api/v1/profile/drafts/{draft['draft_id']}/pdf-samples"
+            body = {
+                "revision": draft["revision"],
+                "request_id": str(uuid4()),
+                "filename": "sample.pdf",
+                "content_base64": base64.b64encode(content).decode(),
+            }
+            assert client.post(path, json=body).status_code == 401
+            assert (
+                client.post(
+                    path, headers={"Authorization": "Bearer other"}, json=body
+                ).status_code
+                == 403
+            )
+            response = client.post(path, headers=headers, json=body)
+            assert response.status_code == 200
+            sampled = response.json()
+            assert (
+                len(sampled["sample"]["pages"]) == 2
+                and sampled["sample"]["page_count"] == 3
+            )
+            assert client.post(path, headers=headers, json=body).json() == sampled
+            assert (
+                client.post(
+                    path, headers=headers, json={**body, "stage": "scan"}
+                ).status_code
+                == 422
+            )
+            restored = client.get(
+                path.replace("/pdf-samples", "/conversation"), headers=headers
+            ).json()
+            assert restored["pdf_sample"] == sampled["sample"]
+            assert not gateway.calls and not list((tmp_path / "drafts").rglob("*.pdf"))
 
 
 def test_storage_transport_and_invalid_archives_are_safe():

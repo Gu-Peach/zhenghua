@@ -25,6 +25,7 @@ from .models import (
     DraftView,
     FileDiff,
     FileEdit,
+    PdfSampleInfo,
     ProfileActor,
     ProfileError,
     Proposal,
@@ -367,6 +368,45 @@ class DraftStore:
             return {"action": "attach", "path": path, "checksum": checksum(normalized)}
 
         return self.mutate(draft, actor, revision, f"attach:{image_id}:{checksum(content)}", write)
+
+    def attach_pdf_sample(
+        self, draft: UUID, actor: ProfileActor, revision: int, sample: PdfSampleInfo, images: list[bytes]
+    ) -> DraftView:
+        """Commit only selected page PNGs and their provenance in one immutable revision."""
+        if len(images) != len(sample.pages):
+            raise ProfileError("PDF_SAMPLE_INVALID", "抽样图片数量与页码不一致", 422)
+
+        def write(root: Path, meta: dict[str, Any]) -> dict[str, Any]:
+            for page, content in zip(sample.pages, images, strict=True):
+                path = f"attachments/{page.attachment_id}.png"
+                self.file(root, path).parent.mkdir(parents=True, exist_ok=True)
+                self.file(root, path).write_bytes(content)
+                meta["attachments"].append(
+                    Attachment(
+                        id=page.attachment_id,
+                        filename=f"{Path(sample.filename).stem[:160]}_pdf_{page.pdf_page_number:04d}.png",
+                        path=path,
+                        checksum=checksum(content),
+                        mime_type="image/png",
+                        origin="pdf_sample",
+                    ).model_dump(mode="json")
+                )
+            info = sample.model_dump(mode="json")
+            meta.setdefault("pdf_samples", {})[str(sample.request_id)] = info
+            meta["classification_pdf_sample"] = info
+            meta["wizard"] = {"candidates": {}, "confirmed": {}, "requests": {}, "seals": {}}
+            meta["confirmed_expected"] = {}
+            meta.setdefault("conversation", {})["active_stage"] = "classification"
+            return {"action": "pdf_sample", "sample": info}
+
+        return self.mutate(
+            draft,
+            actor,
+            revision,
+            f"pdf-sample:{sample.request_id}",
+            write,
+            checksum(sample.model_dump_json().encode()),
+        )
 
     @classmethod
     def apply_files(cls, root: Path, edits: list[FileEdit]) -> list[FileDiff]:

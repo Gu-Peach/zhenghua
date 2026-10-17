@@ -1,0 +1,37 @@
+.profile-chat { max-width:1100px; }
+.profile-chat-heading { display:flex; gap:16px; align-items:center; justify-content:space-between; }
+.profile-chat-heading h2 { margin:0; font-size:20px; }
+.profile-chat-heading p { margin:8px 0 16px; overflow-wrap:anywhere; }
+.profile-chat-heading button { flex:none; }
+.profile-transcript { height:clamp(300px,48dvh,650px); min-width:0; overflow:auto; margin-top:16px; padding:16px; border:1px solid #dbe4eb; background:#f8fafb; border-radius:6px; scroll-behavior:auto; }
+.profile-message { max-width:92%; margin:0 0 18px; padding:12px 14px; border:1px solid #e1e8ed; border-radius:7px; background:white; overflow-wrap:anywhere; font-size:14px; line-height:1.75; }
+.profile-message.user { margin-left:auto; background:#edf7f7; border-color:#cbe3e4; }
+.profile-message > strong { font-size:12px; color:#537880; }
+.profile-message p { margin:7px 0; }
+.profile-message pre { overflow:auto; }
+.profile-message .explain-answer { font-size:14px; }
+.profile-chat-images { display:flex; flex-wrap:wrap; gap:10px; margin-top:10px; }
+.profile-chat-images img { display:block; max-width:220px; max-height:160px; object-fit:contain; border:1px solid #dce4ea; }
+.profile-chat-review { margin:16px 0; padding:16px; border:1px solid #cbdfe3; border-radius:6px; background:#fff; }
+.profile-transcript:has(.explain-answer[data-typing="true"]) .profile-chat-review { display:none; }
+.profile-chat-review label { margin-top:12px; }
+.profile-chat-review fieldset { border:0; padding:0; margin:8px 0; }
+.profile-chat-review h3 { margin:0 0 12px; font-size:16px; }
+.profile-reading { border-left:3px solid #78b1b6; padding-left:12px; margin-bottom:12px; font-size:13px; line-height:1.7; }
+.profile-observed-connections { max-height:200px; overflow:auto; background:#f4f8fa; padding:6px 10px; font-size:13px; }
+.profile-rule-summary { font-size:13px; }
+.profile-pdf-sample { padding:9px 12px; border:1px solid #d5e4e8; background:#f1f8fa; border-radius:5px; font-size:12px; overflow-wrap:anywhere; }
+.profile-pdf-action { display:flex; align-items:center; flex-wrap:wrap; gap:9px; padding-bottom:10px; margin-bottom:8px; border-bottom:1px solid #edf1f4; }
+.profile-pdf-action small { font-size:11px; color:#7c8e9c; }
+.profile-chat-composer { padding:12px; margin-top:12px; background:white; border:1px solid #cbdbe3; border-radius:6px; }
+.profile-chat-composer > textarea { border:0; padding:4px; min-height:68px; max-height:240px; }
+.profile-chat input.visually-hidden { width:1px; padding:0; border:0; }
+.profile-composer-actions { display:flex; align-items:center; gap:10px; margin-top:8px; }
+.profile-composer-actions small { flex:1; color:#81929e; font-size:11px; }
+.profile-pending-images { display:flex; gap:10px; overflow:auto; padding-bottom:8px; }
+.profile-pending-images figure { position:relative; width:100px; flex:none; margin:0; }
+.profile-pending-images img { width:100px; height:70px; object-fit:contain; background:#f3f6f8; }
+.profile-pending-images figcaption { font-size:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.profile-pending-images button { position:absolute; top:0; right:0; min-height:22px; padding:3px; background:white; }
+.profile-chat .profile-progress { display:flex; align-items:center; gap:7px; font-size:12px; }
+@media(max-width:700px) { .profile-chat-heading { align-items:flex-start; } .profile-chat-heading h2 { font-size:18px; } .profile-chat-heading p { font-size:12px; } .profile-transcript { padding:9px; height:48dvh; } .profile-message { max-width:100%; padding:10px; } .profile-chat-review { padding:10px; } .profile-composer-actions { flex-wrap:wrap; } .profile-composer-actions small { flex:1 1 100%; order:3; } .profile-composer-actions .primary-button { margin-left:auto; } .profile-chat .profile-steps button { flex:1 1 auto; font-size:12px; } }

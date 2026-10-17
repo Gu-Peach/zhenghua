@@ -1,6 +1,12 @@
 # Server 业务服务
 
-2026-10-17新增Profile三步创建与手动发布：`/api/v1/profile/drafts`经JWT后代理8100可信用户；发布由Server校验并上传不可变ZIP，再调用`publish_extraction_profile`登记规则。启用前在目标Supabase应用[新增迁移](../../supabase/migrations/20261017010000_profile_wizard_publication.sql)，随后重新加载8000、8100和提取Worker。此轮未部署到业务库。原本地规则继续可用，`/rule-library/local`为兼容路径，现也返回已发布规则。
+2026-10-17本项目本地库已补齐`20261017010000`发布迁移，解决已上传包却提示“数据操作失败”；REST Schema与包摘要检查通过，原草稿直接重试手动发布即可。其他环境仍须先应用该迁移；缺接口提示代码需下次加载8000生效。见[排障记录](../../docs/service/server/changelog/2026-10-17-profile-publication-missing-migration.md)。
+
+2026-10-17 API2.5.0新增[Profile PDF抽样代理](../../docs/service/server/changelog/2026-10-17-profile-pdf-sampling.md)，沿用8000→8100鉴权链路及启动方式。只向Agent发送上传PDF供内存抽样，未存业务库或Storage。原有发布迁移不变，本轮没有新迁移。
+
+2026-10-17 API2.4.0新增[规则对话GET与SSE代理](../../docs/service/server/changelog/2026-10-17-profile-conversation.md)，经JWT和内部令牌访问共享8100。沿用下方启动指令，由用户重新加载8000/8100后使用；本轮无新增迁移，发布仍使用原发布迁移。契约生成顺序保持不变。
+
+2026-10-17新增Profile三步创建与手动发布：`/api/v1/profile/drafts`经JWT后代理8100可信用户；发布由Server校验并上传不可变ZIP，再调用`publish_extraction_profile`登记规则。启用前在目标Supabase应用[新增迁移](../../supabase/migrations/20261017010000_profile_wizard_publication.sql)，随后重新加载8000、8100和提取Worker。首次交付未部署；本地后续部署状态见上方排障记录。原本地规则继续可用，`/rule-library/local`为兼容路径，现也返回已发布规则。
 
 契约同步：依次执行`services/agent/scripts/export_profile_contract.py`、`apps/api/scripts/export_openapi.py`和下方已有的openapi-typescript命令。隔离SQL验证使用`$env:PROFILE_PUBLICATION_SQL_TEST="1"; .\.venv\Scripts\python.exe -m pytest services/server/tests/test_profile_publication_sql.py -q`；它创建无网络/无业务卷的临时PostgreSQL容器并清理，不应用业务库迁移。
 

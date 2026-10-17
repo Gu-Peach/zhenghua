@@ -6,6 +6,7 @@ import asyncio
 import base64
 import binascii
 import json
+import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import suppress
 from typing import Any
@@ -18,10 +19,14 @@ from pydantic import Field, ValidationError
 from src.domain.errors import AgentServiceError
 from src.domain.models.common import StrictModel
 
+from .conversation import ConversationEvent, ConversationState, ConversationTurn, ProfileConversation
+from .diagnostics import public_model_error
 from .models import (
     DraftCreate,
     DraftView,
     ExportReceipt,
+    PdfSampleRequest,
+    PdfSampleResult,
     ProfileActor,
     ProfileError,
     ProfileEvent,
@@ -30,6 +35,7 @@ from .models import (
     Proposal,
     ValidationReport,
 )
+from .pdf_sampling import PdfSamplingTool
 from .service import ProfileAgent
 from .validation import validate_draft
 from .wizard import ProfileWizard, Stage, StageConfirm, StageGenerate, WizardState
@@ -54,6 +60,11 @@ class ImageInput(RevisionInput):
 
 
 def public_error(error: Exception) -> tuple[int, dict[str, str]]:
+    logging.getLogger(__name__).error(
+        "Profile request failed type=%s code=%s diagnostic_id=%s",
+        type(error).__name__, getattr(error, "code", "PROFILE_AGENT_FAILED"),
+        getattr(error, "details", {}).get("diagnostic_id", "unavailable"),
+    )
     if isinstance(error, ProfileError):
         return error.status, {"code": error.code, "message": error.message}
     if isinstance(error, ValidationError):
@@ -65,7 +76,7 @@ def public_error(error: Exception) -> tuple[int, dict[str, str]]:
     if isinstance(error, AgentServiceError):
         if str(error.code).startswith("PROFILE_"):
             return 422, {"code": str(error.code), "message": "本地规则资源或指定版本不可用，请核对配置。"}
-        return 502, {"code": str(error.code), "message": "规则助手模型请求失败，请检查配置或重试。"}
+        return 502, public_model_error(error)
     return 500, {"code": "PROFILE_AGENT_FAILED", "message": "规则助手未完成，已提交修订仍保留，请刷新核对。"}
 
 
@@ -76,6 +87,8 @@ def create_profile_router(
     router = APIRouter(prefix="/v1/profile", tags=["profile-agent"])
     identity = Depends(actor_dependency)
     wizard = ProfileWizard(agent)
+    conversation = ProfileConversation(wizard)
+    pdf_sampling = PdfSamplingTool(agent.store)
 
     async def execute(call: Callable[[], Awaitable[Any]]) -> Any:
         try:
@@ -95,6 +108,64 @@ def create_profile_router(
     @router.get("/drafts/{draft}/wizard", response_model=WizardState)
     async def state(draft: UUID, actor: ProfileActor = identity) -> Any:
         return await execute(lambda: asyncio.to_thread(wizard.state, draft, actor))
+
+    @router.post("/drafts/{draft}/pdf-samples", response_model=PdfSampleResult)
+    async def sample_pdf(draft: UUID, body: PdfSampleRequest, actor: ProfileActor = identity) -> Any:
+        return await execute(lambda: asyncio.to_thread(pdf_sampling.sample, draft, body, actor))
+
+    @router.get("/drafts/{draft}/conversation", response_model=ConversationState)
+    async def conversation_state(draft: UUID, actor: ProfileActor = identity) -> Any:
+        return await execute(lambda: asyncio.to_thread(conversation.state, draft, actor))
+
+    @router.post("/drafts/{draft}/conversation/turns", response_model=ConversationState)
+    async def conversation_turn(draft: UUID, body: ConversationTurn, actor: ProfileActor = identity) -> Any:
+        return await execute(lambda: conversation.turn(draft, body, actor))
+
+    @router.post("/drafts/{draft}/conversation/turns/stream", response_class=StreamingResponse)
+    async def conversation_stream(
+        draft: UUID, body: ConversationTurn, request: Request, actor: ProfileActor = identity
+    ) -> StreamingResponse:
+        await execute(lambda: asyncio.to_thread(agent.store.get, draft, actor))
+
+        async def events() -> AsyncIterator[str]:
+            queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=16)
+
+            async def emit(event: ConversationEvent) -> None:
+                await queue.put(
+                    {"event": event.type, "data": event.model_dump(mode="json", exclude_none=True)}
+                )
+
+            async def run() -> None:
+                try:
+                    await conversation.turn(draft, body, actor, emit)
+                except Exception as exc:
+                    status, detail = public_error(exc)
+                    await queue.put({"event": "error", "data": {"status": status, **detail}})
+
+            task = asyncio.create_task(run())
+            try:
+                while True:
+                    if await request.is_disconnected():
+                        return
+                    try:
+                        event = await asyncio.wait_for(queue.get(), 1)
+                    except asyncio.TimeoutError:
+                        yield ": heartbeat\n\n"
+                        continue
+                    data = json.dumps(event["data"], ensure_ascii=False)
+                    yield f"event: {event['event']}\ndata: {data}\n\n"
+                    if event["event"] in {"completed", "error"}:
+                        return
+            finally:
+                task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await task
+
+        return StreamingResponse(
+            events(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
 
     @router.post("/drafts/{draft}/stages/{stage}/generate", response_model=WizardState)
     async def generate(draft: UUID, stage: Stage, body: StageGenerate, actor: ProfileActor = identity) -> Any:

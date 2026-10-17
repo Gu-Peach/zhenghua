@@ -1,5 +1,17 @@
 # Agent 服务设计索引
 
+- [规则发布负例可选](./changelog/2026-10-17-profile-optional-negative.md)：未提供负例不拦截，已提供负例仍校验并打包使用。
+
+- [更换原页后NO_CROSS_PAGE_TASK修复](./changelog/2026-10-17-profile-source-replacement.md)：换图先重建并确认初扫，隔离旧图事实，补全前检查实际引用。
+
+- [同页纠正后重复确认修复](./changelog/2026-10-17-profile-repeated-clarification.md)：补全阶段受控返回初扫、原图复用、依赖失效和明确确认；24项相关回归与11项浏览器通过。
+
+- [Profile第二阶段模型失败排障](./changelog/2026-10-17-profile-model-errors.md)：终端日志/私有响应、错误码和诊断编号、完整输出Schema；历史失败真实触发条件待用户重载后复试。
+
+- [Profile PDF随机两页工具](./changelog/2026-10-17-profile-pdf-sampling.md)、[执行计划](./profile-pdf-sampling-plan.md)：只渲染选中页、不落原PDF/其余页、两图分类Expected及人工图片来源约束。
+
+- [Profile引导式规则对话](./changelog/2026-10-17-profile-conversation.md)、[执行计划](./profile-conversation-plan.md)：LangGraph追问/候选、公开读图依据、原子保存对话与阶段确认，不自动发布。
+
 - [Profile三步创建与发布接入](./changelog/2026-10-17-profile-wizard.md)、[执行计划](./profile-wizard-plan.md)：图片生成答案草稿、人工确认、依赖失效，复用8100宿主；真实部署状态及环境异常见Server交付。
 
 - [独立Profile Agent交付](./changelog/2026-10-17-profile-agent.md)、[模块入口](../../../services/agent/src/agent/profile_agent/README.md)、[ADR 0026](../../adr/0026-independent-profile-agent.md)：模板填充、诊断、受控草稿编辑和包输出，界面/正式发布后接。

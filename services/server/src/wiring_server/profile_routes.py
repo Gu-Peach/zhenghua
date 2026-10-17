@@ -2,12 +2,18 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from .profile_authoring import ProfileAuthoring
 from .profile_contract import (
+    ConversationEvent,
+    ConversationState,
+    ConversationTurn,
     DraftCreate,
     DraftView,
+    PdfSampleRequest,
+    PdfSampleResult,
     Stage,
     StageConfirm,
     StageGenerate,
@@ -52,6 +58,43 @@ def install_profile_routes(app: FastAPI, identity: Any) -> None:
     @app.get("/api/v1/profile/drafts/{draft}/wizard", response_model=WizardState)
     async def state(draft: UUID, request: Request, user: User) -> Any:
         return await service(request).call("GET", f"/drafts/{draft}/wizard", user)
+
+    @app.get(
+        "/api/v1/profile/drafts/{draft}/conversation", response_model=ConversationState
+    )
+    async def conversation_state(draft: UUID, request: Request, user: User) -> Any:
+        return await service(request).call("GET", f"/drafts/{draft}/conversation", user)
+
+    @app.post(
+        "/api/v1/profile/drafts/{draft}/pdf-samples", response_model=PdfSampleResult
+    )
+    async def sample_pdf(
+        draft: UUID, body: PdfSampleRequest, request: Request, user: User
+    ) -> Any:
+        return await service(request).call(
+            "POST", f"/drafts/{draft}/pdf-samples", user, body.model_dump(mode="json")
+        )
+
+    @app.post(
+        "/api/v1/profile/drafts/{draft}/conversation/turns/stream",
+        response_class=StreamingResponse,
+        responses={
+            200: {
+                "model": ConversationEvent,
+                "description": "公开对话SSE事件",
+                "content": {"text/event-stream": {"schema": {"type": "string"}}},
+            }
+        },
+    )
+    async def conversation_stream(
+        draft: UUID, body: ConversationTurn, request: Request, user: User
+    ) -> StreamingResponse:
+        return await service(request).bridge.stream(
+            "POST",
+            f"/v1/profile/drafts/{draft}/conversation/turns/stream",
+            headers={"X-Profile-User-Id": user},
+            json=body.model_dump(mode="json"),
+        )
 
     @app.post("/api/v1/profile/drafts/{draft}/images", response_model=DraftView)
     async def image(

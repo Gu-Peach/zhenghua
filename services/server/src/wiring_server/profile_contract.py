@@ -69,6 +69,7 @@ class Attachment(StrictModel):
     path: str
     checksum: str
     mime_type: str
+    origin: Literal["upload", "pdf_sample"] = "upload"
 
 class DraftView(StrictModel):
     draft_id: UUID
@@ -82,6 +83,29 @@ class DraftView(StrictModel):
     template: TemplateFields | None = None
     warnings: list[str] = Field(default_factory=list)
 
+class PdfSampleRequest(StrictModel):
+    revision: int = Field(ge=1)
+    request_id: UUID = Field(default_factory=uuid4)
+    filename: str = Field(min_length=1, max_length=200)
+    content_base64: str = Field(min_length=1, max_length=70 * 1024 * 1024)
+    stage: Literal["classification"] = "classification"
+
+class SampledPdfPage(StrictModel):
+    attachment_id: UUID
+    pdf_page_number: int = Field(ge=1)
+
+class PdfSampleInfo(StrictModel):
+    request_id: UUID
+    filename: str
+    checksum: str
+    page_count: int = Field(ge=1)
+    pages: list[SampledPdfPage] = Field(min_length=1, max_length=2)
+    notice: str | None = None
+
+class PdfSampleResult(StrictModel):
+    draft: DraftView
+    sample: PdfSampleInfo
+
 class TargetImage(StrictModel):
     attachment_id: UUID
     function: str = Field(min_length=1, max_length=100)
@@ -92,6 +116,7 @@ class StageGenerate(StrictModel):
     request_id: UUID = Field(default_factory=uuid4)
     description: str = Field(min_length=1, max_length=8000, pattern=r"\S")
     source_image: UUID
+    sample_images: list[UUID] = Field(default_factory=list, max_length=2)
     targets: list[TargetImage] = Field(default_factory=list, max_length=30)
     negative_images: list[UUID] = Field(default_factory=list, max_length=3)
 
@@ -102,6 +127,12 @@ class StageGenerate(StrictModel):
             raise ValueError("目标页工作区和页号不能重复")
         return self
 
+class CaseReading(StrictModel):
+    case_id: str
+    summary: str = ""
+    wire_marker: str | None = None
+    evidence_steps: list[str] = Field(default_factory=list)
+
 class StageCandidate(StrictModel):
     id: UUID
     stage: Stage
@@ -110,6 +141,7 @@ class StageCandidate(StrictModel):
     cases: list[ExampleCase]
     model_calls: list[dict[str, Any]] = Field(default_factory=list)
     request: StageGenerate | None = None
+    readings: list[CaseReading] = Field(default_factory=list)
 
 class StageConfirm(StrictModel):
     revision: int = Field(ge=1)
@@ -121,3 +153,34 @@ class WizardState(StrictModel):
     draft: DraftView
     candidates: dict[str, StageCandidate] = Field(default_factory=dict)
     confirmed: dict[str, str] = Field(default_factory=dict)
+
+class ConversationTurn(StrictModel):
+    turn_id: UUID = Field(default_factory=uuid4)
+    revision: int = Field(ge=1)
+    message: str = Field(default="", max_length=8000)
+    attachment_ids: list[UUID] = Field(default_factory=list, max_length=4)
+    stage: Stage | None = None
+    confirmation: StageConfirm | None = None
+
+class ConversationMessage(StrictModel):
+    id: UUID
+    role: Literal["user", "assistant"]
+    text: str
+    stage: Stage
+    attachment_ids: list[UUID] = Field(default_factory=list)
+    created_at: str
+
+class ConversationState(StrictModel):
+    wizard: WizardState
+    stage: Stage
+    messages: list[ConversationMessage] = Field(default_factory=list)
+    publish_ready: bool = False
+    issues: list[str] = Field(default_factory=list)
+    pdf_sample: PdfSampleInfo | None = None
+
+class ConversationEvent(StrictModel):
+    type: Literal["progress", "answer_delta", "completed"]
+    turn_id: UUID
+    message: str | None = None
+    delta: str | None = None
+    state: ConversationState | None = None

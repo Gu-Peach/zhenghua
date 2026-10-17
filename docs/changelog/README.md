@@ -1,5 +1,19 @@
 # Changelog
 
+2026-10-17：修复Profile发布“数据操作失败”的本地部署缺口：补齐既有发布RPC/保护触发器及迁移登记，REST Schema已刷新，已上传包可复用；业务内容摘要不变，未代为发布规则。缺函数返回明确且安全的配置错误，26项后端和2项独立SQL及Ruff/mypy通过。用户在原草稿直接重试，详见[Server排障](../service/server/changelog/2026-10-17-profile-publication-missing-migration.md)。
+
+2026-10-17：Profile规则发布的负例改为可选输入，取消缺负例拦截并同步聊天/表单提示；已提供的负例继续校验、打包和使用，阶段确认等其余校验保留。34项Agent离线、17项浏览器及类型/lint/build、Ruff/mypy通过。未发布真实规则或操作用户服务，需重载8100后恢复对话。见[记录](../service/agent/changelog/2026-10-17-profile-optional-negative.md)。
+
+2026-10-17：修复Profile换原页时描述指向新图、实际初扫仍使用旧图而触发NO_CROSS_PAGE_TASK的问题。新原页先生成并重新确认初扫，后续反馈按图片来源隔离，补全前核对实际引用；公开契约/数据库和发布条件不变。29项Agent离线回归、1项浏览器冒烟及静态检查通过，未改实际草稿或启停用户服务，需重载8100。见[交付](../service/agent/changelog/2026-10-17-profile-source-replacement.md)。
+
+2026-10-17：修复Profile用户指出“终点就在本页”后仍反复确认/索要目标图的问题；允许补全阶段使用原图回到初扫生成修正候选，保留分类并按依赖重新确认。24项相关Fake/Mock和11项浏览器回归、类型/lint/build通过；公共API/数据库未变，未修改实际草稿或调用真实模型，需用户重载8100。见[ADR-0031](../adr/0031-profile-scan-correction.md)。
+
+2026-10-17：Profile模型失败不再被统一提示隐藏，增加8100终端日志、私有响应诊断、前端错误码/编号和GeneratedAnswer完整Schema。9项新诊断及现有Profile回归、10项聊天浏览器和类型/lint/build通过。只读确认第一阶段与样图已保存，历史失败未留响应，实际模型根因/成功复试仍待用户重载8100后验证。见[记录](../service/agent/changelog/2026-10-17-profile-model-errors.md)。
+
+2026-10-17：规则创建第一阶段可上传PDF自动随机取两页，Agent对照推测分页并分别建立Expected；第二/三阶段仍需用户提供图片。只保留抽中样图和来源元数据，原PDF及其余页不落盘，无需清理全册缓存。新增API2.5.0代理，无新迁移；25项相关回归、33项原Profile及60项浏览器和前端检查通过。见[ADR-0030](../adr/0030-profile-pdf-sampling.md)。
+
+2026-10-17：Profile规则创建改为Agent引导聊天，支持文字/样图追问、三个阶段的读图结果与公开连接依据、纠正后确认保存规则/Expected及持久对话恢复。新增8000 API2.4.0鉴权SSE，8100复用既有阶段机制，发布仍手动；原表单保留兼容。57项离线浏览器及相关Fake回归、类型/lint/build通过，无新增迁移，未运行真实模型或操作用户服务。见[ADR-0029](../adr/0029-profile-conversation.md)及[Web交付](../apps/web/changelog/2026-10-17-profile-conversation.md)。
+
 2026-10-17：Profile三步创建与手动发布完成代码接入，API 2.3.0；固定阶段模板、图片生成Expected、表格确认与草稿恢复，Server发布私有固定版本并接通目录/预览和Worker。47项Agent相关、29项后端、2项独立SQL和51项浏览器通过，16源码strict mypy/Ruff及前端检查通过。未调用真实模型、未发布真实规则或部署业务库迁移，目标Supabase环境测试异常及清理已记录。见[Agent](../service/agent/changelog/2026-10-17-profile-wizard.md)、[Server](../service/server/changelog/2026-10-17-profile-publication.md)、[Web](../apps/web/changelog/2026-10-17-profile-wizard.md)。
 
 2026-10-17：图纸预览模式新增线表/图纸拖拽调宽、键盘与双击复位，修复缩放百分比和长标题溢出；45项离线浏览器及前端检查通过，仅前端变更。见[Web记录](../apps/web/changelog/2026-10-17-preview-resize.md)。

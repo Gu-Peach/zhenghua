@@ -402,6 +402,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/profile/drafts/{draft}/conversation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Conversation State */
+        get: operations["conversation_state_api_v1_profile_drafts__draft__conversation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile/drafts/{draft}/pdf-samples": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sample Pdf */
+        post: operations["sample_pdf_api_v1_profile_drafts__draft__pdf_samples_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile/drafts/{draft}/conversation/turns/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Conversation Stream */
+        post: operations["conversation_stream_api_v1_profile_drafts__draft__conversation_turns_stream_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/profile/drafts/{draft}/images": {
         parameters: {
             query?: never;
@@ -506,6 +557,26 @@ export interface components {
             checksum: string;
             /** Mime Type */
             mime_type: string;
+            /**
+             * Origin
+             * @default upload
+             * @enum {string}
+             */
+            origin: "upload" | "pdf_sample";
+        };
+        /** CaseReading */
+        CaseReading: {
+            /** Case Id */
+            case_id: string;
+            /**
+             * Summary
+             * @default
+             */
+            summary: string;
+            /** Wire Marker */
+            wire_marker?: string | null;
+            /** Evidence Steps */
+            evidence_steps?: string[];
         };
         /** ConnectionFacts */
         ConnectionFacts: {
@@ -638,6 +709,87 @@ export interface components {
              * @default 50
              */
             limit: number;
+        };
+        /** ConversationEvent */
+        ConversationEvent: {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "progress" | "answer_delta" | "completed";
+            /**
+             * Turn Id
+             * Format: uuid
+             */
+            turn_id: string;
+            /** Message */
+            message?: string | null;
+            /** Delta */
+            delta?: string | null;
+            state?: components["schemas"]["ConversationState"] | null;
+        };
+        /** ConversationMessage */
+        ConversationMessage: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "user" | "assistant";
+            /** Text */
+            text: string;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "classification" | "scan" | "completion";
+            /** Attachment Ids */
+            attachment_ids?: string[];
+            /** Created At */
+            created_at: string;
+        };
+        /** ConversationState */
+        ConversationState: {
+            wizard: components["schemas"]["WizardState"];
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "classification" | "scan" | "completion";
+            /** Messages */
+            messages?: components["schemas"]["ConversationMessage"][];
+            /**
+             * Publish Ready
+             * @default false
+             */
+            publish_ready: boolean;
+            /** Issues */
+            issues?: string[];
+            pdf_sample?: components["schemas"]["PdfSampleInfo"] | null;
+        };
+        /** ConversationTurn */
+        ConversationTurn: {
+            /**
+             * Turn Id
+             * Format: uuid
+             */
+            turn_id?: string;
+            /** Revision */
+            revision: number;
+            /**
+             * Message
+             * @default
+             */
+            message: string;
+            /** Attachment Ids */
+            attachment_ids?: string[];
+            /** Stage */
+            stage?: ("classification" | "scan" | "completion") | null;
+            confirmation?: components["schemas"]["StageConfirm"] | null;
         };
         /** DraftCreate */
         DraftCreate: {
@@ -959,6 +1111,49 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** PdfSampleInfo */
+        PdfSampleInfo: {
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id: string;
+            /** Filename */
+            filename: string;
+            /** Checksum */
+            checksum: string;
+            /** Page Count */
+            page_count: number;
+            /** Pages */
+            pages: components["schemas"]["SampledPdfPage"][];
+            /** Notice */
+            notice?: string | null;
+        };
+        /** PdfSampleRequest */
+        PdfSampleRequest: {
+            /** Revision */
+            revision: number;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id?: string;
+            /** Filename */
+            filename: string;
+            /** Content Base64 */
+            content_base64: string;
+            /**
+             * Stage
+             * @default classification
+             * @constant
+             */
+            stage: "classification";
+        };
+        /** PdfSampleResult */
+        PdfSampleResult: {
+            draft: components["schemas"]["DraftView"];
+            sample: components["schemas"]["PdfSampleInfo"];
+        };
         /** ProfileEvidence */
         ProfileEvidence: {
             /** Key */
@@ -1055,6 +1250,16 @@ export interface components {
             field?: string | null;
             /** Message */
             message: string;
+        };
+        /** SampledPdfPage */
+        SampledPdfPage: {
+            /**
+             * Attachment Id
+             * Format: uuid
+             */
+            attachment_id: string;
+            /** Pdf Page Number */
+            pdf_page_number: number;
         };
         /** SearchCoverage */
         SearchCoverage: {
@@ -1332,6 +1537,8 @@ export interface components {
                 [key: string]: unknown;
             }[];
             request?: components["schemas"]["StageGenerate"] | null;
+            /** Readings */
+            readings?: components["schemas"]["CaseReading"][];
         };
         /** StageConfirm */
         StageConfirm: {
@@ -1365,6 +1572,8 @@ export interface components {
              * Format: uuid
              */
             source_image: string;
+            /** Sample Images */
+            sample_images?: string[];
             /** Targets */
             targets?: components["schemas"]["TargetImage"][];
             /** Negative Images */
@@ -2511,6 +2720,114 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WizardState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    conversation_state_api_v1_profile_drafts__draft__conversation_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                draft: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConversationState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sample_pdf_api_v1_profile_drafts__draft__pdf_samples_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                draft: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PdfSampleRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PdfSampleResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    conversation_stream_api_v1_profile_drafts__draft__conversation_turns_stream_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                draft: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConversationTurn"];
+            };
+        };
+        responses: {
+            /** @description 公开对话SSE事件 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                    "application/json": components["schemas"]["ConversationEvent"];
                 };
             };
             /** @description Validation Error */

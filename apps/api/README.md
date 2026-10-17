@@ -1,5 +1,9 @@
 # 业务 API
 
+当前API2.5.0提供`POST /api/v1/profile/drafts/{draft}/pdf-samples`，用于规则第一阶段随机两页分类；加载8000/8100新代码后使用，无新启动参数或迁移。见[PDF抽样记录](../../docs/service/server/changelog/2026-10-17-profile-pdf-sampling.md)。
+
+2026-10-17规则聊天入口需当前API2.4.0：`/api/v1/profile/drafts/{draft}/conversation`及其`/turns/stream`。使用下方原命令重新加载8000，并加载8100新增Agent代码；没有新增启动参数/端口/迁移。见[对话代理记录](../../docs/service/server/changelog/2026-10-17-profile-conversation.md)。
+
 2026-10-17规则创建/发布接口属于当前API 2.3.0。前端“新建草稿”或读取草稿返回`404 Not Found`时，先检查`http://127.0.0.1:8000/openapi.json`是否包含`/api/v1/profile/drafts`。若仍显示2.2.0且没有该路径，需要在原终端Ctrl+C停止后，按下方原启动方式重新启动8000加载代码；仅刷新前端或重启8100不会加载业务API的新路由。不要为此重复启动Worker。此次排查确认8100已有草稿路由，8000仍为旧版本；3项Mock发布/创建链路测试通过，未操作运行服务或业务数据。
 
 2026-10-17版本2.2.0新增JWT鉴权Explain流式代理，浏览器经8000转发到8100共享Agent宿主；工具/图纸事件契约和生成TS已同步。无数据库Schema变化，启动及配置见[Server README](../../services/server/README.md)，实现见[交付](../../docs/service/server/changelog/2026-10-17-explain-proxy.md)。

@@ -80,6 +80,7 @@ class Attachment(StrictModel):
     path: str
     checksum: str
     mime_type: str
+    origin: Literal["upload", "pdf_sample"] = "upload"
 
 
 class DraftView(StrictModel):
@@ -93,6 +94,33 @@ class DraftView(StrictModel):
     attachments: list[Attachment] = Field(default_factory=list)
     template: TemplateFields | None = None
     warnings: list[str] = Field(default_factory=list)
+
+
+class PdfSampleRequest(StrictModel):
+    revision: int = Field(ge=1)
+    request_id: UUID = Field(default_factory=uuid4)
+    filename: str = Field(min_length=1, max_length=200)
+    content_base64: str = Field(min_length=1, max_length=70 * 1024 * 1024)
+    stage: Literal["classification"] = "classification"
+
+
+class SampledPdfPage(StrictModel):
+    attachment_id: UUID
+    pdf_page_number: int = Field(ge=1)
+
+
+class PdfSampleInfo(StrictModel):
+    request_id: UUID
+    filename: str
+    checksum: str
+    page_count: int = Field(ge=1)
+    pages: list[SampledPdfPage] = Field(min_length=1, max_length=2)
+    notice: str | None = None
+
+
+class PdfSampleResult(StrictModel):
+    draft: DraftView
+    sample: PdfSampleInfo
 
 
 class FileEdit(StrictModel):

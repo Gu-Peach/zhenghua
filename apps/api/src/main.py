@@ -35,7 +35,7 @@ def create_app(
             app.state.management = ManagementService(app.state.db)
             yield
 
-    app = FastAPI(title="Wiring Workbench Server", version="2.3.0", lifespan=lifespan)
+    app = FastAPI(title="Wiring Workbench Server", version="2.5.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(

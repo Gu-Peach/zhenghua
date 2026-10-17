@@ -1,5 +1,13 @@
 # Agent Service
 
+2026-10-17修复Profile同页纠正后循环确认：新增受控返回初扫的内部动作，复用原图生成待确认修正候选。由用户重载8100，使代码和Prompt同时加载，无需新端口/迁移或重做分类。见[修复记录](../../docs/service/agent/changelog/2026-10-17-profile-repeated-clarification.md)。
+
+Profile模型失败现在会在8100终端输出分类日志，前端显示错误码和诊断编号，私有响应保存在`.runtime/profile-agent/model-traces`。完整说明见[诊断记录](../../docs/service/agent/changelog/2026-10-17-profile-model-errors.md)。由用户重载8100生效；SSE HTTP200仅表示连接建立，请同时检查error事件。本轮未运行实际模型或操作用户服务。
+
+2026-10-17 Profile新增[内存PDF抽样工具](../../docs/service/agent/changelog/2026-10-17-profile-pdf-sampling.md)：第一阶段随机选两页后只渲染选中页，保留草稿样图和来源元数据；原PDF及其余页不落盘。第二/三阶段通过附件来源标记限制为用户上传图片。沿用8100共享宿主，重载当前代码即可；无需新依赖/配置，原图片入口兼容。
+
+2026-10-17 Profile新增[引导式规则对话](../../docs/service/agent/changelog/2026-10-17-profile-conversation.md)：LangGraph根据文字/样图追问或生成候选，逐阶段明确确认，复用原草稿与发布边界。沿用8100共享宿主，重新加载`src.extraction_main`即可提供新对话路由，无新增端口/环境变量。只有用户发送对话或样图时才调用模型，默认测试为Fake；本轮未运行真实模型或重启用户服务。
+
 2026-10-17 Profile三步创建向导已挂载共享`src.extraction_main`的8100服务，无新增端口。配置沿用当前模型及内部令牌；草稿保存于`.runtime/profile-agent`。用户点击“根据图片生成规则与答案”才调用VLM。使用步骤及部署前置见[模块说明](./src/agent/profile_agent/README.md)。独立提取Worker也需加载新代码才能读取已发布的Storage规则包。
 
 2026-10-17新增独立[Profile Agent](./src/agent/profile_agent/README.md)：根据样例/描述填充模板、基于证据诊断、确认建议或明确指令后编辑草稿、确认Expected并输出校验包。独立CLI/SDK无需另开HTTP端口；规则页与正式发布后接，不修改Explain或原始Profile。当前共享宿主未注册本模块路由。

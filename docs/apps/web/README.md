@@ -1,5 +1,15 @@
 # apps/web 前端归档
 
+- [规则负例可选提示](./changelog/2026-10-17-profile-optional-negative.md)：负例上传保留，未提供也可发布。
+
+- [补全聊天回到初扫修正](./changelog/2026-10-17-profile-scan-correction.md)：跟随Agent阶段回退、展示修正端点并重新确认，11项规则聊天回归通过。
+
+- [规则模型错误类别展示](./changelog/2026-10-17-profile-model-errors.md)：前端显示code/诊断编号，同轮重试及桌面/窄屏失败态验证。
+
+- [分类阶段PDF随机抽样](./changelog/2026-10-17-profile-pdf-sampling.md)：上传后自动抽两页、两份Expected、缓存说明/重试，后两阶段继续人工图片；60项浏览器通过。
+
+- [引导式规则聊天](./changelog/2026-10-17-profile-conversation.md)：图片/文字追问、逐阶段候选/修正/确认、持久对话恢复和手动发布；57项浏览器及最后12项入口回归通过。
+
 - [Profile三步创建向导](./changelog/2026-10-17-profile-wizard.md)：图片/规则生成答案、表格编辑确认、恢复和手动发布；6项新增/共51项离线浏览器、前端检查及截图通过。
 
 - [线表与图纸可调宽面板](./changelog/2026-10-17-preview-resize.md)：拖拽/键盘调宽、双击复位、缩放数字及长标题防溢出；45项离线浏览器和前端检查通过。

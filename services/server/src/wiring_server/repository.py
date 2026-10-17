@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import Any, cast
 from urllib.parse import quote
 
@@ -40,6 +41,16 @@ class Repository:
                 code = response.json().get("code", "")
             except ValueError:
                 pass
+            if code == "PGRST202" and path.startswith("/rest/v1/rpc/"):
+                logging.getLogger(__name__).warning(
+                    "Database RPC is unavailable",
+                    extra={"database_code": code, "rpc_name": path.rsplit("/", 1)[-1]},
+                )
+                raise ServiceError(
+                    503,
+                    "DATABASE_FUNCTION_MISSING",
+                    "数据服务接口尚未部署或Schema缓存尚未更新",
+                )
             status = (
                 409
                 if code in {"PT409", "23505", "23503"}
