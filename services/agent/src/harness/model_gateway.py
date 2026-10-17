@@ -34,6 +34,24 @@ class ModelRequest:
     json_mode: bool = False
     enable_thinking: bool | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    tools: list[dict[str, Any]] = field(default_factory=list)
+
+
+@dataclass(frozen=True, slots=True)
+class ModelToolCall:
+    id: str
+    name: str
+    arguments: str
+
+    def as_message(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "type": "function",
+            "function": {
+                "name": self.name,
+                "arguments": self.arguments,
+            },
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,6 +63,7 @@ class ModelResponse:
     attempts: int
     usage: dict[str, Any] = field(default_factory=dict)
     finish_reason: str | None = None
+    tool_calls: tuple[ModelToolCall, ...] = ()
 
 
 class ModelGateway(Protocol):
@@ -119,6 +138,8 @@ class OpenAICompatibleModelGateway:
         }
         if request.max_tokens is not None:
             payload["max_tokens"] = request.max_tokens
+        if request.tools:
+            payload["tools"] = request.tools
         # ``output_model`` controls local Pydantic validation only.  Do not
         # infer provider-side structured-output mode from it: several
         # OpenAI-compatible servers reject ``response_format`` unless they
@@ -163,6 +184,11 @@ class OpenAICompatibleModelGateway:
                         last_error = error
                     else:
                         content, usage, finish_reason = self._read_response(response)
+                        tool_calls = self._read_tool_calls(response.json()["choices"][0]["message"])
+                        if tool_calls and not request.tools:
+                            raise ModelGatewayError(
+                                ErrorCode.MODEL_SCHEMA_INVALID, "Unexpected model tool call.", retryable=False
+                            )
                         try:
                             parsed = self._parse_output(content, request.output_model)
                         except ModelGatewayError as exc:
@@ -188,6 +214,7 @@ class OpenAICompatibleModelGateway:
                             attempts=attempts,
                             usage=usage,
                             finish_reason=finish_reason,
+                            tool_calls=tool_calls,
                         )
                         await self._trace(request, result=result, error=None)
                         return result
@@ -214,8 +241,11 @@ class OpenAICompatibleModelGateway:
     def _read_response(response: httpx.Response) -> tuple[str, dict[str, Any], str | None]:
         try:
             payload = response.json()
-            content = payload["choices"][0]["message"]["content"]
-        except (ValueError, KeyError, IndexError, TypeError) as exc:
+            message = payload["choices"][0]["message"]
+            content = message.get("content")
+            if content is None and message.get("tool_calls"):
+                content = ""
+        except (ValueError, KeyError, IndexError, TypeError, AttributeError) as exc:
             raise ModelGatewayError(
                 ErrorCode.MODEL_SCHEMA_INVALID,
                 "Model response does not match OpenAI chat completions format.",
@@ -233,6 +263,29 @@ class OpenAICompatibleModelGateway:
         finish_reason = payload["choices"][0].get("finish_reason")
         return content, usage, finish_reason if isinstance(finish_reason, str) else None
 
+    @staticmethod
+    def _read_tool_calls(message: dict[str, Any]) -> tuple[ModelToolCall, ...]:
+        calls = message.get("tool_calls") or []
+        try:
+            if not isinstance(calls, list) or len(calls) > 16:
+                raise ValueError("Invalid tool calls")
+            result = []
+            for call in calls:
+                function = call["function"]
+                values = (call["id"], function["name"], function["arguments"])
+                if call.get("type") != "function" or not all(isinstance(v, str) for v in values):
+                    raise ValueError("Invalid function call")
+                if not values[0] or not values[1] or len(values[2]) > 16000:
+                    raise ValueError("Invalid function arguments")
+                result.append(ModelToolCall(*values))
+            if len({item.id for item in result}) != len(result):
+                raise ValueError("Duplicate tool id")
+            return tuple(result)
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ModelGatewayError(
+                ErrorCode.MODEL_SCHEMA_INVALID, "Invalid model tool calls.", retryable=False
+            ) from exc
+
     async def stream_text(
         self, request: ModelRequest, on_text: Callable[[str], Awaitable[None]]
     ) -> ModelResponse:
@@ -248,6 +301,8 @@ class OpenAICompatibleModelGateway:
         }
         if request.max_tokens is not None:
             payload["max_tokens"] = request.max_tokens
+        if request.tools:
+            payload["tools"] = request.tools
         headers = {"Content-Type": "application/json"}
         if self._api_key:
             headers["Authorization"] = f"Bearer {self._api_key}"
@@ -257,6 +312,8 @@ class OpenAICompatibleModelGateway:
         usage: dict[str, Any] = {}
         finish_reason: str | None = None
         attempts = 0
+        tool_fragments: dict[int, dict[str, Any]] = {}
+        tool_calls: tuple[ModelToolCall, ...] = ()
         try:
             for attempt in range(self._retry_policy.max_retries + 1):
                 attempts = attempt + 1
@@ -278,6 +335,7 @@ class OpenAICompatibleModelGateway:
                         if "application/json" in response.headers.get("content-type", ""):
                             await response.aread()
                             content, usage, finish_reason = self._read_response(response)
+                            tool_calls = self._read_tool_calls(response.json()["choices"][0]["message"])
                             if content:
                                 parts.append(content)
                                 await on_text(content)
@@ -304,6 +362,25 @@ class OpenAICompatibleModelGateway:
                                     choice = choices[0]
                                     delta = choice.get("delta") or {}
                                     delta_text = delta.get("content")
+                                    for fragment in delta.get("tool_calls") or []:
+                                        index = fragment["index"]
+                                        if not isinstance(index, int) or not 0 <= index < 16:
+                                            raise ValueError("Invalid tool index")
+                                        item = tool_fragments.setdefault(
+                                            index,
+                                            {
+                                                "id": "",
+                                                "type": "function",
+                                                "function": {"name": "", "arguments": ""},
+                                            },
+                                        )
+                                        if fragment.get("id"):
+                                            item["id"] += fragment["id"]
+                                        for key in ("name", "arguments"):
+                                            value = (fragment.get("function") or {}).get(key, "")
+                                            item["function"][key] += value
+                                        if len(item["function"]["arguments"]) > 16000:
+                                            raise ValueError("Tool arguments too large")
                                     finished = finished or choice.get("finish_reason") is not None
                                     if isinstance(choice.get("finish_reason"), str):
                                         finish_reason = choice["finish_reason"]
@@ -313,7 +390,7 @@ class OpenAICompatibleModelGateway:
                                         "Invalid model text stream.",
                                         retryable=False,
                                     ) from exc
-                                # reasoning_content/tool_calls are deliberately never forwarded.
+                                # Only public content is forwarded; tool arguments/reasoning stay private.
                                 if isinstance(delta_text, str) and delta_text:
                                     parts.append(delta_text)
                                     await on_text(delta_text)
@@ -323,7 +400,14 @@ class OpenAICompatibleModelGateway:
                                     "Model text stream ended before completion.",
                                     retryable=True,
                                 )
-                        if not parts or not "".join(parts).strip():
+                            tool_calls = self._read_tool_calls(
+                                {"tool_calls": [tool_fragments[i] for i in sorted(tool_fragments)]}
+                            )
+                        if tool_calls and not request.tools:
+                            raise ModelGatewayError(
+                                ErrorCode.MODEL_SCHEMA_INVALID, "Unexpected model tool call.", retryable=False
+                            )
+                        if not tool_calls and not "".join(parts).strip():
                             raise ModelGatewayError(
                                 ErrorCode.MODEL_SCHEMA_INVALID,
                                 "Model returned an empty answer.",
@@ -337,12 +421,13 @@ class OpenAICompatibleModelGateway:
                             attempts=attempts,
                             usage=usage,
                             finish_reason=finish_reason,
+                            tool_calls=tool_calls,
                         )
                         await self._trace(request, result=result, error=None)
                         return result
                 except (httpx.TransportError, ModelGatewayError) as exc:
                     retryable = not isinstance(exc, ModelGatewayError) or exc.retryable
-                    if parts or not retryable or attempt >= self._retry_policy.max_retries:
+                    if parts or tool_fragments or not retryable or attempt >= self._retry_policy.max_retries:
                         error = (
                             exc
                             if isinstance(exc, ModelGatewayError)
@@ -482,8 +567,8 @@ def _sanitize_provider_text(value: str) -> str:
 class FakeModelGateway:
     """Deterministic scripted gateway for default tests; it never performs network I/O."""
 
-    def __init__(self, responses: list[str | Exception], model: str = "fake-vlm") -> None:
-        self._responses: deque[str | Exception] = deque(responses)
+    def __init__(self, responses: list[str | Exception | ModelResponse], model: str = "fake-vlm") -> None:
+        self._responses: deque[str | Exception | ModelResponse] = deque(responses)
         self.model = model
         self.calls: list[ModelRequest] = []
 
@@ -494,6 +579,8 @@ class FakeModelGateway:
         scripted = self._responses.popleft()
         if isinstance(scripted, Exception):
             raise scripted
+        if isinstance(scripted, ModelResponse):
+            return scripted
         parsed = OpenAICompatibleModelGateway._parse_output(scripted, request.output_model)
         return ModelResponse(
             content=scripted,

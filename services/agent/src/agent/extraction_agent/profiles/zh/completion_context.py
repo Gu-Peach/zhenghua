@@ -9,6 +9,7 @@ from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionRequest,
     DrawingReference,
 )
+from src.agent.extraction_agent.profiles.zh.completion_view import CompletionInputView
 from src.domain.models.common import StrictModel
 
 
@@ -27,10 +28,11 @@ class CompletionSourceComponent(StrictModel):
 class TargetOnlyCompletionContext(StrictModel):
     """Read-only source facts plus the address of the one supplied target image."""
 
-    context_version: Literal[2] = 2
+    context_version: Literal[2, 3] = 2
     task_id: str
     source_page: CompletionPageContext
     target_page: CompletionPageContext
+    image_view: CompletionInputView | None = None
     source_component: CompletionSourceComponent | None = None
     line_number: str | None = None
     signal_name: str | None = None
@@ -45,11 +47,12 @@ def target_only_context(request: CrossPageCompletionRequest) -> TargetOnlyComple
     """Project the graph task without images, paths, unrelated rows or diagnostics."""
     task: dict[str, Any] = json.loads(request.task_context)
     # Project old compact tasks too; source pins/coordinates never reach the VLM.
-    if task.get("context_version") in (1, 2):
+    if task.get("context_version") in (1, 2, 3):
         compact = dict(task)
         old_start = compact.pop("start", None) or {}
         compact.pop("endpoint_role", None)
         compact.pop("direction_basis", None)
+        compact.pop("image_view", None)
         component = compact.get("source_component") or old_start
         compact["source_component"] = (
             {key: component.get(key) for key in CompletionSourceComponent.model_fields} if component else None

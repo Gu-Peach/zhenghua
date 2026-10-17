@@ -1,5 +1,19 @@
 # Server 业务服务
 
+2026-10-17新增Explain来源解释接口，API版本2.2.0。浏览器POST /api/v1/explain/turns/stream，经Supabase JWT及三表项目所有者校验后转发共享8100的/v1/explain/turns/stream。用户身份由Server注入X-Explain-User-Id，不信任正文/浏览器同名头。只读、不修改数据或新增迁移，旧Supervisor保持未开放。见[交付](../../docs/service/server/changelog/2026-10-17-explain-proxy.md)。
+
+沿用下方8000启动命令加载新代码，并启动[8100共享Agent宿主](../agent/README.md)。SERVER_AGENT_URL默认http://127.0.0.1:8100，AGENT_INTERNAL_TOKEN需与Agent一致；这些配置仅留服务端。前端仍只请求8000。仅启动提取Worker不会提供Explain HTTP。
+
+Explain公共契约生成顺序（无数据库/模型调用）：
+
+```powershell
+.\.venv\Scripts\python.exe services/agent/scripts/export_explain_contract.py
+.\.venv\Scripts\python.exe apps/api/scripts/export_openapi.py
+.\apps\web\node_modules\.bin\openapi-typescript.CMD apps/api/openapi.json -o apps/web/src/apis/generated.ts
+```
+
+explain_contract.py是生成文件，来源是Explain Agent的models.py；Schema一致性测试防止双端契约漂移。
+
 2026-10-16增量提取已接入代码：上传PDF保存后创建提取任务，工作台通过Server SSE刷新已提交的图纸索引和线表。AI聊天仍未开放。启用前需部署新增迁移并启动[独立提取Worker](../agent/README.md#当前增量提取的启动方式)，原数据管理API继续使用8000。见[交付及验证](../../docs/service/server/changelog/2026-10-16-incremental-extraction.md)。
 
 ## 启用增量提取

@@ -1,5 +1,7 @@
 # Extraction Agent
 
+新增`zh_crop@2.2.0`实验规则：按列裁目标图、保持单次调用与原输入像素预算，输出坐标仍映射回整页。用`--profile zh_crop`测试；`--profile zh`仍为2.1.1整页方式。说明见[实验规则](./profiles/zh_crop/README.md)。2026-10-17已按用户要求解除提取源码、配套测试及设计文档的本地忽略和提交拦截，可纳入版本控制；测试运行产物仍忽略。
+
 2026-10-16新增`application/incremental_worker.py`和`infrastructure/incremental_repository.py`，为Stage1/Stage2接入三表增量发布与租约恢复；`application/review.py`统一生成复核原因，模型输出只保留事实。旧CLI仍默认内存，不自动写库。在线启动见[Agent README](../../../README.md#当前增量提取的启动方式)，设计见[ADR 0022](../../../../../docs/adr/0022-incremental-extraction.md)。
 
 当前ZH本地版本2.1.1：目标图补全上下文v2只传来源匹配事实与元件元数据，不传来源端子/坐标/方向描述；匹配任意边界回指，沿线分别读目标接口与针脚，缺失地址可由唯一来源页PDF引用核对。ABB/XMZ仍为双图。见[修正记录](../../../../../docs/service/agent/changelog/2026-10-16-zh-cross-page-reading.md)。端点确定后可另沿相线查对应断路器Ie明确电流，不改变端点/坐标，详见[电流记录](../../../../../docs/service/agent/changelog/2026-10-15-zh-ie-current.md)。元件标识按同页附近/Object Loc或跨页对应引用/附近/Object Loc读取；source_component只完善元件元数据。最终记录保留start_terminal_coordinates/end_terminal_coordinates，本地XLSX14列，见[坐标记录](../../../../../docs/service/agent/changelog/2026-10-15-zh-c01-terminal-coordinates.md)。

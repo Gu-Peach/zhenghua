@@ -1,5 +1,7 @@
 # Server 文档
 
+- [Explain鉴权代理与生成契约](./changelog/2026-10-17-explain-proxy.md)：API 2.2.0、只读JWT/项目边界和共享8100代理，未重启实际服务。
+
 - [上传入队、鉴权SSE、增量事务及隔离库验证](./changelog/2026-10-16-incremental-extraction.md)。
 
 - [起终点坐标字段及验证](./changelog/2026-10-16-terminal-coordinates.md)、[坐标契约](./terminal-coordinate-contract.md)

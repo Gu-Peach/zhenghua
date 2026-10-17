@@ -1,5 +1,15 @@
 # Agent 服务设计索引
 
+- [独立Profile Agent交付](./changelog/2026-10-17-profile-agent.md)、[模块入口](../../../services/agent/src/agent/profile_agent/README.md)、[ADR 0026](../../adr/0026-independent-profile-agent.md)：模板填充、诊断、受控草稿编辑和包输出，界面/正式发布后接。
+
+- [Explain共享宿主与公开工具事件](./changelog/2026-10-17-explain-host.md)：工具状态/结果SSE、8000→8100可信身份和独立前端浮窗接入，启动需加载src.extraction_main。
+
+2026-10-16新增ZH列区域裁剪实验：显式`--profile zh_crop`启用，`zh`保持整页；初扫不改。2026-10-17用户确认本版可一起提交，已解除源码及配套测试/文档的本地忽略与提交保护，运行产物仍忽略，不代表生产规则发布。设计与核对见[实验方案](./zh-completion-crop-plan.md)。
+
+- [Explain检索工具](./changelog/2026-10-16-explain-retrieval.md)：行/页精确查询、跨页图纸、分页覆盖及按需视觉分析，LangGraph原生工具循环；51项Explain/共94项相关离线测试通过，前端/共享服务仍未接入。设计见[ADR-0024](../../adr/0024-explain-retrieval-tools.md)。
+
+- [独立Explain Agent](./changelog/2026-10-16-explain-agent.md)：三表行级来源解释、图纸证据、短期多轮与可挂载HTTP/SSE；20项模块、59项组合离线验证，尚未接前端或共享服务。设计见[ADR-0023](../../adr/0023-independent-explain-agent.md)。
+
 - [上传提取、增量发布及复核后处理](./changelog/2026-10-16-incremental-extraction.md)；[ADR 0022](../../adr/0022-incremental-extraction.md)。
 
 2026-10-16按用户精简后的manifest保留003C01的1组初扫、5组补全/负例和4张图，删除独占未引用6图/12JSON；manifest v13、资源摘要与测试引用同步，Profile保持2.1.1。仅静态核对，未运行测试/模型。见[清理记录](./changelog/2026-10-16-zh-c01-example-cleanup.md)。

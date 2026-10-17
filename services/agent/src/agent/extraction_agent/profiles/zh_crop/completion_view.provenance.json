@@ -1,0 +1,37 @@
+{
+  "version": "2.2.0",
+  "status": "local_experiment_uncommitted",
+  "base_profile": "zh@2.1.1",
+  "base_few_shot_manifest": 13,
+  "coordinate_contract": "input_view_normalized_to_full_page",
+  "files": [
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/zh/completion_view.py",
+      "checksum": "sha256:3d31fa477a113bfda9cdea6c149e86569f78d7ee664c96cddaed5dfaa02a3093"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/zh/completion_context.py",
+      "checksum": "sha256:82955733dbbb8999d79bef25d60d013da3e083790baf5bdc0f251349ab0d9256"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/zh_vlm_stages.py",
+      "checksum": "sha256:eeb52d09e2f78e5afac7626a36eb03dbfc8bef82b0e6ebe161116c4014f364a9"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/zh_crop/profile.json",
+      "checksum": "sha256:8492d6bfc4cfcbf1065f96e577e37a237d352955806ff7a375089c7b9201b26a"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/zh_crop/completion_view.json",
+      "checksum": "sha256:5f5f72bdedf164100f7cac61a0c9eda6ce13c40c223af7c14fe5ecb720805d10"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/zh_crop/rules.json",
+      "checksum": "sha256:0102c06fbc14b109be4136101a732c72166cd12dfcc0577cb127d9df35f9ed5f"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/zh/page_connection_completion_crop.md",
+      "checksum": "sha256:1a69a6b3973cffbd4e94afefc7a3e21daa3e6a80ce94e46db149ec56097c05d7"
+    }
+  ]
+}

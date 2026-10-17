@@ -31,7 +31,7 @@ def install_management_routes(app: FastAPI, identity: Any) -> None:
 
     @app.get("/api/v1/capabilities")
     async def capabilities(user: User) -> dict[str, bool]:
-        return {"data_management": True, "extraction": True, "supervisor": False}
+        return {"data_management": True, "extraction": True, "explain": True, "supervisor": False}
 
     @app.get(
         "/api/v1/projects/{project_id}/extraction",

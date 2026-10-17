@@ -1,5 +1,21 @@
 # 开发路线
 
+2026-10-17 Explain前端逐字显示/Markdown及按需分包完成，26项浏览器、typecheck/lint/build和桌面/窄屏截图通过。后端/Prompt/业务契约未改，不操作用户运行服务或真实模型；整体阶段状态不变。见[交付](./apps/web/changelog/2026-10-17-explain-typewriter.md)。
+
+2026-10-17按用户要求解除提取Agent局部高清版本的本地Git隔离：源码/配置/Prompt/测试及设计可正常提交，测试结果和缓存继续忽略；不改提取行为或Profile发布状态，Phase 4/5状态不变。
+
+2026-10-17来源解释启动排障：确认只运行提取Worker导致8100拒绝连接，已补启动共享HTTP（不重复启动Worker），后端探活/路由/空请求鉴权验证通过；未代跑真实模型或修改数据，Phase 4/5模型验收状态不变。详见[宿主记录](./service/agent/changelog/2026-10-17-explain-host.md#后续启动排障)。
+
+2026-10-17独立Profile Agent核心完成：模板填充、首轮规则/代表案例/原图、证据诊断、确认建议/直接指令编辑及校验包输出；33项新测试+3项Registry、13源码strict mypy/Ruff通过。用户确认不接规则页或正式发布，未调用真实模型/写Supabase，原Explain/共享宿主未改；Phase 4/5实际模型与生产接入验收仍in progress。见[交付](./service/agent/changelog/2026-10-17-profile-agent.md)。
+
+2026-10-17 Explain独立浮窗/8000 JWT代理/8100共享宿主接入完成，API 2.2.0及事件/生成类型同步。94项后端/Agent离线、22项浏览器、截图、前端检查和13源码strict mypy通过。未重启现有服务或真实模型联调，Phase 4/5真实质量验收仍in progress；见[Web](./apps/web/changelog/2026-10-17-explain-panel.md)和[Server](./service/server/changelog/2026-10-17-explain-proxy.md)。
+
+2026-10-16本地ZH裁剪实验文件完成（未提交/发布）：`zh_crop`显式启用，按列替换目标输入并回映射坐标；初扫不改，预算/调用轮次不增加。仅静态及裁剪预览核对，真实模型精度待用户测试，Phase 4/5状态不变。
+
+2026-10-16 Explain独立开发扩展完成：行/页精确检索和按需看图工具、LangGraph条件循环、分页覆盖与查询/图片摘要刷新；51项Explain/共94项相关离线回归及Ruff/strict mypy通过。旧Supervisor额外2项缺历史Prompt失败；未接前端/共享服务或真实模型，既有阶段仍in progress。见[交付](./service/agent/changelog/2026-10-16-explain-retrieval.md)。
+
+2026-10-16独立Explain Agent模块完成：行级只读证据解释、原页/目标图、短期追问与可挂载HTTP/SSE。20项模块/59项组合离线测试及Ruff/类型检查通过；未接前端/共享服务或真实模型/数据库联调，既有阶段状态保持不变。见[交付](./service/agent/changelog/2026-10-16-explain-agent.md)。
+
 2026-10-16后续启动排障：已部署本地20261016020000迁移并原子登记历史，确认四个提取RPC可见及8000 API为2.1.0；原Worker 404缺失前置条件已解决。未领取任务或调用模型，Phase 4/5的真实模型联调仍待验证。
 
 2026-10-16上传入队与Stage1/2独立Worker增量发布已实现，程序判定review，前端展示阶段、初扫/补全结果和失败恢复；62项Agent、19项API、15项浏览器、隔离库空表/旧结果迁移及Web检查通过。当前项目库未部署、服务未重启，真实模型精度/成本/性能未验收，Phase 4/5保持in progress。见[ADR 0022](./adr/0022-incremental-extraction.md)和[增量交付](./service/agent/changelog/2026-10-16-incremental-extraction.md)。

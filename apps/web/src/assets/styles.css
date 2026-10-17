@@ -665,3 +665,76 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .extraction-progress small { color:#637587; }
 .row-state { display:inline-block; font-size:11px; color:#65768b; margin-right:6px; white-space:nowrap; }
 .row-state.review { color:#96561d; }
+
+.explain-cell { position: relative; padding-right: 30px !important; }
+.explain-trigger { position:absolute; right:4px; top:50%; transform:translateY(-50%); display:grid; place-items:center; width:25px; height:26px; padding:0; border:1px solid #d8e3e6; border-radius:6px; color:#527b83; background:#fff; opacity:0; pointer-events:none; }
+.result-table tr:hover .explain-trigger, .result-table tr:focus-within .explain-trigger, .explain-trigger:focus-visible { opacity:1; pointer-events:auto; }
+.explain-trigger:hover { color:#087d81; border-color:#82bfc2; background:#f1f9f9; }
+.explain-panel { position:fixed; z-index:75; right:24px; bottom:24px; width:min(680px, calc(100vw - 48px)); height:min(760px, calc(100dvh - 90px)); display:flex; flex-direction:column; overflow:hidden; border:1px solid #ced9e1; border-radius:14px; background:#fff; box-shadow:0 12px 44px #1a314526; outline:none; color:#293d4f; }
+.explain-header { display:flex; align-items:center; gap:12px; padding:15px 18px; border-bottom:1px solid #e4eaf0; flex:none; }
+.explain-header > svg { color:#167f84; }
+.explain-header > div { min-width:0; flex:1; }
+.explain-header strong { font-size:15px; }
+.explain-header .icon-button { display:grid; place-items:center; flex:none; width:30px; height:30px; padding:0; border:0; border-radius:5px; background:transparent; color:#718391; }
+.explain-header .icon-button:hover { background:#f0f4f6; color:#334b5b; }
+.explain-header p { margin:4px 0 0; color:#798895; font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.explain-feed { flex:1; min-height:0; overflow:auto; padding:18px 22px; overscroll-behavior:contain; }
+.explain-turn { margin-bottom:24px; min-width:0; }
+.explain-question { margin:0 0 15px; padding:11px 13px; border-radius:8px; background:#f3f7f8; color:#496170; font-size:13px; line-height:1.65; overflow-wrap:anywhere; }
+.explain-tools { margin:0 0 13px; }
+.explain-tool { margin:5px 0; color:#84909a; font-size:12px; line-height:1.65; }
+.explain-tool > summary { display:flex; align-items:center; gap:8px; cursor:pointer; list-style:none; padding:5px 0; }
+.explain-tool > summary::-webkit-details-marker { display:none; }
+.explain-tool > summary > span { flex:1; min-width:0; overflow-wrap:anywhere; }
+.explain-tool[open] > summary > svg:last-child { transform:rotate(90deg); }
+.explain-tool.failed { color:#a36854; }
+.explain-tool-result { margin:4px 0 12px 21px; padding:9px 12px; border-left:2px solid #e0e8ed; background:#fafbfc; color:#647584; overflow-wrap:anywhere; }
+.explain-tool-result p { margin:3px 0 8px; }
+.explain-tool-result ul { list-style:none; padding:0; margin:6px 0; max-height:220px; overflow:auto; }
+.explain-tool-result li { display:flex; flex-wrap:wrap; gap:6px 14px; padding:4px 0; border-top:1px solid #edf1f4; }
+.explain-tool-result li > span:first-child { min-width:95px; color:#5d7382; }
+.explain-raw { margin-top:9px; }
+.explain-raw > summary { cursor:pointer; }
+.explain-raw pre { max-height:260px; overflow:auto; white-space:pre-wrap; overflow-wrap:anywhere; font:11px/1.55 Consolas,monospace; }
+.explain-working { display:flex; align-items:center; gap:7px; color:#8b969e; font-size:12px; margin:12px 0; }
+.explain-answer { overflow-wrap:anywhere; font-size:14px; line-height:1.85; color:#283c4a; }
+.explain-answer p { margin:0 0 12px; }
+.explain-answer h1, .explain-answer h2, .explain-answer h3, .explain-answer h4 { margin:20px 0 9px; font-size:15px; line-height:1.6; font-weight:600; }
+.explain-answer > :first-child { margin-top:0; }
+.explain-answer ul, .explain-answer ol { padding-left:22px; margin:9px 0 14px; }
+.explain-answer li { margin:4px 0; }
+.explain-answer li > p { margin:4px 0; }
+.explain-answer code { padding:2px 5px; border-radius:4px; background:#f0f4f6; font:12px/1.65 Consolas,monospace; white-space:pre-wrap; }
+.explain-answer pre { overflow:auto; padding:11px 13px; border:1px solid #e1e8ed; border-radius:6px; background:#f7f9fa; }
+.explain-answer pre code { padding:0; background:transparent; }
+.explain-answer table { display:block; max-width:100%; overflow:auto; border-collapse:collapse; font-size:12px; margin:12px 0; }
+.explain-answer th, .explain-answer td { border:1px solid #dde6eb; padding:6px 9px; text-align:left; white-space:normal; }
+.explain-answer th { background:#f4f7f8; }
+.explain-answer blockquote { border-left:3px solid #d8e4e9; margin:12px 0; padding-left:12px; color:#647b89; }
+.explain-answer a { color:#087e88; text-decoration:underline; }
+.explain-cursor { display:inline-block; width:2px; height:14px; margin-left:2px; background:#6a8793; vertical-align:text-bottom; animation:explain-cursor-blink 1s steps(2,start) infinite; }
+.explain-show-all { border:0; background:none; color:#718692; font-size:11px; padding:5px 0; cursor:pointer; }
+.explain-show-all:hover { color:#167e85; }
+@keyframes explain-cursor-blink { to { visibility:hidden; } }
+@media (prefers-reduced-motion:reduce) { .explain-cursor { animation:none; } }
+.explain-gap { color:#99713f; font-size:12px; line-height:1.6; }
+.explain-error { display:flex; align-items:flex-start; gap:10px; margin:12px 0; padding:10px; background:#fff7f2; color:#9a5b40; font-size:12px; line-height:1.6; overflow-wrap:anywhere; }
+.explain-error span { flex:1; }
+.explain-error button { flex:none; border:1px solid #e2c6b5; background:white; border-radius:4px; color:inherit; padding:2px 8px; }
+.explain-evidence { border-top:1px solid #e7edf0; padding-top:12px; }
+.explain-evidence h3 { font-size:12px; color:#768894; margin:0 0 10px; }
+.explain-evidence h3 span { margin-left:5px; font-weight:400; }
+.explain-evidence > div { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.explain-drawing { margin:0; overflow:hidden; border:1px solid #e0e7eb; border-radius:7px; }
+.explain-drawing img { display:block; width:100%; height:120px; object-fit:contain; background:#fafbfc; }
+.explain-drawing figcaption { font-size:11px; line-height:1.55; padding:7px 9px; color:#657988; overflow-wrap:anywhere; }
+.explain-drawing figcaption > span { display:block; font-weight:600; color:#3e6d76; }
+.explain-image-empty { min-height:120px; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:7px; padding:12px; color:#98a3ac; font-size:11px; }
+.explain-composer { padding:12px 17px 10px; border-top:1px solid #e0e7ed; flex:none; background:#fff; }
+.explain-composer textarea { display:block; width:100%; min-height:60px; max-height:160px; padding:10px 12px; resize:vertical; border:1px solid #d9e3e9; border-radius:7px; background:#fcfdfd; font-family:inherit; font-size:13px; line-height:1.6; color:#334e5d; }
+.explain-composer > div { display:flex; justify-content:space-between; align-items:center; margin-top:7px; }
+.explain-composer > div > span { font-size:11px; color:#95a1aa; }
+.explain-composer button { width:32px; height:30px; display:grid; place-items:center; border:0; border-radius:5px; color:white; background:#18868b; }
+.explain-composer button:disabled { background:#b8c5cb; }
+@media (hover:none) { .explain-trigger { opacity:1; pointer-events:auto; } }
+@media (max-width:760px) { .explain-panel { right:8px; bottom:8px; width:calc(100vw - 16px); height:calc(100dvh - 24px); } .explain-feed { padding:14px; } .explain-header { padding:12px 14px; } .explain-trigger { opacity:1; pointer-events:auto; } .explain-evidence > div { grid-template-columns:1fr; } }

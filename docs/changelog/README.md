@@ -1,5 +1,17 @@
 # Changelog
 
+2026-10-17来源解释支持前端逐字显示和Markdown排版：大块/缓存/完成回复经过缓冲，支持立即显示、停止冻结和减少动态效果；26项浏览器与前端检查通过，无后端或数据变更。见[Web交付](../apps/web/changelog/2026-10-17-explain-typewriter.md)。
+
+2026-10-17新增独立Profile Agent：统一提取Schema与可填写模板、规则/案例/原图诊断、确认建议或明确指令后编辑隔离草稿、用户确认Expected及规则包输出。SDK/CLI/可注册Router已离线验收，未接界面/正式发布，不改变现有Profile或项目。33+3项回归、strict mypy/Ruff通过，未调用真实模型或写业务库。见[Agent交付](../service/agent/changelog/2026-10-17-profile-agent.md)、[ADR 0026](../adr/0026-independent-profile-agent.md)。
+
+2026-10-17接入Explain独立来源浮窗：行/页悬停入口、自动解释及流式追问、可展开淡色工具记录、关联原页/跨页图纸；8000 JWT/所有者代理→8100共享宿主，不新增端口。API 2.2.0及Pydantic/OpenAPI/TS契约同步，94项后端/Agent离线、22项浏览器、截图与前端检查通过。未真实模型/数据库调用或重启服务。详见[Web](../apps/web/changelog/2026-10-17-explain-panel.md)、[Server](../service/server/changelog/2026-10-17-explain-proxy.md)、[Agent](../service/agent/changelog/2026-10-17-explain-host.md)。
+
+2026-10-16新增显式`zh_crop`列区域高清实验，原`zh`保持整页。2026-10-17用户确认本版可一并提交，已解除提取源码及配套测试/设计的本地忽略与专用提交拦截；运行结果、缓存和日志继续忽略。此次仅解除Git隔离，不改提取行为、生产发布状态或其他Agent改动，尚未执行提交。见[Agent记录](../service/agent/changelog/2026-10-16-zh-completion-crop.md)。
+
+2026-10-16 Explain Agent扩展只读工具：支持页码/原理号/端子精确检索、关联原页/跨页图纸、分页覆盖和按需看图，LangGraph模型工具循环及HTTP/SSE/OpenAPI契约同步。51项Explain/共94项相关离线验证通过；未挂前端/服务、未运行真实模型或写库。额外旧Supervisor2项缺历史Prompt失败，详见[交付](../service/agent/changelog/2026-10-16-explain-retrieval.md)。
+
+2026-10-16新增独立Explain Agent：LangGraph只读三表行事实、图纸索引与已保存证据，返回原页/跨页图片地址、差异/复核说明和多轮公开回答流。提供Python/CLI及宿主注入鉴权的router，业务接口/前端暂未接入；20项模块/59项组合离线测试及类型/lint通过，无真实模型或数据库调用、部署或旧Agent清理。见[记录](../service/agent/changelog/2026-10-16-explain-agent.md)。
+
 2026-10-16修复独立Worker启动404：本地缺少20261016020000迁移，现已单独部署并登记历史，原函数/桶配置已备份；只读确认PostgREST四个RPC可见与API 2.1.0。未启动提取或模型调用，见[启动排障记录](../service/server/changelog/2026-10-16-incremental-extraction.md#后续启动排障)。
 
 2026-10-16完成上传即提取的代码链路：独立Worker、三表增量发布、程序review后处理及JWT SSE工作台刷新；保留Stage2内部定向补全，无独立Stage3。API 2.1.0/OpenAPI/TS同步。62项Agent、19项API、15项浏览器、两种隔离库场景及Web检查通过；新增迁移尚未部署当前项目库，未调用付费模型或重启服务。见[Agent](../service/agent/changelog/2026-10-16-incremental-extraction.md)、[Server](../service/server/changelog/2026-10-16-incremental-extraction.md)、[Web](../apps/web/changelog/2026-10-16-incremental-extraction.md)。

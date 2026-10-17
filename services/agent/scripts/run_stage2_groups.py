@@ -271,6 +271,7 @@ class RecordingGateway:
                 "vision_total_pixels": request.metadata.get("vision_total_pixels"),
                 "vision_budget_policy": request.metadata.get("vision_budget_policy"),
                 "vision_image_count": request.metadata.get("vision_image_count"),
+                "completion_image_view": request.metadata.get("completion_image_view"),
                 "vision_input_max_side": request.metadata.get("vision_input_max_side"),
                 "vision_max_total_pixels": request.metadata.get("vision_max_total_pixels"),
                 "vision_few_shot_min_side": request.metadata.get("vision_few_shot_min_side"),

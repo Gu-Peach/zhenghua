@@ -4,6 +4,20 @@
 
 ## 进行中
 
+- [x] 2026-10-17撤销提取Agent本地忽略与专用提交拦截：核对原hook摘要并备份后，仅移除实验隔离块及专用hook；10个新增源码/Prompt/配置/测试/设计文件已恢复Git可见性，docs/test产物和Python缓存仍忽略。文档同步，保留其他Agent改动与原暂存区，不改提取行为、不运行模型/测试或写库，尚未执行提交。
+
+- [x] Explain回复增加逐字缓冲：大块delta/completed不跳过动画，支持立即显示、停止冻结和减少动态效果；Markdown标题/列表/粗体/代码/表格正确渲染，浮窗按需分包。26项浏览器回归、typecheck/lint/build及桌面/窄屏截图通过；未改后端、调用真实模型/数据库或操作用户8000/8100服务。见 `docs/apps/web/changelog/2026-10-17-explain-typewriter.md`。
+
+- [x] 排查来源解释503：8000正常，用户仅启动提取Worker、8100未监听；已补启动src.extraction_main HTTP（inline Worker=false），后端AgentBridge探活成功、Explain路由存在、鉴权后空输入422验证通过。配置标志/内部令牌一致，未改业务数据或调用模型；后台PID/日志在.runtime/explain-http，现有Worker保留。见Agent共享宿主交付中的启动排障记录。
+
+- [x] 接入Explain独立浮窗：行/页悬停与触屏入口、自动解释/流式追问、淡色可展开工具结果及原页/跨页图纸；8000 JWT代理→8100共享宿主，Pydantic/OpenAPI/TS生成同步。94项后端/Agent离线、22项浏览器回归、截图/typecheck/lint/build及13源码strict mypy通过。未调用真实模型/数据库或重启既有服务；加载新API/宿主后使用。见 `docs/apps/web/changelog/2026-10-17-explain-panel.md`。
+
+- [x] Explain Agent增加search_connections/view_drawings：兼容行入口，支持来源/目标页、原理号、起终点端子精确组合查询、分页/覆盖情况、关联图纸及按需视觉分析；LangGraph原生工具循环、身份隔离、查询/图片摘要刷新。51项Explain/共94项相关离线回归、13源码strict mypy与Ruff通过；额外旧Supervisor有2项缺失历史Prompt失败，未改旧链路。未接前端/挂载共享服务、未调用真实模型/数据库或写库。见 `docs/service/agent/changelog/2026-10-16-explain-retrieval.md`。
+
+- [x] 完成本地extraction隔离及ZH跨页列区域高清实验：新增文件本地忽略、已跟踪改动本地提交保护，保留191文件快照；显式--profile zh_crop启用，原zh整页保留。初扫不变、目标局部图替换整页、坐标回映原图，单次补全/原像素预算保持。3源码strict mypy、4文件Ruff、5文件语法、四Profile绑定、46摘要及1/5案例Schema/路径、CLI帮助与裁剪预览核对通过。用户自行跑提取测试，未运行pytest/Fake VLM/真实模型或写库，不提交。见 `docs/service/agent/changelog/2026-10-16-zh-completion-crop.md`。
+
+- [x] 在现有 `src/agent/explain_agent` 完成独立LangGraph：只读三表、原页/跨页图片与证据路径、规则冻结/回退、多轮/版本刷新及字段差异；Python、受限CLI、宿主注入身份的可挂载HTTP/SSE已提供。20项模块、连同网关/Harness/Server共59项离线测试、Ruff和9源码strict mypy通过，CLI帮助与资源打包检查通过。未挂前端/共享服务、未调用真实模型/数据库或改提取规则/执行旧清理。见 `docs/service/agent/changelog/2026-10-16-explain-agent.md`。
+
 
 - [ ] 清理旧Supervisor、纠错/自完善/评测Agent及独占Graph/API/编排/失效脚本：依赖核对及92文件审阅清单已整理，自动审批拒绝大范围删除与入口改写，尚未执行代码删除/入口停用，等待用户明确确认范围。保留独立提取、用户现有改动、样例/结果与共享基础；仅新增方案/开发边界文档，不操作数据库或重启服务。见 `docs/service/agent/independent-agents-cleanup-plan.md` 与 `independent-agents-retirement-inventory.md`。
 
@@ -205,6 +219,8 @@
 - [ ] 生产部署采用自管 Redis/Celery，还是托管队列。
 
 ## 已完成
+
+- [x] 2026-10-17完成独立profile_agent：复用提取Schema的模板填充、规则/样例/原图诊断、具体建议确认后编辑、明确指令直接编辑草稿、Expected确认和校验包输出；SDK/CLI/可注册Router与持久草稿/审计完成。33项新测试+3项Registry回归、13源码strict mypy和Ruff通过。未接规则页/正式发布、未改Explain/共享宿主、未调用真实模型或写Supabase；见Profile Agent交付记录。
 
 - [x] 2026-10-16修复Worker启动404：仅将20261016020000部署到本地zhenghua_test库，原函数/桶配置备份在被忽略的.runtime/migrations，迁移历史同事务登记；只读HTTP核对四个RPC可见及8000 API为2.1.0。未领取任务、未重启服务、未调用模型；用户重新运行Worker。
 

@@ -25,8 +25,15 @@ from src.agent.extraction_agent.domain.models.extraction_stages import (
 from src.agent.extraction_agent.infrastructure.document.json_response import _extract_json_candidate
 from src.agent.extraction_agent.infrastructure.document.model_images import prepare_vision_messages
 from src.agent.extraction_agent.profiles.zh.completion_context import target_only_context
+from src.agent.extraction_agent.profiles.zh.completion_view import (
+    PreparedCompletionView,
+    prepare_completion_example_view,
+    prepare_completion_view,
+    transform_completion_points,
+)
 from src.config import AgentSettings
 from src.domain.enums import ErrorCode
+from src.domain.errors import AgentServiceError
 from src.domain.models.profiles import ProfileBinding
 from src.domain.ports import ExtractionStageAdapter
 from src.harness.model_gateway import ModelGateway, ModelGatewayError, ModelRequest
@@ -132,9 +139,28 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
         request: CrossPageCompletionRequest,
     ) -> CrossPageCompletionData:
         preserve_current = False
+        prepared_view = PreparedCompletionView(reason="source_and_target_mode")
         if request.profile.rules.extraction.cross_page_input_mode == "target_only":
             context = target_only_context(request)
             preserve_current = context.current not in (None, "")
+            try:
+                prepared_view = await asyncio.to_thread(
+                    prepare_completion_view,
+                    request.target_page.image_path,
+                    [item.model_dump(mode="json") for item in context.references],
+                    target_pdf_page=request.target_page.pdf_page_number,
+                    rules_path=request.profile.resolved_resources.get("completion_view_rules"),
+                    input_max_side=self._settings.model_input_max_image_side,
+                    max_total_pixels=self._settings.model_max_total_image_pixels,
+                )
+            except (OSError, ValueError) as exc:
+                raise AgentServiceError(
+                    ErrorCode.PROFILE_INVALID, "Completion image view configuration is invalid."
+                ) from exc
+            if prepared_view.viewport is not None:
+                context = context.model_copy(update={
+                    "context_version": 3, "image_view": prepared_view.viewport.input_context(),
+                })
             request = request.model_copy(update={"task_context": context.model_dump_json(exclude_none=True)})
 
         def normalize(value: Any) -> dict[str, Any]:
@@ -142,6 +168,10 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
                 value, request.task_id, require_evidence=self.enforce_evidence_contract,
                 target_pdf_page=request.target_page.pdf_page_number,
             )
+            if prepared_view.viewport is not None:
+                for endpoint in result.get("intermediate_points") or []:
+                    _bind_terminal_coordinates(endpoint, request.target_page.pdf_page_number)
+                result = transform_completion_points(result, prepared_view.viewport, to_full_page=True)
             if preserve_current:
                 for field in ("current", "current_basis", "current_source_text"):
                     result[field] = None
@@ -161,6 +191,20 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             output_model=CrossPageCompletionData,
             normalize=normalize,
             item_id=request.task_id,
+            image_overrides=(
+                {str(request.target_page.image_path): prepared_view.png}
+                if prepared_view.png is not None else None
+            ),
+            input_max_side_override=(
+                max(self._settings.model_input_max_image_side,
+                    prepared_view.viewport.input_width, prepared_view.viewport.input_height)
+                if prepared_view.viewport is not None else None
+            ),
+            input_metadata={"completion_image_view": prepared_view.metadata},
+            coordinate_space=(
+                "input_view" if request.profile.rules.extraction.cross_page_input_mode == "target_only"
+                and "completion_view_rules" in request.profile.resolved_resources else "full_page"
+            ),
         )
 
     def cross_page_instruction(self, request: CrossPageCompletionRequest) -> str:
@@ -181,7 +225,8 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
                 "终点元件按任务对应出页引用→目标端附近→目标页Object Loc读取，"
                 "来源元件补充按目标回指→已存起点元件→来源页Object Loc读取。"
                 "end.terminal填写完整实际端子，terminal_strip留null；"
-                "end.terminal_coordinates是目标整图归一化坐标及目标PDF物理页。"
+                "end.terminal_coordinates按本次实际输入图归一化，image_view存在时不要自行换算整页，程序统一还原。"
+                "若线路离开裁剪边界、回指或针脚不可确认，报告uncertainties，不靠相邻线路补造。"
                 "电流沿用系统硬约束，有已存current时返回null表示保留。\n"
                 f"任务上下文：{request.task_context}\n"
                 "严格输出CrossPageCompletionData JSON，只处理这条任务。"
@@ -228,9 +273,14 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
         normalize: Any,
         input_json: str | None = None,
         item_id: str | None = None,
+        image_overrides: Mapping[str, bytes] | None = None,
+        input_max_side_override: int | None = None,
+        input_metadata: Mapping[str, Any] | None = None,
+        coordinate_space: str = "full_page",
     ) -> T:
         prompt = profile.resource(prompt_resource).read_text(encoding="utf-8")
-        prefix = self._few_shot_messages(
+        prefix = await asyncio.to_thread(
+            self._few_shot_messages,
             profile=profile,
             resource=example_resource,
             section=example_section,
@@ -245,6 +295,9 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
         if "DrawingEndpoint" in contract.get("$defs", {}):
             endpoint_schema = contract["$defs"]["DrawingEndpoint"]
             endpoint_schema["properties"]["terminal_coordinates"]["description"] = (
+                "实际端子中心在当前输入图中的归一化x/y（0到1），"
+                "有image_view时按局部图读取，不自行换算整页，程序统一映射；无法定位时null"
+                if coordinate_space == "input_view" else
                 "实际端子符号/接点中心在整张输入图片中的归一化x/y（0到1），"
                 "左上为原点，pdf_page_number使用本端图片的物理页号；无法定位时null"
             )
@@ -252,6 +305,10 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
                 *endpoint_schema.get("required", []), "terminal_coordinates",
             ]))
             prompt += (
+                "\n局部图坐标要求：按每张实际输入图片读取端子中心的归一化坐标。"
+                "task_context含image_view时返回当前局部图坐标，不自行添加裁剪偏移；程序还原整页坐标。"
+                "示例未提供image_view时其输入为整页，坐标按该示例图片读取。未知端子/位置留null。"
+            ) if coordinate_space == "input_view" else (
                 "\n通用端子坐标要求：每个可见start/end填写terminal_coordinates={x,y,pdf_page_number}。"
                 "读取实际端子符号或连接点中心，按整张图片宽高归一化到0到1，左上为原点；"
                 "不要标放线标记、文字、箭头或裁剪区域坐标，不按端子编号推算。"
@@ -287,7 +344,7 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             "detail:具体不确定证据}]报告；跨页尚未读取终点属于待补全，不能据此判断人工复核。"
         )
         system_prompt = prompt + "\n输出 JSON Schema：\n" + json.dumps(contract)
-        input_content = await asyncio.to_thread(_multimodal_content, user_text, images)
+        input_content = await asyncio.to_thread(_multimodal_content, user_text, images, image_overrides)
         messages = [
             {"role": "system", "content": system_prompt},
             *prefix,
@@ -296,12 +353,13 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
         messages, image_metadata = await asyncio.to_thread(
             prepare_vision_messages,
             messages,
-            input_max_side=self._settings.model_input_max_image_side,
+            input_max_side=input_max_side_override or self._settings.model_input_max_image_side,
             max_total_pixels=self._settings.model_max_total_image_pixels,
             few_shot_min_side=self._settings.model_fewshot_min_image_side,
         )
         if example_section == "stage3_cases":
             image_metadata["completion_input_mode"] = profile.rules.extraction.cross_page_input_mode
+        image_metadata.update(input_metadata or {})
         last_error: Exception | None = None
         for schema_attempt in range(2):
             attempt_messages = list(messages)
@@ -375,6 +433,13 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
         examples = self._examples[key]
         if section == "stage3_cases":
             examples = _select_stage3_examples(examples, input_json=input_json, limit=1)
+            if profile.rules.extraction.cross_page_input_mode == "target_only":
+                examples = [prepare_completion_example_view(
+                    example, rules_path=profile.resolved_resources.get("completion_view_rules"),
+                    input_max_side=self._settings.model_input_max_image_side,
+                    max_total_pixels=self._settings.model_max_total_image_pixels,
+                    fewshot_max_side=self._settings.model_fewshot_max_image_side,
+                ) for example in examples]
         messages: list[dict[str, Any]] = []
         for example in examples:
             images = [
@@ -391,7 +456,9 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             messages.extend(
                 [
                     {"role": "user", "content": [{"type": "text", "text": text}, *images]},
-                    {"role": "assistant", "content": json.dumps(facts_only(json.loads(example["expected_json"])), ensure_ascii=False)},
+                    {"role": "assistant", "content": json.dumps(
+                        facts_only(json.loads(example["expected_json"])), ensure_ascii=False,
+                    )},
                 ]
             )
         return messages
@@ -430,6 +497,8 @@ def _load_examples(
             image_payloads.append(
                 {
                     "name": path.name,
+                    "path": str(path),
+                    "role": image.get("role"),
                     "data_url": f"data:{mime};base64,{encoded}",
                 }
             )
@@ -503,7 +572,7 @@ def _stage3_example_score(current: Mapping[str, Any], example: Mapping[str, Any]
         score += 3
     if current_features["cross_function"] == candidate_features["cross_function"]:
         score += 1
-    if current.get("context_version") == 2:
+    if current.get("context_version") in (2, 3):
         if (
             current_features["signal_name"]
             and current_features["signal_name"] == candidate_features["signal_name"]
@@ -580,11 +649,19 @@ def _prepare_few_shot_image(path: Path, *, max_side: int) -> tuple[bytes, str]:
     return pixmap.tobytes("png"), "image/png"
 
 
-def _multimodal_content(text: str, pages: Sequence[DrawingPageInput]) -> list[dict[str, Any]]:
+def _multimodal_content(
+    text: str, pages: Sequence[DrawingPageInput], image_overrides: Mapping[str, bytes] | None = None,
+) -> list[dict[str, Any]]:
     content: list[dict[str, Any]] = [{"type": "text", "text": text}]
     for page in pages:
-        mime = mimetypes.guess_type(page.image_path.name)[0] or "image/png"
-        encoded = base64.b64encode(page.image_path.read_bytes()).decode("ascii")
+        override = (image_overrides or {}).get(str(page.image_path))
+        mime = (
+            "image/png" if override is not None
+            else mimetypes.guess_type(page.image_path.name)[0] or "image/png"
+        )
+        encoded = base64.b64encode(
+            override if override is not None else page.image_path.read_bytes()
+        ).decode("ascii")
         content.append(
             {
                 "type": "image_url",
@@ -609,7 +686,7 @@ def _normalize_classification(payload: Any) -> dict[str, Any]:
         payload = payload["result"]
     if not isinstance(payload, dict):
         raise ValueError("Page classification must be a JSON object.")
-    normalized = facts_only(dict(payload))
+    normalized: dict[str, Any] = facts_only(dict(payload))
     normalized["plant_function"] = (
         normalized.get("plant_function") or normalized.get("drawing_function") or normalized.get("function")
     )
@@ -628,7 +705,7 @@ def _normalize_page_scan(
         payload = payload["result"]
     if not isinstance(payload, dict):
         raise ValueError("Page scan must be a JSON object or array.")
-    normalized = facts_only(dict(payload))
+    normalized: dict[str, Any] = facts_only(dict(payload))
     # A legacy model occasionally used drawing_function for a numeric page.
     # Preserve real function codes such as 002.C or LV11.
     function_value = normalized.get("drawing_function")
@@ -747,7 +824,7 @@ def _normalize_cross_page(
         payload = payload.get("completion") or payload.get("result") or payload
     if not isinstance(payload, dict):
         raise ValueError("Cross-page completion must be a JSON object.")
-    normalized = facts_only(dict(payload))
+    normalized: dict[str, Any] = facts_only(dict(payload))
     normalized.setdefault("task_id", task_id)
     if normalized.get("end") is None and any(key.startswith("end_") for key in normalized):
         normalized["end"] = {

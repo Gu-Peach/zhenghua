@@ -1,5 +1,24 @@
 # Agent Service
 
+2026-10-17新增独立[Profile Agent](./src/agent/profile_agent/README.md)：根据样例/描述填充模板、基于证据诊断、确认建议或明确指令后编辑草稿、确认Expected并输出校验包。独立CLI/SDK无需另开HTTP端口；规则页与正式发布后接，不修改Explain或原始Profile。当前共享宿主未注册本模块路由。
+
+2026-10-17 Explain来源浮窗已接入8000鉴权代理与共享8100宿主，支持行/页自动解释、流式工具记录及图纸。使用下方src.extraction_main入口即可同时提供Explain API；不需要每个Agent单独端口。旧src.main未挂本功能，需在自己的终端加载新入口。完整[交付](../../docs/service/agent/changelog/2026-10-17-explain-host.md)。
+
+如果已单独启动提取Worker，可只启动HTTP宿主，不重复启动Worker：
+
+```powershell
+$env:AGENT_INLINE_WORKER = "false"
+.\.venv\Scripts\python.exe -m uvicorn src.extraction_main:app --app-dir services/agent --host 127.0.0.1 --port 8100
+```
+
+沿用services/agent/.env的数据库和模型配置。Server的SERVER_AGENT_URL默认http://127.0.0.1:8100；Server和Agent的AGENT_INTERNAL_TOKEN应一致，生产AGENT_ENV=production必须配置令牌。Worker本身没有HTTP端口，提供Explain时仍需上述共享宿主。未自动重启现有服务或调用真实模型。
+
+启动排障：终端持续显示claim_simple_extraction返回200，只能证明提取Worker正常；来源解释需要另有8100 HTTP服务。若前端提示Agent未启动，请检查http://127.0.0.1:8100/health；已单独启动Worker时，使用上面的inline=false命令补启动HTTP。2026-10-17本地已按此补启动，后台PID/日志位于.runtime/explain-http，用户现有Worker保持运行。
+
+2026-10-16 [Explain Agent](src/agent/explain_agent/README.md)已扩展为模型可调用只读工具：按来源/目标页、原理号和起终点端子精确查询，返回线表及关联图纸，支持分页覆盖和按需看图。LangGraph条件循环、查询/图像摘要刷新、HTTP/SSE与CLI契约同步；51项Explain/共94项相关离线回归、Ruff/类型检查通过。未挂8000/8100或前端、未运行真实模型/数据库或写库。见[交付](../../docs/service/agent/changelog/2026-10-16-explain-retrieval.md)。
+
+2026-10-16新增独立[Explain Agent](src/agent/explain_agent/README.md)：LangGraph按所有者权限只读当前行、原页/跨页和已保存提取证据，支持文字追问、字段差异提示及公开回答流。提供Python/CLI和由宿主注入鉴权的可挂载router，尚未挂到8000/8100或接前端，不新增服务/端口。20项模块、连同共享网关/Server共59项离线回归及Ruff/类型检查通过，未运行真实模型或写库；见[记录](../../docs/service/agent/changelog/2026-10-16-explain-agent.md)。
+
 2026-10-16新增三表增量提取Worker：上传由8000 API入队，图片/分类/初扫/每组补全/页完成分别发布。review由程序计算，模型只报告事实与不确定性。新入口独立于旧Supervisor；旧`src.main`不消费此队列。详见[交付](../../docs/service/agent/changelog/2026-10-16-incremental-extraction.md)。随后启动排障已将20261016020000部署到本地zhenghua_test库，四个RPC可见；未启动付费提取。
 
 ## 当前增量提取的启动方式

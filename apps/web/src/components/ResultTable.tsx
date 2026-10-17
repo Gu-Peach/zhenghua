@@ -1,4 +1,4 @@
-import { Check, ExternalLink, Loader2, Pencil, Trash2, X } from "lucide-react";
+import { Check, ExternalLink, Loader2, MessageCircle, Pencil, Trash2, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { changedConnectionFields, connectionDraft, editableConnectionFields, type ConnectionChanges, type ConnectionDraft, type EditableConnectionKey } from "@/apis/connection-fields";
 import type { WiringRow } from "@/apis/types";
@@ -10,10 +10,15 @@ const columns: Array<{ key: keyof WiringRow; label: string; width: number }> = [
   { key: "current", label: "电流", width: 76 }, { key: "remark", label: "备注", width: 180 }, { key: "colorMark", label: "色标", width: 80 },
 ];
 
+type OnExplain = (row: WiringRow, scope: "row" | "page") => void;
+function ExplainButton({ row, scope, onExplain }: { row: WiringRow; scope: "row" | "page"; onExplain: OnExplain }) {
+  return <button type="button" className="explain-trigger" aria-label={scope === "page" ? `解释本页 ${row.page}` : `解释端子 ${row.startTerminal || row.lineNumber}`} title={scope === "page" ? "解释本页全部端子的来源" : "解释这条连接的信息来源"} onClick={() => onExplain(row, scope)}><MessageCircle size={14} /></button>;
+}
+
 type SaveRow = (row: WiringRow, changes: ConnectionChanges, idempotencyKey: string) => Promise<void>;
 type RowEditor = { row: WiringRow; draft: ConnectionDraft; focus: EditableConnectionKey; save: SaveRow };
 
-export function ResultTable({ rows, onOpenDrawing, onOpenTarget, onHoverTarget, highlightedRowId, onSave, onRefresh, onDelete }: { rows: WiringRow[]; onOpenDrawing: (drawingId: string) => void; onOpenTarget: (row: WiringRow) => void; onHoverTarget: (rowId: string | null) => void; highlightedRowId: string | null; onSave?: SaveRow; onRefresh?: () => void; onDelete?: (row: WiringRow) => void }) {
+export function ResultTable({ rows, onOpenDrawing, onOpenTarget, onHoverTarget, highlightedRowId, onSave, onRefresh, onDelete, onExplain }: { rows: WiringRow[]; onOpenDrawing: (drawingId: string) => void; onOpenTarget: (row: WiringRow) => void; onHoverTarget: (rowId: string | null) => void; highlightedRowId: string | null; onSave?: SaveRow; onRefresh?: () => void; onDelete?: (row: WiringRow) => void; onExplain?: (row: WiringRow, scope: "row" | "page") => void }) {
   const [editor, setEditor] = useState<RowEditor | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -60,7 +65,8 @@ export function ResultTable({ rows, onOpenDrawing, onOpenTarget, onHoverTarget, 
               const field = editableConnectionFields.find(item => item.view === column.key);
               if (editor?.row.id === row.id && field) return <td key={column.key} className="editing-cell"><input aria-label={field.label} title={field.shared ? `${field.label}（同线号共享）` : field.label} value={editor.draft[field.key]} maxLength={field.maxLength} disabled={saving} autoFocus={editor.focus === field.key} onFocus={event => event.currentTarget.select()} onChange={event => { const value = event.target.value; setEditor(current => current ? { ...current, draft: { ...current.draft, [field.key]: value } } : null); }} onKeyDown={event => { if (event.nativeEvent.isComposing) return; if (event.key === "Enter") { event.preventDefault(); void save(); } if (event.key === "Escape") { event.preventDefault(); cancel(); } }} /></td>;
               const cellProps = { className: field && onSave ? "editable-cell" : undefined, onDoubleClick: () => { if (field) beginEdit(row, field.key); } };
-              if (column.key === "page") return <td key={column.key}>{index === 0 || rows[index - 1].drawingId !== row.drawingId ? <button className="source-link" type="button" onClick={() => onOpenDrawing(row.drawingId)} title="在下方显示来源图纸">{String(value)}<ExternalLink size={13} /></button> : <span className="visually-hidden">{String(value)}</span>}</td>;
+              if (column.key === "page") return <td key={column.key} className="explain-cell">{index === 0 || rows[index - 1].drawingId !== row.drawingId ? <><button className="source-link" type="button" onClick={() => onOpenDrawing(row.drawingId)} title="在下方显示来源图纸">{String(value)}<ExternalLink size={13} /></button>{onExplain ? <ExplainButton row={row} scope="page" onExplain={onExplain} /> : null}</> : <span className="visually-hidden">{String(value)}</span>}</td>;
+              if (column.key === "startTerminal") return <td key={column.key} aria-label={String(value || "-")} {...cellProps} className={field && onSave ? "editable-cell explain-cell" : "explain-cell"}><span>{String(value || "-")}</span>{onExplain ? <ExplainButton row={row} scope="row" onExplain={onExplain} /> : null}</td>;
               if (column.key === "wireNumber") return <td key={column.key}>{rows.findIndex(item => item.wireNumber === row.wireNumber) === index ? String(value ?? "-") : <span className="visually-hidden">{String(value)}</span>}</td>;
               if (column.key === "endTerminal") return <td key={column.key} {...cellProps}>{(row.isCrossPage || row.endReference?.kind === "cross-page") && value ? <button type="button" className="terminal-link" onMouseEnter={() => onHoverTarget(row.id)} onMouseLeave={() => onHoverTarget(null)} onFocus={() => onHoverTarget(row.id)} onBlur={() => onHoverTarget(null)} onClick={() => onOpenTarget(row)} title="在表格下方显示跨页目标">{String(value || "-")}<ExternalLink size={12} /></button> : <span className="terminal-static">{String(value || "-")}</span>}</td>;
               if (column.key === "current") return <td key={column.key} {...cellProps}><span className={value ? "current-value" : "empty-value"}>{String(value || "-")}</span></td>;

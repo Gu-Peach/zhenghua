@@ -17,6 +17,7 @@ from wiring_server.models import LoginInput, SessionResponse
 from wiring_server.repository import Repository, ServiceError
 from wiring_server.simple_management import ManagementService
 from wiring_server.simple_routes import install_management_routes
+from wiring_server.explain_routes import install_explain_routes
 
 
 def create_app(
@@ -33,7 +34,7 @@ def create_app(
             app.state.management = ManagementService(app.state.db)
             yield
 
-    app = FastAPI(title="Wiring Workbench Server", version="2.1.0", lifespan=lifespan)
+    app = FastAPI(title="Wiring Workbench Server", version="2.2.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(
@@ -179,6 +180,7 @@ def create_app(
         return {"status": "ok"}
 
     install_management_routes(app, identity)
+    install_explain_routes(app, identity)
     return app
 
 

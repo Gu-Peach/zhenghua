@@ -1,5 +1,9 @@
 # apps/web 前端归档
 
+- [来源解释逐字缓冲与Markdown](./changelog/2026-10-17-explain-typewriter.md)：大块/完成事件也逐字显示、立即显示/停止/减少动态效果，26项浏览器回归及前端检查通过，仅前端修改。
+
+- [独立来源解释浮窗](./changelog/2026-10-17-explain-panel.md)：行/页悬停、流式工具与图纸、追问/取消/重试，22项浏览器回归及前端检查通过，运行需加载8000/8100新代码。
+
 - [提取阶段等待、增量目录与线表展示](./changelog/2026-10-16-incremental-extraction.md)。
 
 2026-10-16结果接口的两端坐标已透传到WiringRow类型，保留独立PDF物理页；本轮仅元数据，无可视布局变化或图片高亮。见[Server坐标记录](../../service/server/changelog/2026-10-16-terminal-coordinates.md)。

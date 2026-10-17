@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Wiring Workbench Server",
-    "version": "2.1.0"
+    "version": "2.2.0"
   },
   "paths": {
     "/api/v1/auth/login": {
@@ -1558,10 +1558,334 @@
           }
         }
       }
+    },
+    "/api/v1/explain/turns/stream": {
+      "post": {
+        "summary": "Explain",
+        "operationId": "explain_api_v1_explain_turns_stream_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExplainTurn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "SSE公开事件，data为ExplainEvent。",
+            "content": {
+              "text/event-stream": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExplainEvent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "ConnectionFacts": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "batch_id": {
+            "type": "string",
+            "title": "Batch Id"
+          },
+          "record_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Record Version"
+          },
+          "page_item_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Item Id"
+          },
+          "workspace_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Code"
+          },
+          "source_drawing_page": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Drawing Page"
+          },
+          "source_pdf_page_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Source Pdf Page Number"
+          },
+          "target_drawing_page": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Drawing Page"
+          },
+          "target_pdf_page_number": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Pdf Page Number"
+          },
+          "wire_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wire Number"
+          },
+          "principle_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Principle Number"
+          },
+          "terminal_strip": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terminal Strip"
+          },
+          "voltage_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Voltage Level"
+          },
+          "start_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Code"
+          },
+          "start_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Description"
+          },
+          "start_terminal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Terminal"
+          },
+          "end_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Code"
+          },
+          "end_description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Description"
+          },
+          "end_terminal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Terminal"
+          },
+          "current_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Value"
+          },
+          "color_mark": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color Mark"
+          },
+          "remark": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remark"
+          },
+          "is_cross_page": {
+            "type": "boolean",
+            "title": "Is Cross Page",
+            "default": false
+          },
+          "needs_review": {
+            "type": "boolean",
+            "title": "Needs Review",
+            "default": false
+          },
+          "start_terminal_coordinates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TerminalPosition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "end_terminal_coordinates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TerminalPosition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "project_id",
+          "batch_id",
+          "record_version",
+          "source_pdf_page_number"
+        ],
+        "title": "ConnectionFacts"
+      },
       "ConnectionFields": {
         "properties": {
           "voltage_level": {
@@ -1729,6 +2053,248 @@
         "type": "object",
         "title": "ConnectionFields"
       },
+      "ConnectionQuery": {
+        "properties": {
+          "connection_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connection Id"
+          },
+          "drawing_page": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drawing Page"
+          },
+          "pdf_page_number": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pdf Page Number"
+          },
+          "target_drawing_page": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Drawing Page"
+          },
+          "target_pdf_page_number": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Pdf Page Number"
+          },
+          "workspace_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Code"
+          },
+          "principle_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Principle Number"
+          },
+          "wire_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wire Number"
+          },
+          "start_terminal": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Terminal"
+          },
+          "end_terminal": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Terminal"
+          },
+          "offset": {
+            "type": "integer",
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Offset",
+            "default": 0
+          },
+          "limit": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Limit",
+            "default": 50
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ConnectionQuery",
+        "description": "AND-combined exact filters; drawing_page always means the source business page."
+      },
+      "DrawingEvidence": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "source",
+              "target",
+              "reference"
+            ],
+            "title": "Role"
+          },
+          "pdf_page_number": {
+            "type": "integer",
+            "title": "Pdf Page Number"
+          },
+          "drawing_page": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drawing Page"
+          },
+          "workspace_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Code"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url"
+          },
+          "url_expires_in": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url Expires In"
+          },
+          "terminal_coordinates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TerminalPosition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "connection_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Connection Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "pdf_page_number"
+        ],
+        "title": "DrawingEvidence"
+      },
       "DrawingRead": {
         "properties": {
           "id": {
@@ -1794,6 +2360,357 @@
           "status"
         ],
         "title": "DrawingRead"
+      },
+      "EvidenceStep": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "record",
+              "source",
+              "target",
+              "profile",
+              "reference",
+              "extraction",
+              "review"
+            ],
+            "title": "Kind"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "facts": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Facts"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "kind",
+          "description"
+        ],
+        "title": "EvidenceStep"
+      },
+      "ExplainContext": {
+        "properties": {
+          "project_name": {
+            "type": "string",
+            "title": "Project Name"
+          },
+          "row": {
+            "$ref": "#/components/schemas/ConnectionFacts"
+          },
+          "profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileEvidence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "drawings": {
+            "items": {
+              "$ref": "#/components/schemas/DrawingEvidence"
+            },
+            "type": "array",
+            "title": "Drawings"
+          },
+          "recorded": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Recorded"
+          },
+          "evidence_path": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceStep"
+            },
+            "type": "array",
+            "title": "Evidence Path"
+          },
+          "gaps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Gaps"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_name",
+          "row"
+        ],
+        "title": "ExplainContext"
+      },
+      "ExplainEvent": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "context",
+              "retrieval",
+              "answer_delta",
+              "completed",
+              "tool_started",
+              "tool_completed",
+              "tool_failed"
+            ],
+            "title": "Type"
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "turn_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Turn Id"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExplainContext"
+              },
+              {
+                "$ref": "#/components/schemas/SearchResult"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "retrieval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SearchResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tool": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ToolActivity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "delta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExplainResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "conversation_id",
+          "turn_id"
+        ],
+        "title": "ExplainEvent"
+      },
+      "ExplainResponse": {
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "turn_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Turn Id"
+          },
+          "answer": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Answer"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ExplainContext"
+              },
+              {
+                "$ref": "#/components/schemas/SearchResult"
+              }
+            ],
+            "title": "Context"
+          },
+          "retrievals": {
+            "items": {
+              "$ref": "#/components/schemas/SearchResult"
+            },
+            "type": "array",
+            "title": "Retrievals"
+          },
+          "drawings": {
+            "items": {
+              "$ref": "#/components/schemas/DrawingEvidence"
+            },
+            "type": "array",
+            "title": "Drawings"
+          },
+          "retrieval_limited": {
+            "type": "boolean",
+            "title": "Retrieval Limited",
+            "default": false
+          },
+          "coverage": {
+            "items": {
+              "$ref": "#/components/schemas/SearchCoverage"
+            },
+            "type": "array",
+            "title": "Coverage"
+          },
+          "visual_pages": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Visual Pages"
+          },
+          "gaps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Gaps"
+          },
+          "history_reset": {
+            "type": "boolean",
+            "title": "History Reset",
+            "default": false
+          },
+          "cached": {
+            "type": "boolean",
+            "title": "Cached",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "turn_id",
+          "answer",
+          "context"
+        ],
+        "title": "ExplainResponse"
+      },
+      "ExplainTurn": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "connection_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Connection Id"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConnectionQuery"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "turn_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Turn Id"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Message",
+            "default": "请解释这一行的端子连接和信息来源。"
+          },
+          "batch_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Id"
+          },
+          "record_version": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Record Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id"
+        ],
+        "title": "ExplainTurn"
       },
       "ExtractionProgress": {
         "properties": {
@@ -1933,6 +2850,51 @@
           "password"
         ],
         "title": "LoginInput"
+      },
+      "ProfileEvidence": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          },
+          "checksum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checksum"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "record_evidence",
+              "project_reference"
+            ],
+            "title": "Source"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "key",
+          "source"
+        ],
+        "title": "ProfileEvidence"
       },
       "ProfileReferenceCreate": {
         "properties": {
@@ -2095,6 +3057,97 @@
           "message"
         ],
         "title": "ReviewReason"
+      },
+      "SearchCoverage": {
+        "properties": {
+          "filters": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Filters"
+          },
+          "returned_count": {
+            "type": "integer",
+            "title": "Returned Count"
+          },
+          "complete": {
+            "type": "boolean",
+            "title": "Complete"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "filters",
+          "returned_count",
+          "complete"
+        ],
+        "title": "SearchCoverage"
+      },
+      "SearchResult": {
+        "properties": {
+          "project_name": {
+            "type": "string",
+            "title": "Project Name"
+          },
+          "batch_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Id"
+          },
+          "query": {
+            "$ref": "#/components/schemas/ConnectionQuery"
+          },
+          "rows": {
+            "items": {
+              "$ref": "#/components/schemas/ExplainContext"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "drawings": {
+            "items": {
+              "$ref": "#/components/schemas/DrawingEvidence"
+            },
+            "type": "array",
+            "title": "Drawings"
+          },
+          "has_more": {
+            "type": "boolean",
+            "title": "Has More",
+            "default": false
+          },
+          "next_offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Offset"
+          },
+          "gaps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Gaps"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_name",
+          "query"
+        ],
+        "title": "SearchResult"
       },
       "SessionResponse": {
         "properties": {
@@ -2806,6 +3859,88 @@
         ],
         "title": "TerminalCoordinates",
         "description": "Normalized terminal center on its own full-page image, not a business page number."
+      },
+      "TerminalPosition": {
+        "properties": {
+          "x": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "X"
+          },
+          "y": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Y"
+          },
+          "pdf_page_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Pdf Page Number"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "x",
+          "y",
+          "pdf_page_number"
+        ],
+        "title": "TerminalPosition"
+      },
+      "ToolActivity": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "enum": [
+              "load_connection",
+              "search_connections",
+              "view_drawings",
+              "unsupported"
+            ],
+            "title": "Name"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Arguments"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "ToolActivity"
       },
       "ValidationError": {
         "properties": {

@@ -350,10 +350,94 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/explain/turns/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Explain */
+        post: operations["explain_api_v1_explain_turns_stream_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** ConnectionFacts */
+        ConnectionFacts: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Batch Id */
+            batch_id: string;
+            /** Record Version */
+            record_version: number;
+            /** Page Item Id */
+            page_item_id?: string | null;
+            /** Workspace Code */
+            workspace_code?: string | null;
+            /** Source Drawing Page */
+            source_drawing_page?: string | null;
+            /** Source Pdf Page Number */
+            source_pdf_page_number: number;
+            /** Target Drawing Page */
+            target_drawing_page?: string | null;
+            /** Target Pdf Page Number */
+            target_pdf_page_number?: number | null;
+            /** Wire Number */
+            wire_number?: string | null;
+            /** Principle Number */
+            principle_number?: string | null;
+            /** Terminal Strip */
+            terminal_strip?: string | null;
+            /** Voltage Level */
+            voltage_level?: string | null;
+            /** Start Code */
+            start_code?: string | null;
+            /** Start Description */
+            start_description?: string | null;
+            /** Start Terminal */
+            start_terminal?: string | null;
+            /** End Code */
+            end_code?: string | null;
+            /** End Description */
+            end_description?: string | null;
+            /** End Terminal */
+            end_terminal?: string | null;
+            /** Current Value */
+            current_value?: string | null;
+            /** Color Mark */
+            color_mark?: string | null;
+            /** Remark */
+            remark?: string | null;
+            /**
+             * Is Cross Page
+             * @default false
+             */
+            is_cross_page: boolean;
+            /**
+             * Needs Review
+             * @default false
+             */
+            needs_review: boolean;
+            start_terminal_coordinates?: components["schemas"]["TerminalPosition"] | null;
+            end_terminal_coordinates?: components["schemas"]["TerminalPosition"] | null;
+        };
         /** ConnectionFields */
         ConnectionFields: {
             /** Voltage Level */
@@ -383,6 +467,63 @@ export interface components {
             /** Is Cross Page */
             is_cross_page?: ("same_page" | "cross_page" | "unknown") | null;
         };
+        /**
+         * ConnectionQuery
+         * @description AND-combined exact filters; drawing_page always means the source business page.
+         */
+        ConnectionQuery: {
+            /** Connection Id */
+            connection_id?: string | null;
+            /** Drawing Page */
+            drawing_page?: string | null;
+            /** Pdf Page Number */
+            pdf_page_number?: number | null;
+            /** Target Drawing Page */
+            target_drawing_page?: string | null;
+            /** Target Pdf Page Number */
+            target_pdf_page_number?: number | null;
+            /** Workspace Code */
+            workspace_code?: string | null;
+            /** Principle Number */
+            principle_number?: string | null;
+            /** Wire Number */
+            wire_number?: string | null;
+            /** Start Terminal */
+            start_terminal?: string | null;
+            /** End Terminal */
+            end_terminal?: string | null;
+            /**
+             * Offset
+             * @default 0
+             */
+            offset: number;
+            /**
+             * Limit
+             * @default 50
+             */
+            limit: number;
+        };
+        /** DrawingEvidence */
+        DrawingEvidence: {
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "source" | "target" | "reference";
+            /** Pdf Page Number */
+            pdf_page_number: number;
+            /** Drawing Page */
+            drawing_page?: string | null;
+            /** Workspace Code */
+            workspace_code?: string | null;
+            /** Image Url */
+            image_url?: string | null;
+            /** Url Expires In */
+            url_expires_in?: number | null;
+            terminal_coordinates?: components["schemas"]["TerminalPosition"] | null;
+            /** Connection Ids */
+            connection_ids?: string[];
+        };
         /** DrawingRead */
         DrawingRead: {
             /** Id */
@@ -401,6 +542,136 @@ export interface components {
             image_url?: string | null;
             /** Reference Note */
             reference_note?: string | null;
+        };
+        /** EvidenceStep */
+        EvidenceStep: {
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "record" | "source" | "target" | "profile" | "reference" | "extraction" | "review";
+            /** Description */
+            description: string;
+            /** Facts */
+            facts?: {
+                [key: string]: unknown;
+            };
+        };
+        /** ExplainContext */
+        ExplainContext: {
+            /** Project Name */
+            project_name: string;
+            row: components["schemas"]["ConnectionFacts"];
+            profile?: components["schemas"]["ProfileEvidence"] | null;
+            /** Drawings */
+            drawings?: components["schemas"]["DrawingEvidence"][];
+            /** Recorded */
+            recorded?: {
+                [key: string]: unknown;
+            };
+            /** Evidence Path */
+            evidence_path?: components["schemas"]["EvidenceStep"][];
+            /** Gaps */
+            gaps?: string[];
+        };
+        /** ExplainEvent */
+        ExplainEvent: {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "context" | "retrieval" | "answer_delta" | "completed" | "tool_started" | "tool_completed" | "tool_failed";
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /**
+             * Turn Id
+             * Format: uuid
+             */
+            turn_id: string;
+            /** Context */
+            context?: components["schemas"]["ExplainContext"] | components["schemas"]["SearchResult"] | null;
+            retrieval?: components["schemas"]["SearchResult"] | null;
+            tool?: components["schemas"]["ToolActivity"] | null;
+            /** Delta */
+            delta?: string | null;
+            result?: components["schemas"]["ExplainResponse"] | null;
+        };
+        /** ExplainResponse */
+        ExplainResponse: {
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /**
+             * Turn Id
+             * Format: uuid
+             */
+            turn_id: string;
+            /** Answer */
+            answer: string;
+            /** Context */
+            context: components["schemas"]["ExplainContext"] | components["schemas"]["SearchResult"];
+            /** Retrievals */
+            retrievals?: components["schemas"]["SearchResult"][];
+            /** Drawings */
+            drawings?: components["schemas"]["DrawingEvidence"][];
+            /**
+             * Retrieval Limited
+             * @default false
+             */
+            retrieval_limited: boolean;
+            /** Coverage */
+            coverage?: components["schemas"]["SearchCoverage"][];
+            /** Visual Pages */
+            visual_pages?: number[];
+            /** Gaps */
+            gaps?: string[];
+            /**
+             * History Reset
+             * @default false
+             */
+            history_reset: boolean;
+            /**
+             * Cached
+             * @default false
+             */
+            cached: boolean;
+        };
+        /** ExplainTurn */
+        ExplainTurn: {
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Connection Id */
+            connection_id?: string | null;
+            query?: components["schemas"]["ConnectionQuery"] | null;
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id?: string;
+            /**
+             * Turn Id
+             * Format: uuid
+             */
+            turn_id?: string;
+            /**
+             * Message
+             * @default 请解释这一行的端子连接和信息来源。
+             */
+            message: string;
+            /** Batch Id */
+            batch_id?: string | null;
+            /** Record Version */
+            record_version?: number | null;
         };
         /** ExtractionProgress */
         ExtractionProgress: {
@@ -468,6 +739,20 @@ export interface components {
             /** Password */
             password: string;
         };
+        /** ProfileEvidence */
+        ProfileEvidence: {
+            /** Key */
+            key: string;
+            /** Version */
+            version?: string | null;
+            /** Checksum */
+            checksum?: string | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "record_evidence" | "project_reference";
+        };
         /** ProfileReferenceCreate */
         ProfileReferenceCreate: {
             /** Profile Key */
@@ -531,6 +816,38 @@ export interface components {
             field?: string | null;
             /** Message */
             message: string;
+        };
+        /** SearchCoverage */
+        SearchCoverage: {
+            /** Filters */
+            filters: {
+                [key: string]: unknown;
+            };
+            /** Returned Count */
+            returned_count: number;
+            /** Complete */
+            complete: boolean;
+        };
+        /** SearchResult */
+        SearchResult: {
+            /** Project Name */
+            project_name: string;
+            /** Batch Id */
+            batch_id?: string | null;
+            query: components["schemas"]["ConnectionQuery"];
+            /** Rows */
+            rows?: components["schemas"]["ExplainContext"][];
+            /** Drawings */
+            drawings?: components["schemas"]["DrawingEvidence"][];
+            /**
+             * Has More
+             * @default false
+             */
+            has_more: boolean;
+            /** Next Offset */
+            next_offset?: number | null;
+            /** Gaps */
+            gaps?: string[];
         };
         /** SessionResponse */
         SessionResponse: {
@@ -764,6 +1081,35 @@ export interface components {
             y: number;
             /** Pdf Page Number */
             pdf_page_number: number;
+        };
+        /** TerminalPosition */
+        TerminalPosition: {
+            /** X */
+            x: number;
+            /** Y */
+            y: number;
+            /** Pdf Page Number */
+            pdf_page_number: number;
+        };
+        /** ToolActivity */
+        ToolActivity: {
+            /** Id */
+            id: string;
+            /**
+             * Name
+             * @enum {string}
+             */
+            name: "load_connection" | "search_connections" | "view_drawings" | "unsupported";
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            };
+            /** Result */
+            result?: {
+                [key: string]: unknown;
+            } | null;
+            /** Error */
+            error?: string | null;
         };
         /** ValidationError */
         ValidationError: {
@@ -1648,6 +1994,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SimpleImportRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    explain_api_v1_explain_turns_stream_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExplainTurn"];
+            };
+        };
+        responses: {
+            /** @description SSE公开事件，data为ExplainEvent。 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": unknown;
+                    "application/json": components["schemas"]["ExplainEvent"];
                 };
             };
             /** @description Validation Error */

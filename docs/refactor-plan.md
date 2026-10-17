@@ -6,6 +6,14 @@
 
 ## 1. 重构结论
 
+2026-10-17独立Profile Agent方案见[ADR-0026](./adr/0026-independent-profile-agent.md)：复用固定提取Schema，以可配置模板填充规则及图像案例，基于证据诊断，确认或明确指令后编辑隔离草稿并输出可验证规则包。本轮不接界面/正式发布，不修改并行Explain实现。
+
+2026-10-17 Explain已通过8000 JWT代理接入8100共享宿主，新增独立前端来源浮窗、行/页入口与工具结果/图纸流；公共DTO从Agent生成Server适配器再生成TS，不让Server导入Agent执行代码。代码与离线验收完成，未重启实际服务；见[ADR-0025](./adr/0025-explain-panel-integration.md)。
+
+2026-10-16 Explain从固定行解释扩展为行/页精确检索工具循环：search_connections读取线表及关联图纸，view_drawings按需提供图像；前端选择与身份/项目边界分离，查询/图片摘要每轮刷新，分页覆盖显式返回。独立模块已离线验证，未接前端或共享服务；见[ADR-0024](./adr/0024-explain-retrieval-tools.md)。
+
+2026-10-16 独立Explain Agent实施设计见[ADR-0023](./adr/0023-independent-explain-agent.md)：按可信身份只读三表行记录和图纸证据，LangGraph生成公开解释及多轮回答；不接旧Supervisor、不改提取或业务数据，缺失历史证据明确说明。
+
 2026-10-16 提取复核改为统一后处理：VLM报告事实/不确定性，程序输出复核标志、原因和阶段状态，待补全与最终缺失分别处理；设计见[复核计划](./service/agent/extraction-review-plan.md)。用户已确认同时实施上传即提取、逐步写库和前端实时展示，见[ADR 0022](./adr/0022-incremental-extraction.md)；不执行此前待确认的旧Agent清理。
 
 2026-10-16 用户授权清理旧Supervisor/纠错/自完善等失效控制面，先独立开发extraction/explain/profile能力，未来再统一主Deep Agent；共享服务保留最小探活/本地规则只读能力，不启用旧业务表任务链路。见 [ADR-0021](./adr/0021-independent-agents-before-orchestration.md)。
