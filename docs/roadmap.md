@@ -1,5 +1,7 @@
 # 开发路线
 
+2026-10-17完成ZH局部补全2.2.1代码/静态修正：空响应有限校验重试并保留失败原因、重复N线来源/信号匹配及两组对照；初扫和预算不变。未运行测试/模型或写库，真实精度由用户新目录复测，整体阶段状态不变。见[记录](./service/agent/changelog/2026-10-17-zh-completion-response.md)。
+
 2026-10-17 Profile发布失败已定位并补齐本地20261017010000迁移：已上传包摘要匹配，发布RPC/权限/REST缓存就绪，项目/线表/规则/Storage摘要不变。26项后端与2项独立SQL及Ruff/mypy通过；未代发用户规则或启停服务，用户直接重试发布，最终业务发布状态待确认，整体阶段状态不变。见[排障记录](./service/server/changelog/2026-10-17-profile-publication-missing-migration.md)。
 
 2026-10-17按用户要求取消Profile发布的负例数量门槛：有负例继续校验/使用，没负例不阻塞；34项Agent离线、17项浏览器及类型/lint/build、Ruff/mypy通过。未代为发布、改业务库或操作用户服务，整体阶段状态不变。见[负例可选记录](./service/agent/changelog/2026-10-17-profile-optional-negative.md)。

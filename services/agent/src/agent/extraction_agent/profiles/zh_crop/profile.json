@@ -1,9 +1,9 @@
 {
   "manifest_version": 1,
   "key": "zh_crop",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "display_name": "振华跨页局部高清（本地实验）",
-  "description": "Local target-column image-view experiment; scan rules unchanged.",
+  "description": "Target-column completion with bounded empty-response validation and source/signal matching for repeated N lines.",
   "status": "experimental",
   "adapter": "zh_native",
   "resource_mode": "legacy_reference",
@@ -12,7 +12,7 @@
     "page_scan_prompt": "../../prompts/zh/page_scan_index.md",
     "cross_page_prompt": "../../prompts/zh/page_connection_completion_crop.md",
     "classification_examples": "../../prompts/zh/examples_page_classification",
-    "wiring_examples": "../../prompts/zh/examples_wiring/002c",
+    "wiring_examples": "examples_wiring",
     "routing_rules": "rules.json",
     "completion_view_rules": "completion_view.json",
     "completion_view_provenance": "completion_view.provenance.json"

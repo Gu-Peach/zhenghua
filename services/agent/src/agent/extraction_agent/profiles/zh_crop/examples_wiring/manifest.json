@@ -1,0 +1,111 @@
+{
+  "version": 14,
+  "description": "ZH crop 2.2.1: preserve the v13 scan and completion fixtures; add paired repeated-N examples on 005C01. Runtime still selects one completion example.",
+  "images": {
+    "003c01": "images/003c01.png",
+    "004c01": "images/004c01.png",
+    "080c10": "images/080c10.png",
+    "003c31": "images/003c31.png",
+    "005c01": "images/005c01.png"
+  },
+  "stage2_cases": [
+    {
+      "id": "003c01_marked_segments",
+      "title": "003.C/1整页：从放线斜杠读XA/XD10出页端子；同页XD3段方向待复核，保留端子坐标",
+      "expected": "stage2/003c01.expected.json",
+      "images": [
+        {
+          "path": "images/003c01.png",
+          "role": "source_page",
+          "note": "15条跨页来源段、2条同页方向待复核段；不把斜杠上方断路器到XA/XD10的连接代替本段。 电流另沿相线查对应断路器：XA:8～13为160A，XD10:13～15为80A，N/PE/控制为空，不改变端点。"
+        }
+      ]
+    }
+  ],
+  "stage3_cases": [
+    {
+      "id": "c01_xa8_to_080c10_xd10_1",
+      "title": "003C01 XA:8到080C10 XD10:1：对应原理号/引用与分图端子坐标（目标图＋初扫来源事实）",
+      "input": "completion/c01_xa8_to_080c10_xd10_1.task.json",
+      "expected": "completion/c01_xa8_to_080c10_xd10_1.expected.json",
+      "images": [
+        {
+          "path": "images/080c10.png",
+          "role": "target_page"
+        }
+      ]
+    },
+    {
+      "id": "c01_xa11_to_003c31_xd10_1",
+      "title": "003C01中间FC12组XA:11到003C31 XD10:1：同工作区省略功能号的引用、160A与目标坐标（目标图＋初扫来源事实）",
+      "input": "completion/c01_xa11_to_003c31_xd10_1.task.json",
+      "expected": "completion/c01_xa11_to_003c31_xd10_1.expected.json",
+      "images": [
+        {
+          "path": "images/003c31.png",
+          "role": "target_page"
+        }
+      ]
+    },
+    {
+      "id": "c01_nbar_to_004c01_xd10_4",
+      "title": "003C01 N-BAR到004C01 XD10:4：区分重复N原理号、来源回指及坐标（目标图＋初扫来源事实）",
+      "input": "completion/c01_nbar_to_004c01_xd10_4.task.json",
+      "expected": "completion/c01_nbar_to_004c01_xd10_4.expected.json",
+      "images": [
+        {
+          "path": "images/004c01.png",
+          "role": "target_page"
+        }
+      ]
+    },
+    {
+      "id": "repeated_n_requires_source_identity",
+      "title": "目标003C01三条002C0600：缺少来源身份时不猜N线终点",
+      "input": "completion/repeated_n_requires_source_identity.task.json",
+      "expected": "completion/repeated_n_requires_source_identity.expected.json",
+      "images": [
+        {
+          "path": "images/003c01.png",
+          "role": "target_page"
+        }
+      ]
+    },
+    {
+      "id": "c01_nbar_to_003c31_nbar",
+      "title": "003C01到003C31：N-BAR独立母排，不继承相邻XD10排号",
+      "input": "completion/c01_nbar_to_003c31_nbar.task.json",
+      "expected": "completion/c01_nbar_to_003c31_nbar.expected.json",
+      "images": [
+        {
+          "path": "images/003c31.png",
+          "role": "target_page"
+        }
+      ]
+    },
+    {
+      "id": "c02_fc11_n_to_005c01_x21_5",
+      "title": "同页重复002C0600：来源004C02的-FC11_N对应X21:5，不选另一条N线",
+      "input": "completion/c02_fc11_n_to_005c01_x21_5.task.json",
+      "expected": "completion/c02_fc11_n_to_005c01_x21_5.expected.json",
+      "images": [
+        {
+          "path": "images/005c01.png",
+          "role": "target_page"
+        }
+      ]
+    },
+    {
+      "id": "c09_lcm_n_to_005c01_x2_10",
+      "title": "同页重复002C0600：来源004C09的-LCM_FC50_N对应X2:10，不选另一条N线",
+      "input": "completion/c09_lcm_n_to_005c01_x2_10.task.json",
+      "expected": "completion/c09_lcm_n_to_005c01_x2_10.expected.json",
+      "images": [
+        {
+          "path": "images/005c01.png",
+          "role": "target_page"
+        }
+      ]
+    }
+  ]
+}

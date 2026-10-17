@@ -209,7 +209,12 @@ def _apply_cross_page_completion(
         )
     else:
         raw_connection["end"] = None
-        raw_connection["completion_state"] = "unavailable"
+        raw_connection["completion_state"] = (
+            "failed" if result.get("completion_state") == "failed" else "unavailable"
+        )
+        raw_connection["uncertainties"] = [
+            *raw_connection.get("uncertainties", []), *list(result.get("uncertainties") or []),
+        ]
         raw_connection["status"] = "needs_review"
         raw_connection["external_source_required"] = True
         reasons = list(result.get("warnings") or []) + [
@@ -387,9 +392,11 @@ async def _resolve_cross_page_node(
                 raise
             result = {
                 "task_id": task_id,
+                "completion_state": "failed",
                 "status": "needs_review",
                 "needs_review": True,
                 "end": None,
+                "uncertainties": [{"field": "end", "detail": "补全调用或响应校验失败；具体原因见warnings"}],
                 "warnings": [str(exc)],
             }
             # Unclear model endpoints are empty facts, not a barrier for later pages.

@@ -1,6 +1,6 @@
 {
   "version": "2.1.1",
-  "review_basis": "2026-10-16: retain the user-confirmed manifest v13 and Profile 2.1.1; common review contract 1.0.0 now owns final review decisions. Updated source checksums and replayed actual-image fixtures through Fake VLM with field-level comparisons; no paid VLM or current project database writes. 2026-10-16 local crop experiment: base ZH prompts/rules/manifest remain unchanged; shared adapter/context and local CLI diagnostic checksums refreshed for the optional image-view extension. Cropping is opt-in via experimental zh_crop, not enabled for zh.",
+  "review_basis": "2026-10-16: retain the user-confirmed manifest v13 and Profile 2.1.1; common review contract 1.0.0 now owns final review decisions. Updated source checksums and replayed actual-image fixtures through Fake VLM with field-level comparisons; no paid VLM or current project database writes. 2026-10-16 local crop experiment: base ZH prompts/rules/manifest remain unchanged; shared adapter/context and local CLI diagnostic checksums refreshed for the optional image-view extension. Cropping is opt-in via experimental zh_crop, not enabled for zh. 2026-10-17: ZH response-content validation and graph failure/uncertainty merge updated; base ZH prompts/manifest/expected remain unchanged. No model or regression tests executed in this change; static checks only.",
   "assets": [
     {
       "path": "completion/c01_nbar_to_003c31_nbar.expected.json",
@@ -82,7 +82,7 @@
     },
     {
       "path": "services/agent/src/agent/extraction_agent/infrastructure/zh_vlm_stages.py",
-      "checksum": "sha256:eeb52d09e2f78e5afac7626a36eb03dbfc8bef82b0e6ebe161116c4014f364a9"
+      "checksum": "sha256:01913f7089e9700d448c4d9a65fead16335cf66da373d84c693d1f8be80351e6"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/graphs/document_extraction/helpers.py",
@@ -102,7 +102,7 @@
     },
     {
       "path": "services/agent/src/agent/extraction_agent/graphs/document_extraction/cross_page.py",
-      "checksum": "sha256:38c7c031daa4eeaa5052f49b6cc54cba40260a2d8a5b91f101a26f06c035d6e5"
+      "checksum": "sha256:e9b4b5161e568235004b3cd3420494aea1c72db1473fc8279d83fadeae9f0262"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/domain/models/wiring.py",

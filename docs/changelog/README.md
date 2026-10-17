@@ -1,5 +1,7 @@
 # Changelog
 
+2026-10-17：ZH局部跨页补全升为zh_crop 2.2.1，拒绝将空对象默认成有效结果，使用已有最多两次校验重试并保留失败/视觉原因；同号N线按来源业务页和完整信号匹配，新增005C01两组对照，正常路径仍单图/单案例。初扫/坐标/数据库保持，静态核对完成，未运行测试/模型，效果待用户复测。见[Agent记录](../service/agent/changelog/2026-10-17-zh-completion-response.md)。
+
 2026-10-17：修复Profile发布“数据操作失败”的本地部署缺口：补齐既有发布RPC/保护触发器及迁移登记，REST Schema已刷新，已上传包可复用；业务内容摘要不变，未代为发布规则。缺函数返回明确且安全的配置错误，26项后端和2项独立SQL及Ruff/mypy通过。用户在原草稿直接重试，详见[Server排障](../service/server/changelog/2026-10-17-profile-publication-missing-migration.md)。
 
 2026-10-17：Profile规则发布的负例改为可选输入，取消缺负例拦截并同步聊天/表单提示；已提供的负例继续校验、打包和使用，阶段确认等其余校验保留。34项Agent离线、17项浏览器及类型/lint/build、Ruff/mypy通过。未发布真实规则或操作用户服务，需重载8100后恢复对话。见[记录](../service/agent/changelog/2026-10-17-profile-optional-negative.md)。

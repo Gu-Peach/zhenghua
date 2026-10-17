@@ -1,5 +1,7 @@
 # Agent 服务设计索引
 
+- [ZH跨页空响应与重复N线](./changelog/2026-10-17-zh-completion-response.md)：zh_crop 2.2.1，默认值前校验/有限重试、失败与歧义保留、两组同号N线对照；初扫和图片预算保持，真实效果待用户复测。
+
 - [规则发布负例可选](./changelog/2026-10-17-profile-optional-negative.md)：未提供负例不拦截，已提供负例仍校验并打包使用。
 
 - [更换原页后NO_CROSS_PAGE_TASK修复](./changelog/2026-10-17-profile-source-replacement.md)：换图先重建并确认初扫，隔离旧图事实，补全前检查实际引用。

@@ -167,6 +167,7 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             result = _normalize_cross_page(
                 value, request.task_id, require_evidence=self.enforce_evidence_contract,
                 target_pdf_page=request.target_page.pdf_page_number,
+                require_response=self.zh_endpoint_semantics,
             )
             if prepared_view.viewport is not None:
                 for endpoint in result.get("intermediate_points") or []:
@@ -227,6 +228,8 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
                 "end.terminal填写完整实际端子，terminal_strip留null；"
                 "end.terminal_coordinates按本次实际输入图归一化，image_view存在时不要自行换算整页，程序统一还原。"
                 "若线路离开裁剪边界、回指或针脚不可确认，报告uncertainties，不靠相邻线路补造。"
+                "N/PE同号时先核对目标图回指的来源业务页和完整信号名，不能只凭原理号选相邻线路。"
+                "未找到时明确返回end=null和原因，不能返回{}或只返回task_id。"
                 "电流沿用系统硬约束，有已存current时返回null表示保留。\n"
                 f"任务上下文：{request.task_context}\n"
                 "严格输出CrossPageCompletionData JSON，只处理这条任务。"
@@ -338,6 +341,14 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
         # The output protocol is shared. The switch above only changes the
         # ZH-specific semantics, never whether ABB receives a JSON contract.
         contract = facts_only(contract)
+        if output_model is CrossPageCompletionData and self.zh_endpoint_semantics:
+            contract["required"] = list(dict.fromkeys([*contract.get("required", []), "end"]))
+            contract["anyOf"] = [
+                {"required": ["source_note"],
+                 "properties": {"source_note": {"type": "string", "minLength": 1}}},
+                {"required": ["uncertainties"],
+                 "properties": {"uncertainties": {"type": "array", "minItems": 1}}},
+            ]
         prompt += (
             "\n复核职责：只输出识别事实与依据。不输出status、needs_review、review_reasons、processing_status，"
             "这些字段由后处理决定。视觉歧义用uncertainties=[{field:direction/start/end/page/connection,"
@@ -464,11 +475,20 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
         return messages
 
 
+class _CompletionResponseError(ValueError):
+    """A ZH completion omitted its endpoint decision or readable evidence."""
+
+
 def _schema_retry_instruction(error: Exception | None) -> str:
     """Report bounded parse diagnostics without replaying a huge invalid answer."""
     detail = "输出不符合字段Schema"
     if isinstance(error, json.JSONDecodeError):
         detail = f"JSON语法错误：{error.msg}；行{error.lineno}、列{error.colno}、位置{error.pos}"
+    elif isinstance(error, _CompletionResponseError):
+        detail = (
+            f"{error}。必须返回end和source_note或uncertainties；"
+            "无法匹配时返回end=null并说明实际缺少的证据，不能返回{}或仅任务号"
+        )
     return (
         f"上次输出未通过校验（{detail}）。请按提供的JSON Schema重新输出单个完整合法JSON对象；"
         "不要输出解释、Markdown、重复连接或多份答案，使用紧凑JSON并省略无值的可选字段。"
@@ -818,13 +838,27 @@ def _normalize_page_scan(
 
 
 def _normalize_cross_page(
-    payload: Any, task_id: str, *, require_evidence: bool = False, target_pdf_page: int | None = None
+    payload: Any, task_id: str, *, require_evidence: bool = False, target_pdf_page: int | None = None,
+    require_response: bool = False,
 ) -> dict[str, Any]:
     if isinstance(payload, dict):
         payload = payload.get("completion") or payload.get("result") or payload
     if not isinstance(payload, dict):
         raise ValueError("Cross-page completion must be a JSON object.")
     normalized: dict[str, Any] = facts_only(dict(payload))
+    if require_response:
+        if normalized.get("task_id") not in (None, task_id):
+            raise _CompletionResponseError("补全task_id与当前任务不符")
+        if "end" not in normalized and not any(key.startswith("end_") for key in normalized):
+            raise _CompletionResponseError("补全响应缺少end字段，空对象不是有效提取结果")
+        uncertainties = normalized.get("uncertainties")
+        has_uncertainty = isinstance(uncertainties, list) and any(
+            isinstance(item, dict) and isinstance(item.get("detail"), str) and item["detail"].strip()
+            for item in uncertainties
+        )
+        note = normalized.get("source_note")
+        if not (isinstance(note, str) and note.strip()) and not has_uncertainty:
+            raise _CompletionResponseError("补全响应没有接线依据或无法确认的原因")
     normalized.setdefault("task_id", task_id)
     if normalized.get("end") is None and any(key.startswith("end_") for key in normalized):
         normalized["end"] = {

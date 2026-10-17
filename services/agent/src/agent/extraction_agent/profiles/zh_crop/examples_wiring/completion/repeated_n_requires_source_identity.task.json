@@ -1,0 +1,15 @@
+{
+  "context_version": 2,
+  "task_id": "repeated_n_requires_source_identity",
+  "source_page": {},
+  "target_page": {
+    "pdf_page_number": 60,
+    "drawing_function": "003.C",
+    "drawing_page_number": 1,
+    "object_location": "+01F11.1"
+  },
+  "line_number": "002C0600",
+  "signal_name": null,
+  "references": [],
+  "source_component": null
+}

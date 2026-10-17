@@ -1,6 +1,8 @@
 # zh_crop：本地局部高清实验
 
-显式使用--profile zh_crop加载2.2.0 experimental规则；原--profile zh仍加载2.1.1并使用整页。初扫Prompt、规则、1组初扫/5组补全原始案例与基线复用，不重新扩展样例。
+显式使用--profile zh_crop加载2.2.1 experimental规则；原--profile zh仍加载2.1.1并使用整页。初扫Prompt不改，案例目录保留原1组初扫/5组补全的逐字节副本，另加005C01上两条重复N线的对照，运行时仍只选1个补全案例。
+
+2.2.1修复空对象被默认值当成有效未知的问题：ZH补全必须有end（可null）及source_note或uncertainties说明，空对象/仅任务号进入已有最多两次校验重试；耗尽后保留失败原因并继续。重复N/PE按来源业务页和完整信号名匹配目标回指，原理号只辅助，不把目标地址当来源地址。FC11_N对应X21:5，LCM_FC50_N对应X2:10，这些值只作为该图的已确认案例，不在程序中硬编码。
 
 仅跨页补全按唯一有效列号裁原始目标图的全高窄带，左右保留0.95列余量。图框约定为0～9列，列号缺失/冲突/越界或宽高比不支持时调用前回退原图。不会另调模型定位，也不为视图外未确认线路自动再调模型。
 
@@ -18,8 +20,8 @@ completion_view.json的enabled可关闭裁剪进行对照；completion_view.prov
   --profile zh_crop `
   --model "Qwen3.8 27B" `
   --groups 003.C 004.C `
-  --output-dir docs/test/run_stage2_crop_001 `
-  --run-id stage2-crop-001
+  --output-dir docs/test/run_stage2_crop_002 `
+  --run-id stage2-crop-002
 ```
 
 输出result.xlsx保持14列及原图归一化坐标；调用日志的completion_image_view用于查看裁剪框或整页回退原因。不要复用旧运行目录进行新旧规则对比。

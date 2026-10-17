@@ -1,6 +1,6 @@
 # Extraction Agent
 
-新增`zh_crop@2.2.0`实验规则：按列裁目标图、保持单次调用与原输入像素预算，输出坐标仍映射回整页。用`--profile zh_crop`测试；`--profile zh`仍为2.1.1整页方式。说明见[实验规则](./profiles/zh_crop/README.md)。2026-10-17已按用户要求解除提取源码、配套测试及设计文档的本地忽略和提交拦截，可纳入版本控制；测试运行产物仍忽略。
+新增`zh_crop@2.2.1`实验规则：按列裁目标图，输出坐标仍映射回整页；空响应进入既有最多两次校验重试，失败原因/视觉歧义保留并继续；重复N线按来源页及完整信号匹配，补两组005C01对照案例，仍只选一个。初扫、原输入像素预算不变，用`--profile zh_crop`测试；`--profile zh`仍为2.1.1整页Prompt/案例。说明见[实验规则](./profiles/zh_crop/README.md)。已解除本地忽略/提交拦截，测试运行产物仍忽略。
 
 2026-10-16新增`application/incremental_worker.py`和`infrastructure/incremental_repository.py`，为Stage1/Stage2接入三表增量发布与租约恢复；`application/review.py`统一生成复核原因，模型输出只保留事实。旧CLI仍默认内存，不自动写库。在线启动见[Agent README](../../../README.md#当前增量提取的启动方式)，设计见[ADR 0022](../../../../../docs/adr/0022-incremental-extraction.md)。
 
