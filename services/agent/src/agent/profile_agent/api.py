@@ -13,7 +13,7 @@ from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
-from pydantic import Field
+from pydantic import Field, ValidationError
 
 from src.domain.errors import AgentServiceError
 from src.domain.models.common import StrictModel
@@ -32,6 +32,7 @@ from .models import (
 )
 from .service import ProfileAgent
 from .validation import validate_draft
+from .wizard import ProfileWizard, Stage, StageConfirm, StageGenerate, WizardState
 
 
 class RevisionInput(StrictModel):
@@ -55,6 +56,12 @@ class ImageInput(RevisionInput):
 def public_error(error: Exception) -> tuple[int, dict[str, str]]:
     if isinstance(error, ProfileError):
         return error.status, {"code": error.code, "message": error.message}
+    if isinstance(error, ValidationError):
+        fields = [".".join(map(str, item["loc"])) for item in error.errors(include_input=False)[:8]]
+        return 422, {
+            "code": "EXPECTED_SCHEMA_INVALID",
+            "message": "答案字段格式不正确，请核对：" + "、".join(fields),
+        }
     if isinstance(error, AgentServiceError):
         if str(error.code).startswith("PROFILE_"):
             return 422, {"code": str(error.code), "message": "本地规则资源或指定版本不可用，请核对配置。"}
@@ -68,6 +75,7 @@ def create_profile_router(
     """A trusted host must authenticate the caller and construct ProfileActor outside the body."""
     router = APIRouter(prefix="/v1/profile", tags=["profile-agent"])
     identity = Depends(actor_dependency)
+    wizard = ProfileWizard(agent)
 
     async def execute(call: Callable[[], Awaitable[Any]]) -> Any:
         try:
@@ -79,6 +87,57 @@ def create_profile_router(
     @router.post("/drafts", response_model=DraftView)
     async def create(body: DraftCreate, actor: ProfileActor = identity) -> Any:
         return await execute(lambda: agent.create(body, actor))
+
+    @router.get("/drafts", response_model=list[DraftView])
+    async def drafts(actor: ProfileActor = identity) -> Any:
+        return await execute(lambda: asyncio.to_thread(agent.store.list_drafts, actor))
+
+    @router.get("/drafts/{draft}/wizard", response_model=WizardState)
+    async def state(draft: UUID, actor: ProfileActor = identity) -> Any:
+        return await execute(lambda: asyncio.to_thread(wizard.state, draft, actor))
+
+    @router.post("/drafts/{draft}/stages/{stage}/generate", response_model=WizardState)
+    async def generate(draft: UUID, stage: Stage, body: StageGenerate, actor: ProfileActor = identity) -> Any:
+        return await execute(lambda: wizard.generate(draft, stage, body, actor))
+
+    @router.post("/drafts/{draft}/stages/{stage}/confirm", response_model=WizardState)
+    async def stage_confirm(
+        draft: UUID, stage: Stage, body: StageConfirm, actor: ProfileActor = identity
+    ) -> Any:
+        return await execute(lambda: asyncio.to_thread(wizard.confirm, draft, stage, body, actor))
+
+    @router.get("/drafts/{draft}/images/{image_id}", response_model=dict[str, str])
+    async def pixels(draft: UUID, image_id: UUID, actor: ProfileActor = identity) -> Any:
+        async def read_image() -> Any:
+            view = await asyncio.to_thread(agent.store.get, draft, actor)
+            asset = next((a for a in view.attachments if a.id == image_id), None)
+            if asset is None:
+                raise ProfileError("IMAGE_NOT_FOUND", "草稿中没有此图片", 404)
+            return (await asyncio.to_thread(agent.store.images, draft, actor, [asset.path]))[0]
+
+        return await execute(read_image)
+
+    @router.post("/drafts/{draft}/publication")
+    async def publication(draft: UUID, body: RevisionInput, actor: ProfileActor = identity) -> Any:
+        async def package() -> Any:
+            receipt = await agent.export(draft, body.revision, actor)
+            from pathlib import Path
+
+            content = await asyncio.to_thread(Path(receipt.archive_path).read_bytes)
+            if len(content) > 30 * 1024 * 1024:
+                raise ProfileError("PACKAGE_TOO_LARGE", "发布包不能超过30MiB", 413)
+            view = await asyncio.to_thread(agent.store.get, draft, actor)
+            if view.revision != body.revision:
+                raise ProfileError("VERSION_CONFLICT", "导出期间草稿已更新", 409)
+            return {
+                "key": receipt.key,
+                "version": receipt.version,
+                "display_name": view.template.display_name if view.template else receipt.key,
+                "checksum": receipt.checksum,
+                "content_base64": base64.b64encode(content).decode(),
+            }
+
+        return await execute(package)
 
     @router.get("/drafts/{draft}", response_model=DraftView)
     async def get(draft: UUID, actor: ProfileActor = identity) -> Any:

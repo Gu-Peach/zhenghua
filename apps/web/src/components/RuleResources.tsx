@@ -6,7 +6,7 @@ import type { RuleLibraryItem } from "@/apis/types";
 
 const roles: Record<string, string> = { source_page: "来源页", target_page: "目标页", drawing_page: "图纸页" };
 
-export function RuleResources({ rule, onClose }: { rule: RuleLibraryItem; onClose: () => void }) {
+export function RuleResources({ rule, onClose, asSkill = false }: { rule: RuleLibraryItem; onClose: () => void; asSkill?: boolean }) {
   const [data, setData] = useState<RulePackage | null>(null);
   const [error, setError] = useState("");
   const [tab, setTab] = useState(0);
@@ -19,7 +19,7 @@ export function RuleResources({ rule, onClose }: { rule: RuleLibraryItem; onClos
   const stages = data ? ruleStages(data) : [];
   const stage = stages[tab];
   return <div className="modal-backdrop"><section className="resource-modal" role="dialog" aria-modal="true" aria-labelledby="rule-heading">
-    <header><h2 id="rule-heading">{rule.name} · {rule.version} · 规则引用</h2><div><button type="button" onClick={() => setRefresh(n => n + 1)}>刷新资源</button><button type="button" onClick={onClose} aria-label="关闭规则面板"><X size={18} /></button></div></header>
+    <header><h2 id="rule-heading">{rule.name} · {rule.version} · {asSkill ? "提取 Skill" : "规则引用"}</h2><div><button type="button" onClick={() => setRefresh(n => n + 1)}>刷新资源</button><button type="button" onClick={onClose} aria-label="关闭规则面板"><X size={18} /></button></div></header>
     <nav className="content-tabs" aria-label="提取规则">{["Stage 1 页面分类", "Stage 2 当前页扫描", "Stage 2 内部连接补全"].map((title, i) => <button key={title} type="button" className={tab === i ? "active" : ""} onClick={() => setTab(i)}>{title}</button>)}</nav>
     <div className="resource-body">{error ? <p role="alert">{error}</p> : !stage ? <p>正在校验并加载规则资源…</p> : <>
       <h3>规则 Prompt</h3><pre>{stage.prompt}</pre>

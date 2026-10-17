@@ -1,5 +1,7 @@
 # Agent Service
 
+2026-10-17 Profile三步创建向导已挂载共享`src.extraction_main`的8100服务，无新增端口。配置沿用当前模型及内部令牌；草稿保存于`.runtime/profile-agent`。用户点击“根据图片生成规则与答案”才调用VLM。使用步骤及部署前置见[模块说明](./src/agent/profile_agent/README.md)。独立提取Worker也需加载新代码才能读取已发布的Storage规则包。
+
 2026-10-17新增独立[Profile Agent](./src/agent/profile_agent/README.md)：根据样例/描述填充模板、基于证据诊断、确认建议或明确指令后编辑草稿、确认Expected并输出校验包。独立CLI/SDK无需另开HTTP端口；规则页与正式发布后接，不修改Explain或原始Profile。当前共享宿主未注册本模块路由。
 
 2026-10-17 Explain来源浮窗已接入8000鉴权代理与共享8100宿主，支持行/页自动解释、流式工具记录及图纸。使用下方src.extraction_main入口即可同时提供Explain API；不需要每个Agent单独端口。旧src.main未挂本功能，需在自己的终端加载新入口。完整[交付](../../docs/service/agent/changelog/2026-10-17-explain-host.md)。

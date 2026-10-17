@@ -1,5 +1,7 @@
 # 业务 API
 
+2026-10-17规则创建/发布接口属于当前API 2.3.0。前端“新建草稿”或读取草稿返回`404 Not Found`时，先检查`http://127.0.0.1:8000/openapi.json`是否包含`/api/v1/profile/drafts`。若仍显示2.2.0且没有该路径，需要在原终端Ctrl+C停止后，按下方原启动方式重新启动8000加载代码；仅刷新前端或重启8100不会加载业务API的新路由。不要为此重复启动Worker。此次排查确认8100已有草稿路由，8000仍为旧版本；3项Mock发布/创建链路测试通过，未操作运行服务或业务数据。
+
 2026-10-17版本2.2.0新增JWT鉴权Explain流式代理，浏览器经8000转发到8100共享Agent宿主；工具/图纸事件契约和生成TS已同步。无数据库Schema变化，启动及配置见[Server README](../../services/server/README.md)，实现见[交付](../../docs/service/server/changelog/2026-10-17-explain-proxy.md)。
 
 2026-10-16已增加上传入队、提取进度/SSE/重试接口和增量结果字段；先应用新增迁移，再重载本服务并启动[提取Worker](../../services/agent/README.md#当前增量提取的启动方式)。本地zhenghua_test库现已部署该迁移，当前8000 API已核对为2.1.0。API仍是8000，浏览器不直接请求Worker。见[Server交付](../../docs/service/server/changelog/2026-10-16-incremental-extraction.md)。较早的“上传不提取”段落仅记录上一次交付。

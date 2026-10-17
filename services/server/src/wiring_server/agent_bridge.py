@@ -41,6 +41,14 @@ class AgentBridge:
         if response.is_error:
             await response.aread()
             status = response.status_code
+            if path.startswith("/v1/profile/"):
+                try:
+                    detail = response.json().get("detail")
+                    if isinstance(detail, dict) and isinstance(detail.get("code"), str) and isinstance(detail.get("message"), str):
+                        await response.aclose()
+                        raise ServiceError(status, detail["code"], detail["message"][:2000])
+                except (ValueError, AttributeError):
+                    pass
             rule_error = None
             if path.startswith("/v1/profiles/packages"):
                 try:

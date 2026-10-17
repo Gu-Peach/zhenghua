@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Wiring Workbench Server",
-    "version": "2.2.0"
+    "version": "2.3.0"
   },
   "paths": {
     "/api/v1/auth/login": {
@@ -1615,10 +1615,567 @@
           }
         }
       }
+    },
+    "/api/v1/profile/drafts": {
+      "get": {
+        "summary": "Drafts",
+        "operationId": "drafts_api_v1_profile_drafts_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DraftView"
+                  },
+                  "title": "Response Drafts Api V1 Profile Drafts Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create",
+        "operationId": "create_api_v1_profile_drafts_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/drafts/{draft}/wizard": {
+      "get": {
+        "summary": "State",
+        "operationId": "state_api_v1_profile_drafts__draft__wizard_get",
+        "parameters": [
+          {
+            "name": "draft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WizardState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/drafts/{draft}/images": {
+      "post": {
+        "summary": "Image",
+        "operationId": "image_api_v1_profile_drafts__draft__images_post",
+        "parameters": [
+          {
+            "name": "draft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileImage"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DraftView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/drafts/{draft}/images/{image}": {
+      "get": {
+        "summary": "Pixels",
+        "operationId": "pixels_api_v1_profile_drafts__draft__images__image__get",
+        "parameters": [
+          {
+            "name": "draft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft"
+            }
+          },
+          {
+            "name": "image",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Image"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Pixels Api V1 Profile Drafts  Draft  Images  Image  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/drafts/{draft}/stages/{stage}/generate": {
+      "post": {
+        "summary": "Generate",
+        "operationId": "generate_api_v1_profile_drafts__draft__stages__stage__generate_post",
+        "parameters": [
+          {
+            "name": "draft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft"
+            }
+          },
+          {
+            "name": "stage",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "classification",
+                "scan",
+                "completion"
+              ],
+              "type": "string",
+              "title": "Stage"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StageGenerate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WizardState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/drafts/{draft}/stages/{stage}/confirm": {
+      "post": {
+        "summary": "Confirm",
+        "operationId": "confirm_api_v1_profile_drafts__draft__stages__stage__confirm_post",
+        "parameters": [
+          {
+            "name": "draft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft"
+            }
+          },
+          {
+            "name": "stage",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "enum": [
+                "classification",
+                "scan",
+                "completion"
+              ],
+              "type": "string",
+              "title": "Stage"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StageConfirm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WizardState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/drafts/{draft}/publish": {
+      "post": {
+        "summary": "Publish",
+        "operationId": "publish_api_v1_profile_drafts__draft__publish_post",
+        "parameters": [
+          {
+            "name": "draft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileRevision"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileReferenceRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "Attachment": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "checksum": {
+            "type": "string",
+            "title": "Checksum"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "filename",
+          "path",
+          "checksum",
+          "mime_type"
+        ],
+        "title": "Attachment"
+      },
       "ConnectionFacts": {
         "properties": {
           "id": {
@@ -2209,6 +2766,137 @@
         "title": "ConnectionQuery",
         "description": "AND-combined exact filters; drawing_page always means the source business page."
       },
+      "DraftCreate": {
+        "properties": {
+          "draft_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Draft Id"
+          },
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+            "title": "Key"
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Display Name"
+          },
+          "source_profile": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Profile"
+          },
+          "source_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "key",
+          "display_name"
+        ],
+        "title": "DraftCreate"
+      },
+      "DraftView": {
+        "properties": {
+          "draft_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Draft Id"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "checksum": {
+            "type": "string",
+            "title": "Checksum"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "files": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Files"
+          },
+          "attachments": {
+            "items": {
+              "$ref": "#/components/schemas/Attachment"
+            },
+            "type": "array",
+            "title": "Attachments"
+          },
+          "template": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TemplateFields"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "draft_id",
+          "revision",
+          "checksum",
+          "key",
+          "version",
+          "files"
+        ],
+        "title": "DraftView"
+      },
       "DrawingEvidence": {
         "properties": {
           "role": {
@@ -2398,6 +3086,75 @@
           "description"
         ],
         "title": "EvidenceStep"
+      },
+      "ExampleCase": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_-]{0,79}$",
+            "title": "Id"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "classification",
+              "scan",
+              "completion"
+            ],
+            "title": "Stage"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "positive",
+              "negative"
+            ],
+            "title": "Kind",
+            "default": "positive"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "images": {
+            "items": {
+              "$ref": "#/components/schemas/ImageUse"
+            },
+            "type": "array",
+            "maxItems": 4,
+            "minItems": 1,
+            "title": "Images"
+          },
+          "expected": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Expected"
+          },
+          "input": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "stage",
+          "title",
+          "images",
+          "expected"
+        ],
+        "title": "ExampleCase"
       },
       "ExplainContext": {
         "properties": {
@@ -2799,6 +3556,31 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "ImageUse": {
+        "properties": {
+          "attachment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attachment Id"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "source_page",
+              "target_page",
+              "sample"
+            ],
+            "title": "Role"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "attachment_id",
+          "role"
+        ],
+        "title": "ImageUse"
+      },
       "LocalProfileOption": {
         "properties": {
           "profile_key": {
@@ -2896,6 +3678,41 @@
         ],
         "title": "ProfileEvidence"
       },
+      "ProfileImage": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "image_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Image Id"
+          },
+          "filename": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Filename"
+          },
+          "content_base64": {
+            "type": "string",
+            "maxLength": 14680064,
+            "minLength": 1,
+            "title": "Content Base64"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "revision",
+          "image_id",
+          "filename",
+          "content_base64"
+        ],
+        "title": "ProfileImage"
+      },
       "ProfileReferenceCreate": {
         "properties": {
           "profile_key": {
@@ -2958,6 +3775,21 @@
           "resource_ref"
         ],
         "title": "ProfileReferenceRead"
+      },
+      "ProfileRevision": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "revision"
+        ],
+        "title": "ProfileRevision"
       },
       "ResourceImage": {
         "properties": {
@@ -3830,6 +4662,339 @@
         ],
         "title": "SimpleSourceRead"
       },
+      "StageCandidate": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "classification",
+              "scan",
+              "completion"
+            ],
+            "title": "Stage"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "rule_text": {
+            "type": "string",
+            "title": "Rule Text"
+          },
+          "cases": {
+            "items": {
+              "$ref": "#/components/schemas/ExampleCase"
+            },
+            "type": "array",
+            "title": "Cases"
+          },
+          "model_calls": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Model Calls"
+          },
+          "request": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StageGenerate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "stage",
+          "description",
+          "rule_text",
+          "cases"
+        ],
+        "title": "StageCandidate"
+      },
+      "StageConfirm": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "candidate_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Candidate Id"
+          },
+          "rule_text": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Rule Text"
+          },
+          "expected": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "minItems": 1,
+            "title": "Expected"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "revision",
+          "candidate_id",
+          "rule_text",
+          "expected"
+        ],
+        "title": "StageConfirm"
+      },
+      "StageGenerate": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Description"
+          },
+          "source_image": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Image"
+          },
+          "targets": {
+            "items": {
+              "$ref": "#/components/schemas/TargetImage"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Targets"
+          },
+          "negative_images": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 3,
+            "title": "Negative Images"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "revision",
+          "description",
+          "source_image"
+        ],
+        "title": "StageGenerate"
+      },
+      "TargetImage": {
+        "properties": {
+          "attachment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Attachment Id"
+          },
+          "function": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Function"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Page"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "attachment_id",
+          "function",
+          "page"
+        ],
+        "title": "TargetImage"
+      },
+      "TemplateFields": {
+        "properties": {
+          "key": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_-]{0,63}$",
+            "title": "Key"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$",
+            "title": "Version",
+            "default": "1.0.0"
+          },
+          "display_name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Display Name"
+          },
+          "adapter": {
+            "type": "string",
+            "enum": [
+              "zh_native",
+              "abb_native",
+              "zh_gantry_reel_native"
+            ],
+            "title": "Adapter",
+            "default": "zh_native"
+          },
+          "company_signals": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Company Signals"
+          },
+          "wire_marker": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wire Marker"
+          },
+          "grouping_rule": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Grouping Rule"
+          },
+          "page_number_rule": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Number Rule"
+          },
+          "page_naming_rule": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Page Naming Rule",
+            "description": "填写业务页标到function/正整数页号的映射；实际文件名沿用提取器，任意文件名重写需额外代码适配"
+          },
+          "cross_page_rule": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 6000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cross Page Rule"
+          },
+          "cross_page_input_mode": {
+            "type": "string",
+            "enum": [
+              "source_and_target",
+              "target_only"
+            ],
+            "title": "Cross Page Input Mode",
+            "default": "source_and_target"
+          },
+          "reference_mode": {
+            "type": "string",
+            "enum": [
+              "function_page",
+              "reversible_sheet",
+              "adapter_change_required"
+            ],
+            "title": "Reference Mode",
+            "default": "function_page"
+          },
+          "page_number_mode": {
+            "type": "string",
+            "enum": [
+              "positive_integer",
+              "reversible_positive_integer",
+              "adapter_change_required"
+            ],
+            "title": "Page Number Mode",
+            "default": "positive_integer"
+          },
+          "additional_rules": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Additional Rules"
+          },
+          "open_questions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Open Questions"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "key",
+          "display_name"
+        ],
+        "title": "TemplateFields",
+        "description": "Unknown drawing conventions stay empty; they are never guessed from the ZH brand."
+      },
       "TerminalCoordinates": {
         "properties": {
           "x": {
@@ -3981,6 +5146,33 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WizardState": {
+        "properties": {
+          "draft": {
+            "$ref": "#/components/schemas/DraftView"
+          },
+          "candidates": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/StageCandidate"
+            },
+            "type": "object",
+            "title": "Candidates"
+          },
+          "confirmed": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Confirmed"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "draft"
+        ],
+        "title": "WizardState"
       },
       "WorkspaceRead": {
         "properties": {

@@ -35,6 +35,12 @@ class MemoryPublication:
     async def artifact(self, run, item):
         return copy.deepcopy(self.steps.get(item))
 
+    async def request(self, method, path, **kwargs):
+        import httpx
+
+        assert method == "GET" and path == "/rest/v1/extraction_profiles"
+        return httpx.Response(200, json=[])
+
     async def put(self, bucket, path, content, mime):
         assert content.startswith(b"\x89PNG") or (mime == "application/zip" and content.startswith(b"PK"))
         self.objects[path] = content

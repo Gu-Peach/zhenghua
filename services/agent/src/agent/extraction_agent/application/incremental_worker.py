@@ -6,11 +6,13 @@ import asyncio
 import hashlib
 import io
 import logging
+import re
 import tempfile
 import zipfile
 from contextlib import suppress
 from dataclasses import replace
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
 from uuid import uuid4
 
 import httpx
@@ -31,6 +33,9 @@ from src.profiles.registry import ProfileRegistry
 
 logger = logging.getLogger(__name__)
 
+if TYPE_CHECKING:
+    from src.agent.extraction_agent.application.stage_persistence import DurableExtractionSession
+
 
 async def frozen_profile(
     session: IncrementalSession, settings: AgentSettings, directory: Path
@@ -43,36 +48,30 @@ async def frozen_profile(
         if checksum(content) != meta["checksum"]:
             raise ValueError("Frozen Profile package checksum mismatch")
     else:
-        registry = ProfileRegistry(
-            profile_root=settings.profile_root,
-            workspace_root=settings.workspace_root,
-            allow_legacy_references=True,
+        response = await session.repository.request(
+            "GET",
+            "/rest/v1/extraction_profiles",
+            params={
+                "profile_key": f"eq.{session.profile['key']}",
+                "profile_version": f"eq.{session.profile['version']}",
+                "checksum": f"eq.{session.profile['checksum']}",
+                "limit": "1",
+            },
         )
-        registry.load_all(strict=False)
-        snapshot = registry.resolve(
-            session.profile["key"], session.profile["version"], allow_experimental=True
-        )
-        files = {snapshot.manifest_path}
-        for resource in snapshot.resolved_resources.values():
-            files.update(p for p in resource.rglob("*") if p.is_file()) if resource.is_dir() else files.add(
-                resource
+        rows = response.json()
+        ref = rows[0].get("resource_ref", "") if rows else ""
+        if ref.startswith("storage://"):
+            match = re.fullmatch(
+                r"storage://project-assets/(profiles/[0-9a-f-]{36}/[a-z][a-z0-9_-]{0,63}/\d+\.\d+\.\d+/[0-9a-f]{64}\.zip)",
+                ref,
             )
-        digest = hashlib.sha256()
-        for file in sorted(files, key=lambda p: str(p).lower()):
-            digest.update(file.relative_to(settings.workspace_root).as_posix().encode())
-            digest.update(b"\0")
-            digest.update(file.read_bytes())
-        if f"sha256:{digest.hexdigest()}" != session.profile["checksum"]:
-            raise ValueError("Selected Profile resources changed after upload")
-        with tempfile.TemporaryDirectory(dir=directory) as temporary:
-            package = Path(temporary) / "selected"
-            await asyncio.to_thread(build_package, snapshot, package)
-            stream = io.BytesIO()
-            with zipfile.ZipFile(stream, "w", zipfile.ZIP_DEFLATED) as archive:
-                for file in package.rglob("*"):
-                    if file.is_file():
-                        archive.writestr(file.relative_to(package).as_posix(), file.read_bytes())
-            content = stream.getvalue()
+            if not match:
+                raise ValueError("Invalid published Profile storage scope")
+            content = await session.repository.get("project-assets", match[1])
+            if checksum(content) != session.profile["checksum"]:
+                raise ValueError("Published Profile package checksum mismatch")
+        else:
+            content = await local_profile_archive(session, settings, directory)
         path = f"projects/{session.project}/runs/{session.run}/profile.zip"
         await session.repository.put("project-assets", path, content, "application/zip")
         await session.commit(
@@ -84,6 +83,8 @@ async def frozen_profile(
     root = directory / "profiles" / "selected"
     root.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(io.BytesIO(content)) as archive:
+        if len(archive.infolist()) > 500 or sum(f.file_size for f in archive.infolist()) > 30 * 1024 * 1024:
+            raise ValueError("Profile archive expansion limit")
         for name in archive.namelist():
             target = root / safe_path(name)
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -93,6 +94,41 @@ async def frozen_profile(
     registry = ProfileRegistry(profile_root=root.parent, workspace_root=directory)
     registry.load_all()
     return registry.bind(session.profile["key"], session.profile["version"], allow_experimental=True)
+
+
+async def local_profile_archive(
+    session: IncrementalSession, settings: AgentSettings, directory: Path
+) -> bytes:
+    """Keep the established local selection checksum and packaging path unchanged."""
+    registry = ProfileRegistry(
+        profile_root=settings.profile_root,
+        workspace_root=settings.workspace_root,
+        allow_legacy_references=True,
+    )
+    registry.load_all(strict=False)
+    snapshot = registry.resolve(session.profile["key"], session.profile["version"], allow_experimental=True)
+    files = {snapshot.manifest_path}
+    for resource in snapshot.resolved_resources.values():
+        files.update(p for p in resource.rglob("*") if p.is_file()) if resource.is_dir() else files.add(
+            resource
+        )
+    digest = hashlib.sha256()
+    for file in sorted(files, key=lambda p: str(p).lower()):
+        digest.update(file.relative_to(settings.workspace_root).as_posix().encode())
+        digest.update(b"\0")
+        digest.update(file.read_bytes())
+    if f"sha256:{digest.hexdigest()}" != session.profile["checksum"]:
+        raise ValueError("Selected Profile resources changed after upload")
+    with tempfile.TemporaryDirectory(dir=directory) as temporary:
+        package = Path(temporary) / "selected"
+        await asyncio.to_thread(build_package, snapshot, package)
+        stream = io.BytesIO()
+        with zipfile.ZipFile(stream, "w", zipfile.ZIP_DEFLATED) as archive:
+            for file in package.rglob("*"):
+                if file.is_file():
+                    archive.writestr(file.relative_to(package).as_posix(), file.read_bytes())
+        content = stream.getvalue()
+    return content
 
 
 async def execute_job(session: IncrementalSession, settings: AgentSettings) -> None:
@@ -136,7 +172,8 @@ async def execute_job(session: IncrementalSession, settings: AgentSettings) -> N
         settings=replace(settings, extraction_max_pdf_pages=0, extraction_output_mode="library"),
         run_id=session.run,
         project_id=session.project,
-        durable=session,
+        # The incremental adapter implements the durable callbacks used by the page workflow.
+        durable=cast("DurableExtractionSession", session),
         trace_store=IncrementalTraceStore(session),
     )
     if result.execution.extraction_errors:

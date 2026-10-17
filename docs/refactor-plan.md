@@ -6,6 +6,10 @@
 
 ## 1. 重构结论
 
+2026-10-17 Profile 三步向导和手动发布实施中，见 [ADR-0028](./adr/0028-profile-creation-publication.md)：阶段候选与人工确认分离，私有固定版本规则包接通目录、预览和提取 Worker；原本地规则兼容。
+
+2026-10-17前端智能体中心/提取Skills及双模式校验工作台见[ADR-0027](./adr/0027-agent-center-and-preview-workbench.md)：用户菜单集中Agent与规则入口，线表按需压缩并在右侧显示原/目标图及端点坐标。本轮只改前端，不改变Profile key、API/数据库或提取顺序；Agent运行元数据缺口明确说明。
+
 2026-10-17独立Profile Agent方案见[ADR-0026](./adr/0026-independent-profile-agent.md)：复用固定提取Schema，以可配置模板填充规则及图像案例，基于证据诊断，确认或明确指令后编辑隔离草稿并输出可验证规则包。本轮不接界面/正式发布，不修改并行Explain实现。
 
 2026-10-17 Explain已通过8000 JWT代理接入8100共享宿主，新增独立前端来源浮窗、行/页入口与工具结果/图纸流；公共DTO从Agent生成Server适配器再生成TS，不让Server导入Agent执行代码。代码与离线验收完成，未重启实际服务；见[ADR-0025](./adr/0025-explain-panel-integration.md)。

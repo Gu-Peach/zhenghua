@@ -1,5 +1,15 @@
 # 开发路线
 
+2026-10-17新建规则草稿404已定位为8000旧进程2.2.0未加载2.3.0路由，8100接口已具备；3项Mock创建/发布链路通过，需用户重载8000后重试。未改运行服务/业务数据，阶段状态不变。见[排障记录](./service/server/changelog/2026-10-17-profile-draft-404.md)。
+
+2026-10-17 Profile创建/发布代码与离线验收完成：智能体中心三步填写规则与Expected、人工表格确认/依赖失效、手动发布及Storage规则供提取使用。47项Agent相关、29项后端、2项隔离SQL及51项浏览器通过，类型/lint/build及截图已核对。迁移和实际服务未部署，真实模型效果与目标Supabase扩展环境发布待验收；不将整个规则诊断/编辑阶段标为完成。见[ADR-0028](./adr/0028-profile-creation-publication.md)和[执行记录](./service/agent/profile-wizard-plan.md)。
+
+2026-10-17线表/图纸预览增加可拖拽分隔条、键盘调宽和双击复位，修复缩放数字/长标题溢出；45项离线浏览器、类型/lint/build及桌面/窄屏截图通过。仅前端交互，整体阶段状态不变。见[交付](./apps/web/changelog/2026-10-17-preview-resize.md)。
+
+2026-10-17按用户指定将Extraction、Explain、Profile的前端展示版本统一为1.0.0；Skill保留实际包版本。4项智能体中心浏览器冒烟及类型/lint/build通过；运行健康与Profile交互接入仍待后续，整体阶段状态不变。
+
+2026-10-17智能体中心、提取Skills迁移、全量/五列预览工作台和上下双图坐标标注完成；44项浏览器、类型/lint/build及桌面/窄屏截图通过。本轮只改前端，不操作真实模型/数据库或用户服务；Agent独立版本/运行健康及Profile交互接入仍待后续，现有阶段状态不变。见[交付](./apps/web/changelog/2026-10-17-agent-center-preview.md)。
+
 2026-10-17前端项目名原地编辑、目录/图纸自然升序和图纸简名完成；按用户确认工作区暂不改名。32项浏览器及前端检查/截图通过，不改后端或提取顺序，既有阶段状态不变。见[交付](./apps/web/changelog/2026-10-17-project-tree-inline.md)。
 
 2026-10-17 Explain前端逐字显示/Markdown及按需分包完成，26项浏览器、typecheck/lint/build和桌面/窄屏截图通过。后端/Prompt/业务契约未改，不操作用户运行服务或真实模型；整体阶段状态不变。见[交付](./apps/web/changelog/2026-10-17-explain-typewriter.md)。

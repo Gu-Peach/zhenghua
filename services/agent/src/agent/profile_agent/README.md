@@ -1,6 +1,6 @@
 # Profile Agent
 
-独立规则助手：填充图纸模板、维护图片/Expected、诊断规则问题，并通过受控工具修改草稿。本轮交付Python接口、CLI和可注册APIRouter；尚未接入规则页、共享宿主或正式发布。没有新增端口，不依赖Supervisor/旧自完善或评测表。
+独立规则助手：填充图纸模板、维护图片/Expected、诊断规则问题，并通过受控工具修改草稿。三步创建向导已接入智能体中心，复用共享8100宿主；正式发布由8000业务Server执行。没有新增端口，不依赖Supervisor/旧自完善或评测表。见[创建发布交付](../../../../../docs/service/agent/changelog/2026-10-17-profile-wizard.md)。启用前需应用新增发布迁移并重新加载8000、8100和提取Worker，此轮未部署或调用真实模型。
 
 ## 行为
 
@@ -25,7 +25,8 @@
 | tools.py | 当前用户/草稿绑定的读取、看图、诊断、建议和编辑工具 |
 | graph.py | LangGraph模型—工具循环，流式公开回复和工具事件 |
 | service.py / factory.py | 独立调用、对话缓存、确认和包输出 |
-| api.py | 未来鉴权宿主可注册的`/v1/profile`路由，不自动挂载 |
+| api.py | 共享宿主注册的`/v1/profile`鉴权路由 |
+| wizard.py | 三步图片生成、持久候选、表格答案原子确认与依赖失效 |
 | __main__.py | 本地独立开发入口 |
 
 ## 本地使用
@@ -96,9 +97,9 @@ reply = await agent.ask(
 updated = await agent.confirm(draft.draft_id, reply.proposals[0].id, draft.revision, True, actor)
 ```
 
-未来共享宿主可`include_router(create_profile_router(agent, authenticated_actor_dependency))`，与其他Agent共用8100。Actor由宿主验证，模型工具参数不包含身份或根目录。当前没有修改共享宿主，也没有让浏览器直接调用未鉴权Agent。
+共享`src.extraction_main`已注册`create_profile_router`，与Explain共用8100。Server以内部令牌及`X-Profile-User-Id`注入可信用户，浏览器仍只访问8000；模型工具参数不包含身份或根目录。
 
-路由提供草稿创建/读取、文件读取、图片上传、`turns`/`turns/stream`、建议读取/确认、Expected确认、校验、审计和导出。它们尚未进入当前业务Server OpenAPI/TS客户端；正式接入时再生成对应契约。
+Agent路由提供原有对话工具及新增三步向导。业务Server只开放本轮创建所需的草稿列表/创建、wizard状态、图片上传/读取、`stages/{stage}/generate|confirm`和`publish`；诊断聊天及精确编辑工具的前端入口仍未接入。公开DTO由`services/agent/scripts/export_profile_contract.py`生成，再生成业务OpenAPI和TS。
 
 ## 校验与限制
 
@@ -106,7 +107,7 @@ updated = await agent.confirm(draft.draft_id, reply.proposals[0].id, draft.revis
 - `stage3_cases`/Schema中的stage3沿用现有资源包兼容名称，表示Stage2内部定向补全案例。
 - `reference_mode/page_number_mode=adapter_change_required`会阻止就绪包输出。模板只能使用现有adapter；Prompt无法替代新的确定性解析代码。命名字段描述向function/正整数页号的映射，实际文件名仍沿用当前提取器，不支持任意文件命名算法的自动改造。
 - 就绪仅表示结构、引用和确认有效，不证明实际识别准确率。当前不运行自动提取评测或生产发布。
-- 持久化为本地开发用SQLite和不可变修订，重开Agent可恢复草稿/建议/历史。生产存储、正式版本发布和跨主机部署由后续Server接入负责。
+- 草稿持久化使用SQLite和不可变修订，刷新/重开Agent可恢复；多主机共享草稿尚未实现。正式发布元数据由Server写数据库，固定版本ZIP进入私有Storage，原有项目不重绑。
 - 取消可能发生在已授权的原子写入之后，已提交修订保留；重试前读取最新revision/audit。导出包保留在草稿的exports目录，不能把输出路径当作已发布引用。
 
 设计与交付见[ADR 0026](../../../../../docs/adr/0026-independent-profile-agent.md)及[实施记录](../../../../../docs/service/agent/changelog/2026-10-17-profile-agent.md)。

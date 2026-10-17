@@ -141,6 +141,15 @@ class DraftStore:
         with self._db() as db:
             return self._view(self._owned(db, draft, actor))
 
+    def list_drafts(self, actor: ProfileActor) -> list[DraftView]:
+        with self._db() as db:
+            return [
+                self._view(row)
+                for row in db.execute(
+                    "select * from drafts where owner=? order by rowid desc limit 100", (str(actor.user_id),)
+                )
+            ]
+
     def root_for(self, draft: UUID, actor: ProfileActor) -> tuple[Path, dict[str, Any]]:
         with self._db() as db:
             return self._verified(self._owned(db, draft, actor))

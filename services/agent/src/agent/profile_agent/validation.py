@@ -154,8 +154,15 @@ def validate_draft(root: Path, metadata: dict[str, Any]) -> ValidationReport:
         return ValidationReport(ready=False, issues=issues)
     if metadata.get("generated"):
         fields = TemplateFields.model_validate_json((root / "template.json").read_text(encoding="utf-8"))
+        if not metadata.get("wizard") and not fields.company_signals:
+            issues.append(
+                ValidationIssue(
+                    code="TEMPLATE_INCOMPLETE",
+                    path="template.json",
+                    message="待补充图纸依据：company_signals",
+                )
+            )
         for name in (
-            "company_signals",
             "wire_marker",
             "grouping_rule",
             "page_number_rule",
@@ -193,13 +200,21 @@ def validate_draft(root: Path, metadata: dict[str, Any]) -> ValidationReport:
         payload = json.loads(relative_file(root, path).read_text(encoding="utf-8"))
         inferred_negative = (
             case["stage"] == "scan"
-            and not payload.get("units")
+            and not any(unit.get("connections") for unit in payload.get("units", []))
             or case["stage"] == "completion"
             and not (payload.get("end") or {}).get("terminal")
             or case["stage"] == "classification"
             and (payload.get("blank") or payload.get("non_wiring"))
         )
         negative = negative or case["kind"] == "negative" or bool(inferred_negative)
+        if metadata.get("wizard") and case["kind"] == "negative" and not inferred_negative:
+            issues.append(
+                ValidationIssue(
+                    code="NEGATIVE_EXPECTED_MISMATCH",
+                    path=path,
+                    message="负例答案包含实际提取结果，请核对图片或答案",
+                )
+            )
         if case["stage"] == "scan" and case["kind"] != "negative":
             positive_scan = positive_scan or any(
                 (connection.get("start") or {}).get("terminal")
@@ -217,6 +232,24 @@ def validate_draft(root: Path, metadata: dict[str, Any]) -> ValidationReport:
     for stage in ("classification", "scan", "completion"):
         if stage not in stages:
             issues.append(ValidationIssue(code="CASE_MISSING", message=f"缺少{stage}实际图片案例"))
+    wizard = metadata.get("wizard")
+    if wizard and set(wizard.get("confirmed", {})) != {"classification", "scan", "completion"}:
+        issues.append(ValidationIssue(code="STAGES_UNCONFIRMED", message="三个阶段尚未全部人工确认"))
+    if wizard:
+        from .template import RESOURCES
+
+        resources = {
+            "classification": "classification_prompt",
+            "scan": "page_scan_prompt",
+            "completion": "cross_page_prompt",
+        }
+        for stage, resource in resources.items():
+            if stage in wizard.get("confirmed", {}) and wizard.get("seals", {}).get(stage) != checksum(
+                (root / RESOURCES[resource]).read_bytes()
+            ):
+                issues.append(
+                    ValidationIssue(code="RULE_UNCONFIRMED", message=f"{stage}规则已改变，需要重新确认")
+                )
     if not negative:
         issues.append(
             ValidationIssue(

@@ -367,10 +367,146 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/profile/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Drafts */
+        get: operations["drafts_api_v1_profile_drafts_get"];
+        put?: never;
+        /** Create */
+        post: operations["create_api_v1_profile_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile/drafts/{draft}/wizard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** State */
+        get: operations["state_api_v1_profile_drafts__draft__wizard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile/drafts/{draft}/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Image */
+        post: operations["image_api_v1_profile_drafts__draft__images_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile/drafts/{draft}/images/{image}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pixels */
+        get: operations["pixels_api_v1_profile_drafts__draft__images__image__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile/drafts/{draft}/stages/{stage}/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate */
+        post: operations["generate_api_v1_profile_drafts__draft__stages__stage__generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile/drafts/{draft}/stages/{stage}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm */
+        post: operations["confirm_api_v1_profile_drafts__draft__stages__stage__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile/drafts/{draft}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish */
+        post: operations["publish_api_v1_profile_drafts__draft__publish_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Attachment */
+        Attachment: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Filename */
+            filename: string;
+            /** Path */
+            path: string;
+            /** Checksum */
+            checksum: string;
+            /** Mime Type */
+            mime_type: string;
+        };
         /** ConnectionFacts */
         ConnectionFacts: {
             /**
@@ -503,6 +639,49 @@ export interface components {
              */
             limit: number;
         };
+        /** DraftCreate */
+        DraftCreate: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id?: string;
+            /** Key */
+            key: string;
+            /** Display Name */
+            display_name: string;
+            /** Source Profile */
+            source_profile?: string | null;
+            /** Source Version */
+            source_version?: string | null;
+        };
+        /** DraftView */
+        DraftView: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Revision */
+            revision: number;
+            /** Checksum */
+            checksum: string;
+            /** Key */
+            key: string;
+            /** Version */
+            version: string;
+            /** Source */
+            source?: {
+                [key: string]: string;
+            } | null;
+            /** Files */
+            files: string[];
+            /** Attachments */
+            attachments?: components["schemas"]["Attachment"][];
+            template?: components["schemas"]["TemplateFields"] | null;
+            /** Warnings */
+            warnings?: string[];
+        };
         /** DrawingEvidence */
         DrawingEvidence: {
             /**
@@ -558,6 +737,34 @@ export interface components {
             facts?: {
                 [key: string]: unknown;
             };
+        };
+        /** ExampleCase */
+        ExampleCase: {
+            /** Id */
+            id: string;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "classification" | "scan" | "completion";
+            /**
+             * Kind
+             * @default positive
+             * @enum {string}
+             */
+            kind: "positive" | "negative";
+            /** Title */
+            title: string;
+            /** Images */
+            images: components["schemas"]["ImageUse"][];
+            /** Expected */
+            expected: {
+                [key: string]: unknown;
+            };
+            /** Input */
+            input?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** ExplainContext */
         ExplainContext: {
@@ -721,6 +928,19 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** ImageUse */
+        ImageUse: {
+            /**
+             * Attachment Id
+             * Format: uuid
+             */
+            attachment_id: string;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "source_page" | "target_page" | "sample";
+        };
         /** LocalProfileOption */
         LocalProfileOption: {
             /** Profile Key */
@@ -753,6 +973,20 @@ export interface components {
              */
             source: "record_evidence" | "project_reference";
         };
+        /** ProfileImage */
+        ProfileImage: {
+            /** Revision */
+            revision: number;
+            /**
+             * Image Id
+             * Format: uuid
+             */
+            image_id: string;
+            /** Filename */
+            filename: string;
+            /** Content Base64 */
+            content_base64: string;
+        };
         /** ProfileReferenceCreate */
         ProfileReferenceCreate: {
             /** Profile Key */
@@ -782,6 +1016,11 @@ export interface components {
              * @default false
              */
             can_delete: boolean;
+        };
+        /** ProfileRevision */
+        ProfileRevision: {
+            /** Revision */
+            revision: number;
         };
         /** ResourceImage */
         ResourceImage: {
@@ -1070,6 +1309,137 @@ export interface components {
              */
             page_count: number;
         };
+        /** StageCandidate */
+        StageCandidate: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Stage
+             * @enum {string}
+             */
+            stage: "classification" | "scan" | "completion";
+            /** Description */
+            description: string;
+            /** Rule Text */
+            rule_text: string;
+            /** Cases */
+            cases: components["schemas"]["ExampleCase"][];
+            /** Model Calls */
+            model_calls?: {
+                [key: string]: unknown;
+            }[];
+            request?: components["schemas"]["StageGenerate"] | null;
+        };
+        /** StageConfirm */
+        StageConfirm: {
+            /** Revision */
+            revision: number;
+            /**
+             * Candidate Id
+             * Format: uuid
+             */
+            candidate_id: string;
+            /** Rule Text */
+            rule_text: string;
+            /** Expected */
+            expected: {
+                [key: string]: unknown;
+            }[];
+        };
+        /** StageGenerate */
+        StageGenerate: {
+            /** Revision */
+            revision: number;
+            /**
+             * Request Id
+             * Format: uuid
+             */
+            request_id?: string;
+            /** Description */
+            description: string;
+            /**
+             * Source Image
+             * Format: uuid
+             */
+            source_image: string;
+            /** Targets */
+            targets?: components["schemas"]["TargetImage"][];
+            /** Negative Images */
+            negative_images?: string[];
+        };
+        /** TargetImage */
+        TargetImage: {
+            /**
+             * Attachment Id
+             * Format: uuid
+             */
+            attachment_id: string;
+            /** Function */
+            function: string;
+            /** Page */
+            page: number;
+        };
+        /**
+         * TemplateFields
+         * @description Unknown drawing conventions stay empty; they are never guessed from the ZH brand.
+         */
+        TemplateFields: {
+            /** Key */
+            key: string;
+            /**
+             * Version
+             * @default 1.0.0
+             */
+            version: string;
+            /** Display Name */
+            display_name: string;
+            /**
+             * Adapter
+             * @default zh_native
+             * @enum {string}
+             */
+            adapter: "zh_native" | "abb_native" | "zh_gantry_reel_native";
+            /** Company Signals */
+            company_signals?: string[];
+            /** Wire Marker */
+            wire_marker?: string | null;
+            /** Grouping Rule */
+            grouping_rule?: string | null;
+            /** Page Number Rule */
+            page_number_rule?: string | null;
+            /**
+             * Page Naming Rule
+             * @description 填写业务页标到function/正整数页号的映射；实际文件名沿用提取器，任意文件名重写需额外代码适配
+             */
+            page_naming_rule?: string | null;
+            /** Cross Page Rule */
+            cross_page_rule?: string | null;
+            /**
+             * Cross Page Input Mode
+             * @default source_and_target
+             * @enum {string}
+             */
+            cross_page_input_mode: "source_and_target" | "target_only";
+            /**
+             * Reference Mode
+             * @default function_page
+             * @enum {string}
+             */
+            reference_mode: "function_page" | "reversible_sheet" | "adapter_change_required";
+            /**
+             * Page Number Mode
+             * @default positive_integer
+             * @enum {string}
+             */
+            page_number_mode: "positive_integer" | "reversible_positive_integer" | "adapter_change_required";
+            /** Additional Rules */
+            additional_rules?: string[];
+            /** Open Questions */
+            open_questions?: string[];
+        };
         /**
          * TerminalCoordinates
          * @description Normalized terminal center on its own full-page image, not a business page number.
@@ -1123,6 +1493,18 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** WizardState */
+        WizardState: {
+            draft: components["schemas"]["DraftView"];
+            /** Candidates */
+            candidates?: {
+                [key: string]: components["schemas"]["StageCandidate"];
+            };
+            /** Confirmed */
+            confirmed?: {
+                [key: string]: string;
+            };
         };
         /** WorkspaceRead */
         WorkspaceRead: {
@@ -2030,6 +2412,291 @@ export interface operations {
                 content: {
                     "text/event-stream": unknown;
                     "application/json": components["schemas"]["ExplainEvent"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    drafts_api_v1_profile_drafts_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftView"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_api_v1_profile_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    state_api_v1_profile_drafts__draft__wizard_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                draft: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WizardState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    image_api_v1_profile_drafts__draft__images_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                draft: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileImage"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DraftView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pixels_api_v1_profile_drafts__draft__images__image__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                draft: string;
+                image: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_api_v1_profile_drafts__draft__stages__stage__generate_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                draft: string;
+                stage: "classification" | "scan" | "completion";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StageGenerate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WizardState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_api_v1_profile_drafts__draft__stages__stage__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                draft: string;
+                stage: "classification" | "scan" | "completion";
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StageConfirm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WizardState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    publish_api_v1_profile_drafts__draft__publish_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                draft: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileRevision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileReferenceRead"];
                 };
             };
             /** @description Validation Error */

@@ -4,11 +4,12 @@ import { changedConnectionFields, connectionDraft, editableConnectionFields, typ
 import type { WiringRow } from "@/apis/types";
 
 const columns: Array<{ key: keyof WiringRow; label: string; width: number }> = [
-  { key: "page", label: "页码", width: 115 }, { key: "wireNumber", label: "线号", width: 80 }, { key: "lineNumber", label: "原理号", width: 112 }, { key: "voltageLevel", label: "电压等级", width: 92 }, { key: "terminalStrip", label: "端子排", width: 80 },
+  { key: "page", label: "页码", width: 115 }, { key: "lineNumber", label: "原理号", width: 112 }, { key: "voltageLevel", label: "电压等级", width: 92 }, { key: "terminalStrip", label: "端子排", width: 80 },
   { key: "startCode", label: "起点代号", width: 116 }, { key: "startDescription", label: "起点描述", width: 180 }, { key: "startTerminal", label: "起点端子", width: 112 },
   { key: "endCode", label: "终点代号", width: 116 }, { key: "endDescription", label: "终点描述", width: 180 }, { key: "endTerminal", label: "终点端子", width: 112 },
   { key: "current", label: "电流", width: 76 }, { key: "remark", label: "备注", width: 180 }, { key: "colorMark", label: "色标", width: 80 },
 ];
+const compactWidths: Partial<Record<keyof WiringRow, number>> = { page: 100, lineNumber: 95, startTerminal: 95, endTerminal: 105, current: 50 };
 
 type OnExplain = (row: WiringRow, scope: "row" | "page") => void;
 function ExplainButton({ row, scope, onExplain }: { row: WiringRow; scope: "row" | "page"; onExplain: OnExplain }) {
@@ -18,7 +19,7 @@ function ExplainButton({ row, scope, onExplain }: { row: WiringRow; scope: "row"
 type SaveRow = (row: WiringRow, changes: ConnectionChanges, idempotencyKey: string) => Promise<void>;
 type RowEditor = { row: WiringRow; draft: ConnectionDraft; focus: EditableConnectionKey; save: SaveRow };
 
-export function ResultTable({ rows, onOpenDrawing, onOpenTarget, onHoverTarget, highlightedRowId, onSave, onRefresh, onDelete, onExplain }: { rows: WiringRow[]; onOpenDrawing: (drawingId: string) => void; onOpenTarget: (row: WiringRow) => void; onHoverTarget: (rowId: string | null) => void; highlightedRowId: string | null; onSave?: SaveRow; onRefresh?: () => void; onDelete?: (row: WiringRow) => void; onExplain?: (row: WiringRow, scope: "row" | "page") => void }) {
+export function ResultTable({ rows, onOpenDrawing, onOpenTarget, onHoverTarget, highlightedRowId, onSave, onRefresh, onDelete, onExplain, compact = false, onSelectConnection }: { rows: WiringRow[]; onOpenDrawing: (drawingId: string) => void; onOpenTarget: (row: WiringRow) => void; onHoverTarget: (rowId: string | null) => void; highlightedRowId: string | null; onSave?: SaveRow; onRefresh?: () => void; onDelete?: (row: WiringRow) => void; onExplain?: (row: WiringRow, scope: "row" | "page") => void; compact?: boolean; onSelectConnection?: (row: WiringRow) => void }) {
   const [editor, setEditor] = useState<RowEditor | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -48,31 +49,32 @@ export function ResultTable({ rows, onOpenDrawing, onOpenTarget, onHoverTarget, 
     finally { savingLock.current = false; setSaving(false); }
   }
   const editorVisible = editor && rows.some(row => row.id === editor.row.id);
+  const shownColumns = compact ? columns.filter(column => ["page", "lineNumber", "startTerminal", "endTerminal", "current"].includes(column.key)) : columns;
+  const showActions = !compact;
   if (!rows.length && !editor) return <div className="table-empty"><span>0</span><strong>当前范围没有线表记录</strong><p>请选择包含已提取结果的图纸或工作区。</p></div>;
   return (
     <div className="inline-table">
-      {editor ? <div className="table-edit-notice" role="status">{saving ? "正在保存…" : "表格编辑中 · Enter 保存 · Esc 取消"}<span>修改仅应用于本行，并保留修改前后记录</span></div> : null}
+      {editor ? <div className="table-edit-notice" role="status">{saving ? "正在保存…" : "表格编辑中 · Enter 保存 · Esc 取消"}<span>修改仅应用于本行，并保留修改前后记录</span>{compact ? <span><button type="button" disabled={saving} onClick={() => void save()}>保存本行修改</button><button type="button" disabled={saving} onClick={cancel}>取消本行修改</button></span> : null}</div> : null}
       {editor && !editorVisible ? <div className="table-edit-error" role="alert"><span>正在编辑的记录已不在当前结果中。</span><button type="button" disabled={saving} onClick={() => { cancel(); onRefresh?.(); }}>取消本次编辑</button></div> : null}
       {error ? <div className="table-edit-error" role="alert"><span>{error}</span>{onRefresh ? <button type="button" disabled={saving} onClick={() => { cancel(); onRefresh(); }}>取消编辑并刷新</button> : null}</div> : null}
     <div className="result-table-shell">
-      <table className="result-table">
-        <colgroup>{columns.map((column) => <col key={column.key} style={{ width: column.width }} />)}<col style={{ width: 170 }} /></colgroup>
-        <thead><tr>{columns.map((column) => <th key={column.key}>{column.label}</th>)}<th aria-label="操作" /></tr></thead>
+      <table className={`result-table ${compact ? "compact-table" : ""}`}>
+        <colgroup>{shownColumns.map((column) => <col key={column.key} style={{ width: compact ? compactWidths[column.key] : column.width }} />)}{showActions ? <col style={{ width: 170 }} /> : null}</colgroup>
+        <thead><tr>{shownColumns.map((column) => <th key={column.key}>{column.label}</th>)}{showActions ? <th aria-label="操作" /> : null}</tr></thead>
         <tbody>{rows.map((row, index) => (
           <tr key={row.id} className={`${row.status === "review" ? "review-row" : ""} ${highlightedRowId === row.id ? "target-row" : ""} ${editor?.row.id === row.id ? "editing-row" : ""}`}>
-            {columns.map((column) => {
+            {shownColumns.map((column) => {
               const value = row[column.key];
               const field = editableConnectionFields.find(item => item.view === column.key);
               if (editor?.row.id === row.id && field) return <td key={column.key} className="editing-cell"><input aria-label={field.label} title={field.shared ? `${field.label}（同线号共享）` : field.label} value={editor.draft[field.key]} maxLength={field.maxLength} disabled={saving} autoFocus={editor.focus === field.key} onFocus={event => event.currentTarget.select()} onChange={event => { const value = event.target.value; setEditor(current => current ? { ...current, draft: { ...current.draft, [field.key]: value } } : null); }} onKeyDown={event => { if (event.nativeEvent.isComposing) return; if (event.key === "Enter") { event.preventDefault(); void save(); } if (event.key === "Escape") { event.preventDefault(); cancel(); } }} /></td>;
               const cellProps = { className: field && onSave ? "editable-cell" : undefined, onDoubleClick: () => { if (field) beginEdit(row, field.key); } };
-              if (column.key === "page") return <td key={column.key} className="explain-cell">{index === 0 || rows[index - 1].drawingId !== row.drawingId ? <><button className="source-link" type="button" onClick={() => onOpenDrawing(row.drawingId)} title="在下方显示来源图纸">{String(value)}<ExternalLink size={13} /></button>{onExplain ? <ExplainButton row={row} scope="page" onExplain={onExplain} /> : null}</> : <span className="visually-hidden">{String(value)}</span>}</td>;
-              if (column.key === "startTerminal") return <td key={column.key} aria-label={String(value || "-")} {...cellProps} className={field && onSave ? "editable-cell explain-cell" : "explain-cell"}><span>{String(value || "-")}</span>{onExplain ? <ExplainButton row={row} scope="row" onExplain={onExplain} /> : null}</td>;
-              if (column.key === "wireNumber") return <td key={column.key}>{rows.findIndex(item => item.wireNumber === row.wireNumber) === index ? String(value ?? "-") : <span className="visually-hidden">{String(value)}</span>}</td>;
-              if (column.key === "endTerminal") return <td key={column.key} {...cellProps}>{(row.isCrossPage || row.endReference?.kind === "cross-page") && value ? <button type="button" className="terminal-link" onMouseEnter={() => onHoverTarget(row.id)} onMouseLeave={() => onHoverTarget(null)} onFocus={() => onHoverTarget(row.id)} onBlur={() => onHoverTarget(null)} onClick={() => onOpenTarget(row)} title="在表格下方显示跨页目标">{String(value || "-")}<ExternalLink size={12} /></button> : <span className="terminal-static">{String(value || "-")}</span>}</td>;
+              if (column.key === "page") return <td key={column.key} className="explain-cell">{index === 0 || rows[index - 1].drawingId !== row.drawingId ? <><button className="source-link" type="button" onClick={() => onOpenDrawing(row.drawingId)} title="在右侧预览来源图纸">{String(value)}<ExternalLink size={13} /></button>{onExplain ? <ExplainButton row={row} scope="page" onExplain={onExplain} /> : null}</> : <span className="visually-hidden">{String(value)}</span>}</td>;
+              if (column.key === "startTerminal") return <td key={column.key} aria-label={String(value || "-")} {...cellProps} className={field && onSave ? "editable-cell explain-cell" : "explain-cell"}><button type="button" className="terminal-position-link" title="预览并定位起点端子" onClick={() => onSelectConnection?.(row)}>{String(value || "-")}</button>{onExplain ? <ExplainButton row={row} scope="row" onExplain={onExplain} /> : null}</td>;
+              if (column.key === "endTerminal") return <td key={column.key} {...cellProps}>{(row.isCrossPage || row.endReference?.kind === "cross-page") && value ? <button type="button" className="terminal-link" onMouseEnter={() => onHoverTarget(row.id)} onMouseLeave={() => onHoverTarget(null)} onFocus={() => onHoverTarget(row.id)} onBlur={() => onHoverTarget(null)} onClick={() => onOpenTarget(row)} title="预览并定位跨页目标">{String(value || "-")}<ExternalLink size={12} /></button> : <button type="button" className="terminal-position-link terminal-static" title="预览并定位终点端子" onClick={() => onSelectConnection?.(row)}>{String(value || "-")}</button>}</td>;
               if (column.key === "current") return <td key={column.key} {...cellProps}><span className={value ? "current-value" : "empty-value"}>{String(value || "-")}</span></td>;
               return <td key={column.key} {...cellProps} title={String(value || "")}>{String(value || "-")}</td>;
             })}
-            <td className="row-actions"><span className={`row-state ${row.status}`} title={(row.reviewReasons ?? []).map(r => r.message).join("；")}>{row.processingStatus === "pending_completion" ? "待补全" : row.processingStatus === "scanned" ? "初扫" : row.status === "review" ? "待复核" : "已完成"}</span>{editor?.row.id === row.id ? <><button type="button" className="row-menu inline-save" disabled={saving} aria-label="保存本行修改" title="保存本行修改（Enter）" onClick={() => void save()}>{saving ? <Loader2 size={16} className="spin" /> : <Check size={16} />}</button><button type="button" className="row-menu" disabled={saving} aria-label="取消本行修改" title="取消本行修改（Esc）" onClick={cancel}><X size={16} /></button></> : <><button type="button" className="row-menu" disabled={!onSave || !!editor || !row.recordVersion} aria-label={`编辑 ${row.startTerminal}`} title="在表格内编辑" onClick={() => beginEdit(row)}><Pencil size={16} /></button><button type="button" className="row-menu" disabled={!onDelete || !!editor} aria-label={`删除 ${row.startTerminal}`} title="删除端子（保留审计）" onClick={() => onDelete?.(row)}><Trash2 size={16} /></button></>}</td>
+            {showActions ? <td className="row-actions"><span className={`row-state ${row.status}`} title={(row.reviewReasons ?? []).map(r => r.message).join("；")}>{row.processingStatus === "pending_completion" ? "待补全" : row.processingStatus === "scanned" ? "初扫" : row.status === "review" ? "待复核" : "已完成"}</span>{editor?.row.id === row.id ? <><button type="button" className="row-menu inline-save" disabled={saving} aria-label="保存本行修改" title="保存本行修改（Enter）" onClick={() => void save()}>{saving ? <Loader2 size={16} className="spin" /> : <Check size={16} />}</button><button type="button" className="row-menu" disabled={saving} aria-label="取消本行修改" title="取消本行修改（Esc）" onClick={cancel}><X size={16} /></button></> : <><button type="button" className="row-menu" disabled={!onSave || !!editor || !row.recordVersion} aria-label={`编辑 ${row.startTerminal}`} title="在表格内编辑" onClick={() => beginEdit(row)}><Pencil size={16} /></button><button type="button" className="row-menu" disabled={!onDelete || !!editor} aria-label={`删除 ${row.startTerminal}`} title="删除端子（保留审计）" onClick={() => onDelete?.(row)}><Trash2 size={16} /></button></>}</td> : null}
           </tr>
         ))}</tbody>
       </table>

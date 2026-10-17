@@ -1,4 +1,4 @@
-import { Bell, Cable, Check, ChevronDown, LogOut, Settings, UserRound, UsersRound } from "lucide-react";
+import { Bell, Bot, Cable, Check, ChevronDown, LogOut, Settings, UserRound, UsersRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { logout } from "@/apis/auth";
@@ -46,6 +46,7 @@ export function AppHeader({ project }: { project?: ProjectDetail }) {
             <div className="account-popover">
               <div className="account-summary"><span className="avatar avatar-large">{user?.name.slice(0, 1)}</span><div><strong>{user?.name}</strong><span>{user?.email}</span></div></div>
               <button type="button"><UserRound size={16} />个人资料</button>
+              <button type="button" onClick={() => { setMenuOpen(false); navigate("/agents"); }}><Bot size={16} />智能体中心</button>
               <button type="button" onClick={handleLogout}><UsersRound size={16} />切换账号</button>
               <button type="button"><Settings size={16} />账户设置</button>
               <button type="button" onClick={handleLogout}><LogOut size={16} />退出登录</button>

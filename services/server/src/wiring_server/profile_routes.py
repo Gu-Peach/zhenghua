@@ -1,0 +1,106 @@
+from typing import Annotated, Any
+from uuid import UUID
+
+from fastapi import Depends, FastAPI, Request
+from pydantic import BaseModel, ConfigDict, Field
+
+from .profile_authoring import ProfileAuthoring
+from .profile_contract import (
+    DraftCreate,
+    DraftView,
+    Stage,
+    StageConfirm,
+    StageGenerate,
+    WizardState,
+)
+from .repository import ServiceError
+from .simple_models import ProfileReferenceRead
+
+
+class ProfileRevision(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    revision: int = Field(ge=1)
+
+
+class ProfileImage(ProfileRevision):
+    image_id: UUID
+    filename: str = Field(min_length=1, max_length=200)
+    content_base64: str = Field(min_length=1, max_length=14 * 1024 * 1024)
+
+
+def install_profile_routes(app: FastAPI, identity: Any) -> None:
+    User = Annotated[str, Depends(identity)]
+
+    def service(request: Request) -> ProfileAuthoring:
+        return ProfileAuthoring(request.app.state.db)
+
+    @app.get("/api/v1/profile/drafts", response_model=list[DraftView])
+    async def drafts(request: Request, user: User) -> Any:
+        return await service(request).call("GET", "/drafts", user)
+
+    @app.post("/api/v1/profile/drafts", response_model=DraftView)
+    async def create(body: DraftCreate, request: Request, user: User) -> Any:
+        profiles = request.app.state.management.profiles
+        if not body.source_profile and body.key in await profiles.available(user):
+            raise ServiceError(
+                409, "PROFILE_KEY_EXISTS", "规则标识已存在，请为新规则使用不同标识"
+            )
+        return await service(request).call(
+            "POST", "/drafts", user, body.model_dump(mode="json")
+        )
+
+    @app.get("/api/v1/profile/drafts/{draft}/wizard", response_model=WizardState)
+    async def state(draft: UUID, request: Request, user: User) -> Any:
+        return await service(request).call("GET", f"/drafts/{draft}/wizard", user)
+
+    @app.post("/api/v1/profile/drafts/{draft}/images", response_model=DraftView)
+    async def image(
+        draft: UUID, body: ProfileImage, request: Request, user: User
+    ) -> Any:
+        return await service(request).call(
+            "POST", f"/drafts/{draft}/images", user, body.model_dump(mode="json")
+        )
+
+    @app.get(
+        "/api/v1/profile/drafts/{draft}/images/{image}", response_model=dict[str, str]
+    )
+    async def pixels(draft: UUID, image: UUID, request: Request, user: User) -> Any:
+        return await service(request).call(
+            "GET", f"/drafts/{draft}/images/{image}", user
+        )
+
+    @app.post(
+        "/api/v1/profile/drafts/{draft}/stages/{stage}/generate",
+        response_model=WizardState,
+    )
+    async def generate(
+        draft: UUID, stage: Stage, body: StageGenerate, request: Request, user: User
+    ) -> Any:
+        return await service(request).call(
+            "POST",
+            f"/drafts/{draft}/stages/{stage}/generate",
+            user,
+            body.model_dump(mode="json"),
+        )
+
+    @app.post(
+        "/api/v1/profile/drafts/{draft}/stages/{stage}/confirm",
+        response_model=WizardState,
+    )
+    async def confirm(
+        draft: UUID, stage: Stage, body: StageConfirm, request: Request, user: User
+    ) -> Any:
+        return await service(request).call(
+            "POST",
+            f"/drafts/{draft}/stages/{stage}/confirm",
+            user,
+            body.model_dump(mode="json"),
+        )
+
+    @app.post(
+        "/api/v1/profile/drafts/{draft}/publish", response_model=ProfileReferenceRead
+    )
+    async def publish(
+        draft: UUID, body: ProfileRevision, request: Request, user: User
+    ) -> Any:
+        return await service(request).publish(str(draft), body.revision, user)

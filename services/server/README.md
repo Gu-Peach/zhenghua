@@ -1,5 +1,9 @@
 # Server 业务服务
 
+2026-10-17新增Profile三步创建与手动发布：`/api/v1/profile/drafts`经JWT后代理8100可信用户；发布由Server校验并上传不可变ZIP，再调用`publish_extraction_profile`登记规则。启用前在目标Supabase应用[新增迁移](../../supabase/migrations/20261017010000_profile_wizard_publication.sql)，随后重新加载8000、8100和提取Worker。此轮未部署到业务库。原本地规则继续可用，`/rule-library/local`为兼容路径，现也返回已发布规则。
+
+契约同步：依次执行`services/agent/scripts/export_profile_contract.py`、`apps/api/scripts/export_openapi.py`和下方已有的openapi-typescript命令。隔离SQL验证使用`$env:PROFILE_PUBLICATION_SQL_TEST="1"; .\.venv\Scripts\python.exe -m pytest services/server/tests/test_profile_publication_sql.py -q`；它创建无网络/无业务卷的临时PostgreSQL容器并清理，不应用业务库迁移。
+
 2026-10-17新增Explain来源解释接口，API版本2.2.0。浏览器POST /api/v1/explain/turns/stream，经Supabase JWT及三表项目所有者校验后转发共享8100的/v1/explain/turns/stream。用户身份由Server注入X-Explain-User-Id，不信任正文/浏览器同名头。只读、不修改数据或新增迁移，旧Supervisor保持未开放。见[交付](../../docs/service/server/changelog/2026-10-17-explain-proxy.md)。
 
 沿用下方8000启动命令加载新代码，并启动[8100共享Agent宿主](../agent/README.md)。SERVER_AGENT_URL默认http://127.0.0.1:8100，AGENT_INTERNAL_TOKEN需与Agent一致；这些配置仅留服务端。前端仍只请求8000。仅启动提取Worker不会提供Explain HTTP。

@@ -1,5 +1,13 @@
 # Changelog
 
+2026-10-17：Profile三步创建与手动发布完成代码接入，API 2.3.0；固定阶段模板、图片生成Expected、表格确认与草稿恢复，Server发布私有固定版本并接通目录/预览和Worker。47项Agent相关、29项后端、2项独立SQL和51项浏览器通过，16源码strict mypy/Ruff及前端检查通过。未调用真实模型、未发布真实规则或部署业务库迁移，目标Supabase环境测试异常及清理已记录。见[Agent](../service/agent/changelog/2026-10-17-profile-wizard.md)、[Server](../service/server/changelog/2026-10-17-profile-publication.md)、[Web](../apps/web/changelog/2026-10-17-profile-wizard.md)。
+
+2026-10-17：图纸预览模式新增线表/图纸拖拽调宽、键盘与双击复位，修复缩放百分比和长标题溢出；45项离线浏览器及前端检查通过，仅前端变更。见[Web记录](../apps/web/changelog/2026-10-17-preview-resize.md)。
+
+2026-10-17：按用户指定，智能体中心三个Agent的展示版本统一为1.0.0，Skill保留实际规则包版本；仅前端变更，详见[Web记录](../apps/web/changelog/2026-10-17-agent-center-preview.md)。
+
+2026-10-17新增用户菜单“智能体中心”及三Agent卡片，提取规则作为zh_extraction等Skills迁入；默认全量线表铺满，按需五列压缩并在右侧上下展示原页/目标页及端点坐标，移除线号显示/底部图纸。44项浏览器与前端检查通过，后端及数据契约不变。见[Web交付](../apps/web/changelog/2026-10-17-agent-center-preview.md)。
+
 2026-10-17项目名改为双击原地编辑，目录/图纸按编号自然升序，图纸标签简化为006M01等编号；工作区暂不改名。32项浏览器与前端检查通过，仅前端改动。见[Web交付](../apps/web/changelog/2026-10-17-project-tree-inline.md)。
 
 2026-10-17来源解释支持前端逐字显示和Markdown排版：大块/缓存/完成回复经过缓冲，支持立即显示、停止冻结和减少动态效果；26项浏览器与前端检查通过，无后端或数据变更。见[Web交付](../apps/web/changelog/2026-10-17-explain-typewriter.md)。

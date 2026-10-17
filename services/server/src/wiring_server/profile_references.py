@@ -70,13 +70,13 @@ class ProfileReferences:
         return resolved
 
     async def register(self, key: str, user: str) -> dict[str, Any]:
-        import asyncio
-
-        option = (await asyncio.to_thread(self.catalog)).get(key)
+        option = (await self.available(user)).get(key)
         if option is None:
             raise ServiceError(
                 422, "PROFILE_NOT_AVAILABLE", "本地规则不存在或资源不完整"
             )
+        if option["resource_ref"].startswith("storage://"):
+            return await self.get(option["id"])
         identifier = str(
             uuid5(
                 NAMESPACE_URL,
@@ -111,6 +111,41 @@ class ProfileReferences:
             if rows:
                 return rows[0]
             raise
+
+    async def available(self, user: str) -> dict[str, dict[str, Any]]:
+        import asyncio
+
+        from .profile_packages import REF
+
+        options = await asyncio.to_thread(self.catalog)
+        rows = await self.list(user)
+
+        def version(value: str) -> tuple[int, ...]:
+            return tuple(int(part) for part in value.split("."))
+
+        for row in rows:
+            if not REF.fullmatch(row["resource_ref"]):
+                continue
+            current = options.get(row["profile_key"])
+            try:
+                newer = not current or version(row["profile_version"]) >= version(
+                    current["profile_version"]
+                )
+            except ValueError:
+                continue
+            if newer:
+                options[row["profile_key"]] = row
+        return options
+
+    async def package(self, row: dict[str, Any]) -> dict[str, Any]:
+        import asyncio
+
+        from .profile_packages import download, preview
+
+        if row["resource_ref"].startswith("storage://"):
+            content = await download(self.db, row)
+            return await asyncio.to_thread(preview, content, row["checksum"])
+        return await asyncio.to_thread(self.resource_package, row)
 
     async def list(self, user: str) -> list[dict[str, Any]]:
         rows = await self.db.all_rows(

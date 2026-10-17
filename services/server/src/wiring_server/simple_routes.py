@@ -31,7 +31,7 @@ def install_management_routes(app: FastAPI, identity: Any) -> None:
 
     @app.get("/api/v1/capabilities")
     async def capabilities(user: User) -> dict[str, bool]:
-        return {"data_management": True, "extraction": True, "explain": True, "supervisor": False}
+        return {"data_management": True, "extraction": True, "explain": True, "profile": True, "supervisor": False}
 
     @app.get(
         "/api/v1/projects/{project_id}/extraction",
@@ -226,7 +226,7 @@ def install_management_routes(app: FastAPI, identity: Any) -> None:
     # Static route must precede /{profile_id}.
     @app.get("/api/v1/rule-library/local", response_model=list[LocalProfileOption])
     async def available_profiles(request: Request, user: User) -> Any:
-        options = await asyncio.to_thread(request.app.state.management.profiles.catalog)
+        options = await request.app.state.management.profiles.available(user)
         return [
             {name: option[name] for name in LocalProfileOption.model_fields}
             for option in options.values()
@@ -259,7 +259,7 @@ def install_management_routes(app: FastAPI, identity: Any) -> None:
     async def profile_package(profile_id: UUID, request: Request, user: User) -> Any:
         profiles = request.app.state.management.profiles
         row = await profiles.get(str(profile_id))
-        return await asyncio.to_thread(profiles.resource_package, row)
+        return await profiles.package(row)
 
     @app.post("/api/v1/imports", response_model=SimpleImportRead, status_code=201)
     async def upload(

@@ -12,11 +12,17 @@ from src.agent.explain_agent import ExplainActor, ExplainAgent, create_explain_a
 from src.agent.explain_agent.api import create_explain_router
 from src.agent.explain_agent.models import ExplainError
 from src.agent.extraction_agent.application.incremental_worker import run_worker
+from src.agent.profile_agent import ProfileActor, ProfileAgent, create_profile_agent
+from src.agent.profile_agent.api import create_profile_router
 from src.api.dependencies import require_internal_service
 from src.config import AgentSettings
 
 
-def create_app(settings: AgentSettings | None = None, explain_agent: ExplainAgent | None = None) -> FastAPI:
+def create_app(
+    settings: AgentSettings | None = None,
+    explain_agent: ExplainAgent | None = None,
+    profile_agent: ProfileAgent | None = None,
+) -> FastAPI:
     config = settings or AgentSettings.from_env()
 
     @asynccontextmanager
@@ -50,6 +56,16 @@ def create_app(settings: AgentSettings | None = None, explain_agent: ExplainAgen
         return ExplainActor(user_id=user)
 
     application.include_router(create_explain_router(explanation, actor))
+
+    async def profile_actor(
+        user: Annotated[UUID, Header(alias="X-Profile-User-Id")],
+        _: Annotated[None, Depends(require_internal_service)],
+    ) -> ProfileActor:
+        return ProfileActor(user_id=user)
+
+    application.include_router(
+        create_profile_router(profile_agent or create_profile_agent(config), profile_actor)
+    )
 
     @application.get("/health")
     async def health() -> dict[str, object]:

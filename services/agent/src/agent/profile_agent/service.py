@@ -151,7 +151,14 @@ class ProfileAgent:
         receipt_path = self.store.file(directory, "receipt.json")
         if receipt_path.is_file():
             receipt = ExportReceipt.model_validate_json(receipt_path.read_text(encoding="utf-8"))
-            if checksum(archive_path.read_bytes()) != receipt.checksum:
+            if (
+                receipt.archive_path != str(archive_path)
+                or receipt.draft_id != draft
+                or receipt.revision != revision
+                or receipt.key != manifest.key
+                or receipt.version != manifest.version
+                or checksum(archive_path.read_bytes()) != receipt.checksum
+            ):
                 raise ProfileError("EXPORT_CHANGED", "导出文件已在工具外修改", 409)
             return receipt
         package = directory / f"package-{os.urandom(8).hex()}"

@@ -73,14 +73,14 @@ export const projectApi = {
     const page = await request<Schema["SimpleConnectionPage"]>(`/api/v1/projects/${id}/connections?${params}`);
     return { ...page, items: page.items.map(connection) };
   },
-  async drawing(id: string): Promise<Drawing> { return drawingFromDb(await request<Schema["DrawingRead"]>(`/api/v1/drawings/${id}`)); },
+  async drawing(id: string, signal?: AbortSignal): Promise<Drawing> { return drawingFromDb(await request<Schema["DrawingRead"]>(`/api/v1/drawings/${id}`, { signal })); },
   async source(id: string): Promise<string> { return (await request<{ url: string }>(`/api/v1/projects/${id}/source`)).url; },
   async addConnection(id: string, body: Schema["SimpleConnectionCreate"], key: string): Promise<void> { await request(`/api/v1/projects/${id}/connections`, { method: "POST", headers: { "Idempotency-Key": key }, body: JSON.stringify(body) }); },
   async deleteConnection(id: string, row: WiringRow, key: string): Promise<void> {
     const body: Schema["SimpleConnectionDelete"] = { record_version: row.recordVersion!, confirmed: true };
     await request(`/api/v1/projects/${id}/connections/${row.id}`, { method: "DELETE", headers: { "Idempotency-Key": key }, body: JSON.stringify(body) });
   },
-  async target(row: WiringRow): Promise<Drawing> { return drawingFromDb(await request<Schema["DrawingRead"]>(`/api/v1/connections/${row.id}/target`)); },
+  async target(row: WiringRow, signal?: AbortSignal): Promise<Drawing> { return drawingFromDb(await request<Schema["DrawingRead"]>(`/api/v1/connections/${row.id}/target`, { signal })); },
   async edit(row: WiringRow, _page: ResultPage, changes: Schema["ConnectionFields"], key: string = crypto.randomUUID()): Promise<void> {
     const body: Schema["SimpleConnectionEdit"] = { record_version: row.recordVersion!, changes };
     await request(`/api/v1/connections/${row.id}`, { method: "PATCH", headers: { "Idempotency-Key": key }, body: JSON.stringify(body) });

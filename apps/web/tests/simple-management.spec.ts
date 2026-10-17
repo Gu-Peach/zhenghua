@@ -35,6 +35,7 @@ async function fixture(page: Page, options: { empty?: boolean; failList?: boolea
     calls.push(path);
     if (path.includes("/supervisor/") || path.includes("/runs/")) throw new Error("Data management must not call the old Agent path");
     if (path.includes("/auth/")) return route.fulfill({ json: { user: { id: "owner", name: "回归测试工程师", email: "fixture@example.invalid", role: "工程师" }, accessToken: "fixture", expiresIn: 3600 } });
+    if (path === "/api/v1/capabilities") return route.fulfill({ json: { extraction: true, explain: true, supervisor: false } });
     if (path === "/api/v1/projects") {
       if (options.loading) await options.loading;
       return options.failList ? route.fulfill({ status: 503, json: { detail: { message: "数据服务暂不可用" } } }) : route.fulfill({ json: exists ? [payload(), ...(options.anotherProject ? [another] : [])] : [] });
@@ -76,7 +77,8 @@ test("空数据库直接显示完整工作区", async ({ page }) => {
   await expect(page.locator(".project-sidebar")).toBeVisible();
   await expect(page.locator(".project-list-page")).toHaveCount(0);
   await expect(page.getByText("上传 PDF 创建项目，在此管理图纸和线表。")).toBeVisible();
-  await page.screenshot({ path: test.info().outputPath("empty.png"), fullPage: true });
+  expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThan(2000);
+  await page.screenshot({ path: test.info().outputPath("empty.png"), animations: "disabled" });
 });
 
 test("已有项目直接进入首个项目工作区", async ({ page }) => {
@@ -91,7 +93,8 @@ test("空工作区窄屏与规则入口", async ({ page }) => {
   await fixture(page, { empty: true }); await page.goto("/projects");
   await expect(page.getByText("上传 PDF 创建项目，在此管理图纸和线表。")).toBeVisible();
   await page.screenshot({ path: test.info().outputPath("empty-narrow.png"), fullPage: true });
-  await page.getByRole("button", { name: "规则库", exact: true }).click();
+  await page.locator(".account-trigger").click(); await page.getByRole("button", { name: "智能体中心", exact: true }).click();
+  await page.getByRole("link", { name: /图纸提取智能体/ }).click();
   await expect(page.getByRole("button", { name: "登记规则引用", exact: true })).toBeVisible();
 });
 
@@ -164,10 +167,9 @@ test("工作区和图纸编号自然升序，树与图纸库使用简名且不�
   await expect(page.getByRole("textbox", { name: "项目名称", exact: true })).toHaveCount(0);
   await expect(page.getByRole("cell", { name: "XA:8", exact: true })).toBeVisible();
   await page.screenshot({ path: test.info().outputPath("tree-ascending-desktop.png") });
-  await page.getByRole("button", { name: "图纸库", exact: true }).click();
-  await page.locator(".library-project > summary").click();
-  await expect(page.locator(".library-workspace > summary > strong")).toHaveText(["006.C", "006.M", "082.R"]);
-  await expect(page.locator(".drawing-file > summary > strong")).toHaveText(["006C01", "006M01", "006M2", "006M10", "082R50"]);
+  await page.getByRole("button", { name: "图纸预览", exact: true }).click();
+  await expect(page.locator(".compact-table th")).toHaveText(["页码", "原理号", "起点端子", "终点端子", "电流"]);
+  await expect(page.getByRole("complementary", { name: "图纸校验面板" })).toBeVisible();
 });
 
 test("窄屏项目名原地编辑、长文本和失败提示可见", async ({ page }) => {
@@ -247,7 +249,9 @@ test("按批次读取、跨页双图和行内编辑", async ({ page }) => {
   await fixture(page); await page.goto(`/projects/${projectId}`);
   await expect(page.getByText("批次 run-one", { exact: false }).first()).toBeVisible();
   await page.getByRole("button", { name: "XD10:1", exact: false }).click();
-  await expect(page.locator(".below-previews.with-target")).toBeVisible();
+  await expect(page.locator(".connection-preview.has-target")).toBeVisible();
+  await expect(page.locator(".connection-preview .drawing-preview")).toHaveCount(2);
+  await page.getByRole("button", { name: "线表工作区", exact: true }).click();
   await page.getByRole("button", { name: "编辑 XA:8", exact: true }).click();
   await page.getByRole("textbox", { name: "终点端子", exact: true }).fill("XD10:2");
   await page.getByRole("textbox", { name: "终点端子", exact: true }).press("Enter");
@@ -267,7 +271,8 @@ test("版本冲突保留草稿，重试复用幂等键", async ({ page }) => {
 
 test("规则引用与Stage2内部补全预览", async ({ page }) => {
   await fixture(page); await page.goto(`/projects/${projectId}`);
-  await page.getByRole("button", { name: "规则库", exact: true }).click();
+  await page.locator(".account-trigger").click(); await page.getByRole("button", { name: "智能体中心", exact: true }).click();
+  await page.getByRole("link", { name: /图纸提取智能体/ }).click();
   await page.getByRole("button", { name: "查看规则", exact: true }).click();
   await page.getByRole("button", { name: "Stage 2 内部连接补全", exact: true }).click();
   await expect(page.getByText("夹具 cross_page 规则")).toBeVisible();

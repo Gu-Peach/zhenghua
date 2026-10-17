@@ -1,5 +1,7 @@
 # Agent 服务设计索引
 
+- [Profile三步创建与发布接入](./changelog/2026-10-17-profile-wizard.md)、[执行计划](./profile-wizard-plan.md)：图片生成答案草稿、人工确认、依赖失效，复用8100宿主；真实部署状态及环境异常见Server交付。
+
 - [独立Profile Agent交付](./changelog/2026-10-17-profile-agent.md)、[模块入口](../../../services/agent/src/agent/profile_agent/README.md)、[ADR 0026](../../adr/0026-independent-profile-agent.md)：模板填充、诊断、受控草稿编辑和包输出，界面/正式发布后接。
 
 - [Explain共享宿主与公开工具事件](./changelog/2026-10-17-explain-host.md)：工具状态/结果SSE、8000→8100可信身份和独立前端浮窗接入，启动需加载src.extraction_main。
