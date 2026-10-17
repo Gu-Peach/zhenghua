@@ -1,6 +1,7 @@
-import { ChevronDown, ChevronRight, FileImage, Folder, FolderOpen, Pencil, Search, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, FileImage, Folder, FolderOpen, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { EditableName } from "./EditableName";
 import type { AgentStageProgress } from "@/apis/agent";
 import type { EntityStatus, ProjectDetail, ProjectSummary } from "@/apis/types";
 
@@ -15,7 +16,7 @@ interface ProjectTreeProps {
   simulationEnabled: boolean;
   onSelectWorkspace: (workspaceId: string) => void;
   onSelectDrawing: (workspaceId: string, drawingId: string) => void;
-  onRename?: (project: ProjectSummary) => void;
+  onRename?: (project: ProjectSummary, name: string) => Promise<void>;
   onDelete?: (project: ProjectSummary) => void;
 }
 
@@ -52,12 +53,7 @@ export function ProjectTree({ project, projects, loading = false, selectedWorksp
             <div className="project-node" key={item.id}>
                   <div className={`project-row ${active ? "active" : ""}`}>
                     <button type="button" className="project-folder-toggle" aria-expanded={expanded} aria-controls={childrenId} aria-label={`${expanded ? "收起" : "展开"}项目 ${item.name}`} onClick={() => toggleProject(item.id)}>{expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}</button>
-                    <Link to={`/projects/${item.id}`} className="project-folder-link" aria-label={item.name} aria-current={active ? "page" : undefined} onClick={() => { if (active && !expanded) setExpandedProjects(ids => [...ids, item.id]); }}>
-                    {expanded ? <FolderOpen size={18} /> : <Folder size={18} />}
-                    <span className="tree-row-copy"><strong title={item.name}>{item.name}</strong></span>
-                    <StatusDot status={item.status} />
-                    </Link>
-                    {onRename ? <button type="button" className="project-action" aria-label={`重命名项目 ${item.name}`} title="重命名项目" onClick={() => onRename(item)}><Pencil size={13} /></button> : null}
+                    <EditableName value={item.name} label="项目名称" current={active} to={`/projects/${item.id}`} className="project-folder-link" leading={expanded ? <FolderOpen size={18} /> : <Folder size={18} />} trailing={<StatusDot status={item.status} />} onActivate={() => { if (active && !expanded) setExpandedProjects(ids => [...ids, item.id]); }} onSave={onRename ? name => onRename(item, name) : undefined} />
                     {onDelete ? <button type="button" className="project-action" aria-label={`删除项目 ${item.name}`} title="删除项目" onClick={() => onDelete(item)}><Trash2 size={13} /></button> : null}
                   </div>
                   {project && active && expanded ? <div id={childrenId} className="workspace-tree">
@@ -78,7 +74,7 @@ export function ProjectTree({ project, projects, loading = false, selectedWorksp
                           <div className="drawing-tree">
                             {workspace.drawings.map((drawing) => (
                               <button type="button" key={drawing.id} className={`drawing-row ${selectedDrawingId === drawing.id ? "active" : ""}`} onClick={() => onSelectDrawing(workspace.id, drawing.id)}>
-                                <FileImage size={15} /><span><strong>图纸 {drawing.drawingPage}.png</strong><small>{drawing.name}</small></span><StatusDot status={stage2?.status === "processing" ? "processing" : stage2?.status === "failed" ? "failed" : drawing.status} />
+                                <FileImage size={15} /><span><strong>{drawing.drawingPage}</strong><small>{drawing.name}</small></span><StatusDot status={stage2?.status === "processing" ? "processing" : stage2?.status === "failed" ? "failed" : drawing.status} />
                               </button>
                             ))}
                           </div>

@@ -7,14 +7,25 @@ const sourceId = "00000000-0000-0000-0000-000000000012";
 const targetId = "00000000-0000-0000-0000-000000000013";
 const workspaceId = "00000000-0000-0000-0000-000000000014";
 const rowId = "00000000-0000-0000-0000-000000000015";
+const anotherProjectId = "00000000-0000-0000-0000-000000000016";
 const drawing = (id: string, page: number) => ({ id, project_id: projectId, workspace_id: workspaceId, pdf_page_number: page, workspace_page: `003C0${page}`, status: "scanned", image_url: "/fixture.png" });
 
-async function fixture(page: Page, options: { empty?: boolean; failList?: boolean; denied?: boolean; failSave?: boolean; noIndex?: boolean; longName?: boolean; loading?: Promise<void>; realtime?: boolean; streamFailures?: number } = {}) {
+async function fixture(page: Page, options: { empty?: boolean; failList?: boolean; denied?: boolean; failSave?: boolean; noIndex?: boolean; longName?: boolean; loading?: Promise<void>; realtime?: boolean; streamFailures?: number; treeOrder?: boolean; failRename?: boolean; renameGate?: Promise<void>; anotherProject?: boolean } = {}) {
   let exists = !options.empty;
   let failSave = options.failSave;
   const calls: string[] = []; const keys: string[] = [];
+  const renames: Array<{ project: string; name: string }> = []; let failRename = !!options.failRename;
   const detail = { id: projectId, name: options.longName ? "超长项目名称用于验证布局和换行".repeat(10) : "三表回归夹具项目", owner_id: "owner", status: "ready", profile_id: profileId, standard_profile: "zh", updated_at: "2026-10-16", source_saved: true, sources: [{ id: projectId, original_filename: "fixture.pdf", page_count: 2 }], workspaces: options.noIndex ? [] : [{ id: workspaceId, code: "003.C", name: "003.C", drawings: [drawing(sourceId, 1), drawing(targetId, 2)] }], batch_id: options.noIndex ? null : "run-one", extraction_available: false };
   const row = { connection_id: rowId, project_id: projectId, batch_id: "run-one", workspace_id: workspaceId, workspace_name: "003.C", drawing_id: sourceId, workspace_page: "003C01", pdf_page_number: 1, row_order: 0, wire_number: null, record_version: 1, start_code: "+01F10", start_terminal: "XA:8", end_code: "+01F12.1", end_terminal: "XD10:1", is_cross_page: true, needs_review: false };
+  if (options.treeOrder) detail.workspaces = [
+    { id: "work-082", code: "082.R", name: "082.R", drawings: [{ ...drawing(sourceId, 1), workspace_page: "082R50" }] },
+    { id: "work-006-m", code: "006.M", name: "006.M", drawings: [
+      { ...drawing("m10", 2), workspace_page: "006M10" }, { ...drawing("m2", 4), workspace_page: "006M2" },
+      { ...drawing("m01", 5), workspace_page: "006M01" },
+    ] },
+    { id: "work-006-c", code: "006.C", name: "006.C", drawings: [{ ...drawing("c01", 3), workspace_page: "006C01" }] },
+  ];
+  const another = { ...detail, id: anotherProjectId, name: "第二项目" };
   let phase = 0; let streamFailures = options.streamFailures ?? 0;
   const progress = () => ({ run_id: "run-one", stage: phase === 0 ? "render" : phase === 1 ? "scan" : phase === 2 ? "completion" : "finished", total_pages: 2, rendered_pages: phase === 0 ? 1 : 2, classified_pages: phase === 0 ? 0 : 2, completed_pages: phase === 3 ? 2 : 0, row_count: phase ? 1 : 0 });
   const payload = () => options.realtime ? { ...detail, status: phase === 3 ? "ready" : "processing", processing: progress(), workspaces: phase === 0 ? [] : detail.workspaces } : detail;
@@ -26,16 +37,22 @@ async function fixture(page: Page, options: { empty?: boolean; failList?: boolea
     if (path.includes("/auth/")) return route.fulfill({ json: { user: { id: "owner", name: "回归测试工程师", email: "fixture@example.invalid", role: "工程师" }, accessToken: "fixture", expiresIn: 3600 } });
     if (path === "/api/v1/projects") {
       if (options.loading) await options.loading;
-      return options.failList ? route.fulfill({ status: 503, json: { detail: { message: "数据服务暂不可用" } } }) : route.fulfill({ json: exists ? [payload()] : [] });
+      return options.failList ? route.fulfill({ status: 503, json: { detail: { message: "数据服务暂不可用" } } }) : route.fulfill({ json: exists ? [payload(), ...(options.anotherProject ? [another] : [])] : [] });
     }
     if (path === "/api/v1/rule-library/local") return route.fulfill({ json: [{ profile_key: "zh", profile_version: "2.1.0", display_name: "振华规则", checksum: "sha256:" + "0".repeat(64) }] });
     if (path === "/api/v1/rule-library") return route.fulfill({ json: [{ id: profileId, profile_key: "zh", profile_version: "2.1.0", display_name: "振华规则", checksum: "sha256:" + "0".repeat(64), resource_ref: "local://zh/profile.json", created_at: "2026-10-16", can_delete: true }] });
     if (path === `/api/v1/rule-library/${profileId}`) return route.fulfill({ json: { manifest: {}, files: ["classification", "page_scan", "cross_page"].map(stage => ({ path: `resources/${stage}_prompt.md`, content: `夹具 ${stage} 规则` })), images: [] } });
     if (path === "/api/v1/imports") { exists = true; detail.workspaces = []; detail.batch_id = null; return route.fulfill({ status: 201, json: { project_id: projectId, source_document_id: projectId, attachment_id: projectId, filename: "fixture.pdf", checksum: "sha256:fixture", size: 100, page_count: 2, extraction_started: true } }); }
-    if (path === `/api/v1/projects/${projectId}`) {
-      if (request.method() === "PATCH") detail.name = request.postDataJSON().name;
+    if (path === `/api/v1/projects/${projectId}` || path === `/api/v1/projects/${anotherProjectId}`) {
+      const selected = path.endsWith(anotherProjectId) ? another : detail;
+      if (request.method() === "PATCH") {
+        renames.push({ project: selected.id, name: request.postDataJSON().name });
+        if (failRename) { failRename = false; return route.fulfill({ status: 503, json: { detail: { message: "项目名称保存失败，请重试" } } }); }
+        if (options.renameGate) await options.renameGate;
+        selected.name = request.postDataJSON().name;
+      }
       if (request.method() === "DELETE") { exists = false; return route.fulfill({ status: 204 }); }
-      return options.denied ? route.fulfill({ status: 403, json: { detail: { message: "没有项目操作权限" } } }) : route.fulfill({ json: payload() });
+      return options.denied ? route.fulfill({ status: 403, json: { detail: { message: "没有项目操作权限" } } }) : route.fulfill({ json: selected === another ? another : payload() });
     }
     if (path.endsWith("/extraction/events") && streamFailures-- > 0) return route.fulfill({ contentType: "text/event-stream", body: "event: unavailable\ndata: {}\n\n" });
     if (path.endsWith("/extraction/events")) return route.fulfill({ contentType: "text/event-stream", body: `id: ${phase}\nevent: refresh\ndata: {}\n\n${phase === 3 ? "event: done\ndata: {}\n\n" : ""}` });
@@ -47,10 +64,10 @@ async function fixture(page: Page, options: { empty?: boolean; failList?: boolea
       return route.fulfill({ json: { connection_id: rowId, batch_id: "run-one", action: "edit", record_version: row.record_version, idempotent: false } });
     }
     if (path.endsWith("/target")) return route.fulfill({ json: drawing(targetId, 2) });
-    if (path.startsWith("/api/v1/drawings/")) return route.fulfill({ json: drawing(path.endsWith(sourceId) ? sourceId : targetId, path.endsWith(sourceId) ? 1 : 2) });
+    if (path.startsWith("/api/v1/drawings/")) return route.fulfill({ json: detail.workspaces.flatMap(workspace => workspace.drawings).find(d => path.endsWith(d.id)) ?? drawing(sourceId, 1) });
     return route.fulfill({ status: 404, json: { detail: { message: "未配置的夹具请求" } } });
   });
-  return { calls, keys, advance: (next: number) => { phase = next; } };
+  return { calls, keys, renames, advance: (next: number) => { phase = next; } };
 }
 
 test("空数据库直接显示完整工作区", async ({ page }) => {
@@ -78,15 +95,104 @@ test("空工作区窄屏与规则入口", async ({ page }) => {
   await expect(page.getByRole("button", { name: "登记规则引用", exact: true })).toBeVisible();
 });
 
-test("侧栏保留重命名和删除，删除后回到空工作区", async ({ page }) => {
+test("侧栏双击原地改名并保留删除，删除后回到空工作区", async ({ page }) => {
   await fixture(page); await page.goto("/projects");
-  page.once("dialog", dialog => dialog.accept("新项目名称"));
-  await page.getByRole("button", { name: "重命名项目 三表回归夹具项目", exact: true }).click();
+  await page.getByRole("link", { name: "三表回归夹具项目", exact: true }).dblclick();
+  await page.getByRole("textbox", { name: "项目名称", exact: true }).fill("新项目名称");
+  await page.getByRole("textbox", { name: "项目名称", exact: true }).press("Enter");
   await expect(page.locator(".header-project strong")).toHaveText("新项目名称");
   page.once("dialog", dialog => dialog.accept());
   await page.getByRole("button", { name: "删除项目 新项目名称", exact: true }).click();
   await expect(page).toHaveURL("/projects");
   await expect(page.getByText("上传 PDF 创建项目，在此管理图纸和线表。")).toBeVisible();
+});
+
+test("原地改名校验空值、Esc取消及失败后保留草稿重试", async ({ page }) => {
+  const state = await fixture(page, { failRename: true });
+  await page.addInitScript(() => { window.prompt = () => { throw new Error("Rename must not use window.prompt"); }; });
+  await page.goto(`/projects/${projectId}`);
+  await expect(page.getByRole("button", { name: /重命名项目/ })).toHaveCount(0);
+  const link = page.getByRole("link", { name: "三表回归夹具项目", exact: true });
+  await link.dblclick(); const input = page.getByRole("textbox", { name: "项目名称", exact: true });
+  await input.fill("  "); await input.press("Enter");
+  await expect(page.getByRole("alert")).toHaveText("项目名称不能为空"); expect(state.renames).toHaveLength(0);
+  await input.press("Escape"); await expect(input).toHaveCount(0);
+  await link.dblclick(); await input.fill("改名失败后的草稿"); await input.press("Enter");
+  await expect(page.getByRole("alert")).toHaveText("项目名称保存失败，请重试");
+  await expect(input).toHaveValue("改名失败后的草稿"); expect(state.renames).toHaveLength(1);
+  await input.press("Enter");
+  await expect(page.locator(".header-project strong")).toHaveText("改名失败后的草稿");
+  expect(state.renames).toHaveLength(2);
+  await page.reload(); await expect(page.getByRole("link", { name: "改名失败后的草稿", exact: true })).toBeVisible();
+});
+
+test("当前项目标题可双击修改，失焦只保存一次且保存中禁用输入", async ({ page }) => {
+  let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; });
+  const state = await fixture(page, { renameGate: gate }); await page.goto(`/projects/${projectId}`);
+  await page.locator(".context-project-name").dblclick();
+  const input = page.getByRole("textbox", { name: "项目名称", exact: true });
+  await input.fill("  标题改名  "); await input.press("Tab");
+  await expect(input).toBeDisabled(); expect(state.renames).toEqual([{ project: projectId, name: "标题改名" }]);
+  await page.screenshot({ path: test.info().outputPath("project-name-saving.png") });
+  release(); await expect(page.locator(".header-project strong")).toHaveText("标题改名");
+  await expect(page.getByRole("link", { name: "标题改名", exact: true })).toBeVisible();
+  expect(state.renames).toHaveLength(1);
+});
+
+test("非当前项目双击改名不跳转，键盘与单击导航仍可用", async ({ page }) => {
+  const state = await fixture(page, { anotherProject: true }); await page.goto(`/projects/${projectId}`);
+  await page.getByRole("link", { name: "第二项目", exact: true }).dblclick();
+  await expect(page).toHaveURL(`/projects/${projectId}`);
+  const input = page.getByRole("textbox", { name: "项目名称", exact: true });
+  await input.fill("第二项目新名称"); await input.press("Enter");
+  const link = page.getByRole("link", { name: "第二项目新名称", exact: true });
+  await expect(link).toBeVisible(); await expect(link).toHaveAttribute("href", `/projects/${anotherProjectId}`);
+  await expect(page.locator(".project-folder-link .inline-name-value")).toHaveText(["三表回归夹具项目", "第二项目新名称"]);
+  await expect(page).toHaveURL(`/projects/${projectId}`);
+  expect(state.renames).toEqual([{ project: anotherProjectId, name: "第二项目新名称" }]);
+  await link.focus(); await link.press("F2"); await expect(input).toBeFocused();
+  await input.press("Escape"); await link.click(); await expect(page).toHaveURL(`/projects/${anotherProjectId}`);
+});
+
+test("工作区和图纸编号自然升序，树与图纸库使用简名且不改变PDF物理页", async ({ page }) => {
+  await fixture(page, { treeOrder: true }); await page.goto(`/projects/${projectId}`);
+  await expect(page.locator(".workspace-row strong")).toHaveText(["006.C", "006.M", "082.R"]);
+  const motor = page.locator(".workspace-node").filter({ has: page.locator(".workspace-row strong", { hasText: "006.M" }) });
+  await expect(motor.locator(".drawing-row strong")).toHaveText(["006M01", "006M2", "006M10"]);
+  await expect(motor.locator(".drawing-row small")).toHaveText(["PDF 第 5 页", "PDF 第 4 页", "PDF 第 2 页"]);
+  await motor.locator(".tree-select").dblclick();
+  await expect(page.getByRole("textbox", { name: "项目名称", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("cell", { name: "XA:8", exact: true })).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath("tree-ascending-desktop.png") });
+  await page.getByRole("button", { name: "图纸库", exact: true }).click();
+  await page.locator(".library-project > summary").click();
+  await expect(page.locator(".library-workspace > summary > strong")).toHaveText(["006.C", "006.M", "082.R"]);
+  await expect(page.locator(".drawing-file > summary > strong")).toHaveText(["006C01", "006M01", "006M2", "006M10", "082R50"]);
+});
+
+test("窄屏项目名原地编辑、长文本和失败提示可见", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await fixture(page, { failRename: true, treeOrder: true }); await page.goto(`/projects/${projectId}`);
+  await page.getByRole("link", { name: "三表回归夹具项目", exact: true }).dblclick();
+  const input = page.getByRole("textbox", { name: "项目名称", exact: true });
+  await input.fill("用于检查名称原地编辑的长项目名称".repeat(10)); await input.press("Enter");
+  await expect(page.getByRole("alert")).toContainText("项目名称保存失败");
+  await expect(input).toHaveAttribute("maxlength", "200");
+  const bounds = await input.boundingBox(); expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
+  await expect(page.getByRole("cell", { name: "XA:8", exact: true })).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath("tree-inline-name-narrow.png"), fullPage: true });
+});
+
+test("增量提取刷新后仍按编号升序显示目录和图纸", async ({ page }) => {
+  const state = await fixture(page, { realtime: true, treeOrder: true });
+  await page.goto(`/projects/${projectId}`);
+  await expect(page.locator(".workspace-row")).toHaveCount(0);
+  state.advance(1);
+  await expect(page.locator(".workspace-row strong")).toHaveText(["006.C", "006.M", "082.R"]);
+  state.advance(3);
+  await expect(page.getByText("处理完成", { exact: true })).toBeVisible();
+  await expect(page.locator(".workspace-row strong")).toHaveText(["006.C", "006.M", "082.R"]);
+  await expect(page.locator(".drawing-row strong")).toHaveText(["006C01", "006M01", "006M2", "006M10", "082R50"]);
 });
 
 test("加载中、请求失败和无权限均可见", async ({ page }) => {

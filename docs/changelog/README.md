@@ -1,5 +1,7 @@
 # Changelog
 
+2026-10-17项目名改为双击原地编辑，目录/图纸按编号自然升序，图纸标签简化为006M01等编号；工作区暂不改名。32项浏览器与前端检查通过，仅前端改动。见[Web交付](../apps/web/changelog/2026-10-17-project-tree-inline.md)。
+
 2026-10-17来源解释支持前端逐字显示和Markdown排版：大块/缓存/完成回复经过缓冲，支持立即显示、停止冻结和减少动态效果；26项浏览器与前端检查通过，无后端或数据变更。见[Web交付](../apps/web/changelog/2026-10-17-explain-typewriter.md)。
 
 2026-10-17新增独立Profile Agent：统一提取Schema与可填写模板、规则/案例/原图诊断、确认建议或明确指令后编辑隔离草稿、用户确认Expected及规则包输出。SDK/CLI/可注册Router已离线验收，未接界面/正式发布，不改变现有Profile或项目。33+3项回归、strict mypy/Ruff通过，未调用真实模型或写业务库。见[Agent交付](../service/agent/changelog/2026-10-17-profile-agent.md)、[ADR 0026](../adr/0026-independent-profile-agent.md)。

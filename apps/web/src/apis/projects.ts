@@ -1,8 +1,9 @@
 import { authenticatedFetch, request } from "./client";
 import type { components } from "./generated";
-import type { Drawing, ProjectDetail, ProjectSummary, RuleLibraryItem, WiringRow } from "./types";
+import type { Drawing, ProjectDetail, ProjectSummary, RuleLibraryItem, WiringRow, Workspace } from "./types";
 
 type Schema = components["schemas"];
+const drawingOrder = new Intl.Collator("zh-CN", { numeric: true, sensitivity: "base" });
 export type ResultPage = Omit<Schema["SimpleConnectionPage"], "items"> & { items: WiringRow[] };
 export type RulePackage = Schema["ResourcePackage"];
 export type ProfileOption = Schema["LocalProfileOption"];
@@ -59,7 +60,9 @@ export const projectApi = {
   async list(): Promise<ProjectSummary[]> { return (await request<Schema["SimpleProjectRead"][]>("/api/v1/projects")).map(summary); },
   async get(id: string): Promise<ProjectDetail> {
     const row = await request<Schema["SimpleProjectRead"]>(`/api/v1/projects/${id}`);
-    return { ...summary(row), processing: row.processing, sourceAvailable: row.source_saved, sourceFilename: row.sources?.[0]?.original_filename ?? "", projectNo: row.id, resultVersion: row.batch_id ? `批次 ${row.batch_id}` : "暂无结果", workspaces: (row.workspaces ?? []).map(w => ({ id: w.id, code: w.code ?? w.name, name: w.name, status: "completed", drawings: (w.drawings ?? []).map(drawingFromDb) })) };
+    const workspaces: Workspace[] = (row.workspaces ?? []).map(w => ({ id: w.id, code: w.code ?? w.name, name: w.name, status: "completed" as const, drawings: (w.drawings ?? []).map(drawingFromDb).sort((a, b) => drawingOrder.compare(a.drawingPage, b.drawingPage) || a.pdfPage - b.pdfPage || a.id.localeCompare(b.id)) }));
+    workspaces.sort((a, b) => drawingOrder.compare(a.code, b.code) || a.id.localeCompare(b.id));
+    return { ...summary(row), processing: row.processing, sourceAvailable: row.source_saved, sourceFilename: row.sources?.[0]?.original_filename ?? "", projectNo: row.id, resultVersion: row.batch_id ? `批次 ${row.batch_id}` : "暂无结果", workspaces };
   },
   async connections(id: string, options: { offset?: number; workspaceId?: string | null; drawingId?: string | null; search?: string; batchId?: string | null } = {}): Promise<ResultPage> {
     const params = new URLSearchParams({ offset: String(options.offset ?? 0), limit: "100" });

@@ -4,6 +4,8 @@
 
 ## 进行中
 
+- [x] 前端项目树/当前项目标题双击原地编辑：Enter/失焦保存、Esc取消，失败保留草稿，移除改名铅笔/window.prompt；按用户确认工作区暂不改名。目录/图纸编号自然升序，主标签仅显示006M01等编号；32项浏览器回归、typecheck/lint/build及桌面/窄屏截图通过。后端/业务键/处理顺序未改，未操作真实数据库或用户服务。见 `docs/apps/web/changelog/2026-10-17-project-tree-inline.md`。
+
 - [x] 2026-10-17撤销提取Agent本地忽略与专用提交拦截：核对原hook摘要并备份后，仅移除实验隔离块及专用hook；10个新增源码/Prompt/配置/测试/设计文件已恢复Git可见性，docs/test产物和Python缓存仍忽略。文档同步，保留其他Agent改动与原暂存区，不改提取行为、不运行模型/测试或写库，尚未执行提交。
 
 - [x] Explain回复增加逐字缓冲：大块delta/completed不跳过动画，支持立即显示、停止冻结和减少动态效果；Markdown标题/列表/粗体/代码/表格正确渲染，浮窗按需分包。26项浏览器回归、typecheck/lint/build及桌面/窄屏截图通过；未改后端、调用真实模型/数据库或操作用户8000/8100服务。见 `docs/apps/web/changelog/2026-10-17-explain-typewriter.md`。

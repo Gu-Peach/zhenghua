@@ -16,6 +16,7 @@ import { RuleLibraryPanel } from "@/components/LibraryPanel";
 import { ProjectTree } from "@/components/ProjectTree";
 import { ResultTable } from "@/components/ResultTable";
 import { UploadDialog } from "@/components/UploadDialog";
+import { EditableName } from "@/components/EditableName";
 
 const emptyPage: ResultPage = { items: [], offset: 0, limit: 100, has_more: false };
 const ExplainPanel = lazy(() => import("@/components/ExplainPanel").then(module => ({ default: module.ExplainPanel })));
@@ -26,9 +27,10 @@ export function ProjectView() {
   const [loading, setLoading] = useState(true); const [retry, setRetry] = useState(0); const [uploadFile, setUploadFile] = useState<File | null>(null);
   useEffect(() => { let active = true; projectApi.list().then(list => { if (active) { setProjects(list); setLoading(false); } }).catch(reason => { if (active) { setError(String(reason)); setLoading(false); } }); return () => { active = false; }; }, [retry]);
   const projectLoaded = useCallback((loaded: ProjectDetail) => { setProjects(previous => previous.some(item => item.id === loaded.id) ? previous.map(item => item.id === loaded.id ? loaded : item) : [...previous, loaded]); }, []);
-  async function rename(project: ProjectSummary) {
-    const name = window.prompt("项目名称", project.name); if (!name?.trim()) return;
-    try { await projectApi.rename(project.id, name.trim()); setRetry(n => n + 1); } catch (reason) { setError(String(reason)); }
+  async function rename(project: ProjectSummary, name: string): Promise<void> {
+    await projectApi.rename(project.id, name);
+    setProjects(previous => previous.map(item => item.id === project.id ? { ...item, name } : item));
+    setRetry(n => n + 1);
   }
   async function remove(project: ProjectSummary) {
     if (!window.confirm(`删除项目“${project.name}”及其 PDF、页面文件和线表？此操作无法撤销。`)) return;
@@ -38,7 +40,7 @@ export function ProjectView() {
   return <>{loading || error || !projectId ? <EmptyWorkspace loading={loading} error={error} onRetry={() => { setError(""); setRetry(n => n + 1); }} onUpload={setUploadFile} /> : <ProjectWorkspace key={projectId} id={projectId} projects={projects} refreshToken={retry} onRename={rename} onDelete={remove} onUpload={setUploadFile} onProjectLoaded={projectLoaded} />}{uploadFile ? <UploadDialog file={uploadFile} onClose={() => setUploadFile(null)} onSaved={id => { setUploadFile(null); setRetry(n => n + 1); navigate(`/projects/${id}`); }} /> : null}</>;
 }
 
-function ProjectWorkspace({ id, projects, refreshToken, onRename, onDelete, onUpload, onProjectLoaded }: { id: string; projects: ProjectSummary[]; refreshToken: number; onRename: (project: ProjectSummary) => void; onDelete: (project: ProjectSummary) => void; onUpload: (file: File) => void; onProjectLoaded: (project: ProjectDetail) => void }) {
+function ProjectWorkspace({ id, projects, refreshToken, onRename, onDelete, onUpload, onProjectLoaded }: { id: string; projects: ProjectSummary[]; refreshToken: number; onRename: (project: ProjectSummary, name: string) => Promise<void>; onDelete: (project: ProjectSummary) => void; onUpload: (file: File) => void; onProjectLoaded: (project: ProjectDetail) => void }) {
   const [project, setProject] = useState<ProjectDetail | null>(() => { const summary = projects.find(item => item.id === id); return summary ? { ...summary, sourceFilename: "", projectNo: id, resultVersion: "", workspaces: [] } : null; });
   const [projectPending, setProjectPending] = useState(true); const [rules, setRules] = useState<RuleLibraryItem[]>([]);
   const [explanation, setExplanation] = useState<{ key: string; selection: ExplainSelection } | null>(null);
@@ -75,7 +77,7 @@ function ProjectWorkspace({ id, projects, refreshToken, onRename, onDelete, onUp
   return <div className="workbench-app"><AppHeader project={project} /><main className="workbench-grid real-workbench" style={{ "--left-width": `${left}px` } as CSSProperties}>
     <ProjectTree project={project} projects={projects} loading={projectPending} selectedWorkspaceId={workspaceId} selectedDrawingId={drawingId} stageProgress={[]} uploadedFilename={project.sourceFilename || null} simulationEnabled={false} onRename={onRename} onDelete={onDelete} onSelectWorkspace={selectWorkspace} onSelectDrawing={selectDrawing} />
     <div className="panel-resizer" role="separator" aria-label="调整项目树宽度" aria-orientation="vertical" tabIndex={0} onPointerDown={resize} onKeyDown={event => { if (event.key === "ArrowRight") setLeft(w => Math.min(600, w + 20)); if (event.key === "ArrowLeft") setLeft(w => Math.max(200, w - 20)); }} />
-    <section className="project-main"><div className="project-context-bar"><h1 className="context-project-name" title={project.name}>{project.name}</h1><nav className="project-resource-nav"><button type="button" className={section === "results" ? "active" : ""} onClick={() => setSection("results")}><FileSpreadsheet size={15} />线表工作区</button><button type="button" className={section === "drawings" ? "active" : ""} onClick={() => setSection("drawings")}><FileText size={15} />图纸库</button><button type="button" className={section === "rules" ? "active" : ""} onClick={() => setSection("rules")}><RefreshCw size={15} />规则库</button></nav><input ref={pdfInput} className="visually-hidden" type="file" accept="application/pdf" onChange={event => { if (event.target.files?.[0]) onUpload(event.target.files[0]); event.target.value = ""; }} /><div className="project-file-actions"><button type="button" className="secondary-button" onClick={() => pdfInput.current?.click()}><Upload size={15} />上传 PDF</button>{project.sourceAvailable ? <button type="button" className="secondary-button" onClick={() => void openPdf()}>原始 PDF</button> : null}</div></div>
+    <section className="project-main"><div className="project-context-bar"><h1 className="context-project-name"><EditableName value={project.name} label="项目名称" onSave={name => onRename(project, name)} /></h1><nav className="project-resource-nav"><button type="button" className={section === "results" ? "active" : ""} onClick={() => setSection("results")}><FileSpreadsheet size={15} />线表工作区</button><button type="button" className={section === "drawings" ? "active" : ""} onClick={() => setSection("drawings")}><FileText size={15} />图纸库</button><button type="button" className={section === "rules" ? "active" : ""} onClick={() => setSection("rules")}><RefreshCw size={15} />规则库</button></nav><input ref={pdfInput} className="visually-hidden" type="file" accept="application/pdf" onChange={event => { if (event.target.files?.[0]) onUpload(event.target.files[0]); event.target.value = ""; }} /><div className="project-file-actions"><button type="button" className="secondary-button" onClick={() => pdfInput.current?.click()}><Upload size={15} />上传 PDF</button>{project.sourceAvailable ? <button type="button" className="secondary-button" onClick={() => void openPdf()}>原始 PDF</button> : null}</div></div>
     {error || tableError || notice ? <div className="inline-error" role="alert">{error || tableError || notice}<button type="button" onClick={() => { setRevision(n => n + 1); setNotice(""); }}>刷新</button></div> : null}
     {projectPending ? <div className="project-data-loading" role="status"><Loader2 size={20} className="spin" />正在读取项目数据…</div> : section === "rules" ? rulePending ? <p role="status">正在读取规则引用…</p> : ruleError ? <div className="inline-error" role="alert">{ruleError}<button type="button" onClick={() => setRevision(n => n + 1)}>重试读取规则库</button></div> : <RuleLibraryPanel items={rules} onChanged={async () => { setRules(await projectApi.listRuleLibrary()); }} /> : section === "drawings" ? <DrawingDirectory project={project} /> : <>
     {!project.workspaces.length && !processing ? <p className="inline-notice" role="status">{project.sourceAvailable ? "PDF 已保存，尚无图纸索引和提取结果。" : "项目尚无图纸索引，文件未保存成功时请重试上传。"}</p> : null}

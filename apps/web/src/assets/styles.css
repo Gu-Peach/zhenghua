@@ -134,6 +134,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .workspace-empty-state h2 { margin: 0; font-size: 18px; color: #4b596c; }
 .workspace-empty-state p { margin: 0; font-size: 13px; }
 .project-row.active { border-color: #a7d3d2; background: var(--teal-soft); color: var(--teal); }
+.inline-name { min-width:0; display:inline-flex; align-items:center; gap:7px; border:0; background:transparent; color:inherit; font:inherit; text-align:left; }
+.inline-name-value { min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:inherit; }
+.project-folder-link .inline-name-value { font-size:12px; color:var(--text); }
+.inline-name-editor { flex-wrap:wrap; cursor:text; }
+.inline-name-editor input { min-width:40px; width:80px; flex:1; padding:4px 6px; border:1px solid #66aeb5; border-radius:4px; background:#fff; color:var(--text); font:inherit; outline:2px solid #d8edf0; }
+.inline-name-editor input:disabled { opacity:.7; }
+.inline-name-error { width:100%; color:#a4573c; font-size:11px; line-height:1.5; white-space:normal; overflow-wrap:anywhere; }
+.context-project-name > .inline-name { width:100%; max-width:100%; padding:2px 0; }
+.context-project-name .inline-name-value { font-weight:600; }
 .tree-row-copy { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 4px; color: var(--text); }
 .tree-row-copy strong, .workspace-row strong, .drawing-row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .tree-row-copy small, .workspace-row small, .drawing-row small { overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }

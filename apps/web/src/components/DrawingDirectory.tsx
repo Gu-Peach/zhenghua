@@ -32,7 +32,7 @@ function DrawingFile({ project, drawing }: { project: ProjectDetail; drawing: Dr
   const [expanded, setExpanded] = useState(false);
   return (
     <details className="drawing-file" onToggle={event => { if (event.target === event.currentTarget) setExpanded(event.currentTarget.open); }}>
-      <summary><ChevronRight className="directory-chevron" size={16} /><FileImage size={18} /><strong>图纸 {drawing.drawingPage}.png</strong><span>PDF 第 {drawing.pdfPage} 页</span></summary>
+      <summary><ChevronRight className="directory-chevron" size={16} /><FileImage size={18} /><strong>{drawing.drawingPage}</strong><span>PDF 第 {drawing.pdfPage} 页</span></summary>
       {expanded ? <LibraryDrawingPreview project={project} drawingId={drawing.id} /> : null}
     </details>
   );
