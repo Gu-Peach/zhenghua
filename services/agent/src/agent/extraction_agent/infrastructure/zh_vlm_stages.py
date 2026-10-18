@@ -12,6 +12,7 @@ from typing import Any, TypeVar, get_args, get_origin
 
 from pydantic import BaseModel, ValidationError
 
+from src.agent.extraction_agent.application.extraction_contract import EXTRACTION_CONTRACT_VERSION
 from src.agent.extraction_agent.application.review import REVIEW_CONTRACT_VERSION, facts_only
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
@@ -34,6 +35,7 @@ from src.agent.extraction_agent.infrastructure.document.completion_view import (
 )
 from src.agent.extraction_agent.infrastructure.document.json_response import _extract_json_candidate
 from src.agent.extraction_agent.infrastructure.document.model_images import prepare_vision_messages
+from src.agent.extraction_agent.infrastructure.document.request_fingerprint import request_fingerprint
 from src.config import AgentSettings
 from src.domain.enums import ErrorCode
 from src.domain.errors import AgentServiceError
@@ -353,6 +355,8 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
         # The output protocol is shared. The switch above only changes the
         # ZH-specific semantics, never whether ABB receives a JSON contract.
         contract = facts_only(contract)
+        # Program-owned diagnostics are persisted on results, never requested from the VLM.
+        contract.get("$defs", {}).pop("PageScanDiagnostics", None)
         if output_model is CrossPageCompletionData and self.require_completion_response(profile):
             contract["required"] = list(dict.fromkeys([*contract.get("required", []), "end"]))
             contract["anyOf"] = [
@@ -405,6 +409,13 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
                         enable_thinking=self._settings.model_enable_thinking,
                         metadata={
                             **image_metadata,
+                            "extraction_contract_version": EXTRACTION_CONTRACT_VERSION,
+                            "request_fingerprint": request_fingerprint(
+                                model=self._settings.default_model or "", messages=attempt_messages,
+                                temperature=0.0, max_tokens=self._settings.model_max_tokens,
+                                json_mode=self._settings.model_json_mode,
+                                thinking=self._settings.model_enable_thinking,
+                            ),
                             "profile": profile.profile.key,
                             "profile_version": profile.profile.version,
                             "profile_checksum": profile.profile.checksum,

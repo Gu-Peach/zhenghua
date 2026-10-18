@@ -6,7 +6,8 @@ import asyncio
 import hashlib
 from dataclasses import asdict
 from pathlib import Path
-from typing import Any, cast
+from typing import Any, Literal, cast
+from uuid import uuid4
 
 from langgraph.graph import END, START, StateGraph
 
@@ -40,6 +41,26 @@ def build_page_extraction_graph(runtime: GraphRuntime, *, pdf_page_number: int) 
             return await _page_scan_loop_node(state, runtime, use_checkpoint=False)
         finally:
             runtime.scan_page_numbers = previous
+
+    def route_scan(state: GraphState) -> Literal["record_scan_failure", "plan_references"]:
+        scan_result = state.get("page_scan_results", {}).get(str(pdf_page_number), {})
+        return "record_scan_failure" if scan_result.get("scan_failed") else "plan_references"
+
+    async def record_scan_failure(state: GraphState) -> dict[str, Any]:
+        """Keep failed attempts separate from successfully completed page snapshots."""
+        page = next(p for p in state["pages"] if p["page_number"] == pdf_page_number)
+        scan_result = state["page_scan_results"][str(pdf_page_number)]
+        if getattr(runtime.durable, "incremental", False):
+            await cast(Any, runtime.durable).fail_page(page, scan_result)
+        else:
+            directory = _diagnostics_dir(Path(state["output_path"]), runtime.output_mode)
+            await asyncio.to_thread(
+                _write_json_atomic,
+                directory / "failed-pages" / str(pdf_page_number) / f"{uuid4()}.json",
+                {"page": page, "scan": scan_result},
+            )
+        runtime.log(f"page_extraction: PDF page {pdf_page_number} scan failed; continuing to next page")
+        return {"processed_pages": []}
 
     async def plan(state: GraphState) -> dict[str, Any]:
         update = _normalize_and_deduplicate_node(state, runtime, review_phase="scan")
@@ -96,13 +117,15 @@ def build_page_extraction_graph(runtime: GraphRuntime, *, pdf_page_number: int) 
 
     graph = StateGraph(GraphState)
     graph.add_node("scan_source", scan)
+    graph.add_node("record_scan_failure", record_scan_failure)
     graph.add_node("plan_references", plan)
     graph.add_node("complete_connections", complete)
     graph.add_node("validate_page", validate)
     graph.add_node("persist_page", save)
+    graph.add_edge(START, "scan_source")
+    graph.add_conditional_edges("scan_source", route_scan)
+    graph.add_edge("record_scan_failure", END)
     sequence = [
-        START,
-        "scan_source",
         "plan_references",
         "complete_connections",
         "validate_page",
@@ -210,6 +233,10 @@ async def _page_extraction_loop_node(state: GraphState, runtime: GraphRuntime) -
                 },
             )
             result = await run_page_extraction(state=initial, runtime=runtime, pdf_page_number=number)
+            scan_result = result.get("page_scan_results", {}).get(str(number), {})
+            if scan_result.get("scan_failed"):
+                scans[str(number)] = scan_result
+                continue
             saved = page_result(result, number)
         units.update(saved.get("wire_units", {}))
         scans[str(number)] = saved.get("scan")

@@ -10,9 +10,10 @@ const MarkdownBody = memo(function MarkdownBody({ text }: { text: string }) {
   }}>{text}</Markdown>;
 });
 
-export function TypewriterAnswer({ text, running, halted, onProgress }: { text: string; running: boolean; halted: boolean; onProgress: () => void }) {
+export function TypewriterAnswer({ text, running, halted, onProgress, onReady }: { text: string; running: boolean; halted: boolean; onProgress: () => void; onReady?: (ready: boolean) => void }) {
   const { text: visible, typing, finish } = useTypewriterText(text, halted);
   useEffect(() => { onProgress(); }, [visible, onProgress]);
+  useEffect(() => { onReady?.(!running && !typing); }, [running, typing, onReady]);
   return <>
     <div className="explain-answer" aria-label="解释回复" aria-busy={running || typing} data-typing={typing}>
       <MarkdownBody text={visible} />

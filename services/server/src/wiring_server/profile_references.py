@@ -151,7 +151,23 @@ class ProfileReferences:
         rows = await self.db.all_rows(
             "extraction_profiles", {"order": "profile_key.asc,created_at.desc"}
         )
-        return [{**row, "can_delete": row["created_by"] == user} for row in rows]
+        latest: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            current = latest.get(row["profile_key"])
+
+            def version(value: str) -> tuple[int, ...]:
+                try:
+                    return tuple(int(p) for p in value.split("."))
+                except ValueError:
+                    return (0,)
+
+            if current is None or version(row["profile_version"]) > version(
+                current["profile_version"]
+            ):
+                latest[row["profile_key"]] = row
+        return [
+            {**row, "can_delete": row["created_by"] == user} for row in latest.values()
+        ]
 
     async def get(self, identifier: str) -> dict[str, Any]:
         rows = await self.db.rows(

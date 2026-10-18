@@ -7,7 +7,7 @@ import hashlib
 import json
 import shutil
 import sqlite3
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Sequence, Set
 from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, cast
@@ -19,6 +19,7 @@ from src.domain.models.profiles import ProfileSnapshot
 from src.profiles.package import build_package, checksum, safe_path
 from src.profiles.registry import ProfileRegistry
 
+from .evidence_validation import validate_findings
 from .models import (
     Attachment,
     DraftCreate,
@@ -135,7 +136,12 @@ class DraftStore:
             template=TemplateFields.model_validate_json((root / "template.json").read_text(encoding="utf-8"))
             if meta.get("generated")
             else None,
-            warnings=["草稿及导出包未正式发布，也未改变任何项目的规则版本。"],
+            warnings=["草稿及导出包未正式发布，也未改变任何项目的规则版本。"]
+            + (
+                ["已有规则使用旧字段定义，新草稿已同步当前提取格式，请核对预期结果。"]
+                if meta.get("source", {}).get("schema_upgraded") == "true"
+                else []
+            ),
         )
 
     def get(self, draft: UUID, actor: ProfileActor) -> DraftView:
@@ -174,7 +180,14 @@ class DraftStore:
             root, meta = self._verified(row)
             return self._view(row), root, meta
 
-    def create(self, request: DraftCreate, actor: ProfileActor) -> DraftView:
+    def create(
+        self,
+        request: DraftCreate,
+        actor: ProfileActor,
+        *,
+        package_files: dict[str, bytes] | None = None,
+        source: dict[str, str] | None = None,
+    ) -> DraftView:
         with self._db() as db:
             db.execute("begin immediate")
             existing = db.execute("select * from drafts where id=?", (str(request.draft_id),)).fetchone()
@@ -182,6 +195,13 @@ class DraftStore:
                 row = self._owned(db, request.draft_id, actor)
                 if json.loads(row["metadata"])["create"] != request.model_dump(mode="json"):
                     raise ProfileError("CREATE_CONFLICT", "相同草稿ID的创建参数已变化", 409)
+                if source:
+                    prior_source = json.loads(row["metadata"]).get("source", {})
+                    if any(
+                        prior_source.get(key) != source.get(key)
+                        for key in ("profile_id", "key", "version", "checksum")
+                    ):
+                        raise ProfileError("CREATE_CONFLICT", "相同草稿ID的来源已变化", 409)
                 return self._view(row)
             relative = f"{actor.user_id}/{request.draft_id}/revisions/{uuid4()}"
             root = self._path(relative)
@@ -191,8 +211,40 @@ class DraftStore:
                 "confirmed_expected": {},
                 "generated": request.source_profile is None,
             }
-            if request.source_profile:
+            if package_files is not None:
+                root.mkdir(parents=True)
+                for name, content in package_files.items():
+                    if name == "manifest.json":
+                        continue
+                    file = self.file(root, name)
+                    file.parent.mkdir(parents=True, exist_ok=True)
+                    file.write_bytes(content)
+                manifest = json.loads((root / "profile.json").read_text(encoding="utf-8"))
+                if manifest["key"] != request.key or manifest["version"] != request.source_version:
+                    raise ProfileError("SOURCE_CHANGED", "规则包身份与来源不符", 409)
+                parts = [int(p) for p in manifest["version"].split(".")]
+                manifest["version"] = f"{parts[0]}.{parts[1]}.{parts[2] + 1}"
+                manifest["status"] = "experimental"
+                json_write(root / "profile.json", manifest)
+                meta["generated"] = False
+            elif request.source_profile:
                 snapshot = self._fresh_source(request.source_profile, request.source_version)
+                if source:
+                    # Server local-reference digests omit the Registry's trailing file separator.
+                    paths = {snapshot.manifest_path}
+                    for resource in snapshot.resolved_resources.values():
+                        paths.update(
+                            p for p in resource.rglob("*") if p.is_file()
+                        ) if resource.is_dir() else paths.add(resource)
+                    reference_digest = hashlib.sha256()
+                    for path in sorted(paths, key=lambda p: str(p).lower()):
+                        reference_digest.update(
+                            path.relative_to(self.registry.workspace_root).as_posix().encode()
+                        )
+                        reference_digest.update(b"\0")
+                        reference_digest.update(path.read_bytes())
+                    if "sha256:" + reference_digest.hexdigest() != source["checksum"]:
+                        raise ProfileError("SOURCE_CHANGED", "本地规则与已登记摘要不符，请刷新规则引用", 409)
                 if request.key != snapshot.manifest.key:
                     raise ProfileError("KEY_MISMATCH", "编辑现有规则需保持key；新标准请使用通用模板新建", 422)
                 build_package(snapshot, root)
@@ -225,6 +277,26 @@ class DraftStore:
             else:
                 root.mkdir(parents=True)
                 render_template(root, TemplateFields(key=request.key, display_name=request.display_name))
+            if source:
+                from .validation import case_files, edit_content_checksum
+
+                meta["source"] = source
+                template_file = root / "template.json"
+                if template_file.is_file():
+                    template = json.loads(template_file.read_text(encoding="utf-8"))
+                    template["version"] = json.loads((root / "profile.json").read_text(encoding="utf-8"))[
+                        "version"
+                    ]
+                    json_write(template_file, template)
+                meta["editor"] = {
+                    "accepted_content": edit_content_checksum(root),
+                    "baseline_content": edit_content_checksum(root),
+                }
+                meta["confirmed_expected"] = {
+                    item["expected_path"]: checksum(self.file(root, item["expected_path"]).read_bytes())
+                    for item in case_files(root)
+                }
+            self.basic_check(root)
             fingerprint = self.digest(root, meta)
             values = (str(request.draft_id), str(actor.user_id), 1, relative, fingerprint, json.dumps(meta))
             db.execute("insert into drafts values(?,?,?,?,?,?)", values)
@@ -493,7 +565,16 @@ class DraftStore:
         )
 
     def propose(
-        self, draft: UUID, actor: ProfileActor, revision: int, identifier: UUID, request: ProposalRequest
+        self,
+        draft: UUID,
+        actor: ProfileActor,
+        revision: int,
+        identifier: UUID,
+        request: ProposalRequest,
+        *,
+        viewed_images: Set[str] = frozenset(),
+        observations: Sequence[dict[str, Any]] = (),
+        user_message: str = "",
     ) -> Proposal:
         with self._db() as db:
             db.execute("begin immediate")
@@ -501,10 +582,13 @@ class DraftStore:
             root, _ = self._verified(row)
             if row["revision"] != revision:
                 raise ProfileError("VERSION_CONFLICT", "建议基于的草稿版本已变化", 409)
-            for finding in request.findings:
-                for anchor in finding.evidence:
-                    if anchor.quote not in self.read(draft, actor, anchor.path, 0, 300000)["text"]:
-                        raise ProfileError("INVALID_EVIDENCE", "建议引用的原文与当前资源不一致", 422)
+            validate_findings(
+                root,
+                request.findings,
+                viewed_images=viewed_images,
+                observations=observations,
+                user_message=user_message,
+            )
             target = self._path(f"{actor.user_id}/{draft}/previews/{uuid4()}")
             shutil.copytree(root, target)
             diffs = self.apply_files(target, request.edits)
@@ -634,6 +718,17 @@ class DraftStore:
             ).fetchall()
             return [message for row in reversed(rows) for message in json.loads(row["payload"])["messages"]]
 
+    def proposals(self, draft: UUID, actor: ProfileActor) -> list[Proposal]:
+        """Return only this owner's proposals; stale proposals remain visible for explanation."""
+        with self._db() as db:
+            self._owned(db, draft, actor)
+            return [
+                Proposal.model_validate_json(row[0])
+                for row in db.execute(
+                    "select payload from proposals where draft=? order by rowid desc limit 30", (str(draft),)
+                )
+            ]
+
     def cached_turn(
         self, draft: UUID, actor: ProfileActor, turn_id: UUID, request_hash: str
     ) -> dict[str, Any] | None:
@@ -664,7 +759,7 @@ class DraftStore:
             payload = {
                 "reply": reply,
                 "messages": [
-                    {"role": "user", "content": message[:12000]},
+                    {"role": "user", "content": message[:28000]},
                     {"role": "assistant", "content": reply["answer"][:16000]},
                 ],
             }

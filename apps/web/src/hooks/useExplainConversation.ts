@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { evidenceDrawings, streamExplanation, type EvidenceDrawing, type ExplainSelection, type ToolActivity } from "@/apis/explain";
+import { explainEdits, type EditProposal, type EditReceipt } from "@/apis/explain-edits";
 
 export interface ExplainTool { activity: ToolActivity; status: "running" | "done" | "failed" }
 export interface ExplainMessage {
@@ -13,6 +14,9 @@ export function useExplainConversation(projectId: string, selection: ExplainSele
   const [messages, setMessages] = useState<ExplainMessage[]>([]);
   const [drawings, setDrawings] = useState<EvidenceDrawing[]>([]);
   const [busy, setBusy] = useState(false);
+  const [proposals, setProposals] = useState<EditProposal[]>([]);
+  const [proposalError, setProposalError] = useState("");
+  const versions = useRef<Record<string, number>>({});
   const controller = useRef<AbortController | null>(null);
 
   const send = useCallback(async (question: string, retryId?: string) => {
@@ -25,9 +29,12 @@ export function useExplainConversation(projectId: string, selection: ExplainSele
       if (!abort.signal.aborted) setMessages(previous => previous.map(item => item.id === id ? change(item) : item));
     };
     try {
-      for await (const event of streamExplanation(selection, projectId, conversationId, id, question, abort.signal)) {
+      const currentSelection = { ...selection, recordVersion: selection.connectionId ? versions.current[selection.connectionId] ?? selection.recordVersion : undefined };
+      for await (const event of streamExplanation(currentSelection, projectId, conversationId, id, question, abort.signal)) {
         if (abort.signal.aborted) break;
         if (event.type === "answer_delta") update(item => ({ ...item, answer: item.answer + (event.delta ?? "") }));
+        if (event.type === "answer_reset") update(item => ({ ...item, answer: "" }));
+        if (event.proposal) setProposals(previous => [...previous.filter(p => p.proposal_id !== event.proposal!.proposal_id), event.proposal!]);
         if (event.context || event.retrieval) {
           const images = evidenceDrawings((event.context ?? event.retrieval)!);
           setDrawings(previous => [...new Map([...previous, ...images].map(image => [image.key, image])).values()]);
@@ -41,6 +48,7 @@ export function useExplainConversation(projectId: string, selection: ExplainSele
         }
         if (event.type === "completed" && event.result) {
           const result = event.result;
+          if (result.proposals?.length) setProposals(previous => [...new Map([...previous, ...result.proposals!].map(p => [p.proposal_id, p])).values()]);
           setDrawings(evidenceDrawings(result));
           update(item => ({ ...item, answer: result.answer, status: "done", historyReset: result.history_reset }));
         }
@@ -63,5 +71,11 @@ export function useExplainConversation(projectId: string, selection: ExplainSele
     return () => { window.clearTimeout(timer); controller.current?.abort(); controller.current = null; };
   }, [selection.scope, send]);
 
-  return { messages, drawings, busy, send, stop };
+  useEffect(() => { let active = true; explainEdits.list(projectId).then(items => { if (active) { setProposals(previous => [...new Map([...items, ...previous].map(p => [p.proposal_id, p])).values()]); setProposalError(""); } }).catch(reason => { if (active) setProposalError(String(reason)); }); return () => { active = false; }; }, [projectId]);
+  const applyDecision = useCallback((receipt: EditReceipt) => {
+    setProposals(previous => previous.map(p => p.proposal_id === receipt.proposal_id ? { ...p, status: receipt.status } : p));
+    if (receipt.status === "applied") { versions.current = { ...versions.current, ...receipt.versions }; setDrawings([]); }
+  }, []);
+
+  return { messages, drawings, busy, send, stop, proposals, proposalError, applyDecision };
 }

@@ -166,16 +166,18 @@ class IncrementalSession:
                 ),
             )
             raise
+        snapshot = result.model_dump(mode="json")
         await self.commit(
             key,
             ExtractionStep(
                 kind="cache",
                 stage=str(stage),
-                snapshot=result.model_dump(mode="json"),
+                snapshot=snapshot,
                 metrics={
                     "duration_seconds": perf_counter() - started,
                     "item_id": item_id,
                     "profile": self.profile,
+                    "scan_diagnostics": snapshot.get("scan_diagnostics"),
                 },
             ),
         )
@@ -218,6 +220,23 @@ class IncrementalSession:
     async def load_page(self, number: int) -> dict[str, Any] | None:
         cached = await self.repository.artifact(self.run, f"page:{number}")
         return cached.get("snapshot") if cached else None
+
+    async def fail_page(self, page: dict[str, Any], scan: dict[str, Any]) -> None:
+        """Publish a failed scan without a completed-page cache or terminal run failure."""
+        number = int(page["page_number"])
+        await self.commit(
+            f"scan:{number}:failed:{uuid4()}",
+            ExtractionStep(
+                kind="scan",
+                stage="scan_failed",
+                page=self.page(page, "failed"),
+                snapshot={"scan": scan},
+                error={
+                    "code": "PAGE_SCAN_FAILED",
+                    "message": f"PDF第{number}页初扫失败，已记录；继续处理后续页面。",
+                },
+            ),
+        )
 
     async def commit_page(self, number: int, state: dict[str, Any]) -> None:
         from src.agent.extraction_agent.graphs.document_extraction.page_extraction import page_result

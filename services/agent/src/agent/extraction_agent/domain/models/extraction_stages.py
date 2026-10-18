@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Literal
 
 from pydantic import Field
+from pydantic.json_schema import SkipJsonSchema
 
 from src.domain.enums import CrossPageState
 from src.domain.models.common import StrictModel
@@ -89,7 +90,7 @@ class DrawingReference(StrictModel):
     target_drawing_page: int | None = Field(default=None, ge=1)
     target_internal_page: int | None = Field(default=None, ge=1)
     target_pdf_page: int | None = Field(default=None, ge=1)
-    target_column: int | None = Field(default=None, ge=1)
+    target_column: int | None = Field(default=None, ge=0)
     target_object: str | None = None
     external: bool = False
     reason: str | None = None
@@ -148,7 +149,20 @@ class ScannedWireUnit(StrictModel):
     confidence: float | None = Field(default=None, ge=0.0, le=1.0)
 
 
+class PageScanDiagnostics(StrictModel):
+    """Program-owned counts captured before receiver filtering, never model instructions."""
+
+    raw_units: int = Field(ge=0)
+    raw_connections: int = Field(ge=0)
+    source_connections: int = Field(ge=0)
+    receiver_connections: int = Field(ge=0)
+    unknown_connections: int = Field(ge=0)
+    retained_connections: int = Field(ge=0)
+    outcome: Literal["skipped", "no_connections", "receivers_only", "sources_retained"]
+
+
 class PageScanData(StrictModel):
+    scan_diagnostics: SkipJsonSchema[PageScanDiagnostics | None] = None
     uncertainties: list[VisualUncertainty] = Field(default_factory=list)
     pdf_page_number: int | None = Field(default=None, ge=1)
     drawing_function: str | None = None
@@ -204,6 +218,7 @@ class PageClassificationResult(StageResultMetadata):
 
 
 class PageScanResult(StageResultMetadata):
+    scan_diagnostics: PageScanDiagnostics | None = None
     uncertainties: list[VisualUncertainty] = Field(default_factory=list)
     pdf_page_number: int = Field(ge=1)
     drawing_function: str | None = None

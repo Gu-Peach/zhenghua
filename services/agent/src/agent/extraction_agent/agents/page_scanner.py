@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import logging
+
 from src.agent.extraction_agent.agents._extraction_stage import require_stage_resources
+from src.agent.extraction_agent.application.extraction_contract import scan_diagnostics
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionRequest,
     CrossPageCompletionResult,
@@ -11,6 +14,8 @@ from src.agent.extraction_agent.domain.models.extraction_stages import (
 from src.domain.enums import ErrorCode
 from src.domain.errors import AgentServiceError
 from src.domain.ports import ExtractionStageAdapter
+
+logger = logging.getLogger(__name__)
 
 
 class PageScannerAgent:
@@ -32,6 +37,12 @@ class PageScannerAgent:
             )
         else:
             result = await self._stages.scan_page(request)
+        diagnostics = scan_diagnostics(result, page)
+        logger.info(
+            "page_scan run=%s pdf_page=%s before_filter=%s receivers=%s retained=%s outcome=%s",
+            request.run_id, page.pdf_page_number, diagnostics.raw_connections,
+            diagnostics.receiver_connections, diagnostics.retained_connections, diagnostics.outcome,
+        )
         for unit in result.units:
             unit.connections = [item for item in unit.connections if item.endpoint_role != "receiver"]
             for item in unit.connections:
@@ -40,6 +51,7 @@ class PageScannerAgent:
                     result.needs_review = True
         result.units = [unit for unit in result.units if unit.connections]
         return PageScanResult(
+            scan_diagnostics=diagnostics,
             run_id=request.run_id,
             project_id=request.project_id,
             profile=request.profile.profile,
@@ -48,7 +60,9 @@ class PageScannerAgent:
             drawing_page_number=page.drawing_page_number or result.drawing_page_number,
             drawing_object_location=page.object_location or result.drawing_object_location,
             blank=result.blank,
-            needs_review=bool(result.uncertainties) or any(c.endpoint_role == "unknown" for u in result.units for c in u.connections),
+            needs_review=bool(result.uncertainties) or any(
+                c.endpoint_role == "unknown" for u in result.units for c in u.connections
+            ),
             uncertainties=result.uncertainties,
             units=[] if result.blank else result.units,
             page_references=result.page_references,

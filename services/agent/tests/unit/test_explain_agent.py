@@ -242,7 +242,7 @@ def test_signing_failure_keeps_row_but_invalid_coordinates_do_not_highlight() ->
     async def run():
         backend, _, _, agent = setup()
         backend.fail_signing = True
-        backend.row["start_terminal_coordinates"]["pdf_page_number"] = 10
+        backend.row["start_terminal_coordinates"]["pdf_page_number"] = 99
         result = await agent.ask(turn(), ExplainActor(user_id=OWNER))
         assert result.context.row.start_terminal == "XA:8"
         assert result.context.drawings[0].terminal_coordinates is None

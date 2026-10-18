@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { toolLabel, toolResultView, type EvidenceDrawing, type ExplainSelection } from "@/apis/explain";
 import { useExplainConversation, type ExplainTool } from "@/hooks/useExplainConversation";
 import { TypewriterAnswer } from "./TypewriterAnswer";
+import { ExplainEditProposal } from "./ExplainEditProposal";
+import type { EditProposal } from "@/apis/explain-edits";
 
 function ToolRecord({ tool }: { tool: ExplainTool }) {
   const result = toolResultView(tool.activity);
@@ -26,14 +28,16 @@ function EvidenceImage({ drawing }: { drawing: EvidenceDrawing }) {
   </figure>;
 }
 
-export function ExplainPanel({ projectId, selection, onClose }: { projectId: string; selection: ExplainSelection; onClose: () => void }) {
-  const { messages, drawings, busy, send, stop } = useExplainConversation(projectId, selection);
+export function ExplainPanel({ projectId, selection, onClose, onModified, readOnly = false }: { projectId: string; selection: ExplainSelection; onClose: () => void; onModified?: (proposal: EditProposal) => void; readOnly?: boolean }) {
+  const { messages, drawings, busy: talking, send, stop, proposals, proposalError, applyDecision } = useExplainConversation(projectId, selection);
+  const [editing, setEditing] = useState(false); const [ready, setReady] = useState<Record<string, boolean>>({});
+  const busy = talking || editing;
   const [draft, setDraft] = useState("");
   const panel = useRef<HTMLElement>(null); const feed = useRef<HTMLDivElement>(null);
   const follow = useRef(true);
   const scrollToLatest = useCallback(() => { if (follow.current && feed.current) feed.current.scrollTop = feed.current.scrollHeight; }, []);
   useEffect(() => { panel.current?.focus({ preventScroll: true }); }, []);
-  useEffect(() => { scrollToLatest(); }, [messages, drawings, scrollToLatest]);
+  useEffect(() => { scrollToLatest(); }, [messages, drawings, proposals, ready, scrollToLatest]);
   function submit(event: FormEvent) { event.preventDefault(); if (!busy && draft.trim()) { void send(draft.trim()); setDraft(""); follow.current = true; } }
   return <section ref={panel} className="explain-panel" role="dialog" aria-modal="false" aria-label="来源解释" tabIndex={-1} onKeyDown={event => { if (event.key === "Escape" && !event.defaultPrevented) { event.preventDefault(); onClose(); } }}>
     <header className="explain-header"><MessageCircle size={19} /><div><strong>来源解释</strong><p title={selection.title}>{selection.title}</p></div><button type="button" className="icon-button" aria-label="关闭来源解释" title="关闭并停止当前解释" onClick={onClose}><X size={19} /></button></header>
@@ -43,13 +47,15 @@ export function ExplainPanel({ projectId, selection, onClose }: { projectId: str
         <div className="explain-tools">{message.tools.map(tool => <ToolRecord key={tool.activity.id} tool={tool} />)}</div>
         {message.status === "running" ? <div className="explain-working" role="status"><Loader2 size={14} className="spin" />{message.answer ? "正在生成解释…" : "正在分析来源与关联图纸…"}</div> : null}
         {message.historyReset ? <p className="explain-gap">资料已更新，本轮基于最新记录重新解释。</p> : null}
-        {message.answer ? <TypewriterAnswer text={message.answer} running={message.status === "running"} halted={message.status === "cancelled"} onProgress={scrollToLatest} /> : null}
+        {message.answer ? <TypewriterAnswer text={message.answer} running={message.status === "running"} halted={message.status === "cancelled"} onProgress={scrollToLatest} onReady={value => setReady(previous => previous[message.id] === value ? previous : { ...previous, [message.id]: value })} /> : null}
         {message.status === "failed" || message.status === "cancelled" ? <div className="explain-error" role={message.status === "failed" ? "alert" : "status"}><span>{message.error ?? "已停止生成，以上内容可能不完整。"}</span><button type="button" disabled={busy} onClick={() => void send(message.question, message.id)}>重试</button></div> : null}
       </article>)}
+      {!talking && messages.every(message => !message.answer || ready[message.id]) ? proposals.map(proposal => <ExplainEditProposal key={proposal.proposal_id} proposal={proposal} disabled={busy || readOnly} onBusy={setEditing} onDecision={receipt => { applyDecision(receipt); if (receipt.status === "applied") onModified?.(proposal); }} />) : null}
+      {proposalError ? <p className="explain-gap">待确认方案列表暂不可用：{proposalError}。来源解释仍可使用。</p> : null}
       {drawings.length ? <section className="explain-evidence" aria-label="关联图纸"><h3>关联图纸 <span>{drawings.length}</span></h3><div>{drawings.map(drawing => <EvidenceImage key={drawing.key} drawing={drawing} />)}</div></section> : null}
     </div>
     <form className="explain-composer" onSubmit={submit}><label className="visually-hidden" htmlFor="explain-question">追问来源解释</label><textarea id="explain-question" value={draft} maxLength={8000} placeholder="继续询问这条连接或本页的提取依据…" rows={2} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); if (!busy && draft.trim()) { void send(draft.trim()); setDraft(""); follow.current = true; } } }} />
-      <div><span>只读解释 · 不修改线表</span>{busy ? <button type="button" aria-label="停止生成" title="停止生成" onClick={stop}><Square size={15} /></button> : <button type="submit" aria-label="发送追问" title="发送追问" disabled={!draft.trim()}><Send size={16} /></button>}</div>
+      <div><span>{readOnly ? "提取处理中，暂不能保存线表修改" : "可解释与提出修改 · 确认后保存线表"}</span>{talking ? <button type="button" aria-label="停止生成" title="停止生成" onClick={stop}><Square size={15} /></button> : <button type="submit" aria-label="发送追问" title="发送追问" disabled={editing || !draft.trim()}><Send size={16} /></button>}</div>
     </form>
   </section>;
 }

@@ -1,11 +1,51 @@
 {
-  "version": "1.2.0",
+  "version": "1.2.1",
   "coordinate_contract": "input_view_normalized_to_full_page",
-  "review_basis": "2026-10-17: visually checked packaged source/target images and crop previews; static checks only, no tests/model/database calls; engineering validation pending.",
+  "review_basis": "2026-10-17: visually checked packaged source/target images and crop previews; static checks only, no tests/model/database calls; engineering validation pending.; 2026-10-18: shared CLI/upload request and output contract, 4 scan/14 completion request parity and154-row projection checks, ZH zero-column compatibility; static only, no tests/models/DB writes.; 2026-10-18 ABB marker correction: visible busbar endpoints, full pin labels, marker + Sheet numbers and27 same-source fixture connections; static resource checks only, no tests/models/DB/publishing.",
   "files": [
     {
+      "path": "services/agent/src/agent/extraction_agent/agents/page_scanner.py",
+      "checksum": "sha256:490657049e0bab2652fa1911fb16bf824d7c3d6f10b4da70e9201208bed08c13"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/application/extraction_contract.py",
+      "checksum": "sha256:6745dde7ce1a03e984330a39b163b8bbbcc599b09c307d21b85425c7dfa9fa51"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/application/extraction_stage_factory.py",
+      "checksum": "sha256:3001114120e3782fdd8573cf4a0b2df36614e3714923894a3816a8e23eb06eef"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/application/incremental.py",
+      "checksum": "sha256:34f5706f2787c35107fe2f3b4a9e24a92d0c8b8b32a3ecc1ec5507ae9677475d"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/application/incremental_worker.py",
+      "checksum": "sha256:26596c4ef27b5ea6943dc88fdcc0667181643ca609fd626578e5d4e20cbb2e0a"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/application/page_workflow_extraction.py",
+      "checksum": "sha256:20f805416e2476ca6b41b149a3f19cb8f78be33990dc413c9907b6cfe10001ba"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/application/review.py",
+      "checksum": "sha256:10a237d474ca501b05a1024426a9687908c22008faa573ad4946c304ba8eeb0c"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/domain/models/extraction_stages.py",
+      "checksum": "sha256:fd0155569a6b7000690e202a9dd98abf32e4468d426dde98475abee6344cefb4"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/domain/table_output.py",
+      "checksum": "sha256:5e84d81e43c26b4dfde35f1d83890a00613cf7183e9250392024bf0a6df12aa2"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/graphs/document_extraction/page_extraction.py",
+      "checksum": "sha256:a77e33ac52a0f1872cf2a5bc3906e83d327a06026a14ed77327b5049f1c42803"
+    },
+    {
       "path": "services/agent/src/agent/extraction_agent/infrastructure/abb_vlm_stages.py",
-      "checksum": "sha256:262fa44c3789a50ec01e23116d2c0d4a2621bf50ec41e868f2fbbc79770c355e"
+      "checksum": "sha256:7c9c38dd2a218abde878dede9277e1f3ddc0270f51af9cd79a099aeaf19b007d"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/infrastructure/document/completion_context.py",
@@ -16,20 +56,32 @@
       "checksum": "sha256:fe1d218ad9f11025085ae39eebdeba1f0e9c3ca7dab63c4a3b812c279d601d18"
     },
     {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/document/request_fingerprint.py",
+      "checksum": "sha256:a6b8de6ec3aa85e826ea0e954c688459dc81297486998e9ca16ac65197c19c14"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/incremental_repository.py",
+      "checksum": "sha256:695e3886307644e6182457561480383ef7134de413b0527bd380ef46327a03d1"
+    },
+    {
       "path": "services/agent/src/agent/extraction_agent/infrastructure/zh_vlm_stages.py",
-      "checksum": "sha256:5ca449fd9510f7947891f05105f4f5632537392fca2b7635031b4175a5444188"
+      "checksum": "sha256:289b386db35d56f77b3eef1df55c9d82fde4691cc589d87657405c1e58e60e67"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/profiles/abb/completion_view.json",
       "checksum": "sha256:8d6974b53f669985d1ccd848d43803218269225b0ed876ee7f7aba79ad1b5a5b"
     },
     {
+      "path": "services/agent/src/agent/extraction_agent/profiles/abb/policy.py",
+      "checksum": "sha256:9eca5a72cd8199732fa7f5155bddc6416349f155733a64e1249eb2369c81c199"
+    },
+    {
       "path": "services/agent/src/agent/extraction_agent/profiles/abb/profile.json",
-      "checksum": "sha256:c3c01d861bb4f9dcc6d0015a8cba3ea853d247aeb19667540f7e1aeb8f93ab49"
+      "checksum": "sha256:1fdb66e771c66f19a6cfcc1ed931fa2fc7479087761fcf42def13c5c87f58c29"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/profiles/abb/rules.json",
-      "checksum": "sha256:50e65233243189d41a82e97a38b7ff51106697f1c84f9fab623053ca192637e6"
+      "checksum": "sha256:a62f89f71521652f3987b1fa0981c6f56b7c98fc57d1e600023414e801ac2d3f"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/annotated/images/lv11_205.png",
@@ -41,15 +93,15 @@
     },
     {
       "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/annotated/manifest.json",
-      "checksum": "sha256:68a94215b2646cb72a9f64135cf7b5af529b2bf0aca7218e01df3fa3be6a1150"
+      "checksum": "sha256:5fba667fad98c357a333628e2f3a4d8ce0def3c7c477d246d0cf4d8240819abd"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/annotated/stage2/lv11_205.expected.json",
-      "checksum": "sha256:aea1965f29b415063f1a76bde2aab6d7216508d64f49b1750ce98e874cb7a375"
+      "checksum": "sha256:a47fbdd8a8fbf8f6258ffec2badbf9d15eefce6efae67b2352133295e3fc8e89"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/annotated/stage3/205_q4_l1_to_241_q1.expected.json",
-      "checksum": "sha256:74fc40a846c5d01fc8ecb5598f0baebd7efce6b8b1bd922a6aec3a853294f11c"
+      "checksum": "sha256:c0e50b1eb7864857dd3e0d9afe3088ac6e9fe72a32cef0ae34719f7e1f8d5bc8"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/annotated/stage3/205_q4_l1_to_241_q1.task.json",
@@ -57,11 +109,12 @@
     },
     {
       "path": "services/agent/src/agent/extraction_agent/prompts/abb/page_cross_page_completion.md",
-      "checksum": "sha256:9122eec4b10baa94745bd31ff056b3e94fd9aee81f55df72f2f26c2233444945"
+      "checksum": "sha256:c40d30f8528a1a088e939da397514cc2d1815afb498db2b21d94269b2c811f4a"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/prompts/abb/page_scan_index.md",
-      "checksum": "sha256:f221963ceedec5a4da3e2c76d2a38c140d58b69be4400ca1d6a7cf12102bc47d"
+      "checksum": "sha256:46a64e6c1d77145cf4c4451d0efd4343c9be50f04715c8c539dfae01a21cb346"
     }
-  ]
+  ],
+  "runtime_contract": "stage2-script-aligned-v1"
 }

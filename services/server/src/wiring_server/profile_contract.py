@@ -106,6 +106,124 @@ class PdfSampleResult(StrictModel):
     draft: DraftView
     sample: PdfSampleInfo
 
+class FileEdit(StrictModel):
+    path: str = Field(min_length=1, max_length=300)
+    before_checksum: str | None = None
+    content: str | None = Field(default=None, max_length=300000)
+    operation: Literal["write", "delete"] = "write"
+
+class EvidenceAnchor(StrictModel):
+    path: str = Field(
+        description="当前草稿文本/本轮已查看图片的完整相对路径；本轮用户输入用user_message，观察用observations/<索引>"
+    )
+    quote: str = Field(
+        min_length=1,
+        max_length=2000,
+        description="文本/用户观察须逐字摘录；图片为待用户核对的视觉观察，不代表已验证OCR",
+    )
+
+class Finding(StrictModel):
+    category: Literal["rule_issue", "example_issue", "model_deviation", "mixed", "insufficient_evidence"]
+    explanation: str = Field(min_length=1, max_length=4000)
+    evidence: list[EvidenceAnchor] = Field(default_factory=list, max_length=12)
+    missing_evidence: list[str] = Field(default_factory=list, max_length=12)
+
+class ProposalRequest(StrictModel):
+    summary: str = Field(min_length=1, max_length=4000)
+    edits: list[FileEdit] = Field(min_length=1, max_length=20)
+    findings: list[Finding] = Field(default_factory=list, max_length=12)
+
+class FileDiff(StrictModel):
+    path: str
+    before: str | None
+    after: str | None
+
+class Proposal(ProposalRequest):
+    id: UUID
+    draft_id: UUID
+    base_revision: int
+    base_checksum: str
+    status: Literal["pending", "accepted", "rejected"] = "pending"
+    applied_revision: int | None = None
+    diffs: list[FileDiff] = Field(default_factory=list)
+
+class ProfileTurn(StrictModel):
+    turn_id: UUID = Field(default_factory=uuid4)
+    message: str = Field(min_length=1, max_length=12000, pattern=r"\S")
+    intent: Literal["discuss", "edit"] = "discuss"
+    expected_revision: int = Field(ge=1)
+    observations: list[dict[str, Any]] = Field(default_factory=list, max_length=20)
+    attachment_ids: list[UUID] = Field(default_factory=list, max_length=4)
+    focus_stage: Literal["classification", "scan", "completion"] | None = None
+
+class ValidationIssue(StrictModel):
+    code: str
+    path: str | None = None
+    message: str
+
+class ValidationReport(StrictModel):
+    ready: bool
+    issues: list[ValidationIssue] = Field(default_factory=list)
+    case_count: int = 0
+    schema_version: str = "extraction_stages_v1/review_1.0.0"
+
+class ProfileReply(StrictModel):
+    draft_id: UUID
+    turn_id: UUID
+    revision: int
+    answer: str
+    findings: list[Finding] = Field(default_factory=list)
+    proposals: list[Proposal] = Field(default_factory=list)
+    changed_files: list[str] = Field(default_factory=list)
+    validation: ValidationReport | None = None
+    tool_limited: bool = False
+    cached: bool = False
+    model_calls: list[dict[str, Any]] = Field(default_factory=list)
+    viewed_images: list[str] = Field(default_factory=list)
+
+class ProfileEvent(StrictModel):
+    type: Literal["tool_started", "tool_completed", "answer_delta", "completed"]
+    tool: str | None = None
+    detail: dict[str, Any] = Field(default_factory=dict)
+    delta: str | None = None
+    reply: ProfileReply | None = None
+
+class ProfileImport(StrictModel):
+    draft_id: UUID
+    profile_id: UUID
+    profile_key: str = Field(pattern=r"^[a-z][a-z0-9_-]{0,63}$")
+    profile_version: str = Field(pattern=r"^\d+\.\d+\.\d+$")
+    source_checksum: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    display_name: str = Field(min_length=1, max_length=120)
+    content_base64: str | None = Field(default=None, max_length=42 * 1024 * 1024)
+
+class EditFilesInput(StrictModel):
+    revision: int = Field(ge=1)
+    operation_id: UUID = Field(default_factory=uuid4)
+    edits: list[FileEdit] = Field(min_length=1, max_length=20)
+
+class EditText(StrictModel):
+    path: str
+    content: str
+    checksum: str
+
+class EditImage(StrictModel):
+    path: str
+    url: str
+
+class EditPackage(StrictModel):
+    manifest: dict[str, Any]
+    files: list[EditText]
+    images: list[EditImage]
+
+class ProfileEditState(StrictModel):
+    draft: DraftView
+    package: EditPackage
+    validation: ValidationReport
+    proposals: list[Proposal] = Field(default_factory=list)
+    history: list[dict[str, str]] = Field(default_factory=list)
+    changed: bool = False
+
 class TargetImage(StrictModel):
     attachment_id: UUID
     function: str = Field(min_length=1, max_length=100)

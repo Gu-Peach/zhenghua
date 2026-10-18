@@ -1,25 +1,20 @@
 from __future__ import annotations
 
-from src.config import AgentSettings
-from src.harness.model_gateway import ModelGateway, OpenAICompatibleModelGateway
-from src.harness.retry import RetryPolicy
-from src.domain.ports import TraceStore
+from src.agent.extraction_agent.application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
 from src.agent.extraction_agent.infrastructure.abb_vlm_stages import AbbVlmExtractionStageAdapter
 from src.agent.extraction_agent.infrastructure.zh_gantry_reel_vlm_stages import ZhGantryReelVlmAdapter
 from src.agent.extraction_agent.infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
-from src.agent.extraction_agent.application.extraction_stage_dispatcher import ProfileBoundStageDispatcher
+from src.config import AgentSettings
+from src.domain.ports import TraceStore
+from src.harness.model_gateway import ModelGateway, OpenAICompatibleModelGateway
+from src.harness.retry import RetryPolicy
 
 
-def build_extraction_stage_dispatcher(
-    settings: AgentSettings,
-    *,
-    gateway: ModelGateway | None = None,
-    trace_store: TraceStore | None = None,
-) -> ProfileBoundStageDispatcher:
-    """Build profile-specific stage adapters using the agent's own model gateway."""
-    if not settings.model_configured and gateway is None:
-        raise ValueError("Configure AGENT_MODEL_BASE_URL and AGENT_DEFAULT_MODEL before extraction.")
-    model_gateway = gateway or OpenAICompatibleModelGateway(
+def build_extraction_model_gateway(
+    settings: AgentSettings, *, trace_store: TraceStore | None = None,
+) -> ModelGateway:
+    """One model endpoint, timeout and retry configuration for scripts and Workers."""
+    return OpenAICompatibleModelGateway(
         base_url=settings.model_base_url or settings.model_chat_completions_url or "",
         chat_completions_url=settings.model_chat_completions_url,
         api_key=settings.model_api_key,
@@ -32,6 +27,18 @@ def build_extraction_stage_dispatcher(
             max_backoff_seconds=settings.model_retry_max_backoff_seconds,
         ),
     )
+
+
+def build_extraction_stage_dispatcher(
+    settings: AgentSettings,
+    *,
+    gateway: ModelGateway | None = None,
+    trace_store: TraceStore | None = None,
+) -> ProfileBoundStageDispatcher:
+    """Build profile-specific stage adapters using the agent's own model gateway."""
+    if not settings.model_configured and gateway is None:
+        raise ValueError("Configure AGENT_MODEL_BASE_URL and AGENT_DEFAULT_MODEL before extraction.")
+    model_gateway = gateway or build_extraction_model_gateway(settings, trace_store=trace_store)
     dispatcher = ProfileBoundStageDispatcher()
     dispatcher.register("zh_native", ZhVlmExtractionStageAdapter(settings, model_gateway))
     dispatcher.register("zh_gantry_reel_native", ZhGantryReelVlmAdapter(settings, model_gateway))

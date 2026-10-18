@@ -1,5 +1,25 @@
 # Changelog
 
+2026-10-18：线表顶部提取未完成提示可通过右侧关闭按钮隐藏，保留任务失败状态和重试行为，新失败重新展示。前端类型/lint/build及隔离浏览器核对通过，无API/数据库变更。见[Web记录](../apps/web/changelog/2026-10-18-extraction-notice-dismiss.md)。
+
+2026-10-18：按用户纠正，撤回整组端点调换迁移所属页/工作区的约定，固定记录归属和关联索引，仅交换端点/坐标对象，前端保留原筛选并禁用旧迁页方案。新迁移20261018040000已部署；实际4行按快照事务恢复006C01/006.C，ID、已确认端点/坐标和同项目其他行保持。相关70项Agent、5项API、10项独立SQL、25项编辑/预览浏览器及类型/lint/build/Ruff/mypy通过。见[当前设计与恢复记录](../service/server/explain-swap-origin-correction.md)；以下同日“跟随新页”的较早记录已被取代，删除修复保留。
+
+2026-10-18：ABB本地1.2.1修正小圆点放线识别，覆盖母线输入、同段双标记、数字拼Sheet和无编号端子回退；初扫/补全保留完整端子身份。公共十四列/坐标、ZH/XMZ不变，未运行模型/测试或发布规则。见[Agent记录](../service/agent/changelog/2026-10-18-abb-marker-endpoints.md)。
+
+2026-10-18：修复Explain整组调换后仍按旧来源页筛选的空表问题，确认后跟随新页/全项目并显示位置，行ID不变。按用户要求后续物理删行不留业务副本并清除相关方案，最小幂等回执保留；工作区已明确时Agent主动查询。新函数迁移本地部署、实际三表摘要不变，离线124项定向回归及类型/lint/build/Ruff/截图通过；未重跑真实模型或修改现有线表。见[联合排障](../service/server/changelog/2026-10-18-explain-delete-relocation.md)。
+
+2026-10-18：提取任务单页初扫失败后记录并继续后续页，完整遍历后汇总未完成项；复用成功页缓存恢复，配置/存储/取消仍立即中止。不新增数据库/API状态，重启Worker后原项目重试。仅静态核对，未运行模型或操作现有任务。见[Agent记录](../service/agent/changelog/2026-10-18-extraction-page-failure.md)。
+
+2026-10-18：修复Explain无真实方案却口述已生成预览、无确认按钮。无回执时撤回错误文本并受控补调一次，失败明确提示；不从文字制造可提交数据。新增answer_reset、API2.7.1及生成契约同步。68项Agent、5项Server、19项浏览器及类型/lint/build通过，无Schema变更、真实模型/数据修改或服务启停。见[记录](../service/agent/changelog/2026-10-18-explain-preview-receipt.md)。
+
+2026-10-18：Explain新增线表修改方案工具，用户确认整组起终点连同元件、描述、坐标/页码一起调换，也支持去前缀与字段修正。API2.7.0确认事务、RLS/批次/版本/范围/幂等及审计，前端先回答后预览并刷新线表。58项Agent、27项Server、6项独立SQL、75项浏览器及后续6项通过，类型/lint/build和截图通过。本地仅部署新增结构20261018020000，三表摘要不变；未跑真实模型或改真实线表，待用户重载8000/8100。见[Agent](../service/agent/changelog/2026-10-18-explain-edits.md)、[Server](../service/server/changelog/2026-10-18-explain-edit-transactions.md)、[Web](../apps/web/changelog/2026-10-18-explain-edit-preview.md)。
+
+2026-10-18：修复Profile辅助编辑将图片/用户结果证据按文本文件读取的问题，诊断与建议持久化共用来源校验；保留用户确认、修订和发布约束，历史工具错误可在新轮继续。EvidenceAnchor形状兼容，生成DTO/OpenAPI/TS字段说明同步，不修改已发布规则。验证及重载8100说明见[Agent排障](../service/agent/changelog/2026-10-18-profile-evidence-validation.md)。
+
+2026-10-18：平台上传提取与本地脚本统一请求/结果契约stage2-script-aligned-v1，禁色标处理、模型Gateway和14列业务字段共用，补过滤前计数、请求指纹及ZH0列兼容。ZH Prompt/样例与2.2.1业务规则保持，4初扫/14补全消息及154条投影离线核对通过；未跑模型/pytest、不改旧任务或业务库，需重启Worker后新上传测试。见[Agent记录](../service/agent/changelog/2026-10-18-extraction-entry-alignment.md)。
+
+2026-10-18：基于ProfileAgent扩展已有规则编辑，Extraction查看规则可双击修改或用旁侧聊天结合图纸/实际结果诊断，查看工具及diff后同意修改并发布新版。新版替换入口，旧包无引用才回收；API2.6.0及生成契约同步，新迁移已部署本地且未改业务内容。76项Agent、26项Server、2项独立SQL、59项浏览器及最终25项复验/静态检查通过。未调用真实模型或代发规则，需用户加载8000/8100。见[设计](../adr/0032-profile-resource-editing.md)、[Web](../apps/web/changelog/2026-10-18-profile-rule-editing.md)、[Server](../service/server/changelog/2026-10-18-profile-editing-replacement.md)。
+
 2026-10-17：ABB1.2.0和XMZ（zh_gantry_reel）0.2.0提取对齐ZH结构：单来源样例、对应目标图补全与各自图框局部高清读取；分页、ZH业务规则、最终14列/整页坐标保持。原起点/电流冻结，未知端点留空。仅静态/图片预览核对，不运行模型/测试、不写库或发布。见[Agent记录](../service/agent/changelog/2026-10-17-abb-xmz-alignment.md)。
 
 2026-10-17：ZH局部跨页补全升为zh_crop 2.2.1，拒绝将空对象默认成有效结果，使用已有最多两次校验重试并保留失败/视觉原因；同号N线按来源业务页和完整信号匹配，新增005C01两组对照，正常路径仍单图/单案例。初扫/坐标/数据库保持，静态核对完成，未运行测试/模型，效果待用户复测。见[Agent记录](../service/agent/changelog/2026-10-17-zh-completion-response.md)。

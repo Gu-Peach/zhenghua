@@ -350,6 +350,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project}/connection-edits": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Edits */
+        get: operations["edits_api_v1_projects__project__connection_edits_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project}/connection-edits/{proposal}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Edit */
+        get: operations["edit_api_v1_projects__project__connection_edits__proposal__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project}/connection-edits/{proposal}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Decide Edit */
+        post: operations["decide_edit_api_v1_projects__project__connection_edits__proposal__decision_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/explain/turns/stream": {
         parameters: {
             query?: never;
@@ -361,6 +412,125 @@ export interface paths {
         put?: never;
         /** Explain */
         post: operations["explain_api_v1_explain_turns_stream_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile/references/{profile}/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Fork */
+        post: operations["fork_api_v1_profile_references__profile__draft_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile/drafts/{draft}/editor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Editor State */
+        get: operations["editor_state_api_v1_profile_drafts__draft__editor_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile/drafts/{draft}/editor/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Editor Save */
+        post: operations["editor_save_api_v1_profile_drafts__draft__editor_files_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile/drafts/{draft}/editor/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Editor Accept */
+        post: operations["editor_accept_api_v1_profile_drafts__draft__editor_accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile/drafts/{draft}/editor/proposals/{proposal}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Editor Confirm */
+        post: operations["editor_confirm_api_v1_profile_drafts__draft__editor_proposals__proposal__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile/drafts/{draft}/editor/turns/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Editor Stream */
+        post: operations["editor_stream_api_v1_profile_drafts__draft__editor_turns_stream_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile/cleanup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cleanup */
+        post: operations["cleanup_api_v1_profile_cleanup_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -578,6 +748,109 @@ export interface components {
             /** Evidence Steps */
             evidence_steps?: string[];
         };
+        /** ConnectionEditChange */
+        ConnectionEditChange: {
+            /**
+             * Connection Id
+             * Format: uuid
+             */
+            connection_id: string;
+            /** Record Version */
+            record_version: number;
+            /** Principle Number */
+            principle_number?: string | null;
+            /** Workspace Code */
+            workspace_code?: string | null;
+            /** Source Drawing Page */
+            source_drawing_page?: string | null;
+            /** Before */
+            before: {
+                [key: string]: unknown;
+            };
+            /** After */
+            after: {
+                [key: string]: unknown;
+            };
+        };
+        /** ConnectionEditDecision */
+        ConnectionEditDecision: {
+            /** Checksum */
+            checksum: string;
+            /** Accepted */
+            accepted: boolean;
+        };
+        /** ConnectionEditProposal */
+        ConnectionEditProposal: {
+            /**
+             * Proposal Id
+             * Format: uuid
+             */
+            proposal_id: string;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Batch Id */
+            batch_id: string;
+            /** Checksum */
+            checksum: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "pending" | "applied" | "rejected";
+            request: components["schemas"]["ConnectionEditRequest"];
+            /** Matched Count */
+            matched_count: number;
+            /** Changed Count */
+            changed_count: number;
+            /** Changes */
+            changes: components["schemas"]["ConnectionEditChange"][];
+            /** Created At */
+            created_at: string;
+            /** Expires At */
+            expires_at: string;
+        };
+        /** ConnectionEditReceipt */
+        ConnectionEditReceipt: {
+            /**
+             * Proposal Id
+             * Format: uuid
+             */
+            proposal_id: string;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /** Batch Id */
+            batch_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "applied" | "rejected";
+            /** Changed Count */
+            changed_count: number;
+            /** Versions */
+            versions?: {
+                [key: string]: number;
+            };
+            /**
+             * Idempotent
+             * @default false
+             */
+            idempotent: boolean;
+        };
+        /** ConnectionEditRequest */
+        ConnectionEditRequest: {
+            scope: components["schemas"]["EditScope"];
+            /** Operation */
+            operation: components["schemas"]["RemoveTerminalPrefix"] | components["schemas"]["SwapEndpoints"] | components["schemas"]["SetConnectionFields"];
+            /** Reason */
+            reason: string;
+        };
         /** ConnectionFacts */
         ConnectionFacts: {
             /**
@@ -644,6 +917,31 @@ export interface components {
             needs_review: boolean;
             start_terminal_coordinates?: components["schemas"]["TerminalPosition"] | null;
             end_terminal_coordinates?: components["schemas"]["TerminalPosition"] | null;
+        };
+        /** ConnectionFieldValues */
+        ConnectionFieldValues: {
+            /** Principle Number */
+            principle_number?: string | null;
+            /** Terminal Strip */
+            terminal_strip?: string | null;
+            /** Start Code */
+            start_code?: string | null;
+            /** Start Description */
+            start_description?: string | null;
+            /** Start Terminal */
+            start_terminal?: string | null;
+            /** End Code */
+            end_code?: string | null;
+            /** End Description */
+            end_description?: string | null;
+            /** End Terminal */
+            end_terminal?: string | null;
+            /** Current Value */
+            current_value?: string | null;
+            /** Color Mark */
+            color_mark?: string | null;
+            /** Remark */
+            remark?: string | null;
         };
         /** ConnectionFields */
         ConnectionFields: {
@@ -874,6 +1172,72 @@ export interface components {
             /** Reference Note */
             reference_note?: string | null;
         };
+        /** EditFilesInput */
+        EditFilesInput: {
+            /** Revision */
+            revision: number;
+            /**
+             * Operation Id
+             * Format: uuid
+             */
+            operation_id?: string;
+            /** Edits */
+            edits: components["schemas"]["FileEdit"][];
+        };
+        /** EditImage */
+        EditImage: {
+            /** Path */
+            path: string;
+            /** Url */
+            url: string;
+        };
+        /** EditPackage */
+        EditPackage: {
+            /** Manifest */
+            manifest: {
+                [key: string]: unknown;
+            };
+            /** Files */
+            files: components["schemas"]["EditText"][];
+            /** Images */
+            images: components["schemas"]["EditImage"][];
+        };
+        /**
+         * EditScope
+         * @description Exact AND filters within the host-bound project and batch; no implicit whole-project edit.
+         */
+        EditScope: {
+            /** Workspace Code */
+            workspace_code?: string | null;
+            /** Drawing Page */
+            drawing_page?: string | null;
+            /** Principle Numbers */
+            principle_numbers?: string[];
+            /** Connection Ids */
+            connection_ids?: string[];
+        };
+        /** EditText */
+        EditText: {
+            /** Path */
+            path: string;
+            /** Content */
+            content: string;
+            /** Checksum */
+            checksum: string;
+        };
+        /** EvidenceAnchor */
+        EvidenceAnchor: {
+            /**
+             * Path
+             * @description 当前草稿文本/本轮已查看图片的完整相对路径；本轮用户输入用user_message，观察用observations/<索引>
+             */
+            path: string;
+            /**
+             * Quote
+             * @description 文本/用户观察须逐字摘录；图片为待用户核对的视觉观察，不代表已验证OCR
+             */
+            quote: string;
+        };
         /** EvidenceStep */
         EvidenceStep: {
             /** Id */
@@ -941,7 +1305,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "context" | "retrieval" | "answer_delta" | "completed" | "tool_started" | "tool_completed" | "tool_failed";
+            type: "context" | "retrieval" | "answer_delta" | "answer_reset" | "completed" | "tool_started" | "tool_completed" | "tool_failed" | "edit_proposal";
             /**
              * Conversation Id
              * Format: uuid
@@ -959,6 +1323,7 @@ export interface components {
             /** Delta */
             delta?: string | null;
             result?: components["schemas"]["ExplainResponse"] | null;
+            proposal?: components["schemas"]["ConnectionEditProposal"] | null;
         };
         /** ExplainResponse */
         ExplainResponse: {
@@ -1001,6 +1366,8 @@ export interface components {
              * @default false
              */
             cached: boolean;
+            /** Proposals */
+            proposals?: components["schemas"]["ConnectionEditProposal"][];
         };
         /** ExplainTurn */
         ExplainTurn: {
@@ -1074,6 +1441,44 @@ export interface components {
             error?: {
                 [key: string]: string;
             } | null;
+        };
+        /** FileDiff */
+        FileDiff: {
+            /** Path */
+            path: string;
+            /** Before */
+            before: string | null;
+            /** After */
+            after: string | null;
+        };
+        /** FileEdit */
+        FileEdit: {
+            /** Path */
+            path: string;
+            /** Before Checksum */
+            before_checksum?: string | null;
+            /** Content */
+            content?: string | null;
+            /**
+             * Operation
+             * @default write
+             * @enum {string}
+             */
+            operation: "write" | "delete";
+        };
+        /** Finding */
+        Finding: {
+            /**
+             * Category
+             * @enum {string}
+             */
+            category: "rule_issue" | "example_issue" | "model_deviation" | "mixed" | "insufficient_evidence";
+            /** Explanation */
+            explanation: string;
+            /** Evidence */
+            evidence?: components["schemas"]["EvidenceAnchor"][];
+            /** Missing Evidence */
+            missing_evidence?: string[];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -1154,6 +1559,40 @@ export interface components {
             draft: components["schemas"]["DraftView"];
             sample: components["schemas"]["PdfSampleInfo"];
         };
+        /** ProfileEditState */
+        ProfileEditState: {
+            draft: components["schemas"]["DraftView"];
+            package: components["schemas"]["EditPackage"];
+            validation: components["schemas"]["ValidationReport"];
+            /** Proposals */
+            proposals?: components["schemas"]["Proposal"][];
+            /** History */
+            history?: {
+                [key: string]: string;
+            }[];
+            /**
+             * Changed
+             * @default false
+             */
+            changed: boolean;
+        };
+        /** ProfileEvent */
+        ProfileEvent: {
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "tool_started" | "tool_completed" | "answer_delta" | "completed";
+            /** Tool */
+            tool?: string | null;
+            /** Detail */
+            detail?: {
+                [key: string]: unknown;
+            };
+            /** Delta */
+            delta?: string | null;
+            reply?: components["schemas"]["ProfileReply"] | null;
+        };
         /** ProfileEvidence */
         ProfileEvidence: {
             /** Key */
@@ -1168,6 +1607,16 @@ export interface components {
              */
             source: "record_evidence" | "project_reference";
         };
+        /** ProfileFork */
+        ProfileFork: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Base Checksum */
+            base_checksum: string;
+        };
         /** ProfileImage */
         ProfileImage: {
             /** Revision */
@@ -1181,6 +1630,13 @@ export interface components {
             filename: string;
             /** Content Base64 */
             content_base64: string;
+        };
+        /** ProfileProposalConfirm */
+        ProfileProposalConfirm: {
+            /** Revision */
+            revision: number;
+            /** Accepted */
+            accepted: boolean;
         };
         /** ProfileReferenceCreate */
         ProfileReferenceCreate: {
@@ -1211,11 +1667,135 @@ export interface components {
              * @default false
              */
             can_delete: boolean;
+            /**
+             * Cleanup Pending
+             * @default false
+             */
+            cleanup_pending: boolean;
+            /**
+             * Previous Version Retained
+             * @default false
+             */
+            previous_version_retained: boolean;
+        };
+        /** ProfileReply */
+        ProfileReply: {
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /**
+             * Turn Id
+             * Format: uuid
+             */
+            turn_id: string;
+            /** Revision */
+            revision: number;
+            /** Answer */
+            answer: string;
+            /** Findings */
+            findings?: components["schemas"]["Finding"][];
+            /** Proposals */
+            proposals?: components["schemas"]["Proposal"][];
+            /** Changed Files */
+            changed_files?: string[];
+            validation?: components["schemas"]["ValidationReport"] | null;
+            /**
+             * Tool Limited
+             * @default false
+             */
+            tool_limited: boolean;
+            /**
+             * Cached
+             * @default false
+             */
+            cached: boolean;
+            /** Model Calls */
+            model_calls?: {
+                [key: string]: unknown;
+            }[];
+            /** Viewed Images */
+            viewed_images?: string[];
         };
         /** ProfileRevision */
         ProfileRevision: {
             /** Revision */
             revision: number;
+        };
+        /** ProfileTurn */
+        ProfileTurn: {
+            /**
+             * Turn Id
+             * Format: uuid
+             */
+            turn_id?: string;
+            /** Message */
+            message: string;
+            /**
+             * Intent
+             * @default discuss
+             * @enum {string}
+             */
+            intent: "discuss" | "edit";
+            /** Expected Revision */
+            expected_revision: number;
+            /** Observations */
+            observations?: {
+                [key: string]: unknown;
+            }[];
+            /** Attachment Ids */
+            attachment_ids?: string[];
+            /** Focus Stage */
+            focus_stage?: ("classification" | "scan" | "completion") | null;
+        };
+        /** Proposal */
+        Proposal: {
+            /** Summary */
+            summary: string;
+            /** Edits */
+            edits: components["schemas"]["FileEdit"][];
+            /** Findings */
+            findings?: components["schemas"]["Finding"][];
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Draft Id
+             * Format: uuid
+             */
+            draft_id: string;
+            /** Base Revision */
+            base_revision: number;
+            /** Base Checksum */
+            base_checksum: string;
+            /**
+             * Status
+             * @default pending
+             * @enum {string}
+             */
+            status: "pending" | "accepted" | "rejected";
+            /** Applied Revision */
+            applied_revision?: number | null;
+            /** Diffs */
+            diffs?: components["schemas"]["FileDiff"][];
+        };
+        /** RemoveTerminalPrefix */
+        RemoveTerminalPrefix: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "remove_terminal_prefix";
+            /**
+             * Endpoint
+             * @enum {string}
+             */
+            endpoint: "start" | "end";
+            /** Prefix */
+            prefix: string;
         };
         /** ResourceImage */
         ResourceImage: {
@@ -1311,6 +1891,15 @@ export interface components {
             name: string;
             /** Role */
             role: string;
+        };
+        /** SetConnectionFields */
+        SetConnectionFields: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "set_fields";
+            changes: components["schemas"]["ConnectionFieldValues"];
         };
         /** SimpleConnectionCreate */
         SimpleConnectionCreate: {
@@ -1579,6 +2168,14 @@ export interface components {
             /** Negative Images */
             negative_images?: string[];
         };
+        /** SwapEndpoints */
+        SwapEndpoints: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            kind: "swap_endpoints" | "swap_terminals";
+        };
         /** TargetImage */
         TargetImage: {
             /**
@@ -1678,7 +2275,7 @@ export interface components {
              * Name
              * @enum {string}
              */
-            name: "load_connection" | "search_connections" | "view_drawings" | "unsupported";
+            name: "load_connection" | "search_connections" | "view_drawings" | "propose_connection_edit" | "unsupported";
             /** Arguments */
             arguments?: {
                 [key: string]: unknown;
@@ -1702,6 +2299,32 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** ValidationIssue */
+        ValidationIssue: {
+            /** Code */
+            code: string;
+            /** Path */
+            path?: string | null;
+            /** Message */
+            message: string;
+        };
+        /** ValidationReport */
+        ValidationReport: {
+            /** Ready */
+            ready: boolean;
+            /** Issues */
+            issues?: components["schemas"]["ValidationIssue"][];
+            /**
+             * Case Count
+             * @default 0
+             */
+            case_count: number;
+            /**
+             * Schema Version
+             * @default extraction_stages_v1/review_1.0.0
+             */
+            schema_version: string;
         };
         /** WizardState */
         WizardState: {
@@ -2598,6 +3221,111 @@ export interface operations {
             };
         };
     };
+    edits_api_v1_projects__project__connection_edits_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                project: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionEditProposal"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_api_v1_projects__project__connection_edits__proposal__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                project: string;
+                proposal: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionEditProposal"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    decide_edit_api_v1_projects__project__connection_edits__proposal__decision_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                project: string;
+                proposal: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectionEditDecision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionEditReceipt"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     explain_api_v1_explain_turns_stream_post: {
         parameters: {
             query?: never;
@@ -2621,6 +3349,259 @@ export interface operations {
                 content: {
                     "text/event-stream": unknown;
                     "application/json": components["schemas"]["ExplainEvent"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    fork_api_v1_profile_references__profile__draft_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                profile: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileFork"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileEditState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    editor_state_api_v1_profile_drafts__draft__editor_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                draft: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileEditState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    editor_save_api_v1_profile_drafts__draft__editor_files_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                draft: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EditFilesInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileEditState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    editor_accept_api_v1_profile_drafts__draft__editor_accept_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                draft: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileRevision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileEditState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    editor_confirm_api_v1_profile_drafts__draft__editor_proposals__proposal__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                draft: string;
+                proposal: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileProposalConfirm"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileEditState"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    editor_stream_api_v1_profile_drafts__draft__editor_turns_stream_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                draft: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileTurn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                    "application/json": components["schemas"]["ProfileEvent"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cleanup_api_v1_profile_cleanup_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
                 };
             };
             /** @description Validation Error */

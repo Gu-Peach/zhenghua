@@ -6,6 +6,10 @@
 
 ## 1. 重构结论
 
+2026-10-18 Explain线表修改设计见[ADR-0033](./adr/0033-explain-connection-edit-tools.md)：模型产生强类型精确范围proposal，用户查看逐行对照后经Server事务确认；整组端点/坐标对象调换，记录所属页、工作区及关联跨页索引固定，坐标内部PDF页号随端点保留。此前迁页约定已纠正，见[修正](./service/server/explain-swap-origin-correction.md)。
+
+2026-10-18基于Profile Agent扩展现有规则编辑：预览双击手动修改及旁侧工具聊天，可信包派生草稿，建议确认后发布替换新版与引用感知旧包回收，见[ADR-0032](./adr/0032-profile-resource-editing.md)。
+
 2026-10-17 ZH局部补全2.2.1在适配器默认值前检查无内容响应，使用已有两次校验重试并在失败后继续；N线按来源页与完整信号名匹配。保持Graph拓扑/状态枚举和坐标契约，设计见[计划](./service/agent/zh-completion-response-plan.md)。
 
 2026-10-17 Profile补全聊天允许受控返回初扫生成修正候选，解决同页误判后仍反复索要目标图；保持显式确认与依赖失效，见[ADR-0031](./adr/0031-profile-scan-correction.md)。

@@ -21,15 +21,19 @@ from src.domain.models.common import StrictModel
 
 from .conversation import ConversationEvent, ConversationState, ConversationTurn, ProfileConversation
 from .diagnostics import public_model_error
+from .editing import ProfileEditor
 from .models import (
     DraftCreate,
     DraftView,
+    EditFilesInput,
     ExportReceipt,
     PdfSampleRequest,
     PdfSampleResult,
     ProfileActor,
+    ProfileEditState,
     ProfileError,
     ProfileEvent,
+    ProfileImport,
     ProfileReply,
     ProfileTurn,
     Proposal,
@@ -62,7 +66,8 @@ class ImageInput(RevisionInput):
 def public_error(error: Exception) -> tuple[int, dict[str, str]]:
     logging.getLogger(__name__).error(
         "Profile request failed type=%s code=%s diagnostic_id=%s",
-        type(error).__name__, getattr(error, "code", "PROFILE_AGENT_FAILED"),
+        type(error).__name__,
+        getattr(error, "code", "PROFILE_AGENT_FAILED"),
         getattr(error, "details", {}).get("diagnostic_id", "unavailable"),
     )
     if isinstance(error, ProfileError):
@@ -89,6 +94,36 @@ def create_profile_router(
     wizard = ProfileWizard(agent)
     conversation = ProfileConversation(wizard)
     pdf_sampling = PdfSamplingTool(agent.store)
+    editor = ProfileEditor(agent.store)
+
+    @router.post("/imports", response_model=ProfileEditState)
+    async def import_profile(body: ProfileImport, actor: ProfileActor = identity) -> Any:
+        return await execute(lambda: asyncio.to_thread(editor.import_profile, body, actor))
+
+    @router.get("/drafts/{draft}/editor", response_model=ProfileEditState)
+    async def editor_state(draft: UUID, actor: ProfileActor = identity) -> Any:
+        return await execute(lambda: asyncio.to_thread(editor.state, draft, actor))
+
+    @router.post("/drafts/{draft}/editor/files", response_model=ProfileEditState)
+    async def editor_save(draft: UUID, body: EditFilesInput, actor: ProfileActor = identity) -> Any:
+        async def save() -> ProfileEditState:
+            await asyncio.to_thread(editor.state, draft, actor)
+            await asyncio.to_thread(
+                agent.store.edit,
+                draft,
+                actor,
+                body.revision,
+                f"manual:{body.operation_id}",
+                body.edits,
+                "explicit_instruction",
+            )
+            return await asyncio.to_thread(editor.state, draft, actor)
+
+        return await execute(save)
+
+    @router.post("/drafts/{draft}/editor/accept", response_model=ProfileEditState)
+    async def editor_accept(draft: UUID, body: RevisionInput, actor: ProfileActor = identity) -> Any:
+        return await execute(lambda: asyncio.to_thread(editor.accept, draft, actor, body.revision))
 
     async def execute(call: Callable[[], Awaitable[Any]]) -> Any:
         try:
@@ -206,6 +241,7 @@ def create_profile_router(
                 "display_name": view.template.display_name if view.template else receipt.key,
                 "checksum": receipt.checksum,
                 "content_base64": base64.b64encode(content).decode(),
+                "source": view.source,
             }
 
         return await execute(package)

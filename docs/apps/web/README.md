@@ -1,5 +1,11 @@
 # apps/web 前端归档
 
+- [关闭提取未完成提示](./changelog/2026-10-18-extraction-notice-dismiss.md)：右侧关闭按钮、键盘操作、新失败重新展示，不改任务状态。
+
+- [Explain逐行修改预览](./changelog/2026-10-18-explain-edit-preview.md)：先回答后预览、确认/拒绝、冲突/处理态保护及刷新/恢复；75项全量与后续6项定向通过。
+
+- [查看规则双击编辑与旁侧助手](./changelog/2026-10-18-profile-rule-editing.md)：图片/实际结果诊断、工具/差异展示、确认后发布替换新版与失败恢复。
+
 - [规则负例可选提示](./changelog/2026-10-17-profile-optional-negative.md)：负例上传保留，未提供也可发布。
 
 - [补全聊天回到初扫修正](./changelog/2026-10-17-profile-scan-correction.md)：跟随Agent阶段回退、展示修正端点并重新确认，11项规则聊天回归通过。

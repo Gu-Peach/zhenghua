@@ -1,5 +1,5 @@
 {
-  "version": 5,
+  "version": 6,
   "review_status": "image_checked_pending_user_validation",
   "annotation_source": "user_supplied_rule_drawings",
   "expected_source": "image_transcription_by_coding_agent_no_model_calls",
@@ -37,13 +37,17 @@
     "Small hollow circles mark wiring; large hollow circles are terminals, per user instruction.",
     "Two circles on one direct segment yield one connection.",
     "No separator in marker-or-terminal plus source Sheet.",
-    "No external workbook data or current range inference."
+    "No external workbook data or current range inference.",
+    "User-confirmed 2026-10-18: L1/L2/L3/N bus connections are valid endpoints; mark224 + Sheet205 gives224205.",
+    "Visible marker564 on N to X1:1 uses564205; X1:1205 is reserved for an unnumbered X1:1 segment.",
+    "Common -X1 label with terminal11/12/13 means X1:11/12/13, never a strip X11.",
+    "No live tests, model calls, database writes, package publishing, or existing-run result changes."
   ],
   "example_scope": {
     "stage1": "One classification page 205.",
-    "stage2": "One source205 example merging reviewed Q3/Q4 segments, not exhaustive. Older fixtures are offline only.",
+    "stage2": "One source205 example including user-confirmed 14 incoming segments, Q6 output marker501/502/503 to X1:11/12/13, unnumbered X1 to Q103, and existing Q3/Q4 outputs; not exhaustive. No extra runtime images.",
     "stage3": "Source205 Q4 L1 frozen facts plus target241 only; view configured independently for 1..6 ABB grid."
   },
-  "profile_version": "1.2.0",
+  "profile_version": "1.2.1",
   "coordinate_source": "manual_visual_review_of_packaged_images_terminal_or_connection_centers; approximate normalized locations, pending engineering validation"
 }

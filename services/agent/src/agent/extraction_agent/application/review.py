@@ -14,6 +14,7 @@ from src.agent.extraction_agent.domain.models.review import (
 
 MODEL_CONTROL_FIELDS = frozenset(
     {
+        "scan_diagnostics",
         "status",
         "needs_review",
         "review_reasons",

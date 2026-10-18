@@ -79,6 +79,11 @@ class AbbExtractionPolicy:
             ):
                 if reference.get(field) in (None, ""):
                     reference[field] = value
+        if reference.get("target_column") is not None and int(reference["target_column"]) < 1:
+            reference.update(
+                target_pdf_page=None, external=True, reason="ABB numeric grid columns start at 1",
+            )
+            return reference
         target_sheet = reference.get("target_drawing_page") or reference.get("target_internal_page")
         target_pdf = reference.get("target_pdf_page")
         target_function = reference.get("target_function")

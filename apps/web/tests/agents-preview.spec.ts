@@ -8,16 +8,19 @@ const rowId = "00000000-0000-0000-0000-000000000014";
 const anotherRow = "00000000-0000-0000-0000-000000000015";
 const ruleId = "00000000-0000-0000-0000-000000000016";
 
-async function fixture(page: Page, options: { samePage?: boolean; coordinates?: "missing" | "mismatch" | "invalid"; failTarget?: boolean; slowTarget?: Promise<void>; failCapabilities?: boolean; loggedOut?: boolean; brokenImage?: boolean } = {}) {
+async function fixture(page: Page, options: { samePage?: boolean; swapped?: boolean; coordinates?: "missing" | "mismatch" | "invalid"; failTarget?: boolean; slowTarget?: Promise<void>; failCapabilities?: boolean; loggedOut?: boolean; brokenImage?: boolean } = {}) {
   const calls: string[] = [];
   const image = (id: string, pdf: number) => ({ id, project_id: project, workspace_id: "work", pdf_page_number: pdf, workspace_page: `003C0${pdf}`, status: "completed", image_url: "/preview-fixture.svg" });
   const rows = [
-    { connection_id: rowId, project_id: project, batch_id: "run-one", workspace_id: "work", workspace_name: "003.C", drawing_id: source, workspace_page: "003C01", pdf_page_number: 1, row_order: 0, record_version: 1, start_terminal: "XA:8", end_terminal: "XD10:1", principle_number: "003C0101", wire_number: "1000", current_value: "160A", is_cross_page: !options.samePage,
+    { connection_id: rowId, project_id: project, batch_id: "run-one", workspace_id: "work", workspace_name: "003.C", drawing_id: source, workspace_page: "003C01", pdf_page_number: 1, row_order: 0, record_version: 1, start_terminal: "XA:8", end_terminal: "XD10:1", principle_number: "003C0101", wire_number: "1000", current_value: "160A", is_cross_page: !options.samePage, target_pdf_page_number: options.samePage ? null : 2,
       start_terminal_coordinates: options.coordinates === "missing" ? null : { x: options.coordinates === "invalid" ? 2 : .25, y: .35, pdf_page_number: options.coordinates === "mismatch" ? 99 : 1 },
       end_terminal_coordinates: options.coordinates === "missing" ? null : { x: .72, y: .62, pdf_page_number: options.samePage ? 1 : 2 } },
     { connection_id: anotherRow, project_id: project, batch_id: "run-one", workspace_id: "work", workspace_name: "003.C", drawing_id: third, workspace_page: "003C03", pdf_page_number: 3, row_order: 1, record_version: 1, start_terminal: "XB:2", end_terminal: "XB:3", principle_number: "003C0301", wire_number: "1001", current_value: "80A", is_cross_page: false,
       start_terminal_coordinates: { x: .8, y: .25, pdf_page_number: 3 }, end_terminal_coordinates: { x: .18, y: .7, pdf_page_number: 3 } },
   ];
+  if (options.swapped) {
+    [rows[0].start_terminal_coordinates, rows[0].end_terminal_coordinates] = [rows[0].end_terminal_coordinates, rows[0].start_terminal_coordinates];
+  }
   await page.route("**/preview-fixture.svg", route => options.brokenImage ? route.fulfill({ status: 404 }) : route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="600"><rect width="1000" height="600" fill="white"/><path d="M250 210 H720 V372" stroke="#536c7b" fill="none" stroke-width="3"/><text x="250" y="195" font-size="20">XA:8</text><text x="720" y="405" font-size="20">XD10:1</text></svg>' }));
   await page.route("**/api/v1/**", async route => {
     const path = new URL(route.request().url()).pathname; calls.push(path);
@@ -124,6 +127,19 @@ test("同页连接在原图标出两端，不请求目标图", async ({ page }) 
   await expect(original.locator(".terminal-marker")).toHaveCount(2);
   await expect(page.getByText("同页连接：两端在上方原页标注")).toBeVisible();
   expect(state.calls.some(path => path.endsWith("/target"))).toBe(false);
+});
+
+test("端点交换后原页显示终点、跨页显示起点，按坐标自身页号标注", async ({ page }) => {
+  await fixture(page, { swapped: true }); await workbench(page);
+  await page.getByRole("button", { name: "XD10:1", exact: true }).click();
+  const original = page.getByRole("region", { name: "原页预览" });
+  const destination = page.getByRole("region", { name: "目标页预览" });
+  await expect(original.getByRole("img", { name: "终点 XD10:1", exact: true })).toBeVisible();
+  await expect(destination.getByRole("img", { name: "起点 XA:8", exact: true })).toBeVisible();
+  await expect(destination.locator(".preview-toolbar")).not.toContainText("终点 XD10:1");
+  await expect(original.locator(".coordinate-note")).toHaveCount(0);
+  await expect(destination.locator(".coordinate-note")).toHaveCount(0);
+  await page.screenshot({ path: test.info().outputPath("swapped-endpoints-kept-page.png") });
 });
 
 for (const coordinates of ["missing", "mismatch", "invalid"] as const) test(`坐标${coordinates}时不猜测位置`, async ({ page }) => {

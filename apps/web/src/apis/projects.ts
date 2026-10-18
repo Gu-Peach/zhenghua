@@ -9,7 +9,9 @@ export type RulePackage = Schema["ResourcePackage"];
 export type ProfileOption = Schema["LocalProfileOption"];
 
 function summary(row: Schema["SimpleProjectRead"]): ProjectSummary {
-  const status = row.status === "failed" || row.status === "archived" ? "failed" : row.status === "processing" ? "processing" : row.status === "ready" ? "completed" : "queued";
+  // Older workers reported page errors as a failure only after traversing the full PDF.
+  const traversedWithPageErrors = row.status === "failed" && row.processing?.error?.code === "EXTRACTION_PARTIAL";
+  const status = traversedWithPageErrors ? "completed" : row.status === "failed" || row.status === "archived" ? "failed" : row.status === "processing" ? "processing" : row.status === "ready" ? "completed" : "queued";
   return { id: row.id, name: row.name, company: "", profile: row.standard_profile ?? "未指定", status, progress: row.status === "ready" ? 100 : 0, workspaceCount: row.workspaces?.length ?? 0, drawingCount: row.workspaces?.reduce((n, w) => n + (w.drawings?.length ?? 0), 0) ?? 0, updatedAt: row.updated_at };
 }
 export function drawingFromDb(d: Schema["DrawingRead"]): Drawing {
@@ -87,7 +89,7 @@ export const projectApi = {
   },
   async listRuleLibrary(): Promise<RuleLibraryItem[]> {
     const rows = await request<Schema["ProfileReferenceRead"][]>("/api/v1/rule-library");
-    return rows.map(row => ({ id: row.id, key: row.profile_key, name: row.display_name, version: row.profile_version, summary: `规则引用 · ${row.checksum.slice(7, 19)}`, status: "published", updatedAt: row.created_at ?? "", canDelete: row.can_delete ?? false, isActive: true }));
+    return rows.map(row => ({ id: row.id, key: row.profile_key, name: row.display_name, version: row.profile_version, checksum: row.checksum, summary: `规则引用 · ${row.checksum.slice(7, 19)}`, status: "published", updatedAt: row.created_at ?? "", canDelete: row.can_delete ?? false, isActive: true }));
   },
   async localProfiles(): Promise<ProfileOption[]> { return request("/api/v1/rule-library/local"); },
   async createRule(body: Schema["ProfileReferenceCreate"]): Promise<void> { await request("/api/v1/rule-library", { method: "POST", body: JSON.stringify(body) }); },

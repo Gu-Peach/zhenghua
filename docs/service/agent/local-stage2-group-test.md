@@ -1,5 +1,7 @@
 # 本地 002.C / 002.M Stage 2 测试
 
+2026-10-18：脚本与平台共用`stage2-script-aligned-v1`请求/结果契约，专属禁色标提示已迁入共享层，模型Gateway/字段映射共用；参数与内存模式不变。新增请求指纹和过滤前计数，允许ZH0列，Prompt/样例不改。平台验证需先重启Worker，再新上传；详见[交付](./changelog/2026-10-18-extraction-entry-alignment.md)。
+
 ZH2.1.1补全只发送目标图及来源匹配事实（不传起点端子/坐标），`--profile zh`自动使用；命令参数不变，复测请使用新输出目录和run_id。ABB1.2.0/XMZ0.2.0同样使用目标图，并按独立列配置裁局部图，详见[修正记录](./changelog/2026-10-16-zh-cross-page-reading.md)。
 
 2026-10-15起PDF入口和拆页入口主表均复用ZH14列输出契约，ABB/XMZ同样包含两端坐标列；业务备注只取remark，读取依据保留在记录JSON。坐标读取要求和图像expected已同步，旧结果不自动补坐标或改写。ABB1.1.4/XMZ0.1.2应使用新输出目录复测，避免混用旧Profile指纹。见[统一记录](./changelog/2026-10-15-unified-table-coordinates.md)。

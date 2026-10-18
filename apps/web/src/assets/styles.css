@@ -388,6 +388,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .edit-grid p, .edit-grid footer { grid-column: 1 / -1; }
 .edit-grid footer { display: flex; justify-content: flex-end; gap: 10px; }
 .inline-error { background: #fff2ea; padding: 12px; font-size: 12px; overflow-wrap: anywhere; }
+.extraction-failure-notice { display:flex; align-items:center; gap:10px; }
+.extraction-failure-notice > span { min-width:0; }
+.extraction-failure-notice > button { flex:none; }
+.extraction-failure-notice .extraction-notice-close { display:grid; place-items:center; width:32px; height:32px; padding:0; margin-left:auto; border:0; border-radius:4px; background:transparent; color:var(--muted); }
+.extraction-failure-notice .extraction-notice-close:hover { background:#f6e3d8; color:var(--text); }
 .drawing-library { padding: 22px; }
 .drawing-library > header h2 { margin: 0 0 7px; font-size: 18px; }
 .drawing-library > header p { margin: 0 0 20px; color: var(--muted); font-size: 12px; }

@@ -1,5 +1,13 @@
 # Server 业务服务
 
+2026-10-18 当前交换约定已纠正：记录所属页/工作区与关联图纸索引固定，只交换元件/描述/端子/坐标对象。`20261018040000_swap_endpoints_keep_origin.sql`已在本地部署，旧迁页方案提交返回409；前端亦停用。指定4行归属恢复006C01/006.C，已确认端点与坐标保留。其他环境按顺序应用迁移；本地核验命令为 `.\.venv\Scripts\python.exe services/server/scripts/apply_explain_edits_migration.py --migration 20261018040000`。无需新端口，前端刷新、Agent重载8100。恢复脚本只用于用户明确授权的旧方案和精确范围，默认只读预览，不应自动修复其他项目。见[记录](../../docs/service/server/explain-swap-origin-correction.md)。
+
+2026-10-18 已部署 `20261018030000_connection_delete_no_snapshot.sql`：后续删行移除业务行及其审计/旧请求副本和相关修改方案，仅保留无端点值的幂等回执。迁移不批量改写旧历史，部署前后三表摘要不变。根目录执行 `.\.venv\Scripts\python.exe services/server/scripts/apply_explain_edits_migration.py --migration 20261018030000 --apply` 可在明确的本地项目应用或核验；其他环境按迁移顺序部署。API形状不变，前端刷新、Agent重载8100。见[排障与验证](../../docs/service/server/changelog/2026-10-18-explain-delete-relocation.md)。
+
+2026-10-18 API2.7.0新增Explain线表修改方案及确认：Agent生成逐行对照，用户在浮窗确认后Server原子提交、版本保护并审计。[新增迁移](../../supabase/migrations/20261018020000_explain_connection_edits.sql)已在本项目本地部署且三表摘要不变，REST可见两个RPC；重载8000和8100即可，无新增端口或Worker参数。其他环境须先应用迁移。本轮未改真实线表。隔离SQL测试：`$env:EXPLAIN_EDIT_SQL_TEST="1"; .\.venv\Scripts\python.exe -m pytest services/server/tests/test_explain_edits_sql.py -q`，仅创建独立临时容器。见[交付](../../docs/service/server/changelog/2026-10-18-explain-edit-transactions.md)。
+
+2026-10-18 API2.6.0新增现有规则编辑代理和新版替换：只有规则所有者可派生草稿，手动编辑/公开工具聊天/建议确认与发布共用8100；无引用旧ZIP进入可重试回收队列，项目/任务仍用的旧版保留。新增`20261018010000_profile_editing_replacement.sql`已在本地部署，其他环境须先应用；沿用下方启动指令重新加载8000及8100，提取Worker无新增启动参数。见[交付](../../docs/service/server/changelog/2026-10-18-profile-editing-replacement.md)。
+
 2026-10-17本项目本地库已补齐`20261017010000`发布迁移，解决已上传包却提示“数据操作失败”；REST Schema与包摘要检查通过，原草稿直接重试手动发布即可。其他环境仍须先应用该迁移；缺接口提示代码需下次加载8000生效。见[排障记录](../../docs/service/server/changelog/2026-10-17-profile-publication-missing-migration.md)。
 
 2026-10-17 API2.5.0新增[Profile PDF抽样代理](../../docs/service/server/changelog/2026-10-17-profile-pdf-sampling.md)，沿用8000→8100鉴权链路及启动方式。只向Agent发送上传PDF供内存抽样，未存业务库或Storage。原有发布迁移不变，本轮没有新迁移。

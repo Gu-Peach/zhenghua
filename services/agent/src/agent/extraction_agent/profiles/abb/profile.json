@@ -1,7 +1,7 @@
 {
   "manifest_version": 1,
   "key": "abb",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "display_name": "ABB 电气图纸",
   "description": "ABB small-circle wiring markers, terminal boundaries and Sheet-based principle numbers in the Stage 2 page workflow.",
   "status": "active",

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Wiring Workbench Server",
-    "version": "2.5.0"
+    "version": "2.7.1"
   },
   "paths": {
     "/api/v1/auth/login": {
@@ -1559,6 +1559,208 @@
         }
       }
     },
+    "/api/v1/projects/{project}/connection-edits": {
+      "get": {
+        "summary": "Edits",
+        "operationId": "edits_api_v1_projects__project__connection_edits_get",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConnectionEditProposal"
+                  },
+                  "title": "Response Edits Api V1 Projects  Project  Connection Edits Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project}/connection-edits/{proposal}": {
+      "get": {
+        "summary": "Edit",
+        "operationId": "edit_api_v1_projects__project__connection_edits__proposal__get",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project"
+            }
+          },
+          {
+            "name": "proposal",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Proposal"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionEditProposal"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project}/connection-edits/{proposal}/decision": {
+      "post": {
+        "summary": "Decide Edit",
+        "operationId": "decide_edit_api_v1_projects__project__connection_edits__proposal__decision_post",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project"
+            }
+          },
+          {
+            "name": "proposal",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Proposal"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectionEditDecision"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectionEditReceipt"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/explain/turns/stream": {
       "post": {
         "summary": "Explain",
@@ -1599,6 +1801,457 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ExplainEvent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/references/{profile}/draft": {
+      "post": {
+        "summary": "Fork",
+        "operationId": "fork_api_v1_profile_references__profile__draft_post",
+        "parameters": [
+          {
+            "name": "profile",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Profile"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileFork"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileEditState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/drafts/{draft}/editor": {
+      "get": {
+        "summary": "Editor State",
+        "operationId": "editor_state_api_v1_profile_drafts__draft__editor_get",
+        "parameters": [
+          {
+            "name": "draft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileEditState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/drafts/{draft}/editor/files": {
+      "post": {
+        "summary": "Editor Save",
+        "operationId": "editor_save_api_v1_profile_drafts__draft__editor_files_post",
+        "parameters": [
+          {
+            "name": "draft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditFilesInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileEditState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/drafts/{draft}/editor/accept": {
+      "post": {
+        "summary": "Editor Accept",
+        "operationId": "editor_accept_api_v1_profile_drafts__draft__editor_accept_post",
+        "parameters": [
+          {
+            "name": "draft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileRevision"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileEditState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/drafts/{draft}/editor/proposals/{proposal}/confirm": {
+      "post": {
+        "summary": "Editor Confirm",
+        "operationId": "editor_confirm_api_v1_profile_drafts__draft__editor_proposals__proposal__confirm_post",
+        "parameters": [
+          {
+            "name": "draft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft"
+            }
+          },
+          {
+            "name": "proposal",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Proposal"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileProposalConfirm"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileEditState"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/drafts/{draft}/editor/turns/stream": {
+      "post": {
+        "summary": "Editor Stream",
+        "operationId": "editor_stream_api_v1_profile_drafts__draft__editor_turns_stream_post",
+        "parameters": [
+          {
+            "name": "draft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileTurn"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileEvent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/cleanup": {
+      "post": {
+        "summary": "Cleanup",
+        "operationId": "cleanup_api_v1_profile_cleanup_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response Cleanup Api V1 Profile Cleanup Post"
                 }
               }
             }
@@ -2415,6 +3068,265 @@
         ],
         "title": "CaseReading"
       },
+      "ConnectionEditChange": {
+        "properties": {
+          "connection_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Connection Id"
+          },
+          "record_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Record Version"
+          },
+          "principle_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Principle Number"
+          },
+          "workspace_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Code"
+          },
+          "source_drawing_page": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Drawing Page"
+          },
+          "before": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Before"
+          },
+          "after": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "After"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "connection_id",
+          "record_version",
+          "before",
+          "after"
+        ],
+        "title": "ConnectionEditChange"
+      },
+      "ConnectionEditDecision": {
+        "properties": {
+          "checksum": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Checksum"
+          },
+          "accepted": {
+            "type": "boolean",
+            "title": "Accepted"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "checksum",
+          "accepted"
+        ],
+        "title": "ConnectionEditDecision"
+      },
+      "ConnectionEditProposal": {
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Proposal Id"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "batch_id": {
+            "type": "string",
+            "title": "Batch Id"
+          },
+          "checksum": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Checksum"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "applied",
+              "rejected"
+            ],
+            "title": "Status"
+          },
+          "request": {
+            "$ref": "#/components/schemas/ConnectionEditRequest"
+          },
+          "matched_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Matched Count"
+          },
+          "changed_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Changed Count"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/ConnectionEditChange"
+            },
+            "type": "array",
+            "title": "Changes"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "expires_at": {
+            "type": "string",
+            "title": "Expires At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "proposal_id",
+          "project_id",
+          "batch_id",
+          "checksum",
+          "status",
+          "request",
+          "matched_count",
+          "changed_count",
+          "changes",
+          "created_at",
+          "expires_at"
+        ],
+        "title": "ConnectionEditProposal"
+      },
+      "ConnectionEditReceipt": {
+        "properties": {
+          "proposal_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Proposal Id"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "batch_id": {
+            "type": "string",
+            "title": "Batch Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "applied",
+              "rejected"
+            ],
+            "title": "Status"
+          },
+          "changed_count": {
+            "type": "integer",
+            "title": "Changed Count"
+          },
+          "versions": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Versions"
+          },
+          "idempotent": {
+            "type": "boolean",
+            "title": "Idempotent",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "proposal_id",
+          "project_id",
+          "batch_id",
+          "status",
+          "changed_count"
+        ],
+        "title": "ConnectionEditReceipt"
+      },
+      "ConnectionEditRequest": {
+        "properties": {
+          "scope": {
+            "$ref": "#/components/schemas/EditScope"
+          },
+          "operation": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RemoveTerminalPrefix"
+              },
+              {
+                "$ref": "#/components/schemas/SwapEndpoints"
+              },
+              {
+                "$ref": "#/components/schemas/SetConnectionFields"
+              }
+            ],
+            "title": "Operation",
+            "discriminator": {
+              "propertyName": "kind",
+              "mapping": {
+                "remove_terminal_prefix": "#/components/schemas/RemoveTerminalPrefix",
+                "set_fields": "#/components/schemas/SetConnectionFields",
+                "swap_endpoints": "#/components/schemas/SwapEndpoints",
+                "swap_terminals": "#/components/schemas/SwapEndpoints"
+              }
+            }
+          },
+          "reason": {
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "scope",
+          "operation",
+          "reason"
+        ],
+        "title": "ConnectionEditRequest"
+      },
       "ConnectionFacts": {
         "properties": {
           "id": {
@@ -2681,6 +3593,145 @@
           "source_pdf_page_number"
         ],
         "title": "ConnectionFacts"
+      },
+      "ConnectionFieldValues": {
+        "properties": {
+          "principle_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Principle Number"
+          },
+          "terminal_strip": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terminal Strip"
+          },
+          "start_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Code"
+          },
+          "start_description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Description"
+          },
+          "start_terminal": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Terminal"
+          },
+          "end_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Code"
+          },
+          "end_description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Description"
+          },
+          "end_terminal": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Terminal"
+          },
+          "current_value": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Value"
+          },
+          "color_mark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color Mark"
+          },
+          "remark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remark"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ConnectionFieldValues"
       },
       "ConnectionFields": {
         "properties": {
@@ -3510,6 +4561,189 @@
         ],
         "title": "DrawingRead"
       },
+      "EditFilesInput": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "operation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Operation Id"
+          },
+          "edits": {
+            "items": {
+              "$ref": "#/components/schemas/FileEdit"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Edits"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "revision",
+          "edits"
+        ],
+        "title": "EditFilesInput"
+      },
+      "EditImage": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "url": {
+            "type": "string",
+            "title": "Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "path",
+          "url"
+        ],
+        "title": "EditImage"
+      },
+      "EditPackage": {
+        "properties": {
+          "manifest": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Manifest"
+          },
+          "files": {
+            "items": {
+              "$ref": "#/components/schemas/EditText"
+            },
+            "type": "array",
+            "title": "Files"
+          },
+          "images": {
+            "items": {
+              "$ref": "#/components/schemas/EditImage"
+            },
+            "type": "array",
+            "title": "Images"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "manifest",
+          "files",
+          "images"
+        ],
+        "title": "EditPackage"
+      },
+      "EditScope": {
+        "properties": {
+          "workspace_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Code"
+          },
+          "drawing_page": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drawing Page"
+          },
+          "principle_numbers": {
+            "items": {
+              "type": "string",
+              "maxLength": 200,
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "title": "Principle Numbers"
+          },
+          "connection_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "title": "Connection Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "EditScope",
+        "description": "Exact AND filters within the host-bound project and batch; no implicit whole-project edit."
+      },
+      "EditText": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "checksum": {
+            "type": "string",
+            "title": "Checksum"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "path",
+          "content",
+          "checksum"
+        ],
+        "title": "EditText"
+      },
+      "EvidenceAnchor": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path",
+            "description": "当前草稿文本/本轮已查看图片的完整相对路径；本轮用户输入用user_message，观察用observations/<索引>"
+          },
+          "quote": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Quote",
+            "description": "文本/用户观察须逐字摘录；图片为待用户核对的视觉观察，不代表已验证OCR"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "path",
+          "quote"
+        ],
+        "title": "EvidenceAnchor"
+      },
       "EvidenceStep": {
         "properties": {
           "id": {
@@ -3679,10 +4913,12 @@
               "context",
               "retrieval",
               "answer_delta",
+              "answer_reset",
               "completed",
               "tool_started",
               "tool_completed",
-              "tool_failed"
+              "tool_failed",
+              "edit_proposal"
             ],
             "title": "Type"
           },
@@ -3745,6 +4981,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/ExplainResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "proposal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConnectionEditProposal"
               },
               {
                 "type": "null"
@@ -3838,6 +5084,13 @@
             "type": "boolean",
             "title": "Cached",
             "default": false
+          },
+          "proposals": {
+            "items": {
+              "$ref": "#/components/schemas/ConnectionEditProposal"
+            },
+            "type": "array",
+            "title": "Proposals"
           }
         },
         "additionalProperties": false,
@@ -4003,6 +5256,136 @@
           "stage"
         ],
         "title": "ExtractionProgress"
+      },
+      "FileDiff": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "before": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before"
+          },
+          "after": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "After"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "path",
+          "before",
+          "after"
+        ],
+        "title": "FileDiff"
+      },
+      "FileEdit": {
+        "properties": {
+          "path": {
+            "type": "string",
+            "maxLength": 300,
+            "minLength": 1,
+            "title": "Path"
+          },
+          "before_checksum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Before Checksum"
+          },
+          "content": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content"
+          },
+          "operation": {
+            "type": "string",
+            "enum": [
+              "write",
+              "delete"
+            ],
+            "title": "Operation",
+            "default": "write"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "path"
+        ],
+        "title": "FileEdit"
+      },
+      "Finding": {
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "rule_issue",
+              "example_issue",
+              "model_deviation",
+              "mixed",
+              "insufficient_evidence"
+            ],
+            "title": "Category"
+          },
+          "explanation": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Explanation"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceAnchor"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Evidence"
+          },
+          "missing_evidence": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Missing Evidence"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "category",
+          "explanation"
+        ],
+        "title": "Finding"
       },
       "HTTPValidationError": {
         "properties": {
@@ -4203,6 +5586,106 @@
         ],
         "title": "PdfSampleResult"
       },
+      "ProfileEditState": {
+        "properties": {
+          "draft": {
+            "$ref": "#/components/schemas/DraftView"
+          },
+          "package": {
+            "$ref": "#/components/schemas/EditPackage"
+          },
+          "validation": {
+            "$ref": "#/components/schemas/ValidationReport"
+          },
+          "proposals": {
+            "items": {
+              "$ref": "#/components/schemas/Proposal"
+            },
+            "type": "array",
+            "title": "Proposals"
+          },
+          "history": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "type": "array",
+            "title": "History"
+          },
+          "changed": {
+            "type": "boolean",
+            "title": "Changed",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "draft",
+          "package",
+          "validation"
+        ],
+        "title": "ProfileEditState"
+      },
+      "ProfileEvent": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "tool_started",
+              "tool_completed",
+              "answer_delta",
+              "completed"
+            ],
+            "title": "Type"
+          },
+          "tool": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool"
+          },
+          "detail": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Detail"
+          },
+          "delta": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta"
+          },
+          "reply": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProfileReply"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "title": "ProfileEvent"
+      },
       "ProfileEvidence": {
         "properties": {
           "key": {
@@ -4248,6 +5731,27 @@
         ],
         "title": "ProfileEvidence"
       },
+      "ProfileFork": {
+        "properties": {
+          "draft_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Draft Id"
+          },
+          "base_checksum": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$",
+            "title": "Base Checksum"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "draft_id",
+          "base_checksum"
+        ],
+        "title": "ProfileFork"
+      },
       "ProfileImage": {
         "properties": {
           "revision": {
@@ -4282,6 +5786,26 @@
           "content_base64"
         ],
         "title": "ProfileImage"
+      },
+      "ProfileProposalConfirm": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "accepted": {
+            "type": "boolean",
+            "title": "Accepted"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "revision",
+          "accepted"
+        ],
+        "title": "ProfileProposalConfirm"
       },
       "ProfileReferenceCreate": {
         "properties": {
@@ -4333,6 +5857,16 @@
             "type": "boolean",
             "title": "Can Delete",
             "default": false
+          },
+          "cleanup_pending": {
+            "type": "boolean",
+            "title": "Cleanup Pending",
+            "default": false
+          },
+          "previous_version_retained": {
+            "type": "boolean",
+            "title": "Previous Version Retained",
+            "default": false
           }
         },
         "type": "object",
@@ -4345,6 +5879,93 @@
           "resource_ref"
         ],
         "title": "ProfileReferenceRead"
+      },
+      "ProfileReply": {
+        "properties": {
+          "draft_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Draft Id"
+          },
+          "turn_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Turn Id"
+          },
+          "revision": {
+            "type": "integer",
+            "title": "Revision"
+          },
+          "answer": {
+            "type": "string",
+            "title": "Answer"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "title": "Findings"
+          },
+          "proposals": {
+            "items": {
+              "$ref": "#/components/schemas/Proposal"
+            },
+            "type": "array",
+            "title": "Proposals"
+          },
+          "changed_files": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Changed Files"
+          },
+          "validation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ValidationReport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "tool_limited": {
+            "type": "boolean",
+            "title": "Tool Limited",
+            "default": false
+          },
+          "cached": {
+            "type": "boolean",
+            "title": "Cached",
+            "default": false
+          },
+          "model_calls": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Model Calls"
+          },
+          "viewed_images": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Viewed Images"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "draft_id",
+          "turn_id",
+          "revision",
+          "answer"
+        ],
+        "title": "ProfileReply"
       },
       "ProfileRevision": {
         "properties": {
@@ -4360,6 +5981,193 @@
           "revision"
         ],
         "title": "ProfileRevision"
+      },
+      "ProfileTurn": {
+        "properties": {
+          "turn_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Turn Id"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 12000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Message"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "discuss",
+              "edit"
+            ],
+            "title": "Intent",
+            "default": "discuss"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Revision"
+          },
+          "observations": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Observations"
+          },
+          "attachment_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 4,
+            "title": "Attachment Ids"
+          },
+          "focus_stage": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "classification",
+                  "scan",
+                  "completion"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Focus Stage"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "message",
+          "expected_revision"
+        ],
+        "title": "ProfileTurn"
+      },
+      "Proposal": {
+        "properties": {
+          "summary": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Summary"
+          },
+          "edits": {
+            "items": {
+              "$ref": "#/components/schemas/FileEdit"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Edits"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "maxItems": 12,
+            "title": "Findings"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "draft_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Draft Id"
+          },
+          "base_revision": {
+            "type": "integer",
+            "title": "Base Revision"
+          },
+          "base_checksum": {
+            "type": "string",
+            "title": "Base Checksum"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "accepted",
+              "rejected"
+            ],
+            "title": "Status",
+            "default": "pending"
+          },
+          "applied_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied Revision"
+          },
+          "diffs": {
+            "items": {
+              "$ref": "#/components/schemas/FileDiff"
+            },
+            "type": "array",
+            "title": "Diffs"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "summary",
+          "edits",
+          "id",
+          "draft_id",
+          "base_revision",
+          "base_checksum"
+        ],
+        "title": "Proposal"
+      },
+      "RemoveTerminalPrefix": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "remove_terminal_prefix",
+            "title": "Kind"
+          },
+          "endpoint": {
+            "type": "string",
+            "enum": [
+              "start",
+              "end"
+            ],
+            "title": "Endpoint"
+          },
+          "prefix": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Prefix"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "endpoint",
+          "prefix"
+        ],
+        "title": "RemoveTerminalPrefix"
       },
       "ResourceImage": {
         "properties": {
@@ -4624,6 +6432,25 @@
           "role"
         ],
         "title": "SessionUser"
+      },
+      "SetConnectionFields": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "set_fields",
+            "title": "Kind"
+          },
+          "changes": {
+            "$ref": "#/components/schemas/ConnectionFieldValues"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "changes"
+        ],
+        "title": "SetConnectionFields"
       },
       "SimpleConnectionCreate": {
         "properties": {
@@ -5421,6 +7248,24 @@
         ],
         "title": "StageGenerate"
       },
+      "SwapEndpoints": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "swap_endpoints",
+              "swap_terminals"
+            ],
+            "title": "Kind"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "SwapEndpoints"
+      },
       "TargetImage": {
         "properties": {
           "attachment_id": {
@@ -5673,6 +7518,7 @@
               "load_connection",
               "search_connections",
               "view_drawings",
+              "propose_connection_edit",
               "unsupported"
             ],
             "title": "Name"
@@ -5753,6 +7599,67 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "ValidationIssue": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ValidationIssue"
+      },
+      "ValidationReport": {
+        "properties": {
+          "ready": {
+            "type": "boolean",
+            "title": "Ready"
+          },
+          "issues": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationIssue"
+            },
+            "type": "array",
+            "title": "Issues"
+          },
+          "case_count": {
+            "type": "integer",
+            "title": "Case Count",
+            "default": 0
+          },
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version",
+            "default": "extraction_stages_v1/review_1.0.0"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ready"
+        ],
+        "title": "ValidationReport"
       },
       "WizardState": {
         "properties": {

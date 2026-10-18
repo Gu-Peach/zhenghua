@@ -1,5 +1,11 @@
 # Agent Service
 
+2026-10-18提取初扫单页失败改为记录并继续后续页，全部遍历后若仍有错误则汇总未完成项，保留重试入口。重启实际提取Worker后，可在原失败项目点击“重试提取”，保持原模型/冻结规则/配置即可复用成功页，不必重新上传。配置/存储/租约/取消仍立即中止。本轮未重启服务或重跑模型，见[说明](../../docs/service/agent/changelog/2026-10-18-extraction-page-failure.md)。
+
+2026-10-18 Explain新增`propose_connection_edit`：模型只生成持久修改对照，用户确认由8000事务提交。复用8100宿主，无新增端口/环境变量；本项目本地已应用`20261018020000_explain_connection_edits.sql`，加载8000/8100新代码即可，其他环境需先迁移，提取Worker不用调整。见[Explain说明](./src/agent/explain_agent/README.md)。本轮不运行真实模型或改真实线表。
+
+2026-10-18 Profile现有规则编辑已接通Extraction的查看规则界面：可信Storage/本地包派生草稿、手动修改及工具聊天诊断/建议、用户确认后发布替换新版。沿用下方8100启动命令，需用户重新加载8100及8000 API2.6.0；本地新迁移已部署，未代发规则或启停服务。见[交付](../../docs/service/agent/changelog/2026-10-18-profile-resource-editing.md)。
+
 2026-10-17修复Profile同页纠正后循环确认：新增受控返回初扫的内部动作，复用原图生成待确认修正候选。由用户重载8100，使代码和Prompt同时加载，无需新端口/迁移或重做分类。见[修复记录](../../docs/service/agent/changelog/2026-10-17-profile-repeated-clarification.md)。
 
 Profile模型失败现在会在8100终端输出分类日志，前端显示错误码和诊断编号，私有响应保存在`.runtime/profile-agent/model-traces`。完整说明见[诊断记录](../../docs/service/agent/changelog/2026-10-17-profile-model-errors.md)。由用户重载8100生效；SSE HTTP200仅表示连接建立，请同时检查error事件。本轮未运行实际模型或操作用户服务。
@@ -53,6 +59,8 @@ $env:AGENT_INLINE_WORKER = "true"
 ```
 
 `GET http://127.0.0.1:8100/health`的`worker_running`反映inline Worker状态。前端仍只请求8000。真实上传会触发已配置模型调用；本地CLI的`--allow-real-model`保护仍保留，测试默认使用Fake模型。任务产物位于被忽略的`.runtime/incremental-extraction/<run_id>`。失败后在工作台点“重试提取”，成功模型响应和完成页复用；恢复需要原模型/图片配置，冻结Profile从私有Storage读取。
+
+2026-10-18上传与脚本统一为`stage2-script-aligned-v1`。更新代码后须重启实际执行提取的Worker，启动日志核对`contract=stage2-script-aligned-v1`；然后新上传并选择zh_crop 2.2.1验证。旧任务配置不包含该契约，不能混用新请求与旧成功页缓存。前端/API无需因本次更新重新构建，具体核对见[交付](../../docs/service/agent/changelog/2026-10-18-extraction-entry-alignment.md)。
 
 以下较早Supervisor/旧表/规则发布内容为历史运行说明，当前增量链路使用上面的入口。
 

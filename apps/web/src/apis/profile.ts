@@ -15,7 +15,7 @@ export type ProfilePdfSample = components["schemas"]["PdfSampleResult"];
 const base = "/api/v1/profile/drafts";
 
 export const profileApi = {
-  list: () => request<ProfileDraft[]>(base),
+  list: async () => (await request<ProfileDraft[]>(base)).filter(draft => !draft.source?.profile_id),
   create: (key: string, displayName: string, draftId: string = crypto.randomUUID()) => request<ProfileDraft>(base, { method: "POST", body: JSON.stringify({ draft_id: draftId, key, display_name: displayName }) }),
   conversation: (id: string) => request<ProfileConversationState>(`${base}/${id}/conversation`),
   async samplePdf(draft: ProfileDraft, file: File, requestId: string, signal?: AbortSignal): Promise<ProfilePdfSample> {

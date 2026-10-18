@@ -1,0 +1,19 @@
+.explain-edit-proposal { margin: 18px 0; padding: 12px; border: 1px solid #ccdce2; border-radius: 6px; background: #fff; color: #334e5d; }
+.explain-edit-proposal h3 { font-size: 14px; margin: 0 0 8px; }
+.explain-edit-proposal p { font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.explain-edit-table { overflow: auto; max-height: 330px; border: 1px solid #e1e7ec; }
+.explain-edit-table table { border-collapse: collapse; width: 100%; font-size: 12px; min-width: 420px; }
+.explain-edit-table th { position: sticky; top: 0; background: #f3f7f9; }
+.explain-edit-table td small { display: block; margin-top: 4px; color: #738692; }
+.explain-edit-table td, .explain-edit-table th { padding: 7px; border-bottom: 1px solid #e1e7ec; text-align: left; max-width: 220px; overflow-wrap: anywhere; vertical-align: top; }
+.explain-edit-actions, .explain-edit-proposal nav { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 12px; font-size: 12px; }
+.explain-edit-proposal button { padding: 7px 10px; border: 1px solid #b8cbd3; border-radius: 4px; background: #fff; color: #355365; cursor: pointer; }
+.explain-edit-actions button:first-child { color: #fff; background: #18868b; border-color: #18868b; }
+.explain-edit-proposal button:disabled { opacity: .5; cursor: default; }
+.explain-edit-hint { color: #738692; }
+@media (max-width: 600px) {
+  .explain-edit-table table { min-width: 0; table-layout: fixed; }
+  .explain-edit-table th:nth-child(1) { width: 18%; }
+  .explain-edit-table th:nth-child(2) { width: 22%; }
+  .explain-edit-table th:nth-child(3), .explain-edit-table th:nth-child(4) { width: 30%; }
+}

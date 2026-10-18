@@ -1,4 +1,4 @@
-"""Read only the three business tables, with explicit project-owner checks."""
+"""Read evidence and persist edit proposals; confirmed business-row writes belong to Server."""
 
 from __future__ import annotations
 
@@ -14,6 +14,8 @@ from pydantic import ValidationError
 from src.infrastructure.supabase_client import SupabaseClient
 
 from .models import (
+    ConnectionEditProposal,
+    ConnectionEditRequest,
     ConnectionFacts,
     ConnectionQuery,
     DrawingEvidence,
@@ -40,6 +42,14 @@ class ExplanationRepository(Protocol):
         self, turn: ExplainTurn, actor: ExplainActor, numbers: list[int]
     ) -> DrawingReadResult: ...
 
+    async def propose_edit(
+        self, turn: ExplainTurn, actor: ExplainActor, proposal_id: str, request: ConnectionEditRequest
+    ) -> ConnectionEditProposal: ...
+
+    async def edit_proposals(
+        self, turn: ExplainTurn, actor: ExplainActor, identifiers: list[str]
+    ) -> list[ConnectionEditProposal]: ...
+
 
 def _text(value: Any, limit: int = 4000) -> str | None:
     return str(value)[:limit] if value is not None else None
@@ -52,6 +62,86 @@ def _object(value: Any) -> dict[str, Any]:
 class SupabaseExplanationRepository:
     def __init__(self, client: SupabaseClient, *, bucket: str = "project-assets") -> None:
         self.client, self.bucket = client, bucket
+
+    async def propose_edit(
+        self, turn: ExplainTurn, actor: ExplainActor, proposal_id: str, request: ConnectionEditRequest
+    ) -> ConnectionEditProposal:
+        """Only persist a deterministic preview. This adapter never commits edits to business rows."""
+        project = await self._authorized_project(turn, actor)
+        if project.get("status") == "processing":
+            raise ExplainError("EXTRACTION_IN_PROGRESS", "提取期间线表只读，请完成后再提出修改。", 409)
+        try:
+            value = await self.client.rpc(
+                "prepare_explain_connection_edit",
+                {
+                    "value": {
+                        "actor": str(actor.user_id),
+                        "project_id": str(turn.project_id),
+                        "batch_id": turn.batch_id,
+                        "proposal_id": proposal_id,
+                        "request": request.model_dump(mode="json", exclude_unset=True),
+                        "user_request": turn.message,
+                    }
+                },
+            )
+        except Exception as exc:
+            from src.domain.errors import AgentServiceError
+
+            if not isinstance(exc, AgentServiceError):
+                raise
+            message = str(exc.details.get("provider_message", ""))
+            if "SWAP_TARGET_UNCONFIRMED" in message or "SWAP_SOURCE_NOT_INDEXED" in message:
+                raise ExplainError(
+                    "EDIT_POSITION_UNCONFIRMED",
+                    "端点位置或目标页尚未确认，不能猜测整组调换后的图纸位置；可先核对页码。",
+                    422,
+                ) from exc
+            if "EDIT_SCOPE_TOO_LARGE" in message:
+                raise ExplainError(
+                    "EDIT_SCOPE_TOO_LARGE", "范围超过1000行，请按工作区内的页码或原理号进一步缩小。", 422
+                ) from exc
+            if exc.details.get("provider_code") == "PT409":
+                raise ExplainError(
+                    "EDIT_VERSION_CONFLICT", "批次或修改请求已变化，请刷新线表后重新生成方案。", 409
+                ) from exc
+            raise ExplainError(
+                "EDIT_PREVIEW_UNAVAILABLE", "修改预览暂不可用，请检查新增迁移与数据服务。", 503
+            ) from exc
+        proposal = ConnectionEditProposal.model_validate(value)
+        if proposal.project_id != turn.project_id or proposal.batch_id != turn.batch_id:
+            raise ExplainError("EDIT_SCOPE_MISMATCH", "修改预览不属于当前项目或批次。", 403)
+        return proposal
+
+    async def edit_proposals(
+        self, turn: ExplainTurn, actor: ExplainActor, identifiers: list[str]
+    ) -> list[ConnectionEditProposal]:
+        await self._authorized_project(turn, actor)
+        from uuid import UUID
+
+        rows = await self.client.select(
+            "connection_edit_proposals",
+            params={
+                "project_id": f"eq.{turn.project_id}",
+                "created_by": f"eq.{actor.user_id}",
+                "proposal_id": "in.(" + ",".join(str(UUID(value)) for value in identifiers) + ")",
+                "select": ",".join(ConnectionEditProposal.model_fields),
+                "limit": "8",
+            },
+        )
+        proposals = [
+            ConnectionEditProposal.model_validate(
+                {name: row[name] for name in ConnectionEditProposal.model_fields}
+            )
+            for row in rows
+        ]
+        if any(
+            p.project_id != turn.project_id
+            or p.batch_id != turn.batch_id
+            or str(p.proposal_id) not in identifiers
+            for p in proposals
+        ):
+            raise ExplainError("EDIT_SCOPE_MISMATCH", "修改方案不属于当前项目、批次或请求范围。", 403)
+        return proposals
 
     def _safe_image_path(self, project_id: Any, bucket: Any, path: Any) -> bool:
         decoded = unquote(path) if isinstance(path, str) else ""
@@ -247,6 +337,15 @@ class SupabaseExplanationRepository:
         if differences:
             recorded["field_differences"] = differences
             gaps.append("当前字段与已保存提取值不同；原始来源说明不能直接证明修改后的值，变更原因需查审计。")
+        manual = _object(evidence.get("manual_change"))
+        if manual.get("proposal_id"):
+            recorded["manual_change"] = {
+                key: manual.get(key) for key in ("proposal_id", "operation", "time", "fields")
+            }
+            if manual.get("operation") == "swap_endpoints":
+                gaps.append(
+                    "该行起终点已人工调换，记录所属页与工作区保持；坐标自身PDF页号才是端点位置。历史方向说明和引用不能当成新方向的证明。"
+                )
         reasons = evidence.get("review_reasons")
         if isinstance(reasons, list):
             recorded["review_reasons"] = [
@@ -265,6 +364,12 @@ class SupabaseExplanationRepository:
         index = _object(project.get("drawing_index"))
         raw_pages = index.get("pages")
         pages: list[Any] = raw_pages if isinstance(raw_pages, list) else []
+        indexed_pair = {row.source_pdf_page_number, row.target_pdf_page_number}
+        if any(
+            point is not None and point.pdf_page_number not in indexed_pair
+            for point in (row.start_terminal_coordinates, row.end_terminal_coordinates)
+        ):
+            context.gaps.append("端子坐标所属页不在记录关联页中，未用于定位。")
         await self._drawing(
             context, pages, "source", row.source_pdf_page_number, row.source_drawing_page, image_cache
         )
@@ -349,16 +454,22 @@ class SupabaseExplanationRepository:
         image_cache: dict[str, str | None] | None = None,
     ) -> None:
         matches = [p for p in pages if isinstance(p, dict) and p.get("pdf_page_number") == number]
+        # Source/target index the extraction page pair, not endpoint direction.
         position = (
-            context.row.start_terminal_coordinates
-            if role == "source"
-            else context.row.end_terminal_coordinates
-            if role == "target"
+            next(
+                (
+                    point
+                    for point in (
+                        context.row.start_terminal_coordinates,
+                        context.row.end_terminal_coordinates,
+                    )
+                    if point is not None and point.pdf_page_number == number
+                ),
+                None,
+            )
+            if role != "reference"
             else None
         )
-        if position and position.pdf_page_number != number:
-            context.gaps.append(f"{role}端子坐标所属页与行记录不一致，未用于定位。")
-            position = None
         drawing = DrawingEvidence(
             role=role, pdf_page_number=number, drawing_page=label, terminal_coordinates=position
         )

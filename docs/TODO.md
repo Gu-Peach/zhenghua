@@ -4,6 +4,26 @@
 
 ## 进行中
 
+- [ ] PDF遍历完成统一显示处理完成：Worker正常返回后提交finished，单页错误保留诊断；前端兼容旧EXTRACTION_PARTIAL终态，真正中断仍失败。仅静态/隔离浏览器检查，不重跑模型或改历史业务数据。
+
+- [x] 线表提取失败提示增加右侧关闭按钮：仅隐藏当前提示，保留重试行为，新失败重新展示；类型/lint/build及隔离浏览器桌面/窄屏/长文本/键盘/重试核对通过，8份截图在.runtime。未操作真实提取任务/数据库/服务，见 `docs/apps/web/changelog/2026-10-18-extraction-notice-dismiss.md`。
+
+- [x] 纠正整组端点调换归属：所属页/工作区及关联索引固定，仅端点/坐标对象交换；旧迁页方案前后端禁用。新迁移20261018040000本地部署，按快照事务恢复实际4行到006C01/006.C，已确认端点/坐标与其他行不变。70项Agent、5项Server API、10项隔离SQL、25项编辑/预览浏览器及类型/lint/build/Ruff/mypy通过；未调用真实模型或重启服务。见 `docs/service/server/explain-swap-origin-correction.md`。
+
+- [x] ABB小圆点规则本地1.2.1：补母线输入/同段双标记、完整Q3:1/X1:11端子、编号拼Sheet及无编号回退；同一来源图27条示范，内部补全同步，ZH十四列/坐标和XMZ不改。2Python AST/Ruff、27条Pydantic、7项manifest摘要/路径及绑定通过，未运行测试/模型或写库/发布。见 `docs/service/agent/changelog/2026-10-18-abb-marker-endpoints.md`。
+
+- [x] Explain删行排障完成：后续物理删除清理业务副本/相关方案，明确工作区主动查询。原空表处理曾采用“跟随新页”，该约定已由上方归属修正撤回，4行已恢复006C01。删除函数迁移20261018030000保留，历史验收见 `docs/service/server/changelog/2026-10-18-explain-delete-relocation.md`。
+
+- [x] 单页初扫失败隔离：独立失败分支和尝试记录，后续页继续，失败页不进入完成缓存；遍历后EXTRACTION_PARTIAL汇总并保留重试。4文件Ruff/AST及Graph构建通过，定向mypy仍有5条原有问题；补回归未运行测试/模型，未操作任务/数据库/服务。由用户重启Worker后原项目重试，见 `docs/service/agent/changelog/2026-10-18-extraction-page-failure.md`。
+
+
+
+- [x] 修复Profile辅助编辑诊断/提案FILE_NOT_READABLE：区分规则原文、已查看图纸和用户结果，工具/建议持久化共用校验，失败提示可恢复；新增10项复现/恢复用例，86项Agent和5项Server离线回归、6源码mypy、Ruff及前端类型/lint/build通过。契约说明同步，不改实际草稿/已发布规则或操作用户服务；重载8100后原草稿新轮复试，真实模型未运行。见 `docs/service/agent/changelog/2026-10-18-profile-evidence-validation.md`。
+
+- [x] 平台提取入口对齐本地Stage2脚本：共享请求/禁色标、页面元数据、模型Gateway与14列字段投影，新增请求指纹/过滤前计数并允许ZH第0列。4初扫与14补全离线消息一致，154条表值不变/发布投影一致，15文件Ruff/AST、105摘要及两CLI帮助通过；13源码类型检查与HEAD基线相同18条问题，无新增。未运行pytest/Fake VLM/真实模型、不写库或启停服务；用户重启Worker后新上传2.2.1验证。见 `docs/service/agent/changelog/2026-10-18-extraction-entry-alignment.md`。
+
+- [x] 扩展Profile现有规则编辑：Storage/本地规则派生草稿、双击手动编辑、带图纸/实际结果的工具聊天、diff/同意后发布替换新版及引用感知回收；API2.6.0与契约同步。76项Agent、26项Server、2项独立SQL与59项浏览器及最终25项复验、类型/lint/build/Ruff/11源码mypy通过；真实ZIP临时导入通过，新迁移本地部署且业务摘要不变。未代发规则、改实际草稿、运行真实模型或启停用户服务；需用户重载8000/8100。见ADR-0032与模块交付。
+
 - [x] 对齐ABB1.2.0/XMZ0.2.0与ZH局部补全结构：各1组来源初扫/对应目标案例，目标图+冻结事实、独立图框裁剪与坐标回映；分页资源/ZH规则保留。7源码strict mypy、11文件Ruff、13份AST、四Profile绑定/Schema/77摘要及两CLI帮助通过；60原资源及5份HEAD记录图像摘要不变。已补回归但未运行测试/模型，不写库/发布，用户新目录复测。见 `docs/service/agent/changelog/2026-10-17-abb-xmz-alignment.md`。
 
 - [x] 完成zh_crop 2.2.1空响应/重复N线修正：默认值前校验、已有最多两次重试、失败/视觉原因保留且继续后续连接；新增005C01两组N线对照、独立1/7案例目录，仍只选一例。3文件Ruff/AST、适配器strict mypy、四Profile绑定、Schema/路径/68摘要及原案例逐字节核对通过；Graph相关13条类型错误与HEAD相同，无新增。已补回归但未运行测试/模型，不写库/覆盖旧结果，用户用新目录复测。见 `docs/service/agent/changelog/2026-10-17-zh-completion-response.md`。
@@ -248,6 +268,10 @@
 - [ ] 生产部署采用自管 Redis/Celery，还是托管队列。
 
 ## 已完成
+
+- [x] 修复Explain口述预览但无确认按钮：只读确认新接口已加载、截图行无持久方案；真实回执后置校验、一次受控工具补调/明确失败、answer_reset撤回不实文本与API2.7.1契约同步。68项Agent、5项Server、19项解释浏览器、14源码mypy与Ruff/typecheck/lint/build通过；不跑真实模型或改实际线表/启停服务，需重载8000/8100后重发原请求。见 `docs/service/agent/changelog/2026-10-18-explain-preview-receipt.md`。
+
+- [x] Explain线表修改工具：工作区/原理号精确范围，去端子前缀、整组起终点交换（含元件/描述/坐标/对应页码）、仅端子交换及字段赋值；先回答后逐行对照、用户确认Server原子写库、版本/完整范围/索引保护、幂等审计与前端刷新/恢复。58项Agent、27项后端、6项独立SQL、75项全量浏览器及6项后续定向、14源码mypy和Ruff/typecheck/lint/build/截图通过。本地已部署20261018020000，三表摘要不变；未调用真实模型或改真实线表，8000/8100待用户重载。见 `docs/service/agent/explain-edit-plan.md`、ADR-0033。
 
 - [x] Profile三步创建与手动发布：静态模板/图片生成候选、表格确认/依赖失效/草稿恢复、私有不可变规则包及目录/预览/Worker加载；47项Agent相关（后续7项复验）、29项后端、2项独立SQL、51项浏览器、16源码strict mypy与Ruff/typecheck/lint/build及截图通过。未调用真实模型或发布真实规则，迁移/服务未部署；原Supabase临时库权限测试触发PG自动恢复及清理情况见Server交付记录。见 `docs/service/agent/profile-wizard-plan.md`、ADR-0028。
 

@@ -1,5 +1,17 @@
 # Agent 服务设计索引
 
+- [ABB小圆点与端点修正](./changelog/2026-10-18-abb-marker-endpoints.md)、[执行计划](./abb-marker-endpoint-plan.md)：本地1.2.1补母线输入、双标记配对、完整端子及原理号组合，十四列/坐标契约不改；静态核对，真实模型待用户复测。
+
+- [单页初扫失败隔离](./changelog/2026-10-18-extraction-page-failure.md)、[执行计划](./extraction-page-failure-plan.md)：失败尝试独立保存、继续后续页、遍历后汇总与仅补未完成页。
+
+- [Explain线表修改工具](./changelog/2026-10-18-explain-edits.md)、[执行计划](./explain-edit-plan.md)：精确范围/固定操作proposal、逐行确认、Server提交，保留证据和当前事实边界。
+
+- [辅助编辑图片证据校验](./changelog/2026-10-18-profile-evidence-validation.md)：统一诊断/建议证据校验，避免将图片和用户结果按文本文件读取，历史失败可在新轮恢复。
+
+- [平台/本地Stage2入口对齐](./changelog/2026-10-18-extraction-entry-alignment.md)：共享请求、模型Gateway、主表字段、过滤前计数与请求指纹，修正ZH0列；仅静态/离线数据核对，需重启Worker后新上传验证。
+
+- [现有规则的手动与Agent编辑](./changelog/2026-10-18-profile-resource-editing.md)：可信包派生、真实图/结果诊断、精确提案与审核、新旧Schema兼容；复用ProfileAgent。
+
 2026-10-17：ABB1.2.0/XMZ0.2.0对齐ZH的单来源样例、目标局部图补全；分页Prompt/分类案例不改，各自图框与业务语义独立。旧ZH导入兼容，局部机制位于共享基础设施。见[交付](./changelog/2026-10-17-abb-xmz-alignment.md)与[方案](./abb-xmz-completion-alignment.md)。
 
 - [ZH跨页空响应与重复N线](./changelog/2026-10-17-zh-completion-response.md)：zh_crop 2.2.1，默认值前校验/有限重试、失败与歧义保留、两组同号N线对照；初扫和图片预算保持，真实效果待用户复测。

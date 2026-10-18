@@ -13,6 +13,12 @@ from src.agent.extraction_agent.agents.page_scanner import PageScannerAgent
 from src.agent.extraction_agent.application.document_extraction.settings import (
     Settings as DocumentExtractionSettings,
 )
+from src.agent.extraction_agent.application.extraction_contract import (
+    EXTRACTION_CONTRACT_VERSION,
+    drawing_page_input,
+    scan_context,
+    without_color,
+)
 from src.agent.extraction_agent.application.extraction_stage_factory import build_extraction_stage_dispatcher
 from src.agent.extraction_agent.application.stage_persistence import DurableExtractionSession
 from src.agent.extraction_agent.domain.models.extraction import ExtractionExecutionResult
@@ -110,6 +116,8 @@ class ExtractionStageGraphClient:
         self._durable = durable
         self._image_budget = dict(image_budget or {})
         self._classified_page_paths: dict[int, Path] = {}
+        self._classified_page_metadata: dict[int, dict[str, Any]] = {}
+        self._classified_index_stamp: tuple[int, int] | None = None
         self._classifier = PageClassifierAgent(stages=stages)
         self._scanner = PageScannerAgent(stages=stages)
 
@@ -119,7 +127,10 @@ class ExtractionStageGraphClient:
 
     @property
     def workflow_fingerprint(self) -> dict[str, Any]:
-        fingerprint: dict[str, Any] = {"run_id": self._run_id, "profile": self._profile.profile.model_dump(mode="json")}
+        fingerprint: dict[str, Any] = {
+            "run_id": self._run_id, "profile": self._profile.profile.model_dump(mode="json"),
+            "extraction_contract": EXTRACTION_CONTRACT_VERSION,
+        }
         if self._image_budget:
             fingerprint["image_budget"] = self._image_budget
         return fingerprint
@@ -168,7 +179,7 @@ class ExtractionStageGraphClient:
             project_id=self._project_id,
             profile=self._profile,
             page=self._page(image),
-            page_context=page_context,
+            page_context=scan_context(page_context),
         )
 
         async def invoke() -> ScanAgentResult:
@@ -184,6 +195,7 @@ class ExtractionStageGraphClient:
             if self._durable
             else await invoke()
         )
+        result = without_color(result)
         return PageScanResult.model_validate(
             result.model_dump(mode="python", exclude={"run_id", "project_id", "profile"})
         )
@@ -230,9 +242,8 @@ class ExtractionStageGraphClient:
             raise ValueError(f"Image {name!r} has no valid physical PDF page number.")
         cached_path = self._classified_page_paths.get(page_number)
         if cached_path is not None and cached_path.is_file():
-            return DrawingPageInput(
-                pdf_page_number=page_number,
-                image_path=cached_path,
+            return drawing_page_input(
+                cached_path, page_number, self._page_metadata(page_number),
                 blank=bool(getattr(image, "blank", False)),
             )
         candidates = (
@@ -253,9 +264,8 @@ class ExtractionStageGraphClient:
             image_path.write_bytes(content)
         if ".incoming" not in image_path.parts:
             self._classified_page_paths[page_number] = image_path
-        return DrawingPageInput(
-            pdf_page_number=page_number,
-            image_path=image_path,
+        return drawing_page_input(
+            image_path, page_number, self._page_metadata(page_number),
             blank=bool(getattr(image, "blank", False)),
         )
 
@@ -266,16 +276,8 @@ class ExtractionStageGraphClient:
             self._cancellation.raise_if_cancelled()
 
     def _classified_page_path(self, page_number: int) -> Path | None:
-        index_path = self._output_dir / "agent" / "drawing_index.json"
-        try:
-            index = json.loads(index_path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError):
-            return None
-        page = next(
-            (item for item in index.get("pages", []) if int(item.get("pdf_page", -1)) == page_number),
-            None,
-        )
-        if page is None:
+        page = self._page_metadata(page_number)
+        if not page:
             return None
         function = str(page.get("function") or "UNKNOWN").upper().lstrip("=")
         function = "".join(char if char.isalnum() or char in ".-_" else "_" for char in function)
@@ -287,6 +289,22 @@ class ExtractionStageGraphClient:
             folder / f"{label}__pdf_{page_number:04d}.png",
         )
         return next((path for path in matches if path.is_file()), None)
+
+    def _page_metadata(self, page_number: int) -> dict[str, Any]:
+        """Refresh indexed identity once per file update, not once per image lookup."""
+        index_path = self._output_dir / "agent" / "drawing_index.json"
+        try:
+            stat = index_path.stat()
+            stamp = (stat.st_mtime_ns, stat.st_size)
+            if stamp != self._classified_index_stamp:
+                index = json.loads(index_path.read_text(encoding="utf-8"))
+                self._classified_page_metadata = {
+                    int(item["pdf_page"]): item for item in index.get("pages", [])
+                }
+                self._classified_index_stamp = stamp
+        except (OSError, ValueError, KeyError, TypeError):
+            return {}
+        return self._classified_page_metadata.get(page_number, {})
 
 
 def _task_id(task_context: str) -> str:

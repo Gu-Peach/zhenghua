@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from typing import Any
+from uuid import UUID
 
 from src.profiles.package import checksum
 
@@ -24,11 +25,20 @@ def load_initial_evidence(tools: ProfileTools) -> tuple[dict[str, Any], list[dic
         resources["classification_examples"] + "/manifest.json",
         resources["wiring_examples"] + "/manifest.json",
     ]
+    focus = {
+        "classification": "classification_prompt",
+        "scan": "page_scan_prompt",
+        "completion": "cross_page_prompt",
+    }
+    if tools.turn.focus_stage:
+        paths.insert(0, resources[focus[tools.turn.focus_stage]])
     cases = case_files(root)
     for stage in ("classification", "scan", "completion"):
         case = next((item for item in cases if item["stage"] == stage), None)
         if case:
             paths.append(case["expected_path"])
+            if case.get("input_path"):
+                paths.append(case["input_path"])
     readings = []
     budget = 24000
     deferred = []
@@ -53,12 +63,24 @@ def load_initial_evidence(tools: ProfileTools) -> tuple[dict[str, Any], list[dic
         )
         budget -= min(len(content), limit)
     # User originals take priority. Retain a small source/target example set when available.
-    images = [attachment["path"] for attachment in meta.get("attachments", [])[:2]]
-    for stage in ("scan", "completion", "classification"):
+    uploaded = meta.get("attachments", [])
+    current_images = [a["path"] for a in uploaded if UUID(a["id"]) in tools.turn.attachment_ids]
+    images = current_images or [a["path"] for a in uploaded[-2:]]
+    image_stages = list(
+        dict.fromkeys(
+            [
+                *([tools.turn.focus_stage] if tools.turn.focus_stage else []),
+                "scan",
+                "completion",
+                "classification",
+            ]
+        )
+    )
+    for stage in image_stages:
         case = next((item for item in cases if item["stage"] == stage), None)
         if case:
             for image in case["images"]:
-                if image["path"] not in images and len(images) < 4:
+                if image["path"] not in images and len(images) < 6:
                     images.append(image["path"])
     pixels = tools.store.images(tools.draft, tools.actor, images) if images else []
     tools.viewed.update(images)

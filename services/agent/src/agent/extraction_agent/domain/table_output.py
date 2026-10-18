@@ -56,25 +56,34 @@ TABLE_STYLE: TableStyle = {
 }
 
 
-def table_row(record: Mapping[str, Any]) -> list[Any]:
-    """Render normalized facts; never synthesize terminals, coordinates or remarks."""
+def output_fields(record: Mapping[str, Any]) -> dict[str, Any]:
+    """Canonical business projection shared by the 14-column table and publication DTO."""
     function, number = record.get("drawing_function"), record.get("drawing_page_number")
     page = f"{str(function).replace('.', '')}{int(number):02d}" if function and number is not None else None
+    return {
+        "source_drawing_page": page,
+        "principle_number": record.get("line_number"),
+        "terminal_strip": record.get("terminal_strip"),
+        "start_code": record.get("start_device") or record.get("start_location"),
+        "start_description": record.get("start_name"),
+        "start_terminal": record.get("start_terminal"),
+        "end_code": record.get("end_device") or record.get("end_location"),
+        "end_description": record.get("end_name"),
+        "end_terminal": record.get("end_terminal"),
+        "current_value": record.get("current"),
+        "color_mark": None,
+        "remark": record.get("remark"),
+        "start_terminal_coordinates": record.get("start_terminal_coordinates"),
+        "end_terminal_coordinates": record.get("end_terminal_coordinates"),
+    }
+
+
+def table_row(record: Mapping[str, Any]) -> list[Any]:
+    """Render normalized facts; never synthesize terminals, coordinates or remarks."""
+    values = output_fields(record)
     return [
-        page,
-        record.get("line_number"),
-        record.get("terminal_strip"),
-        record.get("start_device") or record.get("start_location"),
-        record.get("start_name"),
-        record.get("start_terminal"),
-        record.get("end_device") or record.get("end_location"),
-        record.get("end_name"),
-        record.get("end_terminal"),
-        record.get("current"),
-        None,
-        record.get("remark"),
-        _coordinate_cell(record.get("start_terminal_coordinates")),
-        _coordinate_cell(record.get("end_terminal_coordinates")),
+        _coordinate_cell(value) if field.endswith("_coordinates") else value
+        for field, value in values.items()
     ]
 
 

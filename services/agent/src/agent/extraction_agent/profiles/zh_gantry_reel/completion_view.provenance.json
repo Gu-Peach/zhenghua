@@ -1,8 +1,48 @@
 {
   "version": "0.2.0",
   "coordinate_contract": "input_view_normalized_to_full_page",
-  "review_basis": "2026-10-17: visually checked packaged source/target images and crop previews; static checks only, no tests/model/database calls; engineering validation pending.",
+  "review_basis": "2026-10-17: visually checked packaged source/target images and crop previews; static checks only, no tests/model/database calls; engineering validation pending.; 2026-10-18: shared CLI/upload request and output contract, 4 scan/14 completion request parity and154-row projection checks, ZH zero-column compatibility; static only, no tests/models/DB writes.",
   "files": [
+    {
+      "path": "services/agent/src/agent/extraction_agent/agents/page_scanner.py",
+      "checksum": "sha256:490657049e0bab2652fa1911fb16bf824d7c3d6f10b4da70e9201208bed08c13"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/application/extraction_contract.py",
+      "checksum": "sha256:6745dde7ce1a03e984330a39b163b8bbbcc599b09c307d21b85425c7dfa9fa51"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/application/extraction_stage_factory.py",
+      "checksum": "sha256:3001114120e3782fdd8573cf4a0b2df36614e3714923894a3816a8e23eb06eef"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/application/incremental.py",
+      "checksum": "sha256:34f5706f2787c35107fe2f3b4a9e24a92d0c8b8b32a3ecc1ec5507ae9677475d"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/application/incremental_worker.py",
+      "checksum": "sha256:26596c4ef27b5ea6943dc88fdcc0667181643ca609fd626578e5d4e20cbb2e0a"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/application/page_workflow_extraction.py",
+      "checksum": "sha256:20f805416e2476ca6b41b149a3f19cb8f78be33990dc413c9907b6cfe10001ba"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/application/review.py",
+      "checksum": "sha256:10a237d474ca501b05a1024426a9687908c22008faa573ad4946c304ba8eeb0c"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/domain/models/extraction_stages.py",
+      "checksum": "sha256:fd0155569a6b7000690e202a9dd98abf32e4468d426dde98475abee6344cefb4"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/domain/table_output.py",
+      "checksum": "sha256:5e84d81e43c26b4dfde35f1d83890a00613cf7183e9250392024bf0a6df12aa2"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/graphs/document_extraction/page_extraction.py",
+      "checksum": "sha256:a77e33ac52a0f1872cf2a5bc3906e83d327a06026a14ed77327b5049f1c42803"
+    },
     {
       "path": "services/agent/src/agent/extraction_agent/infrastructure/document/completion_context.py",
       "checksum": "sha256:c5bb29f5071afbb6e4da715f1d8e8f4289cbc69d9f2bc4288e072d316c141760"
@@ -12,12 +52,20 @@
       "checksum": "sha256:fe1d218ad9f11025085ae39eebdeba1f0e9c3ca7dab63c4a3b812c279d601d18"
     },
     {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/document/request_fingerprint.py",
+      "checksum": "sha256:a6b8de6ec3aa85e826ea0e954c688459dc81297486998e9ca16ac65197c19c14"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/incremental_repository.py",
+      "checksum": "sha256:695e3886307644e6182457561480383ef7134de413b0527bd380ef46327a03d1"
+    },
+    {
       "path": "services/agent/src/agent/extraction_agent/infrastructure/zh_gantry_reel_vlm_stages.py",
       "checksum": "sha256:9964c6bba8c69c27b5fd13f1922c521b12d435ab63443edac0dcdf880ef526bb"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/infrastructure/zh_vlm_stages.py",
-      "checksum": "sha256:5ca449fd9510f7947891f05105f4f5632537392fca2b7635031b4175a5444188"
+      "checksum": "sha256:289b386db35d56f77b3eef1df55c9d82fde4691cc589d87657405c1e58e60e67"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/profiles/zh_gantry_reel/completion_view.json",
@@ -63,5 +111,6 @@
       "path": "services/agent/src/agent/extraction_agent/prompts/xmz/page_scan_index.md",
       "checksum": "sha256:f31bc7c8809bc332e98232edd2c8c3139b6c88a1ceedc514678f714f40a9784b"
     }
-  ]
+  ],
+  "runtime_contract": "stage2-script-aligned-v1"
 }

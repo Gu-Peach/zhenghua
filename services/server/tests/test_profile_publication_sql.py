@@ -208,6 +208,59 @@ def test_publication_migration_empty_and_legacy_snapshot(legacy):
                 ).strip()
                 == "local://legacy/profile.json"
             )
+        sql(database, (ROOT / "supabase/migrations/20261018010000_profile_editing_replacement.sql").read_text(encoding="utf-8"))
+        sql(database, """
+          create table public.agent_runs(profile jsonb,status text);
+          do $$ declare actor uuid := '00000000-0000-0000-0000-000000000011';
+            other_actor uuid := '00000000-0000-0000-0000-000000000012';
+            base public.extraction_profiles; v1 jsonb; v2 jsonb; v3 jsonb; again jsonb;
+          begin
+            select * into base from extraction_profiles where profile_key='sample';
+            insert into extraction_projects(owner_id,name,profile_id) values(actor,'Pinned project',base.id);
+            v1 := public.replace_extraction_profile(actor,base.id,base.checksum,'sample','1.0.1','新版',
+              'sha256:'||repeat('c',64),'storage://project-assets/profiles/'||actor||'/sample/1.0.1/'||repeat('c',64)||'.zip');
+            assert (v1->>'previous_version_retained')::boolean;
+            assert exists(select 1 from extraction_profiles where id=base.id);
+            assert (select count(*) from profile_asset_gc)=0;
+            v2 := public.replace_extraction_profile(actor,(v1->'profile'->>'id')::uuid,'sha256:'||repeat('c',64),'sample','1.0.2','再新版',
+              'sha256:'||repeat('d',64),'storage://project-assets/profiles/'||actor||'/sample/1.0.2/'||repeat('d',64)||'.zip');
+            assert not exists(select 1 from extraction_profiles where profile_version='1.0.1');
+            assert (select count(*) from profile_asset_gc)=1;
+            again := public.replace_extraction_profile(actor,(v1->'profile'->>'id')::uuid,'sha256:'||repeat('c',64),'sample','1.0.2','再新版',
+              'sha256:'||repeat('d',64),'storage://project-assets/profiles/'||actor||'/sample/1.0.2/'||repeat('d',64)||'.zip');
+            assert again->'profile'->>'id'=v2->'profile'->>'id';
+            begin
+              perform public.replace_extraction_profile(other_actor,(v2->'profile'->>'id')::uuid,'sha256:'||repeat('d',64),'sample','1.0.3','越权',
+                'sha256:'||repeat('e',64),'bad');
+              raise exception 'Cross-owner replacement succeeded';
+            exception when sqlstate 'PT403' then null; end;
+            begin
+              perform public.replace_extraction_profile(actor,base.id,base.checksum,'sample','1.0.3','旧草稿',
+                'sha256:'||repeat('e',64),'bad');
+              raise exception 'Stale replacement succeeded';
+            exception when sqlstate 'PT409' then null; end;
+            begin
+              perform public.publish_extraction_profile(actor,'sample','1.0.1','复活旧包',
+                'sha256:'||repeat('c',64),'storage://project-assets/profiles/'||actor||'/sample/1.0.1/'||repeat('c',64)||'.zip');
+              raise exception 'Retired object republished';
+            exception when sqlstate 'PT409' then null; end;
+            insert into agent_runs(profile,status) values(jsonb_build_object('key','sample','version','1.0.2','checksum','sha256:'||repeat('d',64)),'RUNNING');
+            v3 := public.replace_extraction_profile(actor,(v2->'profile'->>'id')::uuid,'sha256:'||repeat('d',64),'sample','1.0.3','含运行快照',
+              'sha256:'||repeat('e',64),'storage://project-assets/profiles/'||actor||'/sample/1.0.3/'||repeat('e',64)||'.zip');
+            assert exists(select 1 from extraction_profiles where profile_version='1.0.2');
+            assert (v3->>'previous_version_retained')::boolean;
+          end $$;
+          set role authenticated;
+          select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000012',false);
+          do $$ begin
+            assert (select count(*) from profile_asset_gc)=0;
+            begin
+              perform public.replace_extraction_profile('00000000-0000-0000-0000-000000000012',gen_random_uuid(),'x','x','1.0.0','x','x','x');
+              raise exception 'Browser called replacement RPC';
+            exception when insufficient_privilege then null; end;
+          end $$;
+          reset role;
+        """)
     finally:
         # Only this test's freshly generated, verified database name can be dropped.
         sql("postgres", f'drop database "{database}";')

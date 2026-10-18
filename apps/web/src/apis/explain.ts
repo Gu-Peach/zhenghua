@@ -61,6 +61,7 @@ export function evidenceDrawings(context: ExplainContext | ExplainResponse): Evi
 }
 
 export function toolLabel(tool: ToolActivity): string {
+  if (tool.name === "propose_connection_edit") return "生成线表修改对照（尚未写入线表）";
   if (tool.name === "load_connection") return "读取端子连接及来源证据";
   if (tool.name === "view_drawings") return `查看图纸 · PDF ${Array.isArray(tool.arguments?.pdf_page_numbers) ? tool.arguments.pdf_page_numbers.join("、") : ""}`;
   if (tool.name === "search_connections") {
@@ -76,7 +77,7 @@ export function toolResultView(tool: ToolActivity): ToolResultView {
   const drawings = (Array.isArray(data.drawings) ? data.drawings : []) as Schema["DrawingEvidence"][];
   const gaps = (Array.isArray(data.gaps) ? data.gaps : []) as string[];
   return {
-    summary: tool.error ?? (tool.result ? tool.name === "view_drawings" ? `已读取 ${Array.isArray(data.visual_pages) ? data.visual_pages.length : 0} 张图纸` : `返回 ${rows.length} 条连接 · ${drawings.length} 张图纸${data.has_more ? " · 还有后续记录" : ""}` : "正在处理…"),
+    summary: tool.error ?? (tool.result ? tool.name === "propose_connection_edit" ? `匹配 ${String(data.matched_count ?? 0)} 行 · 拟修改 ${String(data.changed_count ?? 0)} 行，${data.status === "applied" ? "该方案已保存" : data.status === "rejected" ? "该方案已拒绝" : "等待用户确认"}` : tool.name === "view_drawings" ? `已读取 ${Array.isArray(data.visual_pages) ? data.visual_pages.length : 0} 张图纸` : `返回 ${rows.length} 条连接 · ${drawings.length} 张图纸${data.has_more ? " · 还有后续记录" : ""}` : "正在处理…"),
     connections: rows.filter(item => item?.row).map(({ row }) => ({ id: row.id, number: row.principle_number || row.wire_number || "未登记编号", start: row.start_terminal || "未确认", end: row.end_terminal || "未确认" })),
     pages: drawings.map(item => `${roleNames[item.role]} ${item.drawing_page || ""}（PDF ${item.pdf_page_number}）`),
     gaps, json: JSON.stringify(data, null, 2),

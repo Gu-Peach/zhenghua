@@ -1,6 +1,12 @@
 # Explain Agent
 
-独立的线表来源解释与多轮交流能力，使用LangGraph和原生工具调用。前端可指定一行或页码等精确条件，模型继续检索线表/跨页图纸并按需看图。兼容原行级入口；不依赖旧Supervisor、不新增端口、不修改线表/规则或创建提取任务。
+2026-10-18确认按钮排障：口述“已生成预览”不算执行成功。没有真实proposal时会撤回不实回复、最多补调一次修改工具，失败明确报错；只在实际方案返回后出现确认按钮。API2.7.1/answer_reset需加载8100/8000新代码并刷新前端，无新增迁移。见[回执校验记录](../../../../../docs/service/agent/changelog/2026-10-18-explain-preview-receipt.md)。
+
+独立的线表来源解释与多轮交流能力，使用LangGraph和原生工具调用。前端可指定一行或页码等精确条件，模型继续检索线表/跨页图纸并按需看图，也可按用户要求生成线表修改对照。用户确认后由业务Server原子保存，Agent没有提交修改的模型工具。不依赖旧Supervisor、不新增端口，不修改提取规则或创建提取任务。
+
+2026-10-18新增`propose_connection_edit`，支持工作区端子去字面前缀、按原理号整组调换起终点、仅端子交换和白名单字段赋值。整组调换含元件、描述、端子、坐标及跨页定位；未知目标页不猜测。前缀/单元格修改遵循既有坐标失效策略并在预览展示。见[交付](../../../../../docs/service/agent/changelog/2026-10-18-explain-edits.md)。
+
+本项目本地库已应用`20261018020000_explain_connection_edits.sql`并登记历史，REST可见两个RPC；原三张业务表摘要不变，未调用真实修改RPC或付费模型。重载8000 API2.7.0及8100宿主即可使用，沿用原启动命令，无需重启提取Worker；其他环境须先应用迁移。
 
 ## 工作流
 
@@ -12,10 +18,14 @@ flowchart TD
     C -->|view_drawings| I[读取已检索图纸供视觉分析]
     T --> C
     I --> C
+    C -->|propose_connection_edit| P[事务生成精确范围的逐行修改方案]
+    P --> C
     C -->|公开回答流| D[返回解释、分页覆盖和图纸列表]
+    D --> U[用户查看修改对照并确认或拒绝]
+    U --> S[8000 Server校验版本与范围并事务提交]
 ```
 
-仅查询extraction_projects、extraction_connection_rows和必要的extraction_profiles。每次业务检索与图像读取验证所有者/项目；行入口校验可选batch_id/record_version，页查询默认取drawing_index.active_batch_id，无当前批次时明确返回空结果，不混读旧批次。
+事实查询使用extraction_projects、extraction_connection_rows和必要的extraction_profiles；修改方案保存在专用connection_edit_proposals表。每次检索、图像读取与方案生成都验证所有者/项目；行入口校验可选batch_id/record_version，页查询默认当前批次，不混读旧批次。
 
 规则证据优先用该行evidence.profile冻结版本，回退项目引用时标明不能证明历史版本。来源说明/引用/方向依据/复核原因和当前字段与原提取值差异如实展示；缺少的历史过程不补造。当前看图与历史提取说明分开解释。
 

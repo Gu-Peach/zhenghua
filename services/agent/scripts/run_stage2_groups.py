@@ -25,36 +25,41 @@ sys.path.insert(0, str(AGENT_ROOT))
 
 # isort: split
 from src.agent.extraction_agent.application.document_extraction.settings import Settings  # noqa: E402
+from src.agent.extraction_agent.application.extraction_contract import (  # noqa: E402
+    EXTRACTION_CONTRACT_VERSION,
+    drawing_page_input,
+)
 from src.agent.extraction_agent.application.extraction_stage_factory import (  # noqa: E402
+    build_extraction_model_gateway,
     build_extraction_stage_dispatcher,
 )
 from src.agent.extraction_agent.application.page_workflow_extraction import (  # noqa: E402
     ExtractionStageGraphClient,
 )
-from src.config import AgentSettings  # noqa: E402
-from src.domain.models.profiles import ProfileBinding  # noqa: E402
 from src.agent.extraction_agent.domain.models.extraction_stages import DrawingPageInput  # noqa: E402
+from src.agent.extraction_agent.domain.table_output import TABLE_HEADERS as HEADERS  # noqa: E402
+from src.agent.extraction_agent.domain.table_output import TABLE_STYLE, table_row  # noqa: E402
 from src.agent.extraction_agent.graphs.document_extraction.state import PageMeta  # noqa: E402
 from src.agent.extraction_agent.graphs.document_extraction.workflow import (  # noqa: E402
     run_document_stages_2_3,
 )
+from src.agent.extraction_agent.infrastructure.document.checkpoint import _write_json_atomic  # noqa: E402
+from src.agent.extraction_agent.infrastructure.document.model_images import (  # noqa: E402
+    IMAGE_BUDGET_POLICY_VERSION,
+)
+from src.agent.extraction_agent.infrastructure.document.request_fingerprint import (  # noqa: E402
+    request_fingerprint,
+)
+from src.agent.extraction_agent.infrastructure.zh_vlm_stages import _prepare_few_shot_image  # noqa: E402
+from src.agent.extraction_agent.profiles.extraction_policy import default_extraction_policies  # noqa: E402
+from src.config import AgentSettings  # noqa: E402
+from src.domain.models.profiles import ProfileBinding  # noqa: E402
 from src.harness.model_gateway import (  # noqa: E402
     ModelGateway,
     ModelRequest,
     ModelResponse,
-    OpenAICompatibleModelGateway,
 )
-from src.harness.retry import RetryPolicy  # noqa: E402
-from src.agent.extraction_agent.infrastructure.document.checkpoint import _write_json_atomic  # noqa: E402
-from src.agent.extraction_agent.infrastructure.zh_vlm_stages import _prepare_few_shot_image  # noqa: E402
-from src.agent.extraction_agent.infrastructure.document.model_images import IMAGE_BUDGET_POLICY_VERSION  # noqa: E402
 from src.profiles import ProfileRegistry, ProfileRegistryError  # noqa: E402
-from src.agent.extraction_agent.profiles.extraction_policy import default_extraction_policies  # noqa: E402
-
-
-
-from src.agent.extraction_agent.domain.table_output import TABLE_HEADERS as HEADERS  # noqa: E402
-from src.agent.extraction_agent.domain.table_output import TABLE_STYLE, table_row  # noqa: E402
 
 
 def load_pages(
@@ -146,28 +151,7 @@ class LocalImageClient(ExtractionStageGraphClient):
             if not cached_path.is_file():
                 cached_path.write_bytes(content)
             image_path = cached_path
-        return DrawingPageInput(
-            pdf_page_number=int(page["page_number"]),
-            image_path=image_path,
-            plant_function=page.get("function"),
-            drawing_page_number=page.get("internal_page"),
-            object_location=page.get("object_loc"),
-            blank=bool(page.get("blank")),
-            non_wiring=bool(page.get("is_non_wiring")),
-        )
-
-    async def scan_page(self, image: Any, *, page_context: str = "") -> Any:
-        result = await super().scan_page(
-            image,
-            page_context=(
-                "本次测试不提取色标：每条 connection.color 必须为 null。其他字段按图中证据读取。\n"
-                + page_context
-            ),
-        )
-        for unit in result.units:
-            for connection in unit.connections:
-                connection.color = None
-        return result
+        return drawing_page_input(image_path, int(page["page_number"]), page)
 
     async def resolve_cross_page(
         self, target_image: Any, *, source_image: Any | None = None, task_context: str = ""
@@ -196,20 +180,11 @@ class RecordingGateway:
         error = None
         diagnostic: dict[str, Any] = {}
         cache_hit = False
-        fingerprint = hashlib.sha256(
-            json.dumps(
-                {
-                    "model": request.model or self.model,
-                    "messages": request.messages,
-                    "temperature": request.temperature,
-                    "max_tokens": request.max_tokens,
-                    "json_mode": request.json_mode,
-                    "thinking": request.enable_thinking,
-                },
-                ensure_ascii=False,
-                sort_keys=True,
-            ).encode()
-        ).hexdigest()
+        fingerprint = request_fingerprint(
+            model=request.model or self.model, messages=request.messages,
+            temperature=request.temperature, max_tokens=request.max_tokens,
+            json_mode=request.json_mode, thinking=request.enable_thinking,
+        )
         cache_path = self.directory / "model_cache" / f"{fingerprint}.json"
         try:
 
@@ -267,6 +242,9 @@ class RecordingGateway:
                 "call": len(self.calls) + 1,
                 "model": result.model if result else self.model,
                 "stage": request.metadata.get("stage"),
+                "extraction_contract_version": EXTRACTION_CONTRACT_VERSION,
+                "request_fingerprint": fingerprint,
+                "prompt_checksum": request.metadata.get("prompt_checksum"),
                 "vision_images": request.metadata.get("vision_images"),
                 "vision_total_pixels": request.metadata.get("vision_total_pixels"),
                 "vision_budget_policy": request.metadata.get("vision_budget_policy"),
@@ -452,6 +430,7 @@ async def execute(args: argparse.Namespace, *, stages: Any | None = None) -> dic
         "storage_upload": False,
         "extract_color": False,
         "headers": HEADERS,
+        "extraction_contract": EXTRACTION_CONTRACT_VERSION,
         "template": str(args.template.resolve()),
     }
     if not args.export_only:
@@ -473,14 +452,7 @@ async def execute(args: argparse.Namespace, *, stages: Any | None = None) -> dic
             if not settings.model_configured:
                 raise ValueError("Configure the model in services/agent/.env before a real test.")
             gateway = RecordingGateway(
-                OpenAICompatibleModelGateway(
-                    base_url=settings.model_base_url or settings.model_chat_completions_url or "",
-                    chat_completions_url=settings.model_chat_completions_url,
-                    api_key=settings.model_api_key,
-                    default_model=settings.default_model or "",
-                    timeout_seconds=settings.model_timeout_seconds,
-                    retry_policy=RetryPolicy(max_retries=settings.model_max_retries),
-                ),
+                build_extraction_model_gateway(settings),
                 output,
                 model=settings.default_model or "unconfigured",
             )
@@ -530,6 +502,7 @@ async def execute(args: argparse.Namespace, *, stages: Any | None = None) -> dic
         _write_json_atomic(output / "cross-page-tasks.json", result.state.get("cross_page_tasks", []))
         summary = {
             "status": "COMPLETED",
+            "extraction_contract": EXTRACTION_CONTRACT_VERSION,
             "run_id": args.run_id,
             "model": settings.default_model,
             "profile": profile.profile.model_dump(mode="json"),

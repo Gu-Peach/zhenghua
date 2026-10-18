@@ -185,11 +185,53 @@ def test_model_calls_native_search_tool_and_paginates_before_explaining_page():
         assert {t["function"]["name"] for t in gateway.calls[0].tools} == {
             "search_connections",
             "view_drawings",
+            "propose_connection_edit",
         }
         tool_message = next(m for m in gateway.calls[1].messages if m["role"] == "tool")
         assert len(json.loads(tool_message["content"])["rows"]) == 2
         sent = json.dumps(gateway.calls[1].messages)
         assert "PRIVATE-KEY" not in sent and "PRIVATE-SIGNATURE" not in sent and "image_path" not in sent
+
+    asyncio.run(run())
+
+
+def test_deleted_rows_and_project_audit_are_not_reused_as_current_model_facts():
+    async def run():
+        backend, _, gateway, agent = setup_search(["已读取本页。", "现在只剩两条连接。"])
+        selected = page_turn()
+        actor = ExplainActor(user_id=OWNER)
+        await agent.ask(selected, actor)
+        removed = backend.rows.pop()
+        backend.project["drawing_index"]["management"] = {
+            "audit": [{"action": "remove", "before": {**removed, "end_terminal": "DELETED-SECRET"}}]
+        }
+        result = await agent.ask(
+            selected.model_copy(update={"turn_id": uuid4(), "message": "再看一下当前页"}), actor
+        )
+        assert result.history_reset and len(result.context.rows) == 2
+        messages = json.dumps(gateway.calls[-1].messages)
+        assert removed["id"] not in messages and "DELETED-SECRET" not in messages
+        assert all(str(row.row.id) != removed["id"] for row in result.context.rows)
+
+    asyncio.run(run())
+
+
+def test_endpoint_swap_coordinates_match_actual_pages_without_changing_origin():
+    async def run():
+        backend, repo, _, _ = setup_search()
+        backend.rows[0].update(
+            start_terminal_coordinates={"x": 0.4, "y": 0.5, "pdf_page_number": 10},
+            end_terminal_coordinates={"x": 0.2, "y": 0.3, "pdf_page_number": 3},
+        )
+        result = await repo.search(
+            page_turn(), ExplainActor(user_id=OWNER), ConnectionQuery(drawing_page="003C01")
+        )
+        context = result.rows[0]
+        assert context.row.source_pdf_page_number == 3
+        drawings = {drawing.pdf_page_number: drawing for drawing in context.drawings}
+        assert drawings[3].terminal_coordinates == context.row.end_terminal_coordinates
+        assert drawings[10].terminal_coordinates == context.row.start_terminal_coordinates
+        assert not any("坐标所属页" in gap for gap in context.gaps)
 
     asyncio.run(run())
 

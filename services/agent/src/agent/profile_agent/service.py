@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import tempfile
 import time
@@ -55,6 +56,11 @@ class ProfileAgent:
             return reply
         if view.revision != turn.expected_revision:
             raise ProfileError("VERSION_CONFLICT", "草稿修订已变化，请刷新后提问", 409)
+        if not set(turn.attachment_ids).issubset({a.id for a in view.attachments}):
+            raise ProfileError("IMAGE_NOT_FOUND", "本轮图片不属于当前草稿", 422)
+        _, _, metadata = await asyncio.to_thread(self.store.snapshot, draft, actor, view.revision)
+        if metadata.get("editor") and turn.intent != "discuss":
+            raise ProfileError("PROPOSAL_REQUIRED", "请先提出修改建议，再由用户确认应用", 422)
         key = (actor.user_id, draft)
         if key not in self._locks:
             if len(self._locks) >= 128:
@@ -113,7 +119,16 @@ class ProfileAgent:
                 actor,
                 turn.turn_id,
                 request_hash,
-                turn.message,
+                json.dumps(
+                    {
+                        "text": turn.message,
+                        "attachment_ids": [str(i) for i in turn.attachment_ids],
+                        "observations": turn.observations,
+                    },
+                    ensure_ascii=False,
+                )
+                if turn.attachment_ids or turn.observations
+                else turn.message,
                 reply.model_dump(mode="json"),
             )
             if on_event:

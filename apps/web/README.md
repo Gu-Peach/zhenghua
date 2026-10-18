@@ -1,5 +1,11 @@
 # Web 前端
 
+Explain修改确认修复需API2.7.1/8100新代码：当模型只口述预览而未调用工具，服务端撤回未验证文字并尝试生成真实方案；前端处理answer_reset，实际方案到达后才显示确认按钮，输入“确认”不直接写库。无数据库迁移，刷新前端并重发原修改请求。见[记录](../../docs/service/agent/changelog/2026-10-18-explain-preview-receipt.md)。
+
+Explain浮窗支持按工作区/原理号提出线表修改：先回答，再展示逐行对照，确认/拒绝后反馈；支持端子去前缀、整组起终点交换及字段修正。确认后自动刷新表格，后续追问使用新行版本。需API2.7.0/8100新代码；[新增迁移](../../supabase/migrations/20261018020000_explain_connection_edits.sql)已在本项目本地部署，其他环境需应用。前端启动参数不变，未改真实线表。见[交付](../../docs/apps/web/changelog/2026-10-18-explain-edit-preview.md)。
+
+查看规则现在支持双击内容编辑和旁侧Profile Agent辅助编辑，可上传图纸、填写实际提取结果、展开工具及建议diff，用户同意后应用并发布替换新版。需加载8000 API2.6.0和8100新代码；前端沿用Vite启动方式，无新增环境变量。见[交付](../../docs/apps/web/changelog/2026-10-18-profile-rule-editing.md)。
+
 规则聊天失败现在会显示具体模型错误码和诊断编号，支持同轮重试；需重载8100启用对应日志/诊断，见[失败态记录](../../docs/apps/web/changelog/2026-10-17-profile-model-errors.md)。
 
 2026-10-17规则聊天第一阶段新增[PDF随机两页抽样](../../docs/apps/web/changelog/2026-10-17-profile-pdf-sampling.md)：上传PDF后自动对照两页推测分页，每页独立Expected；只保留选中样图，原PDF和其余页不缓存。后两阶段继续人工上传图片。单页/失败重试/来源页说明可见，使用前重新加载8000 API2.5.0和8100，本轮无新迁移。

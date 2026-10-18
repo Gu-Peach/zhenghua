@@ -19,8 +19,8 @@ class _Session:
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     fingerprint: str | None = None
     history: list[dict[str, str]] = field(default_factory=list)
-    responses: OrderedDict[str, tuple[str, str, str, list[ConnectionQuery], list[int], bool]] = field(
-        default_factory=OrderedDict
+    responses: OrderedDict[str, tuple[str, str, str, list[ConnectionQuery], list[int], bool, list[str]]] = (
+        field(default_factory=OrderedDict)
     )
     queries: list[ConnectionQuery] = field(default_factory=list)
     visual_pages: list[int] = field(default_factory=list)
@@ -83,6 +83,7 @@ class ExplainAgent:
                 "saved_queries": cached[3] if cached else session.queries,
                 "saved_visual_pages": cached[4] if cached else session.visual_pages,
                 "cached_limited": cached[5] if cached else False,
+                "cached_proposals": cached[6] if cached else [],
             }
             result_state = await build_explain_graph(
                 self.repository,
@@ -112,6 +113,7 @@ class ExplainAgent:
                 session.queries,
                 session.visual_pages,
                 result.retrieval_limited,
+                [str(p.proposal_id) for p in result.proposals],
             )
             while len(session.responses) > 12:
                 session.responses.popitem(last=False)

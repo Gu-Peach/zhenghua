@@ -8,6 +8,7 @@ from uuid import NAMESPACE_URL, UUID, uuid5
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from src.agent.extraction_agent.domain.models.wiring import WireRecord
+from src.agent.extraction_agent.domain.table_output import output_fields
 from src.domain.models.runs import ProfileRef
 
 
@@ -123,6 +124,7 @@ def published_rows(
         record = value if isinstance(value, WireRecord) else WireRecord.model_validate(value)
         if record.pdf_page_number != number:
             continue
+        values = output_fields(record.model_dump(mode="json"))
         item = f"{record.unit_id}:{record.connection_id}"
         if not record.connection_id or not record.unit_id:
             raise ValueError("Published connection requires a stable scan identity")
@@ -150,30 +152,26 @@ def published_rows(
                 page_item_id=item,
                 row_order=order,
                 workspace_code=str(pages[number].get("function") or ""),
-                source_drawing_page=_drawing_label(pages[number]),
+                source_drawing_page=values["source_drawing_page"] or _drawing_label(pages[number]),
                 source_pdf_page_number=number,
                 target_pdf_page_number=target,
                 target_drawing_page=_drawing_label(target_page),
                 wire_number=record.wire_number,
-                principle_number=record.line_number,
-                terminal_strip=record.terminal_strip,
-                start_code=record.start_device,
-                start_description=record.start_name,
-                start_terminal=_text(record.start_terminal),
-                end_code=record.end_device,
-                end_description=record.end_name,
-                end_terminal=_text(record.end_terminal),
-                current_value=_text(record.current),
-                color_mark=record.color,
-                remark=record.remark,
+                principle_number=values["principle_number"],
+                terminal_strip=values["terminal_strip"],
+                start_code=values["start_code"],
+                start_description=values["start_description"],
+                start_terminal=_text(values["start_terminal"]),
+                end_code=values["end_code"],
+                end_description=values["end_description"],
+                end_terminal=_text(values["end_terminal"]),
+                current_value=_text(values["current_value"]),
+                color_mark=values["color_mark"],
+                remark=values["remark"],
                 is_cross_page=bool(record.references or target or str(record.is_cross_page) == "cross_page"),
                 needs_review=record.needs_review,
-                start_terminal_coordinates=record.start_terminal_coordinates.model_dump()
-                if record.start_terminal_coordinates
-                else None,
-                end_terminal_coordinates=record.end_terminal_coordinates.model_dump()
-                if record.end_terminal_coordinates
-                else None,
+                start_terminal_coordinates=values["start_terminal_coordinates"],
+                end_terminal_coordinates=values["end_terminal_coordinates"],
                 evidence={
                     "profile": profile,
                     "processing_status": record.processing_status,

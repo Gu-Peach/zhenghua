@@ -1,5 +1,13 @@
 # Server 文档
 
+- [整组调换归属纠正](./explain-swap-origin-correction.md)：当前约定为所属页/工作区固定，坐标自带真实页号；新函数迁移和指定4行恢复已完成，取代此前迁页处理。
+
+- [删除副本与修改后空表排障](./changelog/2026-10-18-explain-delete-relocation.md)：物理删除及副本清理、最小幂等回执、新迁移本地部署；调换后来源页筛选跟随，行ID不变。
+
+- [Explain确认修改事务](./changelog/2026-10-18-explain-edit-transactions.md)：API2.7.0、proposal/RLS/版本/原子回执审计；本地仅部署新增结构，原三表不变。
+
+- [规则编辑与新版替换](./changelog/2026-10-18-profile-editing-replacement.md)：API2.6.0、所有权/来源CAS、新版替换、项目/任务保护和持久回收；本地新迁移已部署。
+
 - [Profile发布“数据操作失败”与迁移补齐](./changelog/2026-10-17-profile-publication-missing-migration.md)：本地发布RPC已部署、包摘要与权限核对通过，用户重试发布；缺接口返回安全配置错误。
 
 - [Profile PDF抽样代理](./changelog/2026-10-17-profile-pdf-sampling.md)：API2.5.0、鉴权/幂等/来源恢复契约，无新增业务表或迁移。

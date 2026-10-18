@@ -14,6 +14,7 @@ from src.domain.models.common import StrictModel
 from src.harness.model_gateway import ModelToolCall
 from src.profiles.package import checksum
 
+from .evidence_validation import validate_findings
 from .models import (
     ExampleCase,
     FileEdit,
@@ -78,10 +79,13 @@ DEFINITIONS: dict[str, tuple[type[StrictModel], str]] = {
         NoArgs,
         "确定性检查模板完整性、实际图片/Expected引用、用户确认、Schema及adapter边界，不调用提取或评测。",
     ),
-    "record_diagnosis": (RecordDiagnosis, "记录有证据锚点的诊断；不能凭用户一句话就断言模型幻觉。"),
+    "record_diagnosis": (
+        RecordDiagnosis,
+        "记录诊断。path用当前草稿文本/本轮已查看图片的完整相对路径；用户观察用observations/<索引>或user_message。用户陈述不能单独证明归因。",
+    ),
     "propose_edits": (
         ProposalRequest,
-        "提出带原文依据和精确before/after的修改建议，不改草稿；等待用户确认。",
+        "提交可审阅的精确修改建议，不改草稿；等待用户确认。不要求先record_diagnosis，findings采用相同证据定位约定。",
     ),
     "fill_template": (
         FillTemplate,
@@ -120,22 +124,15 @@ class ProfileTools:
             if name not in {"fill_template", "apply_edits"} or self.turn.intent == "edit" and not self.written
         ]
 
-    def check_findings(self, findings: list[Finding]) -> None:
-        for finding in findings:
-            if finding.category != "insufficient_evidence" and not finding.evidence:
-                raise ProfileError(
-                    "EVIDENCE_REQUIRED", "明确归因必须给出规则/案例原文锚点；资料不足应注明", 422
-                )
-            if finding.category in {"model_deviation", "mixed"} and not self.turn.observations:
-                raise ProfileError("OBSERVATION_REQUIRED", "没有实际输出对照，不能确定是模型偏离", 422)
-            if finding.category == "insufficient_evidence" and not finding.missing_evidence:
-                raise ProfileError("EVIDENCE_REQUIRED", "请说明还缺哪些原图、实际输出或期望结果", 422)
-            for anchor in finding.evidence:
-                if (
-                    anchor.quote
-                    not in self.store.read(self.draft, self.actor, anchor.path, 0, 300000)["text"]
-                ):
-                    raise ProfileError("INVALID_EVIDENCE", "诊断锚点没有出现在当前文件原文中", 422)
+    def check_findings(self, findings: list[Finding]) -> list[dict[str, str]]:
+        _, root, _ = self.store.snapshot(self.draft, self.actor, self.revision)
+        return validate_findings(
+            root,
+            findings,
+            viewed_images=self.viewed,
+            observations=self.turn.observations,
+            user_message=self.turn.message,
+        )
 
     async def execute(self, call: ModelToolCall) -> tuple[dict[str, Any], list[dict[str, str]]]:
         if call.name not in DEFINITIONS:
@@ -167,18 +164,29 @@ class ProfileTools:
             self.validation = await asyncio.to_thread(validate_draft, root, meta)
             return self.validation.model_dump(mode="json"), []
         if isinstance(parameters, RecordDiagnosis):
-            await asyncio.to_thread(self.check_findings, parameters.findings)
+            evidence = await asyncio.to_thread(self.check_findings, parameters.findings)
             self.findings = parameters.findings
-            return {"findings": [f.model_dump(mode="json") for f in self.findings]}, []
+            return {
+                "findings": [f.model_dump(mode="json") for f in self.findings],
+                "evidence_verification": evidence,
+            }, []
         if isinstance(parameters, ProposalRequest):
-            await asyncio.to_thread(self.check_findings, parameters.findings)
+            evidence = await asyncio.to_thread(self.check_findings, parameters.findings)
             identifier = uuid5(NAMESPACE_URL, f"profile-proposal:{draft}:{self.turn.turn_id}:{call.id}")
             proposal = await asyncio.to_thread(
-                store.propose, draft, actor, self.revision, identifier, parameters
+                store.propose,
+                draft,
+                actor,
+                self.revision,
+                identifier,
+                parameters,
+                viewed_images=frozenset(self.viewed),
+                observations=self.turn.observations,
+                user_message=self.turn.message,
             )
             self.proposals.append(proposal)
             self.findings.extend(f for f in parameters.findings if f not in self.findings)
-            return proposal.model_dump(mode="json"), []
+            return {**proposal.model_dump(mode="json"), "evidence_verification": evidence}, []
         if self.turn.intent != "edit" or self.written:
             raise ProfileError(
                 "EDIT_NOT_AUTHORIZED", "本轮未明确授权编辑，或本轮原子修改已执行；请提出建议等待确认", 409

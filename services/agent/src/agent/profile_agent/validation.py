@@ -15,6 +15,20 @@ from .models import TemplateFields, ValidationIssue, ValidationReport
 from .template import MODELS, fixed_schemas
 
 
+def edit_content_checksum(root: Path) -> str:
+    """Bind user review to the exact resource contents, excluding transient metadata."""
+    return checksum(
+        json.dumps(
+            [
+                (p.relative_to(root).as_posix(), checksum(p.read_bytes()))
+                for p in sorted(root.rglob("*"))
+                if p.is_file() and "attachments" not in p.relative_to(root).parts
+            ],
+            sort_keys=True,
+        ).encode()
+    )
+
+
 def relative_file(root: Path, value: str) -> Path:
     path = root / safe_path(value)
     if not path.resolve().is_relative_to(root.resolve()) or any(
@@ -152,6 +166,8 @@ def validate_draft(root: Path, metadata: dict[str, Any]) -> ValidationReport:
     issues = check_structure(root)
     if issues:
         return ValidationReport(ready=False, issues=issues)
+    if metadata.get("editor") and metadata["editor"].get("accepted_content") != edit_content_checksum(root):
+        issues.append(ValidationIssue(code="EDITS_UNCONFIRMED", message="当前修改尚未由用户核对确认"))
     if metadata.get("generated"):
         fields = TemplateFields.model_validate_json((root / "template.json").read_text(encoding="utf-8"))
         if not metadata.get("wizard") and not fields.company_signals:

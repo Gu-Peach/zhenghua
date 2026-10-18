@@ -117,6 +117,7 @@ export interface RuleLibraryItem {
   status: "published";
   updatedAt: string;
   canDelete: boolean;
+  checksum?: string;
   isActive: boolean;
 }
 

@@ -12,8 +12,12 @@ from .profile_contract import (
     ConversationTurn,
     DraftCreate,
     DraftView,
+    EditFilesInput,
     PdfSampleRequest,
     PdfSampleResult,
+    ProfileEditState,
+    ProfileEvent,
+    ProfileTurn,
     Stage,
     StageConfirm,
     StageGenerate,
@@ -34,11 +38,100 @@ class ProfileImage(ProfileRevision):
     content_base64: str = Field(min_length=1, max_length=14 * 1024 * 1024)
 
 
+class ProfileFork(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    draft_id: UUID
+    base_checksum: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+
+
+class ProfileProposalConfirm(ProfileRevision):
+    accepted: bool
+
+
 def install_profile_routes(app: FastAPI, identity: Any) -> None:
     User = Annotated[str, Depends(identity)]
 
     def service(request: Request) -> ProfileAuthoring:
         return ProfileAuthoring(request.app.state.db)
+
+    @app.post(
+        "/api/v1/profile/references/{profile}/draft", response_model=ProfileEditState
+    )
+    async def fork(
+        profile: UUID, body: ProfileFork, request: Request, user: User
+    ) -> Any:
+        return await service(request).fork(
+            str(profile), str(body.draft_id), body.base_checksum, user
+        )
+
+    @app.get("/api/v1/profile/drafts/{draft}/editor", response_model=ProfileEditState)
+    async def editor_state(draft: UUID, request: Request, user: User) -> Any:
+        return await service(request).call("GET", f"/drafts/{draft}/editor", user)
+
+    @app.post(
+        "/api/v1/profile/drafts/{draft}/editor/files", response_model=ProfileEditState
+    )
+    async def editor_save(
+        draft: UUID, body: EditFilesInput, request: Request, user: User
+    ) -> Any:
+        return await service(request).call(
+            "POST", f"/drafts/{draft}/editor/files", user, body.model_dump(mode="json")
+        )
+
+    @app.post(
+        "/api/v1/profile/drafts/{draft}/editor/accept", response_model=ProfileEditState
+    )
+    async def editor_accept(
+        draft: UUID, body: ProfileRevision, request: Request, user: User
+    ) -> Any:
+        return await service(request).call(
+            "POST", f"/drafts/{draft}/editor/accept", user, body.model_dump(mode="json")
+        )
+
+    @app.post(
+        "/api/v1/profile/drafts/{draft}/editor/proposals/{proposal}/confirm",
+        response_model=ProfileEditState,
+    )
+    async def editor_confirm(
+        draft: UUID,
+        proposal: UUID,
+        body: ProfileProposalConfirm,
+        request: Request,
+        user: User,
+    ) -> Any:
+        await service(request).call(
+            "POST",
+            f"/drafts/{draft}/proposals/{proposal}/confirm",
+            user,
+            body.model_dump(mode="json"),
+        )
+        return await service(request).call("GET", f"/drafts/{draft}/editor", user)
+
+    @app.post(
+        "/api/v1/profile/drafts/{draft}/editor/turns/stream",
+        response_class=StreamingResponse,
+        responses={
+            200: {
+                "model": ProfileEvent,
+                "content": {"text/event-stream": {"schema": {"type": "string"}}},
+            }
+        },
+    )
+    async def editor_stream(
+        draft: UUID, body: ProfileTurn, request: Request, user: User
+    ) -> StreamingResponse:
+        if body.intent != "discuss":
+            raise ServiceError(422, "PROPOSAL_REQUIRED", "请先提出建议，再确认具体修改")
+        return await service(request).bridge.stream(
+            "POST",
+            f"/v1/profile/drafts/{draft}/turns/stream",
+            headers={"X-Profile-User-Id": user},
+            json=body.model_dump(mode="json"),
+        )
+
+    @app.post("/api/v1/profile/cleanup", response_model=dict[str, bool])
+    async def cleanup(request: Request, user: User) -> dict[str, bool]:
+        return {"cleanup_pending": await service(request).cleanup(user)}
 
     @app.get("/api/v1/profile/drafts", response_model=list[DraftView])
     async def drafts(request: Request, user: User) -> Any:

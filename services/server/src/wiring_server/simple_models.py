@@ -21,6 +21,8 @@ class ProfileReferenceRead(ReadModel):
     resource_ref: str
     created_at: str = ""
     can_delete: bool = False
+    cleanup_pending: bool = False
+    previous_version_retained: bool = False
 
 
 class LocalProfileOption(Model):

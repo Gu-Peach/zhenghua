@@ -1,8 +1,8 @@
 import type { RulePackage } from "./projects";
 
 export interface RuleExampleImage { path: string; url?: string; role: string; note: string }
-export interface RuleExample { id: string; title: string; description: string; images: RuleExampleImage[]; expected?: string; input?: string }
-export interface RuleStage { title: string; prompt: string; description: string; readme: string; examples: RuleExample[] }
+export interface RuleExample { id: string; title: string; description: string; images: RuleExampleImage[]; expected?: string; expectedPath?: string; input?: string; inputPath?: string }
+export interface RuleStage { title: string; prompt: string; promptPath: string; description: string; readme: string; readmePath: string; examples: RuleExample[] }
 
 function record(value: unknown): Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : {};
@@ -39,9 +39,12 @@ export function ruleStages(data: RulePackage): RuleStage[] {
           return { path, url: images.get(path), role: text(entry.role), note: text(entry.note) };
         }),
         expected: files.get(`${stage.root}/${expectedPath}`),
+        expectedPath: `${stage.root}/${expectedPath}`,
         input: text(item.input) ? files.get(`${stage.root}/${text(item.input)}`) : undefined,
+        inputPath: text(item.input) ? `${stage.root}/${text(item.input)}` : undefined,
       };
     });
-    return { title: stage.title, prompt: files.get(text(resources[stage.promptKey]) || `resources/${stage.promptKey}.md`) ?? "本资源包未提供对应阶段规则", description: text(manifest.description), readme: files.get(`${stage.root}/README.md`) ?? "", examples };
+    const promptPath = text(resources[stage.promptKey]) || `resources/${stage.promptKey}.md`;
+    return { title: stage.title, promptPath, prompt: files.get(promptPath) ?? "本资源包未提供对应阶段规则", description: text(manifest.description), readmePath: `${stage.root}/README.md`, readme: files.get(`${stage.root}/README.md`) ?? "", examples };
   });
 }

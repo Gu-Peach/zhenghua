@@ -142,6 +142,109 @@ class ExplainContext(StrictModel):
         return value
 
 
+class EditScope(StrictModel):
+    """Exact AND filters within the host-bound project and batch; no implicit whole-project edit."""
+
+    workspace_code: ExactText | None = None
+    drawing_page: ExactText | None = None
+    principle_numbers: list[ExactText] = Field(default_factory=list, max_length=200)
+    connection_ids: list[UUID] = Field(default_factory=list, max_length=1000)
+
+    @model_validator(mode="after")
+    def require_scope(self) -> EditScope:
+        if not (self.workspace_code or self.drawing_page or self.principle_numbers or self.connection_ids):
+            raise ValueError("必须明确工作区、页码、原理号或行ID，不能默认修改整个项目")
+        return self
+
+
+class RemoveTerminalPrefix(StrictModel):
+    kind: Literal["remove_terminal_prefix"]
+    endpoint: Literal["start", "end"]
+    prefix: str = Field(min_length=1, max_length=80, pattern=r"\S")
+
+
+class SwapEndpoints(StrictModel):
+    kind: Literal["swap_endpoints", "swap_terminals"]
+
+
+class ConnectionFieldValues(StrictModel):
+    principle_number: str | None = Field(default=None, max_length=512)
+    terminal_strip: str | None = Field(default=None, max_length=512)
+    start_code: str | None = Field(default=None, max_length=512)
+    start_description: str | None = Field(default=None, max_length=2000)
+    start_terminal: str | None = Field(default=None, max_length=512)
+    end_code: str | None = Field(default=None, max_length=512)
+    end_description: str | None = Field(default=None, max_length=2000)
+    end_terminal: str | None = Field(default=None, max_length=512)
+    current_value: str | None = Field(default=None, max_length=512)
+    color_mark: str | None = Field(default=None, max_length=512)
+    remark: str | None = Field(default=None, max_length=2000)
+
+    @model_validator(mode="after")
+    def nonempty(self) -> ConnectionFieldValues:
+        if not self.model_fields_set:
+            raise ValueError("至少指定一个要修改的字段；未指定与显式填空不同")
+        return self
+
+
+class SetConnectionFields(StrictModel):
+    kind: Literal["set_fields"]
+    changes: ConnectionFieldValues
+
+
+class ConnectionEditRequest(StrictModel):
+    scope: EditScope
+    operation: Annotated[
+        RemoveTerminalPrefix | SwapEndpoints | SetConnectionFields, Field(discriminator="kind")
+    ]
+    reason: str = Field(min_length=1, max_length=1000, pattern=r"\S")
+
+
+class ConnectionEditChange(StrictModel):
+    connection_id: UUID
+    record_version: int = Field(ge=1)
+    principle_number: str | None = None
+    workspace_code: str | None = None
+    source_drawing_page: str | None = None
+    before: dict[str, Any]
+    after: dict[str, Any]
+
+
+class ConnectionEditProposal(StrictModel):
+    proposal_id: UUID
+    project_id: UUID
+    batch_id: str
+    checksum: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    status: Literal["pending", "applied", "rejected"]
+    request: ConnectionEditRequest
+    matched_count: int = Field(ge=0)
+    changed_count: int = Field(ge=0)
+    changes: list[ConnectionEditChange]
+    created_at: str
+    expires_at: str
+
+    def model_facts(self) -> dict[str, Any]:
+        value = self.model_dump(mode="json", exclude={"changes"})
+        value["changes"] = [change.model_dump(mode="json") for change in self.changes[:20]]
+        value["preview_limited"] = len(self.changes) > 20
+        return value
+
+
+class ConnectionEditDecision(StrictModel):
+    checksum: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
+    accepted: bool
+
+
+class ConnectionEditReceipt(StrictModel):
+    proposal_id: UUID
+    project_id: UUID
+    batch_id: str
+    status: Literal["applied", "rejected"]
+    changed_count: int
+    versions: dict[str, int] = Field(default_factory=dict)
+    idempotent: bool = False
+
+
 class ExplainResponse(StrictModel):
     conversation_id: UUID
     turn_id: UUID
@@ -155,6 +258,7 @@ class ExplainResponse(StrictModel):
     gaps: list[str] = Field(default_factory=list)
     history_reset: bool = False
     cached: bool = False
+    proposals: list[ConnectionEditProposal] = Field(default_factory=list)
 
 
 class SearchResult(StrictModel):
@@ -184,7 +288,9 @@ class SearchCoverage(StrictModel):
 
 class ToolActivity(StrictModel):
     id: str
-    name: Literal["load_connection", "search_connections", "view_drawings", "unsupported"]
+    name: Literal[
+        "load_connection", "search_connections", "view_drawings", "propose_connection_edit", "unsupported"
+    ]
     arguments: dict[str, Any] = Field(default_factory=dict)
     result: dict[str, Any] | None = None
     error: str | None = None
@@ -192,7 +298,15 @@ class ToolActivity(StrictModel):
 
 class ExplainEvent(StrictModel):
     type: Literal[
-        "context", "retrieval", "answer_delta", "completed", "tool_started", "tool_completed", "tool_failed"
+        "context",
+        "retrieval",
+        "answer_delta",
+        "answer_reset",
+        "completed",
+        "tool_started",
+        "tool_completed",
+        "tool_failed",
+        "edit_proposal",
     ]
     conversation_id: UUID
     turn_id: UUID
@@ -201,3 +315,4 @@ class ExplainEvent(StrictModel):
     tool: ToolActivity | None = None
     delta: str | None = None
     result: ExplainResponse | None = None
+    proposal: ConnectionEditProposal | None = None

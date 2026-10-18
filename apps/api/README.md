@@ -1,6 +1,12 @@
 # 业务 API
 
-当前API2.5.0提供`POST /api/v1/profile/drafts/{draft}/pdf-samples`，用于规则第一阶段随机两页分类；加载8000/8100新代码后使用，无新启动参数或迁移。见[PDF抽样记录](../../docs/service/server/changelog/2026-10-17-profile-pdf-sampling.md)。
+API2.7.1同步Explain的answer_reset公开事件。重载8000/8100与刷新前端后可撤回无真实方案的口述预览，补调失败明确报错；无需新增数据库迁移。
+
+API2.7.0增加`GET /api/v1/projects/{project}/connection-edits`及按proposal读取和`POST .../{proposal}/decision`。只接受checksum和accepted，实际修改来自持久方案并由Server事务确认。本项目本地已应用`20261018020000_explain_connection_edits.sql`，其他环境须先应用；加载8000/8100新代码，沿用下方启动方式。此轮未改真实线表。
+
+当前API2.6.0增加规则编辑草稿、手动保存、建议确认/工具流及新版替换发布，需加载8000和8100新代码。发布替换/安全回收迁移`20261018010000`已在本项目本地库部署，其他环境需要先应用；启动命令和环境变量沿用下方。见[编辑与替换记录](../../docs/service/server/changelog/2026-10-18-profile-editing-replacement.md)。
+
+API2.5.0已提供`POST /api/v1/profile/drafts/{draft}/pdf-samples`，用于规则第一阶段随机两页分类；沿用原有启动参数。见[PDF抽样记录](../../docs/service/server/changelog/2026-10-17-profile-pdf-sampling.md)。
 
 2026-10-17规则聊天入口需当前API2.4.0：`/api/v1/profile/drafts/{draft}/conversation`及其`/turns/stream`。使用下方原命令重新加载8000，并加载8100新增Agent代码；没有新增启动参数/端口/迁移。见[对话代理记录](../../docs/service/server/changelog/2026-10-17-profile-conversation.md)。
 

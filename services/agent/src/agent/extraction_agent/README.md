@@ -1,5 +1,9 @@
 # Extraction Agent
 
+2026-10-18：页面子图增加初扫失败分支，保存独立失败尝试后继续后续页，不创建成功缓存；文档遍历结束再汇总未完成项，恢复复用成功页。模型请求/业务规则保持，需用户重启Worker生效，见[记录](../../../../../docs/service/agent/changelog/2026-10-18-extraction-page-failure.md)。
+
+2026-10-18：上传Worker与本地Stage2脚本共用`stage2-script-aligned-v1`请求/结果契约，禁色标提示、页面身份、模型Gateway和主表字段统一；保存过滤前计数与请求指纹，支持ZH第0列。ZH Prompt/样例和2.2.1业务规则不改。使用前重启提取Worker，再新上传测试。见[交付](../../../../../docs/service/agent/changelog/2026-10-18-extraction-entry-alignment.md)。
+
 2026-10-17：ABB1.2.0与XMZ（规则键zh_gantry_reel）0.2.0对齐目标局部补全，初扫各一张来源样图，补全只用对应目标图；分类不改。纯裁剪/精简任务机制位于`infrastructure/document/completion_*.py`，原ZH路径保留兼容导入。见[交付记录](../../../../../docs/service/agent/changelog/2026-10-17-abb-xmz-alignment.md)。
 
 新增`zh_crop@2.2.1`实验规则：按列裁目标图，输出坐标仍映射回整页；空响应进入既有最多两次校验重试，失败原因/视觉歧义保留并继续；重复N线按来源页及完整信号匹配，补两组005C01对照案例，仍只选一个。初扫、原输入像素预算不变，用`--profile zh_crop`测试；`--profile zh`仍为2.1.1整页Prompt/案例。说明见[实验规则](./profiles/zh_crop/README.md)。已解除本地忽略/提交拦截，测试运行产物仍忽略。

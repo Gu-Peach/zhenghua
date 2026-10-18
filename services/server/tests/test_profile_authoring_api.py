@@ -295,6 +295,7 @@ def test_authoring_proxy_confirmation_publish_catalog_and_preview(tmp_path):
     backend = Backend()
     published = []
     forwarded = []
+    gc_jobs = []
     with TestClient(host) as agent_http:
 
         def handle(request):
@@ -315,6 +316,28 @@ def test_authoring_proxy_confirmation_publish_catalog_and_preview(tmp_path):
                     content=response.content,
                     headers=response.headers,
                 )
+            if request.url.path == "/rest/v1/rpc/replace_extraction_profile":
+                value = json.loads(request.content)
+                rows = backend.tables["extraction_profiles"]
+                old = next(r for r in rows if r["id"] == value["base_profile_id"])
+                assert value["actor"] == old["created_by"] == OWNER
+                assert value["base_checksum"] == old["checksum"]
+                row = {"id": str(uuid4()), "profile_key": value["profile_key_value"],
+                       "profile_version": value["version_value"], "display_name": value["name_value"],
+                       "checksum": value["checksum_value"], "resource_ref": value["ref_value"], "created_by": OWNER}
+                rows.remove(old); rows.append(row)
+                gc_jobs.append({"resource_ref": old["resource_ref"], "owner_id": OWNER, "deleted_at": None})
+                return httpx.Response(200, json={"profile": row, "previous_version_retained": False})
+            if request.url.path == "/rest/v1/profile_asset_gc":
+                if request.method == "PATCH":
+                    for job in gc_jobs: job.update(json.loads(request.content))
+                    return httpx.Response(200, json=gc_jobs)
+                return httpx.Response(200, json=[j for j in gc_jobs if j["deleted_at"] is None])
+            if request.url.path == "/storage/v1/object/project-assets" and request.method == "DELETE":
+                if backend.fail_delete: return httpx.Response(503)
+                for item in json.loads(request.content)["prefixes"]:
+                    backend.uploads.pop("/storage/v1/object/project-assets/" + item, None)
+                return httpx.Response(200, json={})
             if request.url.path == "/rest/v1/rpc/publish_extraction_profile":
                 value = json.loads(request.content)
                 rows = backend.tables["extraction_profiles"]
@@ -465,3 +488,48 @@ def test_authoring_proxy_confirmation_publish_catalog_and_preview(tmp_path):
                 ).json()["id"]
                 == receipt["id"]
             )
+            fork_url = f"/api/v1/profile/references/{receipt['id']}/draft"
+            fork_body = {"draft_id": str(uuid4()), "base_checksum": receipt["checksum"]}
+            assert client.post(fork_url, json=fork_body, headers={"Authorization": "Bearer other"}).status_code == 403
+            assert client.post(fork_url, json={**fork_body, "base_checksum": "sha256:" + "f" * 64}).status_code == 409
+            response = client.post(fork_url, json=fork_body)
+            assert response.status_code == 200, response.text
+            edit = response.json()
+            assert edit["draft"]["version"] == "1.0.1" and not edit["changed"]
+            assert client.post(fork_url, json=fork_body).json()["draft"] == edit["draft"]
+            edit_path = f"/api/v1/profile/drafts/{edit['draft']['draft_id']}"
+            scan_path = edit["package"]["manifest"]["resources"]["page_scan_prompt"]
+            file = next(f for f in edit["package"]["files"] if f["path"] == scan_path)
+            save = {"revision": edit["draft"]["revision"], "operation_id": str(uuid4()), "edits": [{
+                "path": file["path"], "before_checksum": file["checksum"], "content": file["content"] + "\n保留图中真实端子，不添加前缀",
+            }]}
+            response = client.post(edit_path + "/editor/files", json=save)
+            assert response.status_code == 200, response.text
+            edit = response.json()
+            assert edit["changed"] and not edit["validation"]["ready"]
+            assert client.post(edit_path + "/editor/files", json=save).json()["draft"]["revision"] == edit["draft"]["revision"]
+            assert client.post(edit_path + "/publish", json={"revision": edit["draft"]["revision"]}).status_code == 422
+            response = client.post(edit_path + "/editor/accept", json={"revision": edit["draft"]["revision"]})
+            assert response.status_code == 200, response.text
+            edit = response.json()
+            backend.fail_delete = True
+            response = client.post(edit_path + "/publish", json={"revision": edit["draft"]["revision"]})
+            assert response.status_code == 200, response.text
+            replacement = response.json()
+            assert replacement["profile_version"] == "1.0.1" and replacement["cleanup_pending"]
+            listed = client.get("/api/v1/rule-library").json()
+            assert [r["profile_version"] for r in listed if r["profile_key"] == "new_drawing"] == ["1.0.1"]
+            old_object = "/storage/v1/object/" + receipt["resource_ref"].removeprefix("storage://")
+            assert old_object in backend.uploads
+            backend.fail_delete = False
+            assert client.post("/api/v1/profile/cleanup").json() == {"cleanup_pending": False}
+            assert old_object not in backend.uploads
+            assert client.get("/api/v1/rule-library/" + replacement["id"]).status_code == 200
+            # Local references use the legacy directory digest; their editor import must agree.
+            local = server.state.management.profiles.catalog()["zh"]
+            local_row = {name: local[name] for name in ("profile_key", "profile_version", "display_name", "checksum", "resource_ref")}
+            local_row.update(id=str(uuid4()), created_by=OWNER)
+            backend.tables["extraction_profiles"] = [r for r in backend.tables["extraction_profiles"] if r["profile_key"] != "zh"] + [local_row]
+            response = client.post(f"/api/v1/profile/references/{local_row['id']}/draft", json={"draft_id": str(uuid4()), "base_checksum": local_row["checksum"]})
+            assert response.status_code == 200, response.text
+            assert response.json()["draft"]["source"]["checksum"] == local_row["checksum"]

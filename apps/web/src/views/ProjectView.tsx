@@ -7,6 +7,7 @@ import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { ApiError } from "@/apis/client";
 import { projectApi, type ResultPage } from "@/apis/projects";
 import { explainSelection, type ExplainSelection } from "@/apis/explain";
+import { type EditProposal } from "@/apis/explain-edits";
 import type { ProjectDetail, ProjectSummary, WiringRow } from "@/apis/types";
 import { FloatingAgentPanel } from "@/components/FloatingAgentPanel";
 import { AppHeader } from "@/components/AppHeader";
@@ -18,6 +19,7 @@ import { ResultTable } from "@/components/ResultTable";
 import { UploadDialog } from "@/components/UploadDialog";
 import { EditableName } from "@/components/EditableName";
 import { ResizableResults } from "@/components/ResizableResults";
+import { ExtractionFailureNotice } from "@/components/ExtractionFailureNotice";
 
 const emptyPage: ResultPage = { items: [], offset: 0, limit: 100, has_more: false };
 const ExplainPanel = lazy(() => import("@/components/ExplainPanel").then(module => ({ default: module.ExplainPanel })));
@@ -48,6 +50,7 @@ function ProjectWorkspace({ id, projects, refreshToken, onRename, onDelete, onUp
   const explainTrigger = useRef<HTMLButtonElement | null>(null);
   function closeExplanation() { setExplanation(null); if (explainTrigger.current?.isConnected) explainTrigger.current.focus({ preventScroll: true }); }
   const [page, setPage] = useState<ResultPage>(emptyPage); const [error, setError] = useState(""); const [tableError, setTableError] = useState(""); const [notice, setNotice] = useState("");
+  const [editNotice, setEditNotice] = useState("");
   const [workspaceChoice, setWorkspace] = useState<string | null>(null); const [drawingId, setDrawing] = useState<string | null>(null);
   const [offset, setOffset] = useState(0); const [query, setQuery] = useState(""); const [revision, setRevision] = useState(0); const [tableLoading, setTableLoading] = useState(true);
   const [previewOpen, setPreviewOpen] = useState(false); const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -70,23 +73,28 @@ function ProjectWorkspace({ id, projects, refreshToken, onRename, onDelete, onUp
   const sourceEvidence = drawingEvidence(selectedRow, preview.source, "source"); const targetEvidence = drawingEvidence(selectedRow, preview.target, "target");
   const sameTarget = !!preview.target && preview.target.pdfPage === preview.source?.pdfPage;
   function clearSelection() { setSelectedId(null); setExplicitSource(null); setJumpRequested(false); setHighlight(null); }
+  function showModified(proposal: EditProposal) {
+    setEditNotice(`已保存 ${proposal.changed_count} 行修改，记录所属页、工作区和ID保持不变。`);
+    setRevision(n => n + 1);
+  }
   function openSource(drawing: string) { clearSelection(); setExplicitSource(drawing); setPreviewOpen(true); }
   function selectConnection(row: WiringRow, jump = false) { setSelectedId(row.id); setExplicitSource(null); setJumpRequested(jump); setPreviewOpen(true); }
   async function openPdf() { try { window.open(await projectApi.source(id), "_blank", "noopener,noreferrer"); } catch (reason) { setNotice(String(reason)); } }
   function resize(event: PointerEvent<HTMLDivElement>) { event.currentTarget.setPointerCapture(event.pointerId); const start = event.clientX; const width = left; const node = event.currentTarget; function move(next: globalThis.PointerEvent) { setLeft(Math.max(200, Math.min(600, width + next.clientX - start))); } function stop() { node.removeEventListener("pointermove", move); node.removeEventListener("pointerup", stop); node.removeEventListener("pointercancel", stop); } node.addEventListener("pointermove", move); node.addEventListener("pointerup", stop); node.addEventListener("pointercancel", stop); }
-  async function deleteTerminal(row: WiringRow) { if (deleting || !window.confirm(`删除连接 ${row.startTerminal}？修改前数据将保留在项目审计中。`)) return; const fingerprint = `${row.id}:${row.recordVersion}`; if (!deletionKeys.current.has(fingerprint)) deletionKeys.current.set(fingerprint, crypto.randomUUID()); setDeleting(true); try { await projectApi.deleteConnection(id, row, deletionKeys.current.get(fingerprint)!); setRevision(n => n + 1); setNotice(""); } catch (reason) { setNotice(String(reason)); } finally { setDeleting(false); } }
-  function selectWorkspace(workspace: string) { clearSelection(); setWorkspace(workspace); setDrawing(null); setOffset(0); }
-  function selectDrawing(workspace: string, drawing: string) { clearSelection(); setWorkspace(workspace); setDrawing(drawing); setOffset(0); }
+  async function deleteTerminal(row: WiringRow) { if (deleting || !window.confirm(`从数据库永久删除连接 ${row.startTerminal}？该行及相关修改方案将移除，无法撤销。`)) return; const fingerprint = `${row.id}:${row.recordVersion}`; if (!deletionKeys.current.has(fingerprint)) deletionKeys.current.set(fingerprint, crypto.randomUUID()); setDeleting(true); try { await projectApi.deleteConnection(id, row, deletionKeys.current.get(fingerprint)!); clearSelection(); closeExplanation(); setOffset(0); setRevision(n => n + 1); setNotice(""); setEditNotice(""); } catch (reason) { setNotice(String(reason)); } finally { setDeleting(false); } }
+  function selectWorkspace(workspace: string) { clearSelection(); setEditNotice(""); setWorkspace(workspace); setDrawing(null); setOffset(0); }
+  function selectDrawing(workspace: string, drawing: string) { clearSelection(); setEditNotice(""); setWorkspace(workspace); setDrawing(drawing); setOffset(0); }
   if (!project) return <main className="state-page">{error ? <><p role="alert">{error}</p><button onClick={() => setRevision(n => n + 1)}>重试</button></> : "正在读取项目索引…"}</main>;
   return <div className="workbench-app"><AppHeader project={project} /><main className="workbench-grid real-workbench" style={{ "--left-width": `${left}px` } as CSSProperties}>
     <ProjectTree project={project} projects={projects} loading={projectPending} selectedWorkspaceId={workspaceId} selectedDrawingId={drawingId} stageProgress={[]} uploadedFilename={project.sourceFilename || null} simulationEnabled={false} onRename={onRename} onDelete={onDelete} onSelectWorkspace={selectWorkspace} onSelectDrawing={selectDrawing} />
     <div className="panel-resizer" role="separator" aria-label="调整项目树宽度" aria-orientation="vertical" tabIndex={0} onPointerDown={resize} onKeyDown={event => { if (event.key === "ArrowRight") setLeft(w => Math.min(600, w + 20)); if (event.key === "ArrowLeft") setLeft(w => Math.max(200, w - 20)); }} />
     <section className="project-main results-workspace"><div className="project-context-bar"><h1 className="context-project-name"><EditableName value={project.name} label="项目名称" onSave={name => onRename(project, name)} /></h1><nav className="project-resource-nav"><button type="button" className={!previewOpen ? "active" : ""} onClick={() => setPreviewOpen(false)} aria-pressed={!previewOpen}><FileSpreadsheet size={15} />线表工作区</button><button type="button" className={previewOpen ? "active" : ""} onClick={() => setPreviewOpen(true)} aria-pressed={previewOpen}><FileText size={15} />图纸预览</button></nav><input ref={pdfInput} className="visually-hidden" type="file" accept="application/pdf" onChange={event => { if (event.target.files?.[0]) onUpload(event.target.files[0]); event.target.value = ""; }} /><div className="project-file-actions"><button type="button" className="secondary-button" onClick={() => pdfInput.current?.click()}><Upload size={15} />上传 PDF</button>{project.sourceAvailable ? <button type="button" className="secondary-button" onClick={() => void openPdf()}>原始 PDF</button> : null}</div></div>
     {error || tableError || notice ? <div className="inline-error" role="alert">{error || tableError || notice}<button type="button" onClick={() => { setRevision(n => n + 1); setNotice(""); }}>刷新</button></div> : null}
+    {editNotice ? <p className="inline-notice" role="status">{editNotice}</p> : null}
     {projectPending ? <div className="project-data-loading" role="status"><Loader2 size={20} className="spin" />正在读取项目数据…</div> : <>
       {!project.workspaces.length && !processing ? <p className="inline-notice" role="status">{project.sourceAvailable ? "PDF 已保存，尚无图纸索引和提取结果。" : "项目尚无图纸索引，文件未保存成功时请重试上传。"}</p> : null}
       {processing ? <div className="extraction-progress" role="status"><Loader2 size={18} className="spin" /><div><strong>{progressText}</strong><p>拆页 {progress?.rendered_pages ?? 0}/{progress?.total_pages ?? 0} · 分类 {progress?.classified_pages ?? 0} · 提取 {progress?.completed_pages ?? 0} · 已保存 {progress?.row_count ?? 0} 条</p><small>{disconnected ? "实时连接中断，正在重连并刷新已保存结果…" : "结果逐步保存并更新，处理期间暂不可编辑。"}</small></div></div> : null}
-      {project.status === "failed" && progress ? <div className="inline-error" role="alert">{progress.error?.message ?? "提取失败，已保存的数据已保留。"}<button type="button" onClick={() => { void projectApi.retryExtraction(id).then(refreshResults).catch(reason => setNotice(String(reason))); }}>重试提取</button></div> : null}
+      {project.status === "failed" && progress ? <ExtractionFailureNotice key={JSON.stringify([progress.run_id, progress.error])} message={progress.error?.message ?? "提取失败，已保存的数据已保留。"} onRetry={() => { void projectApi.retryExtraction(id).then(refreshResults).catch(reason => setNotice(String(reason))); }} /> : null}
       <ResizableResults primary={
         <section className="results-section"><div className="table-toolbar"><h2>线表结果</h2><label className="library-search"><Search size={16} /><input aria-label="搜索线表" value={query} onChange={event => { clearSelection(); setQuery(event.target.value); setOffset(0); }} placeholder="搜索端子、原理号或描述" /></label><button type="button" className="add-terminal-button" aria-label="新增端子" title="新增端子" disabled={processing || !project.workspaces.some(workspace => workspace.drawings.length) || tableLoading || deleting} onClick={() => setCreating(true)}><Plus size={19} /></button></div>
           {tableLoading ? <p role="status">正在读取线表…</p> : null}
@@ -97,11 +105,11 @@ function ProjectWorkspace({ id, projects, refreshToken, onRename, onDelete, onUp
           <header className="connection-preview-heading"><strong>图纸预览</strong><button type="button" onClick={() => setPreviewRetry(n => n + 1)}>刷新图纸</button></header>
           {preview.loading ? <p className="preview-loading" role="status">正在读取图纸…</p> : null}
           <div className="source-preview-slot">{preview.error ? <p className="inline-error" role="alert">{preview.error}</p> : <DrawingPreview key={`source:${preview.source?.id}:${preview.source?.imageUrl}`} project={project} drawing={preview.source} role="source" markers={sourceEvidence.markers} notes={sourceEvidence.notes} />}</div>
-          <div className="target-preview-slot">{preview.targetError ? <p className="inline-error" role="alert">目标页读取失败：{preview.targetError}</p> : jumpRequested && preview.target && !sameTarget ? <DrawingPreview key={`target:${preview.target.id}:${preview.target.imageUrl}`} project={project} drawing={preview.target} role="target" targetTerminal={selectedRow?.endTerminal} markers={targetEvidence.markers} notes={targetEvidence.notes} /> : <p className="target-placeholder">{sameTarget || selectedRow && !selectedRow.isCrossPage ? "同页连接：两端在上方原页标注" : "点击跨页终点，在这里预览目标页"}</p>}</div>
+          <div className="target-preview-slot">{preview.targetError ? <p className="inline-error" role="alert">目标页读取失败：{preview.targetError}</p> : jumpRequested && preview.target && !sameTarget ? <DrawingPreview key={`target:${preview.target.id}:${preview.target.imageUrl}`} project={project} drawing={preview.target} role="target" targetTerminal={selectedRow?.endTerminalCoordinates?.pdf_page_number === preview.target?.pdfPage ? selectedRow?.endTerminal : undefined} markers={targetEvidence.markers} notes={targetEvidence.notes} /> : <p className="target-placeholder">{sameTarget || selectedRow && !selectedRow.isCrossPage ? "同页连接：两端在上方原页标注" : "点击跨页终点，在这里预览目标页"}</p>}</div>
         </aside> : null} />
     </>}
     </section></main>
-    {explanation ? <Suspense fallback={<section className="explain-panel" role="dialog" aria-modal="false" aria-label="来源解释"><header className="explain-header"><div><strong>来源解释</strong></div><button type="button" className="icon-button" aria-label="关闭来源解释" onClick={closeExplanation}><X size={19} /></button></header><p className="explain-working" role="status">正在加载解释界面…</p></section>}><ExplainPanel key={explanation.key} projectId={id} selection={explanation.selection} onClose={closeExplanation} /></Suspense> : null}
+    {explanation ? <Suspense fallback={<section className="explain-panel" role="dialog" aria-modal="false" aria-label="来源解释"><header className="explain-header"><div><strong>来源解释</strong></div><button type="button" className="icon-button" aria-label="关闭来源解释" onClick={closeExplanation}><X size={19} /></button></header><p className="explain-working" role="status">正在加载解释界面…</p></section>}><ExplainPanel key={explanation.key} projectId={id} selection={explanation.selection} onClose={closeExplanation} onModified={showModified} readOnly={processing} /></Suspense> : null}
     <div hidden={!!explanation}><FloatingAgentPanel events={[]} stageProgress={[]} isRunning={false} hasPendingUpload={false} simulationEnabled={false} unavailableReason="主助手暂未接入。查看来源时，请悬停线表端子或页码并点击解释图标。" onSimulationToggle={() => {}} onRunRepair={() => {}} /></div>
     {creating ? <ConnectionCreator project={project} page={page} onClose={() => setCreating(false)} onSaved={() => setRevision(n => n + 1)} /> : null}
   </div>;

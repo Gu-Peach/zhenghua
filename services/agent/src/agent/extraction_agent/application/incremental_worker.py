@@ -17,6 +17,7 @@ from uuid import uuid4
 
 import httpx
 
+from src.agent.extraction_agent.application.extraction_contract import EXTRACTION_CONTRACT_VERSION
 from src.agent.extraction_agent.application.incremental import ExtractionStep, WorkerClaim
 from src.agent.extraction_agent.application.page_workflow_extraction import run_page_workflow_extraction
 from src.agent.extraction_agent.application.review import REVIEW_CONTRACT_VERSION
@@ -142,6 +143,7 @@ async def execute_job(session: IncrementalSession, settings: AgentSettings) -> N
     await session.configuration(
         {
             "workflow": "simple_extraction_v1.1",
+            "extraction_contract": EXTRACTION_CONTRACT_VERSION,
             "model": settings.default_model,
             "endpoint_checksum": checksum(
                 (settings.model_chat_completions_url or settings.model_base_url or "").encode()
@@ -176,14 +178,24 @@ async def execute_job(session: IncrementalSession, settings: AgentSettings) -> N
         durable=cast("DurableExtractionSession", session),
         trace_store=IncrementalTraceStore(session),
     )
-    if result.execution.extraction_errors:
-        raise RuntimeError("One or more pages failed; committed rows are retained for retry")
-    await session.commit("finished", ExtractionStep(kind="finished", stage="finished"))
+    errors = result.execution.extraction_errors
+    await session.commit(
+        "finished",
+        ExtractionStep(
+            kind="finished",
+            stage="finished",
+            metrics={"extraction_error_count": len(errors), "extraction_errors": errors},
+        ),
+    )
 
 
 async def run_worker(settings: AgentSettings | None = None, *, once: bool = False) -> None:
     settings = settings or AgentSettings.from_env()
     worker = f"extraction-{uuid4()}"
+    logger.info(
+        "Extraction Worker %s contract=%s model=%s",
+        worker, EXTRACTION_CONTRACT_VERSION, settings.default_model,
+    )
     async with httpx.AsyncClient(timeout=settings.supabase_request_timeout_seconds) as http:
         repository = IncrementalRepository(settings, http)
         while True:
