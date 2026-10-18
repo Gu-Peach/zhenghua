@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "review_status": "image_checked_pending_user_validation",
   "annotation_source": "user_supplied_rule_drawings",
   "expected_source": "image_transcription_by_coding_agent_no_model_calls",
@@ -41,9 +41,9 @@
   ],
   "example_scope": {
     "stage1": "One classification page 205.",
-    "stage2": "Three partial examples: 205 Q4,205 Q3,281 Q2/X1/T1. Not exhaustive full-page answers.",
-    "stage3": "Internal completion:205 Q4:2 to241 Q1:2."
+    "stage2": "One source205 example merging reviewed Q3/Q4 segments, not exhaustive. Older fixtures are offline only.",
+    "stage3": "Source205 Q4 L1 frozen facts plus target241 only; view configured independently for 1..6 ABB grid."
   },
-  "profile_version": "1.1.4",
+  "profile_version": "1.2.0",
   "coordinate_source": "manual_visual_review_of_packaged_images_terminal_or_connection_centers; approximate normalized locations, pending engineering validation"
 }

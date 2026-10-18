@@ -22,15 +22,18 @@ from src.agent.extraction_agent.domain.models.extraction_stages import (
     PageScanData,
     PageScanRequest,
 )
-from src.agent.extraction_agent.infrastructure.document.json_response import _extract_json_candidate
-from src.agent.extraction_agent.infrastructure.document.model_images import prepare_vision_messages
-from src.agent.extraction_agent.profiles.zh.completion_context import target_only_context
-from src.agent.extraction_agent.profiles.zh.completion_view import (
+from src.agent.extraction_agent.infrastructure.document.completion_context import (
+    TargetOnlyCompletionContext,
+    target_only_context,
+)
+from src.agent.extraction_agent.infrastructure.document.completion_view import (
     PreparedCompletionView,
     prepare_completion_example_view,
     prepare_completion_view,
     transform_completion_points,
 )
+from src.agent.extraction_agent.infrastructure.document.json_response import _extract_json_candidate
+from src.agent.extraction_agent.infrastructure.document.model_images import prepare_vision_messages
 from src.config import AgentSettings
 from src.domain.enums import ErrorCode
 from src.domain.errors import AgentServiceError
@@ -141,7 +144,7 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
         preserve_current = False
         prepared_view = PreparedCompletionView(reason="source_and_target_mode")
         if request.profile.rules.extraction.cross_page_input_mode == "target_only":
-            context = target_only_context(request)
+            context = self.completion_context(request)
             preserve_current = context.current not in (None, "")
             try:
                 prepared_view = await asyncio.to_thread(
@@ -167,7 +170,7 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             result = _normalize_cross_page(
                 value, request.task_id, require_evidence=self.enforce_evidence_contract,
                 target_pdf_page=request.target_page.pdf_page_number,
-                require_response=self.zh_endpoint_semantics,
+                require_response=self.require_completion_response(request.profile),
             )
             if prepared_view.viewport is not None:
                 for endpoint in result.get("intermediate_points") or []:
@@ -256,6 +259,13 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             "严格输出 CrossPageCompletionData JSON。"
         )
 
+    def completion_context(self, request: CrossPageCompletionRequest) -> TargetOnlyCompletionContext:
+        """Project frozen source facts; profiles may add their native sheet labels."""
+        return target_only_context(request)
+
+    def require_completion_response(self, profile: ProfileBinding) -> bool:
+        return self.zh_endpoint_semantics or profile.rules.extraction.cross_page_input_mode == "target_only"
+
     def completion_images(self, request: CrossPageCompletionRequest) -> list[DrawingPageInput]:
         if request.profile.rules.extraction.cross_page_input_mode == "target_only":
             return [request.target_page]
@@ -290,8 +300,10 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
             input_json=input_json,
         )
         contract = output_model.model_json_schema()
-        if not self.zh_endpoint_semantics and "ScannedConnection" in contract.get("$defs", {}):
-            # The optional matching hint is requested only by the ZH scan Prompt.
+        if (not self.zh_endpoint_semantics
+                and profile.rules.extraction.cross_page_input_mode != "target_only"
+                and "ScannedConnection" in contract.get("$defs", {})):
+            # Target-only completion needs the visible signal identity independently of vendor semantics.
             contract["$defs"]["ScannedConnection"]["properties"].pop("signal_name", None)
         if not self.zh_endpoint_semantics and "DrawingReference" in contract.get("$defs", {}):
             contract["$defs"]["DrawingReference"]["properties"].pop("source_index_raw", None)
@@ -341,7 +353,7 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
         # The output protocol is shared. The switch above only changes the
         # ZH-specific semantics, never whether ABB receives a JSON contract.
         contract = facts_only(contract)
-        if output_model is CrossPageCompletionData and self.zh_endpoint_semantics:
+        if output_model is CrossPageCompletionData and self.require_completion_response(profile):
             contract["required"] = list(dict.fromkeys([*contract.get("required", []), "end"]))
             contract["anyOf"] = [
                 {"required": ["source_note"],
@@ -476,7 +488,7 @@ class ZhVlmExtractionStageAdapter(ExtractionStageAdapter):
 
 
 class _CompletionResponseError(ValueError):
-    """A ZH completion omitted its endpoint decision or readable evidence."""
+    """A completion omitted its endpoint decision or readable evidence."""
 
 
 def _schema_retry_instruction(error: Exception | None) -> str:

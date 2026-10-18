@@ -1,42 +1,31 @@
 {
+  "context_version": 2,
   "task_id": "205_q4_l1_to_241_q1",
-  "unit_id": "205-q4-outgoing",
-  "connection_id": "205-q4-l1",
-  "source_pdf_page": 1,
-  "target_pdf_page": 2,
+  "source_page": {
+    "pdf_page_number": 1,
+    "drawing_function": "LV11",
+    "drawing_page_number": 205,
+    "object_location": "+EH.Q1.1"
+  },
+  "target_page": {
+    "pdf_page_number": 2,
+    "drawing_function": "LV12",
+    "drawing_page_number": 241,
+    "object_location": "+EH.Q21"
+  },
+  "source_component": {
+    "device": "-Q4",
+    "location": "+EH.Q1.1"
+  },
+  "line_number": "Q4:2205",
+  "signal_name": "=LV11-Q4 L1",
   "references": [
     {
       "raw": "/241.1A / =LV11-Q4 L1",
       "target_function": "LV12",
       "target_drawing_page": 241,
-      "target_internal_page": null,
       "target_pdf_page": 2,
-      "target_column": 1,
-      "target_object": null,
-      "external": false,
-      "reason": null
+      "target_column": 1
     }
-  ],
-  "wire_number": null,
-  "line_number": "Q4:2205",
-  "core_number": null,
-  "source_record": {
-    "drawing_function": "LV11",
-    "drawing_page_number": 205,
-    "line_number": "Q4:2205",
-    "start_location": "+EH.Q1.1",
-    "start_device": "-Q4",
-    "start_terminal": "2",
-    "end_terminal": null,
-    "current": null,
-    "current_basis": null,
-    "current_source_text": null,
-    "start_name": "Lighting/heating panel",
-    "start_terminal_coordinates": {
-      "x": 0.43389,
-      "y": 0.36136,
-      "pdf_page_number": 1
-    }
-  },
-  "needs_review": false
+  ]
 }

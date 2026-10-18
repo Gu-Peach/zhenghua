@@ -11,15 +11,15 @@
     },
     {
       "path": "services/agent/src/agent/extraction_agent/infrastructure/zh_vlm_stages.py",
-      "checksum": "sha256:01913f7089e9700d448c4d9a65fead16335cf66da373d84c693d1f8be80351e6"
+      "checksum": "sha256:5ca449fd9510f7947891f05105f4f5632537392fca2b7635031b4175a5444188"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/profiles/zh/completion_context.py",
-      "checksum": "sha256:82955733dbbb8999d79bef25d60d013da3e083790baf5bdc0f251349ab0d9256"
+      "checksum": "sha256:7a7c73463b48613f59d81814d47c6c25b10d744f98f6ccb34bd70ff2e2fe40ea"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/profiles/zh/completion_view.py",
-      "checksum": "sha256:3d31fa477a113bfda9cdea6c149e86569f78d7ee664c96cddaed5dfaa02a3093"
+      "checksum": "sha256:68c72580c7505118aea9e79da9d1f921309decca90a1927ec9f36b250727f8ea"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/profiles/zh_crop/completion_view.json",
@@ -120,8 +120,16 @@
     {
       "path": "services/agent/src/agent/extraction_agent/prompts/zh/page_connection_completion_crop.md",
       "checksum": "sha256:cbfcbb0d9fe8ed1e403c1634b3e092cc7fa6a8515f644f52ccb1ef962a999dc7"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/document/completion_view.py",
+      "checksum": "sha256:fe1d218ad9f11025085ae39eebdeba1f0e9c3ca7dab63c4a3b812c279d601d18"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/document/completion_context.py",
+      "checksum": "sha256:c5bb29f5071afbb6e4da715f1d8e8f4289cbc69d9f2bc4288e072d316c141760"
     }
   ],
   "few_shot_manifest": 14,
-  "review_basis": "2026-10-17: Original 005C01 visually checked: FC11_N to X21:5, LCM_FC50_N to X2:10; source/page/signal disambiguation. Static checks only; regression and model tests not run."
+  "review_basis": "2026-10-17: Original 005C01 visually checked: FC11_N to X21:5, LCM_FC50_N to X2:10; source/page/signal disambiguation. Static checks only; regression and model tests not run.; 2026-10-17 shared image/context mechanics extracted for ABB/XMZ; ZH prompts/rules/examples unchanged, no regression run."
 }

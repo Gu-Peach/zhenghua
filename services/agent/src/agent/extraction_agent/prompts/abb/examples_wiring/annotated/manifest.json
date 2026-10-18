@@ -1,73 +1,35 @@
 {
-  "version": 3,
-  "description": "小圆圈放线、大圆圈端子、同段双标记一条连接；原理号数字或完整端子直接拼Sheet。局部案例不限制整页扫描。stage3_cases为内部补全历史键。",
+  "version": 4,
+  "description": "一张来源图/一个初扫案例；对应目标页定向补全，运行时最多一例。offline_manifest仅作历史离线资料，不注入模型。stage3_cases是内部补全历史键。",
   "images": {
     "lv11_205": "images/lv11_205.png",
-    "lv12_241": "images/lv12_241.png",
-    "lv21_281": "images/lv21_281.png"
+    "lv12_241": "images/lv12_241.png"
   },
   "stage2_cases": [
     {
-      "id": "lv11_205_q4_cross",
-      "title": "LV11/205：完整原页上的 Q4 跨页出线示例",
-      "expected": "stage2/lv11_205_q4_cross.expected.json",
+      "id": "lv11_205",
+      "title": "LV11/205：同一来源图上的Q3本页段与Q4跨页段",
+      "expected": "stage2/lv11_205.expected.json",
       "images": [
         {
           "path": "images/lv11_205.png",
           "role": "source_page",
-          "note": "完整 Sheet 205 原页；本示例仅示范 Q4:2/4/6/8 出线到 Sheet 241 的四条跨页连接。expected 不是整页穷举结果，其他单元未纳入此示例答案。"
+          "note": "一张Sheet205来源图，仅示范经核对的Q3与Q4段，不是整页穷举结果；真实任务扫描全部符合规则的段。"
         }
       ],
       "checksums": {
-        "stage2/lv11_205_q4_cross.expected.json": "sha256:ac8ccf02bdad4e305b00031ff22092ba83f558ebfd04743a333b7f24f9e550e6",
+        "stage2/lv11_205.expected.json": "sha256:aea1965f29b415063f1a76bde2aab6d7216508d64f49b1750ce98e874cb7a375",
         "images/lv11_205.png": "sha256:5d33f36cfa99dd73b7159bda9969cb50761d273951294b9c12ccb50eedf8aecb"
-      }
-    },
-    {
-      "id": "lv11_205_q3_fallback",
-      "title": "205局部：Q3无标记编号，以Q3:2/4/6直接拼Sheet205",
-      "expected": "stage2/lv11_205_q3_fallback.expected.json",
-      "images": [
-        {
-          "path": "images/lv11_205.png",
-          "role": "source_page",
-          "note": "只示范指定段，不是整页穷举结果。"
-        }
-      ],
-      "checksums": {
-        "stage2/lv11_205_q3_fallback.expected.json": "sha256:9b75493b919cfadde9c56362a1413fbb9241d5f7fb67777037a70e0f36dc8206",
-        "images/lv11_205.png": "sha256:5d33f36cfa99dd73b7159bda9969cb50761d273951294b9c12ccb50eedf8aecb"
-      }
-    },
-    {
-      "id": "lv21_281_circles",
-      "title": "281局部：双小圆圈一段、大端子分段、数字与端子号回退",
-      "expected": "stage2/lv21_281_circles.expected.json",
-      "images": [
-        {
-          "path": "images/lv21_281.png",
-          "role": "source_page",
-          "note": "只示范指定段，不是整页穷举结果。"
-        }
-      ],
-      "checksums": {
-        "stage2/lv21_281_circles.expected.json": "sha256:b680ef37c2d03e968684907c47275a7a6575e276497744bb41718361d6af8294",
-        "images/lv21_281.png": "sha256:bcb98870a6ae5c1cbc6f610e53f69a3f6cbf233c152b9816be0195d7d14f3ce6"
       }
     }
   ],
   "stage3_cases": [
     {
       "id": "205_q4_l1_to_241_q1",
-      "title": "LV11/205 Q4:2 → LV12/241 Q1:2（原页+跨页）",
+      "title": "LV11/205 Q4 L1 → LV12/241 Q1:2：目标图+冻结来源事实",
       "input": "stage3/205_q4_l1_to_241_q1.task.json",
       "expected": "stage3/205_q4_l1_to_241_q1.expected.json",
       "images": [
-        {
-          "path": "images/lv11_205.png",
-          "role": "source_page",
-          "note": "Sheet 205 原页：核对 Q4 L1 和 /241.1A 引用；起点以冻结 task 为准，不重新扫描其他连接。"
-        },
         {
           "path": "images/lv12_241.png",
           "role": "target_page",
@@ -76,11 +38,10 @@
       ],
       "checksums": {
         "stage3/205_q4_l1_to_241_q1.expected.json": "sha256:74fc40a846c5d01fc8ecb5598f0baebd7efce6b8b1bd922a6aec3a853294f11c",
-        "stage3/205_q4_l1_to_241_q1.task.json": "sha256:4841f81e4e669c1e802808b346d601988b1c9b5c60f9caa4b2ede7366e436743",
-        "images/lv11_205.png": "sha256:5d33f36cfa99dd73b7159bda9969cb50761d273951294b9c12ccb50eedf8aecb",
+        "stage3/205_q4_l1_to_241_q1.task.json": "sha256:3ad5a17bef231dcb95f6d936d90ea2216bd958f0cf3996da01d6b729b6a8f072",
         "images/lv12_241.png": "sha256:9f6bbef109ee8e3830c86d5136540edbce040befd217e9720dedfaf7106746ca"
       }
     }
   ],
-  "profile_version": "1.1.4"
+  "profile_version": "1.2.0"
 }

@@ -144,7 +144,8 @@
           "status": "needs_reference",
           "source_drawing_pages": [
             "1B"
-          ]
+          ],
+          "signal_name": "24VDC/ABS"
         },
         {
           "local_connection_id": "1b-abs-35",
@@ -183,7 +184,8 @@
           "status": "needs_reference",
           "source_drawing_pages": [
             "1B"
-          ]
+          ],
+          "signal_name": "0VDC/ABS"
         }
       ],
       "source_drawing_pages": [

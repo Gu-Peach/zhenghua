@@ -1,0 +1,67 @@
+{
+  "version": "0.2.0",
+  "coordinate_contract": "input_view_normalized_to_full_page",
+  "review_basis": "2026-10-17: visually checked packaged source/target images and crop previews; static checks only, no tests/model/database calls; engineering validation pending.",
+  "files": [
+    {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/document/completion_context.py",
+      "checksum": "sha256:c5bb29f5071afbb6e4da715f1d8e8f4289cbc69d9f2bc4288e072d316c141760"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/document/completion_view.py",
+      "checksum": "sha256:fe1d218ad9f11025085ae39eebdeba1f0e9c3ca7dab63c4a3b812c279d601d18"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/zh_gantry_reel_vlm_stages.py",
+      "checksum": "sha256:9964c6bba8c69c27b5fd13f1922c521b12d435ab63443edac0dcdf880ef526bb"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/zh_vlm_stages.py",
+      "checksum": "sha256:5ca449fd9510f7947891f05105f4f5632537392fca2b7635031b4175a5444188"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/zh_gantry_reel/completion_view.json",
+      "checksum": "sha256:14a1e7ecbcaebe26722d6dffb335a98b8f5d48d9baf5f21c3c5c77804b095bc6"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/zh_gantry_reel/profile.json",
+      "checksum": "sha256:c6d79b23aacbe050c58bc42cda29752988c47298d0d33b9b54dcee693af88de8"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/zh_gantry_reel/rules.json",
+      "checksum": "sha256:f4f33c5c429c930f8e15ad01c4532281bc3bfc44fa3bb9eecf61487d089fa6e6"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/xmz/examples_wiring/completion/abs_power.expected.json",
+      "checksum": "sha256:940b248475a3e611e27186de0b5cd533049d6ff55280bd92ab111e2a71c28ccd"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/xmz/examples_wiring/completion/abs_power.task.json",
+      "checksum": "sha256:43522e9b665c66790c049da3d69c99ef3fb610677cfb4c8b10d49da026022e85"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/xmz/examples_wiring/images/1B.png",
+      "checksum": "sha256:09048041e2081b28d220581c6e3ad16040dee93adf3abbd14a61ae84f1124279"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/xmz/examples_wiring/images/2A.png",
+      "checksum": "sha256:55572e06f377e4179085551012136c4bb0ddd52ccda27f35b310cf942aa943fc"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/xmz/examples_wiring/manifest.json",
+      "checksum": "sha256:e6006a51fc50426d2d8030058851b28f9072a6b603037a61fae04cc1317b6546"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/xmz/examples_wiring/stage2/1b_segments.expected.json",
+      "checksum": "sha256:b5ccf8fdf912d3b880906507ebe4d0f9a32b6723d37a7172926397402bb94428"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/xmz/page_connection_completion.md",
+      "checksum": "sha256:0eb4796979173853596a2bc2d7a74b0bbd37541b5c76ff59c1df4b12a48f8b2f"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/xmz/page_scan_index.md",
+      "checksum": "sha256:f31bc7c8809bc332e98232edd2c8c3139b6c88a1ceedc514678f714f40a9784b"
+    }
+  ]
+}

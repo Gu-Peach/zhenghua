@@ -4,6 +4,8 @@
 
 ## 进行中
 
+- [x] 对齐ABB1.2.0/XMZ0.2.0与ZH局部补全结构：各1组来源初扫/对应目标案例，目标图+冻结事实、独立图框裁剪与坐标回映；分页资源/ZH规则保留。7源码strict mypy、11文件Ruff、13份AST、四Profile绑定/Schema/77摘要及两CLI帮助通过；60原资源及5份HEAD记录图像摘要不变。已补回归但未运行测试/模型，不写库/发布，用户新目录复测。见 `docs/service/agent/changelog/2026-10-17-abb-xmz-alignment.md`。
+
 - [x] 完成zh_crop 2.2.1空响应/重复N线修正：默认值前校验、已有最多两次重试、失败/视觉原因保留且继续后续连接；新增005C01两组N线对照、独立1/7案例目录，仍只选一例。3文件Ruff/AST、适配器strict mypy、四Profile绑定、Schema/路径/68摘要及原案例逐字节核对通过；Graph相关13条类型错误与HEAD相同，无新增。已补回归但未运行测试/模型，不写库/覆盖旧结果，用户用新目录复测。见 `docs/service/agent/changelog/2026-10-17-zh-completion-response.md`。
 
 - [x] Profile发布“数据操作失败”修复：只读确认包已上传但缺发布RPC/迁移；既有20261017010000迁移已原子应用到明确的本地库并登记，业务/Storage摘要不变，可信角色权限与REST Schema可见性通过。ZIP摘要匹配，用户规则尚未登记；未代为发布或启停服务。26项后端与2项独立SQL、Ruff/2源码mypy通过，补缺接口的安全错误码与重试复用验证。用户直接重试发布即可，见Server发布迁移排障记录。

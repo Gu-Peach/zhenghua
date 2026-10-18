@@ -9,7 +9,7 @@ from src.agent.extraction_agent.domain.models.drawing_index import DrawingIndex,
 from src.agent.extraction_agent.domain.models.wiring import WireRecord
 from src.agent.extraction_agent.profiles.zh.policy import ZhExtractionPolicy
 
-POLICY_VERSION = "0.1.2"
+POLICY_VERSION = "0.2.0"
 
 SHEET_RE = re.compile(r"^(\d{1,2})([A-Z])$")
 ADDRESS_RE = re.compile(

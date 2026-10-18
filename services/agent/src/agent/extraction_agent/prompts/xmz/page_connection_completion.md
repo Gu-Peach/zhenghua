@@ -1,18 +1,18 @@
-# Stage 2内部节点：定向连接补全（XMZ 0.1.2）
+# XMZ Stage 2内部：定向连接补全（0.2.0）
 
-接收来源图、目标图和task_context，只补任务指定放线段的终点。
+只接收目标图和初扫保留的task_context，补指定连接的终点。source_page/target_page.drawing_label保存原生SH.NO.（如1B、2A），drawing_function/page是可逆程序索引（GCR.1/2对应1B），不是图上印刷页标；PDF物理页只用于图片绑定。来源端子、坐标和方向已由state保存，不在这里重新识别。
 
-1. 根据来源出页引用、原理号及目标图的对应入页线路匹配同一连接。从对应入页箭头沿实际导线读取，遇到第一个实际端子即停止，不穿过该端子追到下游设备。引用中的名称用于匹配，终点元件和端子以目标图实际标注为准。
-2. 读取实际排号/接口、端子、元件、描述和位置。同排数字继承明确X排号，完整写成X3:19等；接口和针脚按标注读取。只有接线点而没有端子标识时terminal=null，不从人工表补写。
-3. 保留来源起点、原理号和方向，不生成其他连接。1G45H表示SH.NO.1G页、45列、H行；规范索引GCR.1/7用于查页，不能把45H当端子。正常来源回指可用于匹配。
-4. terminal_strip留null，由程序从实际X排号处理。不用外部柜图、人工放线表、元件常识或业务别名补字段。
-5. 找不到目标页、引用循环或端点不清晰时，未知字段为空，保留可确认部分，status=needs_review、needs_review=true，并写原因；不阻塞其他连接。
-6. 电流遵守初扫约束：三相断路器对应相线优先Ir，其次单一明确In/Ie，需单位和原文依据；其他连接无依据不填。来源已有current时输出current=null表示保留。
+## 读取顺序
 
-只输出符合CrossPageCompletionData JSON Schema的JSON，包含task_id、end、status、needs_review及可见信息；source_note简述图中匹配路径，不输出start或新增连接。
+1. 在目标图查找来源SH.NO.的回指，再核对signal_name、原理号和references。1G45H表示1G页45列H行，不能将45H当针脚。references是目标地址，目标图回指是来源地址。24VDC/ABS、0VDC/ABS、PN2等信号名帮助区分线路，不能当针脚；同号N/PE或相同原理号须结合来源页和完整信号匹配，不按左右顺序配对。两端原理号缺失或标注不同时，只有来源页、完整信号和实际路径仍能唯一对应才保留匹配，并在uncertainties说明冲突。
+2. 从对应回指沿实线找到第一个实际端子或设备接口，遇到即停止，不穿过它追到更远设备。回指可在任意边界、箭头可朝外，按冻结任务确定终点归属，不重新交换起终点；正常回指不触发递归跳页。
+3. 分开读取实际元件device、描述name、位置location、接口/排号terminal_board及针脚terminal。明确同排X标识与数字组合，例如X3:19；设备接口X150与P1组合为X150:P1，不能把信号或功能标注当针脚。保留图上实际元件代号，不套用ZH的+01F别名和XA/XD分类。terminal_code仅存独立接口标识，terminal_strip留null，由程序处理。
+4. end.terminal_coordinates读取实际端子符号中心，按本次实际输入图宽高归一化x/y（0～1），左上为原点，绑定目标PDF物理页。image_view存在表示按本模板01～48列裁出的全高局部图，返回局部图坐标，由程序还原整页；没有image_view时按整页读取。不标文字、箭头或放线斜杠的位置。
 
-## 端子图片坐标
+若导线离开局部图边界、回指不唯一或针脚不可辨，保留可读事实，未知字段为null，通过uncertainties记录缺失证据。只有24VDC功能文字而未标针脚时terminal=null，不能套入来源针脚。不从人工表、图外设备常识或相邻线路补值。目标位置可以使用target_page已知元数据；元件名称只读取视图内可见标注。
 
-每个可见start/end填写terminal_coordinates={"x":0.2,"y":0.5,"pdf_page_number":1}，记录实际端子符号或连接点中心。以整张图片左上角为(0,0)，向右x、向下y增大，分别除以整图宽高归一化到0到1；等比例缩放不改变归一化位置。不能填放线标记、文字或箭头坐标，不按编号或外部表推算。端子未知或无法定位时为null。
+## 电流与输出
 
-初扫同页可见两端使用当前输入图片的PDF物理页号；跨页end仍为null。内部补全仅读取目标实际端子坐标，使用目标图PDF物理页，保留来源起点坐标。Sheet/SH.NO.不是PDF物理页号。
+来源已有current时输出current=null表示保留。来源为空且目标明确给出当前三相断路器对应相线电流时，优先Ir，其次单一明确In/Ie，必须带单位及current_basis/current_source_text。N、PE、控制、通信、光纤为空；不计算范围、系数或电压/功率。
+
+只输出CrossPageCompletionData JSON，明确给出end（可为null），并用source_note或uncertainties说明匹配路径或未找到的原因。禁止返回{}或只给task_id；不输出start，不创建其他连接，不改来源原理号和坐标。

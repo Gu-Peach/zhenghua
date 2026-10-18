@@ -1,0 +1,363 @@
+{
+  "pdf_page_number": 1,
+  "drawing_function": "LV11",
+  "drawing_page_number": 205,
+  "drawing_object_location": "+EH.Q1.1",
+  "blank": false,
+  "needs_review": false,
+  "units": [
+    {
+      "unit_id": "205-q4-outgoing",
+      "wire_number": null,
+      "project_no": "L009925",
+      "drawing_prefix": "8MAP100065-PCD",
+      "unit_identity_confidence": "high",
+      "connections": [
+        {
+          "local_connection_id": "205-q4-l1",
+          "core_number": null,
+          "color": null,
+          "line_number": "Q4:2205",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+EH.Q1.1",
+            "device": "-Q4",
+            "name": "Lighting/heating panel",
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "2",
+            "terminal_coordinates": {
+              "x": 0.43389,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": null,
+          "intermediate_points": [],
+          "references": [
+            {
+              "raw": "/241.1A / =LV11-Q4 L1",
+              "target_function": null,
+              "target_drawing_page": 241,
+              "target_internal_page": null,
+              "target_pdf_page": null,
+              "target_column": 1,
+              "target_object": null,
+              "external": false,
+              "reason": null
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "confidence": 0.96,
+          "remark": null,
+          "source_note": "明确无小圈的断路器对外出线；无标记数字，用Q4实际端子直接拼来源Sheet205。",
+          "source_pdf_pages": [],
+          "source_drawing_pages": [],
+          "external_source_required": false,
+          "endpoint_role": "source",
+          "direction_basis": "Q4下方导线向下出页；本页设备端子是起点",
+          "signal_name": "=LV11-Q4 L1"
+        },
+        {
+          "local_connection_id": "205-q4-l2",
+          "core_number": null,
+          "color": null,
+          "line_number": "Q4:4205",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+EH.Q1.1",
+            "device": "-Q4",
+            "name": "Lighting/heating panel",
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "4",
+            "terminal_coordinates": {
+              "x": 0.44877,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": null,
+          "intermediate_points": [],
+          "references": [
+            {
+              "raw": "/241.1A / =LV11-Q4 L2",
+              "target_function": null,
+              "target_drawing_page": 241,
+              "target_internal_page": null,
+              "target_pdf_page": null,
+              "target_column": 1,
+              "target_object": null,
+              "external": false,
+              "reason": null
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "confidence": 0.96,
+          "remark": null,
+          "source_note": "明确无小圈的断路器对外出线；无标记数字，用Q4实际端子直接拼来源Sheet205。",
+          "source_pdf_pages": [],
+          "source_drawing_pages": [],
+          "external_source_required": false,
+          "endpoint_role": "source",
+          "direction_basis": "Q4下方导线向下出页；本页设备端子是起点",
+          "signal_name": "=LV11-Q4 L2"
+        },
+        {
+          "local_connection_id": "205-q4-l3",
+          "core_number": null,
+          "color": null,
+          "line_number": "Q4:6205",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+EH.Q1.1",
+            "device": "-Q4",
+            "name": "Lighting/heating panel",
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "6",
+            "terminal_coordinates": {
+              "x": 0.47167,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": null,
+          "intermediate_points": [],
+          "references": [
+            {
+              "raw": "/241.1A / =LV11-Q4 L3",
+              "target_function": null,
+              "target_drawing_page": 241,
+              "target_internal_page": null,
+              "target_pdf_page": null,
+              "target_column": 1,
+              "target_object": null,
+              "external": false,
+              "reason": null
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "confidence": 0.96,
+          "remark": null,
+          "source_note": "明确无小圈的断路器对外出线；无标记数字，用Q4实际端子直接拼来源Sheet205。",
+          "source_pdf_pages": [],
+          "source_drawing_pages": [],
+          "external_source_required": false,
+          "endpoint_role": "source",
+          "direction_basis": "Q4下方导线向下出页；本页设备端子是起点",
+          "signal_name": "=LV11-Q4 L3"
+        },
+        {
+          "local_connection_id": "205-q4-n",
+          "core_number": null,
+          "color": null,
+          "line_number": "Q4:8205",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+EH.Q1.1",
+            "device": "-Q4",
+            "name": "Lighting/heating panel",
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "8",
+            "terminal_coordinates": {
+              "x": 0.49113,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": null,
+          "intermediate_points": [],
+          "references": [
+            {
+              "raw": "/241.1A / =LV11-Q4 N",
+              "target_function": null,
+              "target_drawing_page": 241,
+              "target_internal_page": null,
+              "target_pdf_page": null,
+              "target_column": 1,
+              "target_object": null,
+              "external": false,
+              "reason": null
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "confidence": 0.96,
+          "remark": null,
+          "source_note": "明确无小圈的断路器对外出线；无标记数字，用Q4实际端子直接拼来源Sheet205。",
+          "source_pdf_pages": [],
+          "source_drawing_pages": [],
+          "external_source_required": false,
+          "endpoint_role": "source",
+          "direction_basis": "Q4下方导线向下出页；本页设备端子是起点",
+          "signal_name": "=LV11-Q4 N"
+        }
+      ],
+      "source_pages": [],
+      "source_drawing_pages": [],
+      "status": "needs_reference",
+      "confidence": 0.96
+    },
+    {
+      "unit_id": "205-q3",
+      "wire_number": null,
+      "current": null,
+      "connections": [
+        {
+          "local_connection_id": "205-q3-2",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头，按实际接线从图上方设备/端子到下方设备/端子记录",
+          "line_number": "Q3:2205",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+EH.Q1.1",
+            "device": "-Q3",
+            "name": "Shore power output",
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "2",
+            "terminal_coordinates": {
+              "x": 0.14367,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "part": "++",
+            "location": null,
+            "device": "-Q106",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "1",
+            "terminal_coordinates": {
+              "x": 0.14367,
+              "y": 0.68876,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_note": "用户明确纳入的无圈断路器对外出线；没有标记数字，用Q3实际端子拼Sheet205。"
+        },
+        {
+          "local_connection_id": "205-q3-4",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头，按实际接线从图上方设备/端子到下方设备/端子记录",
+          "line_number": "Q3:4205",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+EH.Q1.1",
+            "device": "-Q3",
+            "name": "Shore power output",
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "4",
+            "terminal_coordinates": {
+              "x": 0.16256,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "part": "++",
+            "location": null,
+            "device": "-Q106",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "3",
+            "terminal_coordinates": {
+              "x": 0.16256,
+              "y": 0.68876,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_note": "用户明确纳入的无圈断路器对外出线；没有标记数字，用Q3实际端子拼Sheet205。"
+        },
+        {
+          "local_connection_id": "205-q3-6",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头，按实际接线从图上方设备/端子到下方设备/端子记录",
+          "line_number": "Q3:6205",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "start": {
+            "part": null,
+            "location": "+EH.Q1.1",
+            "device": "-Q3",
+            "name": "Shore power output",
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "6",
+            "terminal_coordinates": {
+              "x": 0.18203,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "part": "++",
+            "location": null,
+            "device": "-Q106",
+            "name": null,
+            "terminal_board": null,
+            "terminal_code": null,
+            "terminal_strip": null,
+            "terminal": "5",
+            "terminal_coordinates": {
+              "x": 0.18203,
+              "y": 0.68876,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "status": "complete",
+          "source_note": "用户明确纳入的无圈断路器对外出线；没有标记数字，用Q3实际端子拼Sheet205。"
+        }
+      ]
+    }
+  ],
+  "page_references": [],
+  "warnings": [
+    "本示例使用完整 Sheet 205 图片，但答案仅示范 Q4:2/4/6/8 到 Sheet 241 的跨页出线，不是整页穷举结果；PE 仅见接地符号，无可确认设备端子，不编造连接。"
+  ]
+}

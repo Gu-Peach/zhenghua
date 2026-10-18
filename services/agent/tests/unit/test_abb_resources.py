@@ -7,8 +7,6 @@ import json
 from pathlib import Path
 
 from src.agent.extraction_agent.application.extraction_stage_factory import build_extraction_stage_dispatcher
-from src.config import AgentSettings
-from src.domain.enums import ProfileStatus
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
     CrossPageCompletionRequest,
@@ -18,7 +16,6 @@ from src.agent.extraction_agent.domain.models.extraction_stages import (
     PageScanData,
     PageScanRequest,
 )
-from src.harness.model_gateway import FakeModelGateway
 from src.agent.extraction_agent.infrastructure.document.few_shot import (
     load_cross_page_few_shot_examples,
     load_page_classification_few_shot_examples,
@@ -26,6 +23,9 @@ from src.agent.extraction_agent.infrastructure.document.few_shot import (
 )
 from src.agent.extraction_agent.profiles.abb import AbbExtractionPolicy
 from src.agent.extraction_agent.profiles.extraction_policy import default_extraction_policies
+from src.config import AgentSettings
+from src.domain.enums import ProfileStatus
+from src.harness.model_gateway import FakeModelGateway
 from src.profiles.package import build_package, verify_package
 from src.profiles.registry import ProfileRegistry
 
@@ -43,7 +43,7 @@ def test_abb_resources_are_independent_and_ready(tmp_path: Path) -> None:
     registry.load_all()
     abb = registry.resolve("abb")
     assert abb.manifest.status == ProfileStatus.ACTIVE
-    assert abb.manifest.version == "1.1.4"
+    assert abb.manifest.version == "1.2.0"
     assert abb.manifest.adapter == "abb_native"
     assert "full_document_extraction" in abb.manifest.capabilities
     assert all("prompts/zh" not in str(path).replace("\\", "/") for path in abb.resolved_resources.values())
@@ -92,7 +92,7 @@ def test_abb_package_routes_all_three_stages_without_zh_rules() -> None:
                 '{"pdf_page_number":1,"drawing_function":"LV11","drawing_page_number":205,'
                 '"units":[{"unit_id":"q4","connections":[]}]}',
                 '{"task_id":"abb-task","end":{"device":"-Q1","terminal":"2"},'
-                '"status":"resolved"}',
+                '"source_note":"matched target reference and Q1 pin","status":"resolved"}',
             ]
         )
         dispatcher = build_extraction_stage_dispatcher(
@@ -141,7 +141,7 @@ def test_abb_package_routes_all_three_stages_without_zh_rules() -> None:
         assert sum(
             item.get("type") == "image_url"
             for item in gateway.calls[-1].messages[-1]["content"]
-        ) == 2
+        ) == 1
 
     asyncio.run(run())
 
@@ -157,13 +157,13 @@ def test_classification_uses_one_current_sheet_not_cont() -> None:
 
 def test_page_scan_uses_one_full_page_with_cross_page_connections() -> None:
     examples = load_page_scan_few_shot_examples(WIRING)
-    assert len(examples) == 3
+    assert len(examples) == 1
     example = examples[0]
     data = PageScanData.model_validate_json(example.expected_json)
     assert data.pdf_page_number == 1
     assert len(example.images) == 1 and example.images[0].content == (RESOURCES / "1.png").read_bytes()
     assert example.images[0].note and "不是整页穷举结果" in example.images[0].note
-    assert len(data.units) == 1 and data.units[0].wire_number is None
+    assert len(data.units) == 2 and data.units[0].wire_number is None
     connections = data.units[0].connections
     assert [c.line_number for c in connections] == ["Q4:2205", "Q4:4205", "Q4:6205", "Q4:8205"]
     assert [connection.start.terminal for connection in connections if connection.start] == [
@@ -183,9 +183,11 @@ def test_page_scan_uses_one_full_page_with_cross_page_connections() -> None:
 
 def test_circle_examples_keep_direct_segments_and_source_sheet_numbers() -> None:
     examples = load_page_scan_few_shot_examples(WIRING)
-    fallback = PageScanData.model_validate_json(examples[1].expected_json)
-    assert [c.line_number for c in fallback.units[0].connections] == ["Q3:2205", "Q3:4205", "Q3:6205"]
-    circles = PageScanData.model_validate_json(examples[2].expected_json)
+    fallback = PageScanData.model_validate_json(examples[0].expected_json)
+    assert [c.line_number for c in fallback.units[1].connections] == ["Q3:2205", "Q3:4205", "Q3:6205"]
+    circles = PageScanData.model_validate_json(
+        (WIRING / "stage2/lv21_281_circles.expected.json").read_text(encoding="utf-8")
+    )
     connections = [c for u in circles.units for c in u.connections]
     assert len(connections) == 9
     assert [c.line_number for c in connections] == [
@@ -196,7 +198,7 @@ def test_circle_examples_keep_direct_segments_and_source_sheet_numbers() -> None
     assert [c.end.terminal for c in connections[6:] if c.end] == ["1L1", "1L2", "1L3"]
 
 
-def test_cross_page_uses_one_source_target_pair_and_frozen_source() -> None:
+def test_cross_page_uses_one_target_and_compact_frozen_source() -> None:
     examples = load_cross_page_few_shot_examples(WIRING)
     assert len(examples) == 1
     example = examples[0]
@@ -204,15 +206,13 @@ def test_cross_page_uses_one_source_target_pair_and_frozen_source() -> None:
     task = json.loads(example.input_json)
     result = CrossPageCompletionData.model_validate_json(example.expected_json)
     assert result.task_id == task["task_id"]
-    assert (task["source_pdf_page"], task["target_pdf_page"]) == (1, 2)
-    assert task["source_record"]["drawing_page_number"] == 205
-    assert task["source_record"]["start_terminal"] == "2"
-    assert task["source_record"]["end_terminal"] is None
-    assert [image.role for image in example.images] == ["source_page", "target_page"]
-    assert [image.content for image in example.images] == [
-        (RESOURCES / "1.png").read_bytes(),
-        (RESOURCES / "2.png").read_bytes(),
-    ]
+    assert (task["source_page"]["pdf_page_number"], task["target_page"]["pdf_page_number"]) == (1, 2)
+    assert task["source_page"]["drawing_page_number"] == 205
+    assert task["signal_name"] == "=LV11-Q4 L1"
+    assert "start_terminal" not in example.input_json
+    assert "terminal_coordinates" not in example.input_json
+    assert [image.role for image in example.images] == ["target_page"]
+    assert example.images[0].content == (RESOURCES / "2.png").read_bytes()
     assert "start" not in json.loads(example.expected_json)
     assert result.end and (result.end.location, result.end.device, result.end.terminal) == (
         "+EH.Q21",

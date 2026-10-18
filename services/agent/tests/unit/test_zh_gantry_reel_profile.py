@@ -43,7 +43,8 @@ def read(path: Path) -> dict:
 
 def registry() -> ProfileRegistry:
     value = ProfileRegistry(
-        profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles", workspace_root=ROOT, allow_legacy_references=True
+        profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles",
+        workspace_root=ROOT, allow_legacy_references=True
     )
     value.load_all()
     return value
@@ -79,7 +80,7 @@ def test_manifest_counts_schemas_and_every_asset_checksum() -> None:
         directory = ASSETS / folder
         manifest = read(directory / "manifest.json")
         for section, model in sections:
-            assert len(manifest[section]) == (5 if section == "stage2_cases" else 2)
+            assert len(manifest[section]) == (2 if section == "cases" else 1)
             for case in manifest[section]:
                 expected = directory / case["expected"]
                 model.model_validate_json(expected.read_text(encoding="utf-8"))
@@ -92,8 +93,8 @@ def test_manifest_counts_schemas_and_every_asset_checksum() -> None:
                         (directory / relative).read_bytes()
                     ).hexdigest()
                 total += 1
-    assert total == 9
-    assert registry().resolve("zh_gantry_reel", allow_experimental=True).manifest.version == "0.1.2"
+    assert total == 4
+    assert registry().resolve("zh_gantry_reel", allow_experimental=True).manifest.version == "0.2.0"
 
 
 def test_address_keeps_row_and_refuses_external_or_invalid_grid() -> None:
@@ -167,9 +168,10 @@ def test_image_examples_replay_field_by_field_through_fake_adapter() -> None:
                 model = PageScanData
             else:
                 task = read(directory / case["input"])
-                source = page.model_copy(update={"pdf_page_number": task["source_pdf_page"]})
+                source = None
                 target = DrawingPageInput(
-                    pdf_page_number=task["target_pdf_page"], image_path=directory / case["images"][1]["path"]
+                    pdf_page_number=task["target_page"]["pdf_page_number"],
+                    image_path=directory / case["images"][0]["path"]
                 )
                 result = await dispatcher.resolve_cross_page(
                     CrossPageCompletionRequest(
@@ -182,7 +184,7 @@ def test_image_examples_replay_field_by_field_through_fake_adapter() -> None:
                 )
                 model = CrossPageCompletionData
                 parts = gateway.calls[0].messages[-1]["content"]
-                assert sum(item.get("type") == "image_url" for item in parts) == 2
+                assert sum(item.get("type") == "image_url" for item in parts) == 1
             actual_data = result.model_dump(mode="json")
             expected_data = model.model_validate(expected).model_dump(mode="json")
             # Transport may append diagnostics for intentionally unlabelled pins.

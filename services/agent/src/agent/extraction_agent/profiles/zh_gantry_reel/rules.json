@@ -37,7 +37,8 @@
       ],
       "cross_page_completion": [
         "cross_page_prompt",
-        "wiring_examples"
+        "wiring_examples",
+        "completion_view_rules"
       ]
     },
     "business_rules": [
@@ -49,8 +50,12 @@
       "端子排由程序从实际X排号确定，模型terminal_strip为空，颜色暂不提取",
       "当前 Stage 2 内部定向补全，未知针脚填空并复核",
       "不同端子/芯/分支即使同一原理号仍分别保存",
-      "所有可见实际端点读取整图归一化坐标和本端PDF物理页，跨页起点坐标冻结；未知坐标为空"
+      "所有可见实际端点读取整图归一化坐标和本端PDF物理页，跨页起点坐标冻结；未知坐标为空",
+      "补全只传目标图和冻结来源事实，按来源业务页、信号名及引用匹配，起点端子/坐标不传模型且不改写",
+      "唯一有效列按本模板图框裁全高局部图，缺失/冲突时回退整页；返回输入图坐标由程序还原整页",
+      "每次补全明确end或null并记录source_note/uncertainties，空响应只用现有两次Schema尝试"
     ],
-    "output_contract": "wiring_connection_v1"
+    "output_contract": "wiring_connection_v1",
+    "cross_page_input_mode": "target_only"
   }
 }

@@ -1,0 +1,97 @@
+{
+  "version": 3,
+  "profile_version": "0.1.2",
+  "description": "Offline historical fixtures, never injected into current extraction requests. Current contracts are in manifest.json.",
+  "review_status": "image_checked_pending_user_validation",
+  "stage2_cases": [
+    {
+      "id": "1e_sources",
+      "title": "1E：两台电机八条带放线标记连接，原理号和端子照图读取",
+      "expected": "stage2/1e_sources.expected.json",
+      "images": [
+        {
+          "path": "images/1E.png",
+          "role": "source_page"
+        }
+      ]
+    },
+    {
+      "id": "1b_segments",
+      "title": "1B局部案例：BRAKE1针脚未标注留空，ABS出页保留占位",
+      "expected": "stage2/1b_segments.expected.json",
+      "images": [
+        {
+          "path": "images/1B.png",
+          "role": "source_page"
+        }
+      ]
+    },
+    {
+      "id": "1g_encoder",
+      "title": "1G局部案例：X3:1～6至编码器，保留图中1F原理号",
+      "expected": "stage2/1g_encoder.expected.json",
+      "images": [
+        {
+          "path": "images/1G.png",
+          "role": "source_page"
+        }
+      ]
+    },
+    {
+      "id": "2a_pn2",
+      "title": "2A局部案例：带放线斜杠的P2出页，入页P1不重复输出",
+      "expected": "stage2/2a_pn2.expected.json",
+      "images": [
+        {
+          "path": "images/2A.png",
+          "role": "source_page"
+        }
+      ]
+    },
+    {
+      "id": "td_3a_non_wiring",
+      "title": "TD 3.a：端子报告负例，不生成连接",
+      "expected": "stage2/td_3a_non_wiring.expected.json",
+      "images": [
+        {
+          "path": "images/pdf25_TD_3a.png",
+          "role": "source_page"
+        }
+      ]
+    }
+  ],
+  "stage3_cases": [
+    {
+      "id": "pn2_to_cu320",
+      "title": "正例：2A B1:P2 → 1F CU320 X150:P1",
+      "input": "completion/pn2_to_cu320.task.json",
+      "expected": "completion/pn2_to_cu320.expected.json",
+      "images": [
+        {
+          "path": "images/2A.png",
+          "role": "source_page"
+        },
+        {
+          "path": "images/1F.png",
+          "role": "target_page"
+        }
+      ]
+    },
+    {
+      "id": "abs_power",
+      "title": "缺失针脚：1B X3:33 → 2A绝对值编码器接点",
+      "input": "completion/abs_power.task.json",
+      "expected": "completion/abs_power.expected.json",
+      "images": [
+        {
+          "path": "images/1B.png",
+          "role": "source_page"
+        },
+        {
+          "path": "images/2A.png",
+          "role": "target_page"
+        }
+      ]
+    }
+  ]
+}

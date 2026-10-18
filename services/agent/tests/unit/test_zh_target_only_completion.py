@@ -82,8 +82,17 @@ def test_mode_is_profile_scoped_and_old_rules_default_to_two_images(tmp_path):
     assert ZhVlmExtractionStageAdapter(settings, gateway).completion_images(request) == [request.target_page]
     for key, adapter in [("abb", AbbVlmExtractionStageAdapter), ("zh_gantry_reel", ZhGantryReelVlmAdapter)]:
         other = _request(tmp_path, key=key)
-        assert other.profile.rules.extraction.cross_page_input_mode == "source_and_target"
-        assert adapter(settings, gateway).completion_images(other) == [other.source_page, other.target_page]
+        assert other.profile.rules.extraction.cross_page_input_mode == "target_only"
+        assert adapter(settings, gateway).completion_images(other) == [other.target_page]
+        legacy_extraction = other.profile.rules.extraction.model_copy(
+            update={"cross_page_input_mode": "source_and_target"}
+        )
+        legacy = other.model_copy(update={"profile": other.profile.model_copy(update={
+            "rules": other.profile.rules.model_copy(update={"extraction": legacy_extraction}),
+        })})
+        assert adapter(settings, gateway).completion_images(legacy) == [
+            legacy.source_page, legacy.target_page,
+        ]
     old_rules = request.profile.rules.extraction.model_dump(exclude={"cross_page_input_mode"})
     assert (
         type(request.profile.rules.extraction).model_validate(old_rules).cross_page_input_mode

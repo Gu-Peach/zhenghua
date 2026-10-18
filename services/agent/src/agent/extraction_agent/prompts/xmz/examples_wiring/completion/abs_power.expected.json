@@ -18,5 +18,15 @@
   "source_note": "1B页X3:33沿24VDC/ABS出页引用到2A35R；目标图右下角入页线接到绝对值编码器的24VDC接点，未标出元件代号或针脚编号。",
   "warnings": [
     "目标接点有24VDC功能标注，未提供物理端子编号。"
+  ],
+  "uncertainties": [
+    {
+      "field": "end",
+      "detail": "匹配的编码器接点旁只有24VDC功能文字，未标出物理针脚或元件代号。"
+    },
+    {
+      "field": "connection",
+      "detail": "来源原理号1B38R，目标图对应线标1B39T；以来源SH.NO.1B、24VDC/ABS信号和2A35R线路唯一对应，保留标注差异待复核。"
+    }
   ]
 }

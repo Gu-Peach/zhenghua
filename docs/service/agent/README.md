@@ -1,5 +1,7 @@
 # Agent 服务设计索引
 
+2026-10-17：ABB1.2.0/XMZ0.2.0对齐ZH的单来源样例、目标局部图补全；分页Prompt/分类案例不改，各自图框与业务语义独立。旧ZH导入兼容，局部机制位于共享基础设施。见[交付](./changelog/2026-10-17-abb-xmz-alignment.md)与[方案](./abb-xmz-completion-alignment.md)。
+
 - [ZH跨页空响应与重复N线](./changelog/2026-10-17-zh-completion-response.md)：zh_crop 2.2.1，默认值前校验/有限重试、失败与歧义保留、两组同号N线对照；初扫和图片预算保持，真实效果待用户复测。
 
 - [规则发布负例可选](./changelog/2026-10-17-profile-optional-negative.md)：未提供负例不拦截，已提供负例仍校验并打包使用。

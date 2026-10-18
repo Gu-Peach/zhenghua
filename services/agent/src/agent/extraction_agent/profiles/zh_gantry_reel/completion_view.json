@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "enabled": true,
+  "columns": 48,
+  "first_column": 1,
+  "frame_left": 0.001,
+  "frame_right": 0.999,
+  "half_width_columns": 11,
+  "max_side": 4096,
+  "min_aspect": 1.2,
+  "max_aspect": 1.8
+}

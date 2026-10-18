@@ -1,0 +1,67 @@
+{
+  "version": "1.2.0",
+  "coordinate_contract": "input_view_normalized_to_full_page",
+  "review_basis": "2026-10-17: visually checked packaged source/target images and crop previews; static checks only, no tests/model/database calls; engineering validation pending.",
+  "files": [
+    {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/abb_vlm_stages.py",
+      "checksum": "sha256:262fa44c3789a50ec01e23116d2c0d4a2621bf50ec41e868f2fbbc79770c355e"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/document/completion_context.py",
+      "checksum": "sha256:c5bb29f5071afbb6e4da715f1d8e8f4289cbc69d9f2bc4288e072d316c141760"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/document/completion_view.py",
+      "checksum": "sha256:fe1d218ad9f11025085ae39eebdeba1f0e9c3ca7dab63c4a3b812c279d601d18"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/zh_vlm_stages.py",
+      "checksum": "sha256:5ca449fd9510f7947891f05105f4f5632537392fca2b7635031b4175a5444188"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/abb/completion_view.json",
+      "checksum": "sha256:8d6974b53f669985d1ccd848d43803218269225b0ed876ee7f7aba79ad1b5a5b"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/abb/profile.json",
+      "checksum": "sha256:c3c01d861bb4f9dcc6d0015a8cba3ea853d247aeb19667540f7e1aeb8f93ab49"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/abb/rules.json",
+      "checksum": "sha256:50e65233243189d41a82e97a38b7ff51106697f1c84f9fab623053ca192637e6"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/annotated/images/lv11_205.png",
+      "checksum": "sha256:5d33f36cfa99dd73b7159bda9969cb50761d273951294b9c12ccb50eedf8aecb"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/annotated/images/lv12_241.png",
+      "checksum": "sha256:9f6bbef109ee8e3830c86d5136540edbce040befd217e9720dedfaf7106746ca"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/annotated/manifest.json",
+      "checksum": "sha256:68a94215b2646cb72a9f64135cf7b5af529b2bf0aca7218e01df3fa3be6a1150"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/annotated/stage2/lv11_205.expected.json",
+      "checksum": "sha256:aea1965f29b415063f1a76bde2aab6d7216508d64f49b1750ce98e874cb7a375"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/annotated/stage3/205_q4_l1_to_241_q1.expected.json",
+      "checksum": "sha256:74fc40a846c5d01fc8ecb5598f0baebd7efce6b8b1bd922a6aec3a853294f11c"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/annotated/stage3/205_q4_l1_to_241_q1.task.json",
+      "checksum": "sha256:3ad5a17bef231dcb95f6d936d90ea2216bd958f0cf3996da01d6b729b6a8f072"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/page_cross_page_completion.md",
+      "checksum": "sha256:9122eec4b10baa94745bd31ff056b3e94fd9aee81f55df72f2f26c2233444945"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/page_scan_index.md",
+      "checksum": "sha256:f221963ceedec5a4da3e2c76d2a38c140d58b69be4400ca1d6a7cf12102bc47d"
+    }
+  ]
+}

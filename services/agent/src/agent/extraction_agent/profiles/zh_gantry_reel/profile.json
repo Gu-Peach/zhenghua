@@ -1,7 +1,7 @@
 {
   "manifest_version": 1,
   "key": "zh_gantry_reel",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "display_name": "振华大车卷盘（SH.NO. 网格页标）",
   "description": "Local experimental grid-sheet drawing profile derived from 1002001693; no remote publication or real-VLM acceptance.",
   "status": "experimental",
@@ -13,7 +13,11 @@
     "cross_page_prompt": "../../prompts/xmz/page_connection_completion.md",
     "classification_examples": "../../prompts/xmz/examples_page_classification",
     "wiring_examples": "../../prompts/xmz/examples_wiring",
-    "routing_rules": "rules.json"
+    "routing_rules": "rules.json",
+    "completion_view_rules": "completion_view.json",
+    "resource_readme": "../../prompts/xmz/README.md",
+    "resource_changelog": "../../prompts/xmz/CHANGELOG.md",
+    "completion_view_provenance": "completion_view.provenance.json"
   },
   "capabilities": [
     "page_classification",
