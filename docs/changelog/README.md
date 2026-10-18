@@ -1,5 +1,7 @@
 # Changelog
 
+2026-10-18：按用户确认，PDF遍历正常结束统一显示处理完成，单页错误保留诊断，不再让整任务失败；历史EXTRACTION_PARTIAL在前端兼容显示完成，真正中断仍失败。静态及隔离浏览器核对通过，无数据库/API结构变更，不改历史业务数据。见[记录](../service/agent/changelog/2026-10-18-extraction-finished-status.md)。
+
 2026-10-18：线表顶部提取未完成提示可通过右侧关闭按钮隐藏，保留任务失败状态和重试行为，新失败重新展示。前端类型/lint/build及隔离浏览器核对通过，无API/数据库变更。见[Web记录](../apps/web/changelog/2026-10-18-extraction-notice-dismiss.md)。
 
 2026-10-18：按用户纠正，撤回整组端点调换迁移所属页/工作区的约定，固定记录归属和关联索引，仅交换端点/坐标对象，前端保留原筛选并禁用旧迁页方案。新迁移20261018040000已部署；实际4行按快照事务恢复006C01/006.C，ID、已确认端点/坐标和同项目其他行保持。相关70项Agent、5项API、10项独立SQL、25项编辑/预览浏览器及类型/lint/build/Ruff/mypy通过。见[当前设计与恢复记录](../service/server/explain-swap-origin-correction.md)；以下同日“跟随新页”的较早记录已被取代，删除修复保留。

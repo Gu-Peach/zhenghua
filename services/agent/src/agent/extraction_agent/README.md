@@ -1,5 +1,7 @@
 # Extraction Agent
 
+2026-10-18后续调整：按用户要求，文档遍历正常返回即提交finished，单页错误保留metrics/诊断及失败尝试；只有真正中断才整任务失败。前端兼容已跑完的旧EXTRACTION_PARTIAL显示完成，见[记录](../../../../../docs/service/agent/changelog/2026-10-18-extraction-finished-status.md)。
+
 2026-10-18：页面子图增加初扫失败分支，保存独立失败尝试后继续后续页，不创建成功缓存；文档遍历结束再汇总未完成项，恢复复用成功页。模型请求/业务规则保持，需用户重启Worker生效，见[记录](../../../../../docs/service/agent/changelog/2026-10-18-extraction-page-failure.md)。
 
 2026-10-18：上传Worker与本地Stage2脚本共用`stage2-script-aligned-v1`请求/结果契约，禁色标提示、页面身份、模型Gateway和主表字段统一；保存过滤前计数与请求指纹，支持ZH第0列。ZH Prompt/样例和2.2.1业务规则不改。使用前重启提取Worker，再新上传测试。见[交付](../../../../../docs/service/agent/changelog/2026-10-18-extraction-entry-alignment.md)。

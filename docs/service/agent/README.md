@@ -1,5 +1,7 @@
 # Agent 服务设计索引
 
+- [PDF完成状态约定](./changelog/2026-10-18-extraction-finished-status.md)：遍历正常结束即处理完成，错误留诊断，真正中断仍失败；替代早期部分失败终态。
+
 - [ABB小圆点与端点修正](./changelog/2026-10-18-abb-marker-endpoints.md)、[执行计划](./abb-marker-endpoint-plan.md)：本地1.2.1补母线输入、双标记配对、完整端子及原理号组合，十四列/坐标契约不改；静态核对，真实模型待用户复测。
 
 - [单页初扫失败隔离](./changelog/2026-10-18-extraction-page-failure.md)、[执行计划](./extraction-page-failure-plan.md)：失败尝试独立保存、继续后续页、遍历后汇总与仅补未完成页。

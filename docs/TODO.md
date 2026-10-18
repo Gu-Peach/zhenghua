@@ -4,7 +4,7 @@
 
 ## 进行中
 
-- [ ] PDF遍历完成统一显示处理完成：Worker正常返回后提交finished，单页错误保留诊断；前端兼容旧EXTRACTION_PARTIAL终态，真正中断仍失败。仅静态/隔离浏览器检查，不重跑模型或改历史业务数据。
+- [x] PDF遍历完成统一显示处理完成：Worker正常返回后提交finished，单页错误保留诊断；前端兼容旧EXTRACTION_PARTIAL，真正中断仍失败。Ruff/AST/Worker mypy、前端类型/lint/build及隔离浏览器/5截图/98摘要通过；未运行提取测试或模型、未改历史业务数据/任务/服务，见 `docs/service/agent/changelog/2026-10-18-extraction-finished-status.md`。
 
 - [x] 线表提取失败提示增加右侧关闭按钮：仅隐藏当前提示，保留重试行为，新失败重新展示；类型/lint/build及隔离浏览器桌面/窄屏/长文本/键盘/重试核对通过，8份截图在.runtime。未操作真实提取任务/数据库/服务，见 `docs/apps/web/changelog/2026-10-18-extraction-notice-dismiss.md`。
 

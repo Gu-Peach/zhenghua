@@ -1,5 +1,7 @@
 # Agent Service
 
+2026-10-18按用户要求，整份PDF遍历正常结束即处理完成，单页错误只留诊断，不再提交EXTRACTION_PARTIAL失败；真正中断仍失败。刷新前端可兼容已跑完的旧部分失败项目，后续执行由用户重启实际提取Worker加载新代码，无需数据库/API迁移。见[说明](../../docs/service/agent/changelog/2026-10-18-extraction-finished-status.md)。
+
 2026-10-18提取初扫单页失败改为记录并继续后续页，全部遍历后若仍有错误则汇总未完成项，保留重试入口。重启实际提取Worker后，可在原失败项目点击“重试提取”，保持原模型/冻结规则/配置即可复用成功页，不必重新上传。配置/存储/租约/取消仍立即中止。本轮未重启服务或重跑模型，见[说明](../../docs/service/agent/changelog/2026-10-18-extraction-page-failure.md)。
 
 2026-10-18 Explain新增`propose_connection_edit`：模型只生成持久修改对照，用户确认由8000事务提交。复用8100宿主，无新增端口/环境变量；本项目本地已应用`20261018020000_explain_connection_edits.sql`，加载8000/8100新代码即可，其他环境需先迁移，提取Worker不用调整。见[Explain说明](./src/agent/explain_agent/README.md)。本轮不运行真实模型或改真实线表。

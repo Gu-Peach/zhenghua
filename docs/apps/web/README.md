@@ -1,5 +1,7 @@
 # apps/web 前端归档
 
+- [PDF完成状态显示](../../service/agent/changelog/2026-10-18-extraction-finished-status.md)：兼容已跑完的旧EXTRACTION_PARTIAL记录为处理完成，不改历史数据，真正中断保留失败。
+
 - [关闭提取未完成提示](./changelog/2026-10-18-extraction-notice-dismiss.md)：右侧关闭按钮、键盘操作、新失败重新展示，不改任务状态。
 
 - [Explain逐行修改预览](./changelog/2026-10-18-explain-edit-preview.md)：先回答后预览、确认/拒绝、冲突/处理态保护及刷新/恢复；75项全量与后续6项定向通过。
