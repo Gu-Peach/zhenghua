@@ -52,6 +52,7 @@ def prepare_evidence(context: ExplainContext) -> ExplainContext:
         ("review_reasons", "review", "程序保存的复核原因。"),
         ("field_differences", "review", "当前字段与已保存提取值的差异，不推断变更操作者或原因。"),
         ("manual_change", "review", "已确认线表修订的方案和字段；历史提取说明保留用于追溯。"),
+        ("rescan", "review", "用户确认后的重新扫描记录、实际原图/细节图证据及原规则版本。"),
     )
     for key, kind, label in descriptions:
         value = context.recorded.get(key)

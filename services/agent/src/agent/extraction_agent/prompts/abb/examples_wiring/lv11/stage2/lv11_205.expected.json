@@ -1,0 +1,1902 @@
+{
+  "pdf_page_number": 1,
+  "drawing_function": "LV11",
+  "drawing_page_number": 205,
+  "drawing_object_location": "+EH.Q1.1",
+  "blank": false,
+  "units": [
+    {
+      "unit_id": "205-q4-outgoing",
+      "project_no": "L009925",
+      "drawing_prefix": "8MAP100065-PCD",
+      "connections": [
+        {
+          "local_connection_id": "205-q4-l1",
+          "line_number": "Q4:2205",
+          "start": {
+            "location": "+EH.Q1.1",
+            "device": "-Q4",
+            "name": "Lighting/heating panel",
+            "terminal_board": "Q4",
+            "terminal": "Q4:2",
+            "terminal_coordinates": {
+              "x": 0.43389,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [
+            {
+              "raw": "/241.1A / =LV11-Q4 L1",
+              "target_drawing_page": 241,
+              "target_column": 1,
+              "external": false
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "endpoint_role": "source",
+          "direction_basis": "Q4下方导线向下出页；本页设备端子是起点",
+          "signal_name": "=LV11-Q4 L1"
+        },
+        {
+          "local_connection_id": "205-q4-l2",
+          "line_number": "Q4:4205",
+          "start": {
+            "location": "+EH.Q1.1",
+            "device": "-Q4",
+            "name": "Lighting/heating panel",
+            "terminal_board": "Q4",
+            "terminal": "Q4:4",
+            "terminal_coordinates": {
+              "x": 0.44877,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [
+            {
+              "raw": "/241.1A / =LV11-Q4 L2",
+              "target_drawing_page": 241,
+              "target_column": 1,
+              "external": false
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "endpoint_role": "source",
+          "direction_basis": "Q4下方导线向下出页；本页设备端子是起点",
+          "signal_name": "=LV11-Q4 L2"
+        },
+        {
+          "local_connection_id": "205-q4-l3",
+          "line_number": "Q4:6205",
+          "start": {
+            "location": "+EH.Q1.1",
+            "device": "-Q4",
+            "name": "Lighting/heating panel",
+            "terminal_board": "Q4",
+            "terminal": "Q4:6",
+            "terminal_coordinates": {
+              "x": 0.47167,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [
+            {
+              "raw": "/241.1A / =LV11-Q4 L3",
+              "target_drawing_page": 241,
+              "target_column": 1,
+              "external": false
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "endpoint_role": "source",
+          "direction_basis": "Q4下方导线向下出页；本页设备端子是起点",
+          "signal_name": "=LV11-Q4 L3"
+        },
+        {
+          "local_connection_id": "205-q4-n",
+          "line_number": "Q4:8205",
+          "start": {
+            "location": "+EH.Q1.1",
+            "device": "-Q4",
+            "name": "Lighting/heating panel",
+            "terminal_board": "Q4",
+            "terminal": "Q4:8",
+            "terminal_coordinates": {
+              "x": 0.49113,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [
+            {
+              "raw": "/241.1A / =LV11-Q4 N",
+              "target_drawing_page": 241,
+              "target_column": 1,
+              "external": false
+            }
+          ],
+          "is_cross_page": "cross_page",
+          "endpoint_role": "source",
+          "direction_basis": "Q4下方导线向下出页；本页设备端子是起点",
+          "signal_name": "=LV11-Q4 N"
+        }
+      ]
+    },
+    {
+      "unit_id": "205-q3",
+      "connections": [
+        {
+          "local_connection_id": "205-q3-2",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头，按实际接线从图上方设备/端子到下方设备/端子记录",
+          "line_number": "Q3:2205",
+          "current": "100A",
+          "current_basis": "device_rating",
+          "current_source_text": "100A",
+          "start": {
+            "location": "+EH.Q1.1",
+            "device": "-Q3",
+            "name": "Shore power output",
+            "terminal_board": "Q3",
+            "terminal": "Q3:2",
+            "terminal_coordinates": {
+              "x": 0.14367,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "part": "++",
+            "device": "-Q106",
+            "terminal_board": "Q106",
+            "terminal": "Q106:1",
+            "terminal_coordinates": {
+              "x": 0.14367,
+              "y": 0.68876,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-q3-4",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头，按实际接线从图上方设备/端子到下方设备/端子记录",
+          "line_number": "Q3:4205",
+          "current": "100A",
+          "current_basis": "device_rating",
+          "current_source_text": "100A",
+          "start": {
+            "location": "+EH.Q1.1",
+            "device": "-Q3",
+            "name": "Shore power output",
+            "terminal_board": "Q3",
+            "terminal": "Q3:4",
+            "terminal_coordinates": {
+              "x": 0.16256,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "part": "++",
+            "device": "-Q106",
+            "terminal_board": "Q106",
+            "terminal": "Q106:3",
+            "terminal_coordinates": {
+              "x": 0.16256,
+              "y": 0.68876,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-q3-6",
+          "endpoint_role": "source",
+          "direction_basis": "无方向箭头，按实际接线从图上方设备/端子到下方设备/端子记录",
+          "line_number": "Q3:6205",
+          "current": "100A",
+          "current_basis": "device_rating",
+          "current_source_text": "100A",
+          "start": {
+            "location": "+EH.Q1.1",
+            "device": "-Q3",
+            "name": "Shore power output",
+            "terminal_board": "Q3",
+            "terminal": "Q3:6",
+            "terminal_coordinates": {
+              "x": 0.18203,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "part": "++",
+            "device": "-Q106",
+            "terminal_board": "Q106",
+            "terminal": "Q106:5",
+            "terminal_coordinates": {
+              "x": 0.18203,
+              "y": 0.68876,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        }
+      ]
+    },
+    {
+      "unit_id": "205-busbar-inputs",
+      "connections": [
+        {
+          "local_connection_id": "205-q3-input-1",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "224205",
+          "signal_name": "L1",
+          "current": "100A",
+          "current_basis": "device_rating",
+          "current_source_text": "100A",
+          "start": {
+            "location": "+EH.Q1.1",
+            "terminal": "L1",
+            "terminal_coordinates": {
+              "x": 0.14367,
+              "y": 0.05255,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "location": "+EH.Q1.1",
+            "device": "-Q3",
+            "name": "Shore power output",
+            "terminal_board": "Q3",
+            "terminal": "Q3:1",
+            "terminal_coordinates": {
+              "x": 0.14367,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-q3-input-3",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "225205",
+          "signal_name": "L2",
+          "current": "100A",
+          "current_basis": "device_rating",
+          "current_source_text": "100A",
+          "start": {
+            "location": "+EH.Q1.1",
+            "terminal": "L2",
+            "terminal_coordinates": {
+              "x": 0.16256,
+              "y": 0.07276,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "location": "+EH.Q1.1",
+            "device": "-Q3",
+            "name": "Shore power output",
+            "terminal_board": "Q3",
+            "terminal": "Q3:3",
+            "terminal_coordinates": {
+              "x": 0.16256,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-q3-input-5",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "226205",
+          "signal_name": "L3",
+          "current": "100A",
+          "current_basis": "device_rating",
+          "current_source_text": "100A",
+          "start": {
+            "location": "+EH.Q1.1",
+            "terminal": "L3",
+            "terminal_coordinates": {
+              "x": 0.18203,
+              "y": 0.09297,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "location": "+EH.Q1.1",
+            "device": "-Q3",
+            "name": "Shore power output",
+            "terminal_board": "Q3",
+            "terminal": "Q3:5",
+            "terminal_coordinates": {
+              "x": 0.18203,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-q5-input-1",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "231205",
+          "signal_name": "L1",
+          "start": {
+            "location": "+EH.Q1.1",
+            "terminal": "L1",
+            "terminal_coordinates": {
+              "x": 0.28623,
+              "y": 0.05255,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "location": "+EH.Q1.1",
+            "device": "-Q5",
+            "name": "Cabin panel",
+            "terminal_board": "Q5",
+            "terminal": "Q5:1",
+            "terminal_coordinates": {
+              "x": 0.28623,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-q5-input-3",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "232205",
+          "signal_name": "L2",
+          "start": {
+            "location": "+EH.Q1.1",
+            "terminal": "L2",
+            "terminal_coordinates": {
+              "x": 0.30512,
+              "y": 0.07276,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "location": "+EH.Q1.1",
+            "device": "-Q5",
+            "name": "Cabin panel",
+            "terminal_board": "Q5",
+            "terminal": "Q5:3",
+            "terminal_coordinates": {
+              "x": 0.30512,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-q5-input-5",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "233205",
+          "signal_name": "L3",
+          "start": {
+            "location": "+EH.Q1.1",
+            "terminal": "L3",
+            "terminal_coordinates": {
+              "x": 0.32401,
+              "y": 0.09297,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "location": "+EH.Q1.1",
+            "device": "-Q5",
+            "name": "Cabin panel",
+            "terminal_board": "Q5",
+            "terminal": "Q5:5",
+            "terminal_coordinates": {
+              "x": 0.32401,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-n-x1-1",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "564205",
+          "signal_name": "N",
+          "start": {
+            "location": "+EH.Q1.1",
+            "terminal": "N",
+            "terminal_coordinates": {
+              "x": 0.34347,
+              "y": 0.11318,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "location": "+EH.Q1.1",
+            "device": "-X1",
+            "terminal_board": "X1",
+            "terminal": "X1:1",
+            "terminal_coordinates": {
+              "x": 0.34347,
+              "y": 0.40016,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-q4-input-1",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "227205",
+          "signal_name": "L1",
+          "start": {
+            "location": "+EH.Q1.1",
+            "terminal": "L1",
+            "terminal_coordinates": {
+              "x": 0.43389,
+              "y": 0.05255,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "location": "+EH.Q1.1",
+            "device": "-Q4",
+            "name": "Lighting/heating panel",
+            "terminal_board": "Q4",
+            "terminal": "Q4:1",
+            "terminal_coordinates": {
+              "x": 0.43389,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-q4-input-3",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "228205",
+          "signal_name": "L2",
+          "start": {
+            "location": "+EH.Q1.1",
+            "terminal": "L2",
+            "terminal_coordinates": {
+              "x": 0.45278,
+              "y": 0.07276,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "location": "+EH.Q1.1",
+            "device": "-Q4",
+            "name": "Lighting/heating panel",
+            "terminal_board": "Q4",
+            "terminal": "Q4:3",
+            "terminal_coordinates": {
+              "x": 0.45278,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-q4-input-5",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "229205",
+          "signal_name": "L3",
+          "start": {
+            "location": "+EH.Q1.1",
+            "terminal": "L3",
+            "terminal_coordinates": {
+              "x": 0.47167,
+              "y": 0.09297,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "location": "+EH.Q1.1",
+            "device": "-Q4",
+            "name": "Lighting/heating panel",
+            "terminal_board": "Q4",
+            "terminal": "Q4:5",
+            "terminal_coordinates": {
+              "x": 0.47167,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-q4-input-7",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "230205",
+          "signal_name": "N",
+          "start": {
+            "location": "+EH.Q1.1",
+            "terminal": "N",
+            "terminal_coordinates": {
+              "x": 0.49113,
+              "y": 0.11318,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "location": "+EH.Q1.1",
+            "device": "-Q4",
+            "name": "Lighting/heating panel",
+            "terminal_board": "Q4",
+            "terminal": "Q4:7",
+            "terminal_coordinates": {
+              "x": 0.49113,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-q6-input-1",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "125205",
+          "signal_name": "L1",
+          "current": "50A",
+          "current_basis": "device_rating",
+          "current_source_text": "50A",
+          "start": {
+            "location": "+EH.Q1.3",
+            "device": "-Q6",
+            "name": "BUSBAR",
+            "terminal": "L1",
+            "terminal_coordinates": {
+              "x": 0.60504,
+              "y": 0.17381,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "location": "+EH.Q1.3",
+            "device": "-Q6",
+            "name": "Service crane M-house",
+            "terminal_board": "Q6",
+            "terminal": "Q6:1",
+            "terminal_coordinates": {
+              "x": 0.60504,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-q6-input-3",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "126205",
+          "signal_name": "L2",
+          "current": "50A",
+          "current_basis": "device_rating",
+          "current_source_text": "50A",
+          "start": {
+            "location": "+EH.Q1.3",
+            "device": "-Q6",
+            "name": "BUSBAR",
+            "terminal": "L2",
+            "terminal_coordinates": {
+              "x": 0.62393,
+              "y": 0.17381,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "location": "+EH.Q1.3",
+            "device": "-Q6",
+            "name": "Service crane M-house",
+            "terminal_board": "Q6",
+            "terminal": "Q6:3",
+            "terminal_coordinates": {
+              "x": 0.62393,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-q6-input-5",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "127205",
+          "signal_name": "L3",
+          "current": "50A",
+          "current_basis": "device_rating",
+          "current_source_text": "50A",
+          "start": {
+            "location": "+EH.Q1.3",
+            "device": "-Q6",
+            "name": "BUSBAR",
+            "terminal": "L3",
+            "terminal_coordinates": {
+              "x": 0.64339,
+              "y": 0.17381,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "location": "+EH.Q1.3",
+            "device": "-Q6",
+            "name": "Service crane M-house",
+            "terminal_board": "Q6",
+            "terminal": "Q6:5",
+            "terminal_coordinates": {
+              "x": 0.64339,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        }
+      ]
+    },
+    {
+      "unit_id": "205-q6-to-x1",
+      "connections": [
+        {
+          "local_connection_id": "205-q6-x1-11",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "501205",
+          "current": "50A",
+          "current_basis": "device_rating",
+          "current_source_text": "50A",
+          "start": {
+            "location": "+EH.Q1.3",
+            "device": "-Q6",
+            "name": "Service crane M-house",
+            "terminal_board": "Q6",
+            "terminal": "Q6:2",
+            "terminal_coordinates": {
+              "x": 0.60504,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "location": "+EH.Q1.3",
+            "device": "-X1",
+            "terminal_board": "X1",
+            "terminal": "X1:11",
+            "terminal_coordinates": {
+              "x": 0.60504,
+              "y": 0.48262,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-q6-x1-12",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "502205",
+          "current": "50A",
+          "current_basis": "device_rating",
+          "current_source_text": "50A",
+          "start": {
+            "location": "+EH.Q1.3",
+            "device": "-Q6",
+            "name": "Service crane M-house",
+            "terminal_board": "Q6",
+            "terminal": "Q6:4",
+            "terminal_coordinates": {
+              "x": 0.62393,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "location": "+EH.Q1.3",
+            "device": "-X1",
+            "terminal_board": "X1",
+            "terminal": "X1:12",
+            "terminal_coordinates": {
+              "x": 0.62393,
+              "y": 0.48262,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-q6-x1-13",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "503205",
+          "current": "50A",
+          "current_basis": "device_rating",
+          "current_source_text": "50A",
+          "start": {
+            "location": "+EH.Q1.3",
+            "device": "-Q6",
+            "name": "Service crane M-house",
+            "terminal_board": "Q6",
+            "terminal": "Q6:6",
+            "terminal_coordinates": {
+              "x": 0.64339,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "location": "+EH.Q1.3",
+            "device": "-X1",
+            "terminal_board": "X1",
+            "terminal": "X1:13",
+            "terminal_coordinates": {
+              "x": 0.64339,
+              "y": 0.48262,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        }
+      ]
+    },
+    {
+      "unit_id": "205-x1-to-q103-fallback",
+      "connections": [
+        {
+          "local_connection_id": "205-x1-q103-1",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "X1:1205",
+          "start": {
+            "location": "+EH.Q1.3",
+            "device": "-X1",
+            "terminal_board": "X1",
+            "terminal": "X1:1",
+            "terminal_coordinates": {
+              "x": 0.74242,
+              "y": 0.62328,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "part": "++",
+            "device": "-Q103",
+            "terminal_board": "Q103",
+            "terminal": "Q103:1",
+            "terminal_coordinates": {
+              "x": 0.74242,
+              "y": 0.68876,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-x1-q103-2",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "X1:2205",
+          "start": {
+            "location": "+EH.Q1.3",
+            "device": "-X1",
+            "terminal_board": "X1",
+            "terminal": "X1:2",
+            "terminal_coordinates": {
+              "x": 0.76189,
+              "y": 0.62328,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "part": "++",
+            "device": "-Q103",
+            "terminal_board": "Q103",
+            "terminal": "Q103:3",
+            "terminal_coordinates": {
+              "x": 0.76189,
+              "y": 0.68876,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-x1-q103-3",
+          "endpoint_role": "source",
+          "direction_basis": "同页供电母线/母排到设备，或上方实际端子到下方实际端子；不按标记编号定向",
+          "line_number": "X1:3205",
+          "start": {
+            "location": "+EH.Q1.3",
+            "device": "-X1",
+            "terminal_board": "X1",
+            "terminal": "X1:3",
+            "terminal_coordinates": {
+              "x": 0.78135,
+              "y": 0.62328,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "part": "++",
+            "device": "-Q103",
+            "terminal_board": "Q103",
+            "terminal": "Q103:5",
+            "terminal_coordinates": {
+              "x": 0.78135,
+              "y": 0.68876,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        }
+      ]
+    },
+    {
+      "unit_id": "205-q5-to-grj",
+      "connections": [
+        {
+          "local_connection_id": "205-q5-grj-1",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "Q5:2205",
+          "start": {
+            "device": "-Q5",
+            "terminal": "Q5:2",
+            "terminal_board": "Q5",
+            "location": "+EH.Q1.1",
+            "name": "Cabin panel",
+            "terminal_coordinates": {
+              "x": 0.28623,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-X1",
+            "terminal": "X1:1",
+            "terminal_board": "X1",
+            "location": "+GRJ.1",
+            "terminal_coordinates": {
+              "x": 0.28623,
+              "y": 0.56265,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-q5-grj-2",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "Q5:4205",
+          "start": {
+            "device": "-Q5",
+            "terminal": "Q5:4",
+            "terminal_board": "Q5",
+            "location": "+EH.Q1.1",
+            "name": "Cabin panel",
+            "terminal_coordinates": {
+              "x": 0.30512,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-X1",
+            "terminal": "X1:2",
+            "terminal_board": "X1",
+            "location": "+GRJ.1",
+            "terminal_coordinates": {
+              "x": 0.30512,
+              "y": 0.56265,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-q5-grj-3",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "Q5:6205",
+          "start": {
+            "device": "-Q5",
+            "terminal": "Q5:6",
+            "terminal_board": "Q5",
+            "location": "+EH.Q1.1",
+            "name": "Cabin panel",
+            "terminal_coordinates": {
+              "x": 0.32401,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-X1",
+            "terminal": "X1:3",
+            "terminal_board": "X1",
+            "location": "+GRJ.1",
+            "terminal_coordinates": {
+              "x": 0.32401,
+              "y": 0.56265,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        }
+      ]
+    },
+    {
+      "unit_id": "205-x1-to-q102",
+      "connections": [
+        {
+          "local_connection_id": "205-x1-q102-11",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "X1:11205",
+          "start": {
+            "device": "-X1",
+            "terminal": "X1:11",
+            "terminal_board": "X1",
+            "location": "+EH.Q1.3",
+            "terminal_coordinates": {
+              "x": 0.60504,
+              "y": 0.48262,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-Q102",
+            "terminal": "Q102:1",
+            "terminal_board": "Q102",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.60504,
+              "y": 0.68876,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-x1-q102-12",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "X1:12205",
+          "start": {
+            "device": "-X1",
+            "terminal": "X1:12",
+            "terminal_board": "X1",
+            "location": "+EH.Q1.3",
+            "terminal_coordinates": {
+              "x": 0.62393,
+              "y": 0.48262,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-Q102",
+            "terminal": "Q102:3",
+            "terminal_board": "Q102",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.62393,
+              "y": 0.68876,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-x1-q102-13",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "X1:13205",
+          "start": {
+            "device": "-X1",
+            "terminal": "X1:13",
+            "terminal_board": "X1",
+            "location": "+EH.Q1.3",
+            "terminal_coordinates": {
+              "x": 0.64339,
+              "y": 0.48262,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-Q102",
+            "terminal": "Q102:5",
+            "terminal_board": "Q102",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.64339,
+              "y": 0.68876,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        }
+      ]
+    },
+    {
+      "unit_id": "205-q102-to-a1",
+      "connections": [
+        {
+          "local_connection_id": "205-q102-a1-2",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "Q102:2205",
+          "start": {
+            "device": "-Q102",
+            "terminal": "Q102:2",
+            "terminal_board": "Q102",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.60504,
+              "y": 0.7211,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-A1",
+            "terminal": "A1:L1",
+            "terminal_board": "A1",
+            "name": "Service crane M-house",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.60504,
+              "y": 0.806,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "current": "42A",
+          "current_basis": "device_rating",
+          "current_source_text": "42A"
+        },
+        {
+          "local_connection_id": "205-q102-a1-4",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "Q102:4205",
+          "start": {
+            "device": "-Q102",
+            "terminal": "Q102:4",
+            "terminal_board": "Q102",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.62393,
+              "y": 0.7211,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-A1",
+            "terminal": "A1:L2",
+            "terminal_board": "A1",
+            "name": "Service crane M-house",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.62393,
+              "y": 0.806,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "current": "42A",
+          "current_basis": "device_rating",
+          "current_source_text": "42A"
+        },
+        {
+          "local_connection_id": "205-q102-a1-6",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "Q102:6205",
+          "start": {
+            "device": "-Q102",
+            "terminal": "Q102:6",
+            "terminal_board": "Q102",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.64339,
+              "y": 0.7211,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-A1",
+            "terminal": "A1:L3",
+            "terminal_board": "A1",
+            "name": "Service crane M-house",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.64339,
+              "y": 0.806,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "current": "42A",
+          "current_basis": "device_rating",
+          "current_source_text": "42A"
+        }
+      ]
+    },
+    {
+      "unit_id": "205-q7-inputs",
+      "connections": [
+        {
+          "local_connection_id": "205-q7-input-1",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "128205",
+          "start": {
+            "device": "-Q7",
+            "terminal": "L1",
+            "location": "+EH.Q1.3",
+            "name": "BUSBAR",
+            "terminal_coordinates": {
+              "x": 0.74242,
+              "y": 0.17381,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-Q7",
+            "terminal": "Q7:1",
+            "terminal_board": "Q7",
+            "location": "+EH.Q1.3",
+            "name": "Elevator",
+            "terminal_coordinates": {
+              "x": 0.74242,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "current": "60A",
+          "current_basis": "device_rating",
+          "current_source_text": "60A"
+        },
+        {
+          "local_connection_id": "205-q7-input-3",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "129205",
+          "start": {
+            "device": "-Q7",
+            "terminal": "L2",
+            "location": "+EH.Q1.3",
+            "name": "BUSBAR",
+            "terminal_coordinates": {
+              "x": 0.76189,
+              "y": 0.17381,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-Q7",
+            "terminal": "Q7:3",
+            "terminal_board": "Q7",
+            "location": "+EH.Q1.3",
+            "name": "Elevator",
+            "terminal_coordinates": {
+              "x": 0.76189,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "current": "60A",
+          "current_basis": "device_rating",
+          "current_source_text": "60A"
+        },
+        {
+          "local_connection_id": "205-q7-input-5",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "130205",
+          "start": {
+            "device": "-Q7",
+            "terminal": "L3",
+            "location": "+EH.Q1.3",
+            "name": "BUSBAR",
+            "terminal_coordinates": {
+              "x": 0.78135,
+              "y": 0.17381,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-Q7",
+            "terminal": "Q7:5",
+            "terminal_board": "Q7",
+            "location": "+EH.Q1.3",
+            "name": "Elevator",
+            "terminal_coordinates": {
+              "x": 0.78135,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "current": "60A",
+          "current_basis": "device_rating",
+          "current_source_text": "60A"
+        }
+      ]
+    },
+    {
+      "unit_id": "205-q7-to-x1",
+      "connections": [
+        {
+          "local_connection_id": "205-q7-x1-14",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "504205",
+          "start": {
+            "device": "-Q7",
+            "terminal": "Q7:2",
+            "terminal_board": "Q7",
+            "location": "+EH.Q1.3",
+            "name": "Elevator",
+            "terminal_coordinates": {
+              "x": 0.74242,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-X1",
+            "terminal": "X1:14",
+            "terminal_board": "X1",
+            "location": "+EH.Q1.3",
+            "terminal_coordinates": {
+              "x": 0.74242,
+              "y": 0.48262,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "current": "60A",
+          "current_basis": "device_rating",
+          "current_source_text": "60A"
+        },
+        {
+          "local_connection_id": "205-q7-x1-15",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "505205",
+          "start": {
+            "device": "-Q7",
+            "terminal": "Q7:4",
+            "terminal_board": "Q7",
+            "location": "+EH.Q1.3",
+            "name": "Elevator",
+            "terminal_coordinates": {
+              "x": 0.76189,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-X1",
+            "terminal": "X1:15",
+            "terminal_board": "X1",
+            "location": "+EH.Q1.3",
+            "terminal_coordinates": {
+              "x": 0.76189,
+              "y": 0.48262,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "current": "60A",
+          "current_basis": "device_rating",
+          "current_source_text": "60A"
+        },
+        {
+          "local_connection_id": "205-q7-x1-16",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "506205",
+          "start": {
+            "device": "-Q7",
+            "terminal": "Q7:6",
+            "terminal_board": "Q7",
+            "location": "+EH.Q1.3",
+            "name": "Elevator",
+            "terminal_coordinates": {
+              "x": 0.78135,
+              "y": 0.36136,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-X1",
+            "terminal": "X1:16",
+            "terminal_board": "X1",
+            "location": "+EH.Q1.3",
+            "terminal_coordinates": {
+              "x": 0.78135,
+              "y": 0.48262,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "current": "60A",
+          "current_basis": "device_rating",
+          "current_source_text": "60A"
+        }
+      ]
+    },
+    {
+      "unit_id": "205-x1-to-t1",
+      "connections": [
+        {
+          "local_connection_id": "205-x1-t1-14",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "X1:14205",
+          "start": {
+            "device": "-X1",
+            "terminal": "X1:14",
+            "terminal_board": "X1",
+            "location": "+EH.Q1.3",
+            "terminal_coordinates": {
+              "x": 0.74242,
+              "y": 0.48262,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-T1",
+            "terminal": "T1:1W",
+            "terminal_board": "T1",
+            "name": "Step-down transformer",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.74242,
+              "y": 0.5369,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-x1-t1-15",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "X1:15205",
+          "start": {
+            "device": "-X1",
+            "terminal": "X1:15",
+            "terminal_board": "X1",
+            "location": "+EH.Q1.3",
+            "terminal_coordinates": {
+              "x": 0.76189,
+              "y": 0.48262,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-T1",
+            "terminal": "T1:1V",
+            "terminal_board": "T1",
+            "name": "Step-down transformer",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.76189,
+              "y": 0.5369,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-x1-t1-16",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "X1:16205",
+          "start": {
+            "device": "-X1",
+            "terminal": "X1:16",
+            "terminal_board": "X1",
+            "location": "+EH.Q1.3",
+            "terminal_coordinates": {
+              "x": 0.78135,
+              "y": 0.48262,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-T1",
+            "terminal": "T1:1U",
+            "terminal_board": "T1",
+            "name": "Step-down transformer",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.78135,
+              "y": 0.5369,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        }
+      ]
+    },
+    {
+      "unit_id": "205-t1-to-x1",
+      "connections": [
+        {
+          "local_connection_id": "205-t1-x1-1",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "T1:2W205",
+          "start": {
+            "device": "-T1",
+            "terminal": "T1:2W",
+            "terminal_board": "T1",
+            "name": "Step-down transformer",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.74242,
+              "y": 0.5798,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-X1",
+            "terminal": "X1:1",
+            "terminal_board": "X1",
+            "location": "+EH.Q1.3",
+            "terminal_coordinates": {
+              "x": 0.74242,
+              "y": 0.62328,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-t1-x1-2",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "T1:2V205",
+          "start": {
+            "device": "-T1",
+            "terminal": "T1:2V",
+            "terminal_board": "T1",
+            "name": "Step-down transformer",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.76189,
+              "y": 0.5798,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-X1",
+            "terminal": "X1:2",
+            "terminal_board": "X1",
+            "location": "+EH.Q1.3",
+            "terminal_coordinates": {
+              "x": 0.76189,
+              "y": 0.62328,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-t1-x1-3",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "T1:2U205",
+          "start": {
+            "device": "-T1",
+            "terminal": "T1:2U",
+            "terminal_board": "T1",
+            "name": "Step-down transformer",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.78135,
+              "y": 0.5798,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-X1",
+            "terminal": "X1:3",
+            "terminal_board": "X1",
+            "location": "+EH.Q1.3",
+            "terminal_coordinates": {
+              "x": 0.78135,
+              "y": 0.62328,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        }
+      ]
+    },
+    {
+      "unit_id": "205-q103-to-a2",
+      "connections": [
+        {
+          "local_connection_id": "205-q103-a2-2",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "Q103:2205",
+          "start": {
+            "device": "-Q103",
+            "terminal": "Q103:2",
+            "terminal_board": "Q103",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.74242,
+              "y": 0.7211,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-A2.1",
+            "terminal": "A2.1:H3",
+            "terminal_board": "A2.1",
+            "location": "+L04+P",
+            "name": "Elevator",
+            "terminal_coordinates": {
+              "x": 0.74242,
+              "y": 0.806,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "current": "20A",
+          "current_basis": "device_rating",
+          "current_source_text": "20A"
+        },
+        {
+          "local_connection_id": "205-q103-a2-4",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "Q103:4205",
+          "start": {
+            "device": "-Q103",
+            "terminal": "Q103:4",
+            "terminal_board": "Q103",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.76189,
+              "y": 0.7211,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-A2.1",
+            "terminal": "A2.1:H2",
+            "terminal_board": "A2.1",
+            "location": "+L04+P",
+            "name": "Elevator",
+            "terminal_coordinates": {
+              "x": 0.76189,
+              "y": 0.806,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "current": "20A",
+          "current_basis": "device_rating",
+          "current_source_text": "20A"
+        },
+        {
+          "local_connection_id": "205-q103-a2-6",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "Q103:6205",
+          "start": {
+            "device": "-Q103",
+            "terminal": "Q103:6",
+            "terminal_board": "Q103",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.78135,
+              "y": 0.7211,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-A2.1",
+            "terminal": "A2.1:H1",
+            "terminal_board": "A2.1",
+            "location": "+L04+P",
+            "name": "Elevator",
+            "terminal_coordinates": {
+              "x": 0.78135,
+              "y": 0.806,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "current": "20A",
+          "current_basis": "device_rating",
+          "current_source_text": "20A"
+        }
+      ]
+    },
+    {
+      "unit_id": "205-f50-inputs",
+      "connections": [
+        {
+          "local_connection_id": "205-f50-input-1",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "145205",
+          "start": {
+            "device": "-F50",
+            "terminal": "L1",
+            "location": "+EH.Q1.3",
+            "name": "BUSBAR",
+            "terminal_coordinates": {
+              "x": 0.88151,
+              "y": 0.17381,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-F50",
+            "terminal": "F50:1",
+            "terminal_board": "F50",
+            "location": "+EH.Q1.3",
+            "name": "Control Voltage",
+            "terminal_coordinates": {
+              "x": 0.88151,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "current": "15A",
+          "current_basis": "device_rating",
+          "current_source_text": "15A"
+        },
+        {
+          "local_connection_id": "205-f50-input-3",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "147205",
+          "start": {
+            "device": "-F50",
+            "terminal": "L2",
+            "location": "+EH.Q1.3",
+            "name": "BUSBAR",
+            "terminal_coordinates": {
+              "x": 0.90097,
+              "y": 0.17381,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-F50",
+            "terminal": "F50:3",
+            "terminal_board": "F50",
+            "location": "+EH.Q1.3",
+            "name": "Control Voltage",
+            "terminal_coordinates": {
+              "x": 0.90097,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "current": "15A",
+          "current_basis": "device_rating",
+          "current_source_text": "15A"
+        },
+        {
+          "local_connection_id": "205-f50-input-5",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "149205",
+          "start": {
+            "device": "-F50",
+            "terminal": "L3",
+            "location": "+EH.Q1.3",
+            "name": "BUSBAR",
+            "terminal_coordinates": {
+              "x": 0.91986,
+              "y": 0.17381,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-F50",
+            "terminal": "F50:5",
+            "terminal_board": "F50",
+            "location": "+EH.Q1.3",
+            "name": "Control Voltage",
+            "terminal_coordinates": {
+              "x": 0.91986,
+              "y": 0.30962,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page",
+          "current": "15A",
+          "current_basis": "device_rating",
+          "current_source_text": "15A"
+        }
+      ]
+    },
+    {
+      "unit_id": "205-pe-direct",
+      "connections": [
+        {
+          "local_connection_id": "205-pe-a1",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "A1:PE205",
+          "start": {
+            "terminal": "PE",
+            "terminal_coordinates": {
+              "x": 0.66342,
+              "y": 0.6056,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-A1",
+            "terminal": "A1:PE",
+            "terminal_board": "A1",
+            "name": "Service crane M-house",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.66342,
+              "y": 0.806,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-pe-t1",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "T1:PE205",
+          "start": {
+            "terminal": "PE",
+            "terminal_coordinates": {
+              "x": 0.799,
+              "y": 0.48262,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-T1",
+            "terminal": "T1:PE",
+            "terminal_board": "T1",
+            "name": "Step-down transformer",
+            "part": "++",
+            "terminal_coordinates": {
+              "x": 0.799,
+              "y": 0.5369,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "205-pe-a2",
+          "endpoint_role": "source",
+          "direction_basis": "同页实际供电路径，按可见符号端点记录",
+          "line_number": "A2.1:PE205",
+          "start": {
+            "terminal": "PE",
+            "terminal_coordinates": {
+              "x": 0.799,
+              "y": 0.62328,
+              "pdf_page_number": 1
+            }
+          },
+          "end": {
+            "device": "-A2.1",
+            "terminal": "A2.1:PE",
+            "terminal_board": "A2.1",
+            "location": "+L04+P",
+            "name": "Elevator",
+            "terminal_coordinates": {
+              "x": 0.799,
+              "y": 0.806,
+              "pdf_page_number": 1
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        }
+      ]
+    }
+  ],
+  "page_references": [],
+  "warnings": [
+    "整页逐区核对，覆盖本Profile可确认的小圆点段和明确无圈断路器外接段；排除项详见coverage.json。未标出针脚/引用的内容不编造。"
+  ]
+}

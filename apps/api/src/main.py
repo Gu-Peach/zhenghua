@@ -35,13 +35,14 @@ def create_app(
             app.state.management = ManagementService(app.state.db)
             yield
 
-    app = FastAPI(title="Wiring Workbench Server", version="2.7.1", lifespan=lifespan)
+    app = FastAPI(title="Wiring Workbench Server", version="2.9.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(
             {config.web_origin, "http://localhost:5174", "http://127.0.0.1:5174"}
         ),
         allow_credentials=True,
+        expose_headers=["Content-Disposition"],
         allow_methods=["GET", "POST", "PATCH", "DELETE"],
         allow_headers=[
             "Authorization",

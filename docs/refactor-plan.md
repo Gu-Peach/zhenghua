@@ -6,6 +6,10 @@
 
 ## 1. 重构结论
 
+2026-10-18项目全量XLSX二进制导出及Explain按需重扫历史契约见[ADR-0035](./adr/0035-project-xlsx-export.md)：Server固定批次和版本核对，普通自动解释禁用重扫工具，拖动和项目级入口属于Web。
+
+2026-10-18 Explain重扫实施设计见[ADR-0034](./adr/0034-explain-rescan.md)：私有辅助图+原图/关联图、原Profile冻结、复用Stage2及候选隔离持久化、租约Worker和确认后原子ResultPatch，已有记录归属固定。
+
 2026-10-18 Explain线表修改设计见[ADR-0033](./adr/0033-explain-connection-edit-tools.md)：模型产生强类型精确范围proposal，用户查看逐行对照后经Server事务确认；整组端点/坐标对象调换，记录所属页、工作区及关联跨页索引固定，坐标内部PDF页号随端点保留。此前迁页约定已纠正，见[修正](./service/server/explain-swap-origin-correction.md)。
 
 2026-10-18基于Profile Agent扩展现有规则编辑：预览双击手动修改及旁侧工具聊天，可信包派生草稿，建议确认后发布替换新版与引用感知旧包回收，见[ADR-0032](./adr/0032-profile-resource-editing.md)。

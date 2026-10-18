@@ -89,6 +89,8 @@ class Backend:
                 }
             ],
             "agent_runs": [],
+            "connection_rescan_assets": [],
+            "connection_rescan_runs": [],
         }
 
     def respond(self, request: httpx.Request) -> httpx.Response:
@@ -127,11 +129,26 @@ class Backend:
             value = json.loads(request.content)
             runs = self.tables["agent_runs"]
             if not any(r["id"] == value["requested_run"] for r in runs):
-                runs.append({"id": value["requested_run"], "project_id": value["project"], "status": "QUEUED"})
-            project = next(p for p in self.tables["extraction_projects"] if p["id"] == value["project"])
+                runs.append(
+                    {
+                        "id": value["requested_run"],
+                        "project_id": value["project"],
+                        "status": "QUEUED",
+                    }
+                )
+            project = next(
+                p
+                for p in self.tables["extraction_projects"]
+                if p["id"] == value["project"]
+            )
             project["status"] = "processing"
-            project["drawing_index"]["processing"] = {"run_id": value["requested_run"], "stage": "queued"}
-            return httpx.Response(200, json={"run_id": value["requested_run"], "status": "QUEUED"})
+            project["drawing_index"]["processing"] = {
+                "run_id": value["requested_run"],
+                "stage": "queued",
+            }
+            return httpx.Response(
+                200, json={"run_id": value["requested_run"], "status": "QUEUED"}
+            )
         if path == "/rest/v1/rpc/manage_extraction_connection":
             value = json.loads(request.content)["value"]
             return httpx.Response(
@@ -152,6 +169,10 @@ class Backend:
                 str(row.get(key)) == value[3:]
                 for key, value in request.url.params.items()
                 if value.startswith("eq.")
+            ) and all(
+                str(row.get(key)) in value[4:-1].split(",")
+                for key, value in request.url.params.items()
+                if value.startswith("in.(")
             )
 
         selected = [row for row in rows if matches(row)]
@@ -221,33 +242,55 @@ def test_project_tree_and_pagination_use_json_index(management) -> None:
     assert all("wiring_units" not in str(call.url) for call in backend.calls)
 
 
-
 def test_processing_rows_are_read_only_and_return_review_reasons(management) -> None:
     client, backend = management
     backend.tables["extraction_projects"][0]["status"] = "processing"
     backend.tables["extraction_connection_rows"][0]["evidence"] = {
         "processing_status": "pending_completion",
-        "review_reasons": [{"code": "direction_unconfirmed", "field": "direction", "message": "方向未确认"}],
+        "review_reasons": [
+            {
+                "code": "direction_unconfirmed",
+                "field": "direction",
+                "message": "方向未确认",
+            }
+        ],
     }
     response = client.get(f"/api/v1/projects/{PROJECT}/connections")
     assert response.status_code == 200
     assert response.json()["items"][0]["processing_status"] == "pending_completion"
-    assert response.json()["items"][0]["review_reasons"][0]["code"] == "direction_unconfirmed"
-    response = client.patch(f"/api/v1/connections/{ROW}", json={"record_version": 1,
-                            "changes": {"start_terminal": "X1:2"}}, headers={"Idempotency-Key": "edit-during-scan"})
+    assert (
+        response.json()["items"][0]["review_reasons"][0]["code"]
+        == "direction_unconfirmed"
+    )
+    response = client.patch(
+        f"/api/v1/connections/{ROW}",
+        json={"record_version": 1, "changes": {"start_terminal": "X1:2"}},
+        headers={"Idempotency-Key": "edit-during-scan"},
+    )
     assert response.status_code == 409
     assert response.json()["detail"]["code"] == "EXTRACTION_IN_PROGRESS"
 
 
-def test_progress_and_events_enforce_owner_and_stream_committed_notifications(management) -> None:
+def test_progress_and_events_enforce_owner_and_stream_committed_notifications(
+    management,
+) -> None:
     client, backend = management
-    backend.tables["extraction_projects"][0]["drawing_index"]["processing"] = {"run_id": "run-one", "stage": "finished"}
+    backend.tables["extraction_projects"][0]["drawing_index"]["processing"] = {
+        "run_id": "run-one",
+        "stage": "finished",
+    }
     backend.tables["agent_events"] = [{"agent_run_id": "run-one", "seq": 7}]
     response = client.get(f"/api/v1/projects/{PROJECT}/extraction/events?cursor=6")
     assert response.status_code == 200
     assert "id: 7" in response.text and "event: done" in response.text
     for suffix in ("extraction", "extraction/events"):
-        assert client.get(f"/api/v1/projects/{PROJECT}/{suffix}", headers={"Authorization": "Bearer other"}).status_code == 403
+        assert (
+            client.get(
+                f"/api/v1/projects/{PROJECT}/{suffix}",
+                headers={"Authorization": "Bearer other"},
+            ).status_code
+            == 403
+        )
 
 
 def test_coordinates_are_returned_with_each_endpoint_physical_page(management) -> None:

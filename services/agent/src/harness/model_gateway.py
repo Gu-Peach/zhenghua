@@ -352,8 +352,19 @@ class OpenAICompatibleModelGateway:
                                     continue
                                 try:
                                     frame = json.loads(data)
-                                    if not isinstance(frame, dict) or frame.get("error"):
+                                    if not isinstance(frame, dict):
                                         raise ValueError("Invalid stream frame")
+                                    if frame.get("error"):
+                                        # Providers can reject generation after opening HTTP 200 SSE.
+                                        # This is an upstream failure, not malformed tool/model output.
+                                        details = _provider_error_details(httpx.Response(200, json=frame))
+                                        details["failure_kind"] = "provider_stream_error"
+                                        raise ModelGatewayError(
+                                            ErrorCode.MODEL_TEMPORARILY_UNAVAILABLE,
+                                            "Model provider returned an error inside the text stream.",
+                                            retryable=False,
+                                            details=details,
+                                        )
                                     if isinstance(frame.get("usage"), dict):
                                         usage = frame["usage"]
                                     choices = frame.get("choices") or []

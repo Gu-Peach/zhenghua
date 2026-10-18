@@ -80,6 +80,100 @@ async function openRow(page: Page) {
   return page.getByRole("dialog", { name: "来源解释", exact: true });
 }
 
+test("来源解释标题栏可拖动、键盘移动与恢复，拖动不调用Agent", async ({ page }) => {
+  const state = await fixture(page); const panel = await openRow(page);
+  await expect(panel.getByLabel("解释回复")).toContainText("通过引用匹配跨页");
+  expect(state.requests[0].allow_rescan).toBe(false);
+  const before = await panel.boundingBox();
+  const header = panel.getByLabel("来源解释窗口标题栏", { exact: true }); const box = await header.boundingBox();
+  await page.mouse.move(box!.x + 100, box!.y + 20); await page.mouse.down(); await page.mouse.move(box!.x - 80, box!.y + 5, { steps: 4 }); await page.mouse.up();
+  const after = await panel.boundingBox(); expect(after!.x).toBeLessThan(before!.x - 100);
+  await expect(panel).not.toHaveClass(/is-dragging/); expect(state.requests).toHaveLength(1);
+  await panel.getByLabel("追问来源解释").fill("保留输入草稿");
+  await header.focus(); await page.keyboard.press("ArrowLeft");
+  expect((await panel.boundingBox())!.x).toBeLessThan(after!.x);
+  await expect(panel.getByLabel("追问来源解释")).toHaveValue("保留输入草稿");
+  await page.screenshot({ path: test.info().outputPath("explain-draggable-desktop.png") });
+  await page.keyboard.press("Home"); expect(Math.abs((await panel.boundingBox())!.x - before!.x)).toBeLessThan(2);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const narrow = await panel.boundingBox(); expect(narrow!.x).toBeGreaterThanOrEqual(0); expect(narrow!.x + narrow!.width).toBeLessThanOrEqual(390);
+  await expect(panel.getByRole("button", { name: "关闭来源解释", exact: true })).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath("explain-draggable-mobile.png") });
+  expect(state.requests).toHaveLength(1);
+});
+
+test("图纸滚轮以指针缩放、中键拖动且目录收起后保留选择", async ({ page }) => {
+  await fixture(page); await page.goto(`/projects/${projectId}`);
+  await page.getByRole("button", { name: /^003C01 PDF/ }).click();
+  await page.getByRole("button", { name: "图纸预览", exact: true }).click();
+  const preview = page.getByRole("region", { name: "原页预览", exact: true });
+  const canvas = preview.locator(".drawing-canvas"), frame = canvas.locator(".evidence-image-frame");
+  await expect(frame.locator("img")).toBeVisible();
+  const bounds = await canvas.boundingBox();
+  const x = bounds!.x + bounds!.width / 2, y = bounds!.y + 80;
+  const before = await frame.boundingBox();
+  await page.mouse.move(x, y); await page.mouse.wheel(0, -250);
+  await expect(preview.locator(".preview-zoom-value")).not.toHaveText("100%");
+  const after = await frame.boundingBox();
+  expect(after!.width).toBeGreaterThan(before!.width);
+  expect(Math.abs((x - before!.x) / before!.width - (x - after!.x) / after!.width)).toBeLessThan(.025);
+  const left = await canvas.evaluate(node => node.scrollLeft);
+  await page.mouse.down({ button: "middle" }); await page.mouse.move(x - 100, y - 65, { steps: 5 }); await page.mouse.up({ button: "middle" });
+  expect(await canvas.evaluate(node => node.scrollLeft)).toBeGreaterThan(left + 70);
+  await expect(canvas).not.toHaveClass(/is-panning/);
+  await page.getByRole("button", { name: "收起项目目录", exact: true }).click();
+  await expect(page.getByRole("complementary", { name: "项目目录", exact: true })).toBeHidden();
+  await expect(page.getByRole("button", { name: "展开项目目录", exact: true })).toHaveAttribute("aria-expanded", "false");
+  await page.screenshot({ path: test.info().outputPath("drawing-navigation-sidebar-collapsed.png") });
+  await page.getByRole("button", { name: "展开项目目录", exact: true }).click();
+  await expect(page.getByRole("button", { name: /^003C01 PDF/ })).toHaveClass(/active/);
+  await expect(preview.locator(".preview-zoom-value")).not.toHaveText("100%");
+});
+
+test("聊天图片属于各轮消息，正文向下展开，居中放大支持缩放和Esc返回", async ({ page }) => {
+  const state = await fixture(page); const panel = await openRow(page);
+  await expect(panel.getByLabel("解释回复")).toContainText("通过引用匹配跨页");
+  const first = panel.locator(".explain-turn").first();
+  await expect(first.getByRole("region", { name: "关联图纸", exact: true })).toBeVisible();
+  expect(await first.evaluate(node => !!(node.querySelector(".explain-evidence")!.compareDocumentPosition(node.querySelector(".explain-answer")!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
+  const button = first.getByRole("button", { name: /放大查看 原页/ });
+  await button.click();
+  const lightbox = page.getByRole("dialog", { name: /^查看图纸 原页/ });
+  await expect(lightbox).toBeVisible();
+  const rect = await lightbox.boundingBox(), screen = page.viewportSize()!;
+  expect(Math.abs(rect!.x + rect!.width / 2 - screen.width / 2)).toBeLessThan(2);
+  await lightbox.getByRole("button", { name: "放大图纸", exact: true }).click();
+  await expect(lightbox.getByRole("button", { name: "125%", exact: true })).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath("explain-lightbox-desktop.png") });
+  await page.keyboard.press("Escape");
+  await expect(lightbox).toHaveCount(0); await expect(panel).toBeVisible(); await expect(button).toBeFocused();
+  await panel.getByLabel("追问来源解释").fill("再解释一下端子来源");
+  await panel.getByRole("button", { name: "发送追问", exact: true }).click();
+  await expect(panel.locator(".explain-turn")).toHaveCount(2);
+  await expect(panel.getByLabel("解释回复").last()).toContainText("追问回复");
+  expect(state.requests).toHaveLength(2);
+  expect(await panel.locator(".explain-evidence").evaluateAll(nodes => nodes.every(node => node.parentElement?.classList.contains("explain-turn")))).toBe(true);
+  await page.screenshot({ path: test.info().outputPath("explain-inline-evidence-followup.png") });
+});
+
+test("窄屏目录折叠和图纸放大关闭可用且不溢出", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 }); await fixture(page);
+  const panel = await openRow(page);
+  await expect(panel.getByLabel("解释回复")).toContainText("通过引用匹配跨页");
+  await panel.getByRole("button", { name: /放大查看 原页/ }).click();
+  const lightbox = page.getByRole("dialog", { name: /^查看图纸/ });
+  await expect(lightbox).toBeVisible();
+  expect((await lightbox.boundingBox())!.width).toBeLessThanOrEqual(390);
+  await page.screenshot({ path: test.info().outputPath("explain-lightbox-mobile.png") });
+  await lightbox.getByRole("button", { name: "关闭图纸放大", exact: true }).click();
+  await expect(panel).toBeVisible();
+  await panel.getByRole("button", { name: "关闭来源解释", exact: true }).click();
+  await page.getByRole("button", { name: "收起项目目录", exact: true }).click();
+  await expect(page.getByRole("complementary", { name: "项目目录", exact: true })).toBeHidden();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath("workbench-sidebar-mobile.png") });
+});
+
 test("行悬停打开独立浮窗，先显示工具状态，再流式展示获取链路", async ({ page }) => {
   const state = await fixture(page, { pauseTools: true, pauseAnswer: true });
   const panel = await openRow(page);

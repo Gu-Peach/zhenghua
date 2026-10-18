@@ -16,11 +16,12 @@ interface ProjectTreeProps {
   simulationEnabled: boolean;
   onSelectWorkspace: (workspaceId: string) => void;
   onSelectDrawing: (workspaceId: string, drawingId: string) => void;
+  onSelectProject?: () => void;
   onRename?: (project: ProjectSummary, name: string) => Promise<void>;
   onDelete?: (project: ProjectSummary) => void;
 }
 
-export function ProjectTree({ project, projects, loading = false, selectedWorkspaceId, selectedDrawingId, stageProgress, uploadedFilename, simulationEnabled, onSelectWorkspace, onSelectDrawing, onRename, onDelete }: ProjectTreeProps) {
+export function ProjectTree({ project, projects, loading = false, selectedWorkspaceId, selectedDrawingId, stageProgress, uploadedFilename, simulationEnabled, onSelectWorkspace, onSelectDrawing, onSelectProject, onRename, onDelete }: ProjectTreeProps) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<string[]>([]);
@@ -41,7 +42,7 @@ export function ProjectTree({ project, projects, loading = false, selectedWorksp
   }
 
   return (
-    <aside className="project-sidebar">
+    <aside id="project-directory" className="project-sidebar" aria-label="项目目录">
       <div className="sidebar-heading"><div><span className="section-kicker">PROJECT LIBRARY</span><h2>项目目录</h2></div><span className="count-badge">{projects.length}</span></div>
       <label className="tree-search"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索项目或公司" aria-label="搜索项目或公司" /></label>
       <nav className="project-tree" aria-label="项目、工作区和图纸">
@@ -53,7 +54,7 @@ export function ProjectTree({ project, projects, loading = false, selectedWorksp
             <div className="project-node" key={item.id}>
                   <div className={`project-row ${active ? "active" : ""}`}>
                     <button type="button" className="project-folder-toggle" aria-expanded={expanded} aria-controls={childrenId} aria-label={`${expanded ? "收起" : "展开"}项目 ${item.name}`} onClick={() => toggleProject(item.id)}>{expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}</button>
-                    <EditableName value={item.name} label="项目名称" current={active} to={`/projects/${item.id}`} className="project-folder-link" leading={expanded ? <FolderOpen size={18} /> : <Folder size={18} />} trailing={<StatusDot status={item.status} />} onActivate={() => { if (active && !expanded) setExpandedProjects(ids => [...ids, item.id]); }} onSave={onRename ? name => onRename(item, name) : undefined} />
+                    <EditableName value={item.name} label="项目名称" current={active} to={`/projects/${item.id}`} className="project-folder-link" leading={expanded ? <FolderOpen size={18} /> : <Folder size={18} />} trailing={<StatusDot status={item.status} />} onActivate={() => { if (active) { onSelectProject?.(); if (!expanded) setExpandedProjects(ids => [...ids, item.id]); } }} onSave={onRename ? name => onRename(item, name) : undefined} />
                     {onDelete ? <button type="button" className="project-action" aria-label={`删除项目 ${item.name}`} title="删除项目" onClick={() => onDelete(item)}><Trash2 size={13} /></button> : null}
                   </div>
                   {project && active && expanded ? <div id={childrenId} className="workspace-tree">

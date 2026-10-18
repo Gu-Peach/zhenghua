@@ -1,7 +1,7 @@
 {
-  "version": "1.2.1",
+  "version": "1.3.0",
   "coordinate_contract": "input_view_normalized_to_full_page",
-  "review_basis": "2026-10-17: visually checked packaged source/target images and crop previews; static checks only, no tests/model/database calls; engineering validation pending.; 2026-10-18: shared CLI/upload request and output contract, 4 scan/14 completion request parity and154-row projection checks, ZH zero-column compatibility; static only, no tests/models/DB writes.; 2026-10-18 ABB marker correction: visible busbar endpoints, full pin labels, marker + Sheet numbers and27 same-source fixture connections; static resource checks only, no tests/models/DB/publishing.",
+  "review_basis": "2026-10-17: visually checked packaged source/target images and crop previews; static checks only, no tests/model/database calls; engineering validation pending.; 2026-10-18: shared CLI/upload request and output contract, 4 scan/14 completion request parity and154-row projection checks, ZH zero-column compatibility; static only, no tests/models/DB writes.; 2026-10-18 ABB marker correction: visible busbar endpoints, full pin labels, marker + Sheet numbers and27 same-source fixture connections; static resource checks only, no tests/models/DB/publishing.; 2026-10-18 resource layout only: ZH-aligned completion/lv11/quality-provenance names; active Prompt/Expected/image bytes preserved, historical assets moved to test fixtures; static checks only, no tests/model/DB/publishing.; 2026-10-18 ABB1.3.0 private marker readings and program principle numbers, full-page applicable57-line fixture with coverage exclusions and27 current positives. Static message/schema/field comparison only; no tests/models/DB/publishing. Legacy packages opt out by absence of scan_evidence_rules.",
   "files": [
     {
       "path": "services/agent/src/agent/extraction_agent/agents/page_scanner.py",
@@ -21,7 +21,7 @@
     },
     {
       "path": "services/agent/src/agent/extraction_agent/application/incremental_worker.py",
-      "checksum": "sha256:26596c4ef27b5ea6943dc88fdcc0667181643ca609fd626578e5d4e20cbb2e0a"
+      "checksum": "sha256:f67a71e28f2c78ee0d4e078e8f65f3dd3d4a808e8205cf67d4f3cc3ce32af61c"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/application/page_workflow_extraction.py",
@@ -45,7 +45,7 @@
     },
     {
       "path": "services/agent/src/agent/extraction_agent/infrastructure/abb_vlm_stages.py",
-      "checksum": "sha256:7c9c38dd2a218abde878dede9277e1f3ddc0270f51af9cd79a099aeaf19b007d"
+      "checksum": "sha256:d8a354a9e8c8251614a942f98522185bd9dfb675165db0d3c7370b191d55e1d0"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/infrastructure/document/completion_context.py",
@@ -77,43 +77,67 @@
     },
     {
       "path": "services/agent/src/agent/extraction_agent/profiles/abb/profile.json",
-      "checksum": "sha256:1fdb66e771c66f19a6cfcc1ed931fa2fc7479087761fcf42def13c5c87f58c29"
+      "checksum": "sha256:4afc6b08ef168da3012464fbaf0ded51289efb41baa538dd07c0d7b1c51570e8"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/profiles/abb/rules.json",
-      "checksum": "sha256:a62f89f71521652f3987b1fa0981c6f56b7c98fc57d1e600023414e801ac2d3f"
+      "checksum": "sha256:2e015cffd216f8c3ecd55fb79e0a7ac10c980e396afde7fb05b68dc47ae5ebfa"
     },
     {
-      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/annotated/images/lv11_205.png",
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/lv11/images/lv11_205.png",
       "checksum": "sha256:5d33f36cfa99dd73b7159bda9969cb50761d273951294b9c12ccb50eedf8aecb"
     },
     {
-      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/annotated/images/lv12_241.png",
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/lv11/images/lv12_241.png",
       "checksum": "sha256:9f6bbef109ee8e3830c86d5136540edbce040befd217e9720dedfaf7106746ca"
     },
     {
-      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/annotated/manifest.json",
-      "checksum": "sha256:5fba667fad98c357a333628e2f3a4d8ce0def3c7c477d246d0cf4d8240819abd"
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/lv11/manifest.json",
+      "checksum": "sha256:14b25ca4617e2259e67bfc4fd43dafb5b81bb87ba5c772fe6f658630215361dd"
     },
     {
-      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/annotated/stage2/lv11_205.expected.json",
-      "checksum": "sha256:a47fbdd8a8fbf8f6258ffec2badbf9d15eefce6efae67b2352133295e3fc8e89"
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/lv11/stage2/lv11_205.expected.json",
+      "checksum": "sha256:2486fc764964d245504b556c6e1677d8fb0927417a1f68641b8436c8a497b9d3"
     },
     {
-      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/annotated/stage3/205_q4_l1_to_241_q1.expected.json",
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/lv11/completion/205_q4_l1_to_241_q1.expected.json",
       "checksum": "sha256:c0e50b1eb7864857dd3e0d9afe3088ac6e9fe72a32cef0ae34719f7e1f8d5bc8"
     },
     {
-      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/annotated/stage3/205_q4_l1_to_241_q1.task.json",
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/lv11/completion/205_q4_l1_to_241_q1.task.json",
       "checksum": "sha256:3ad5a17bef231dcb95f6d936d90ea2216bd958f0cf3996da01d6b729b6a8f072"
     },
     {
-      "path": "services/agent/src/agent/extraction_agent/prompts/abb/page_cross_page_completion.md",
-      "checksum": "sha256:c40d30f8528a1a088e939da397514cc2d1815afb498db2b21d94269b2c811f4a"
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/page_connection_completion.md",
+      "checksum": "sha256:47108ebf87ecec5dd1a27bdf57a7dadf83e90179abb1b80f5a03f2aa8919ea07"
     },
     {
       "path": "services/agent/src/agent/extraction_agent/prompts/abb/page_scan_index.md",
-      "checksum": "sha256:46a64e6c1d77145cf4c4451d0efd4343c9be50f04715c8c539dfae01a21cb346"
+      "checksum": "sha256:5d55390163063c90a93e015014fbe6302a7911063bff09b20b8123d62a11eb45"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/lv11/quality-provenance.json",
+      "checksum": "sha256:459a9b8f92ad7cda257d716574aeae31694b66db7a9f1145cba040c05458c0de"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/lv11/README.md",
+      "checksum": "sha256:2bd4a4be209d2a7186eb7e44eeff60de5bf40b6407a375459955eb772e069819"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/infrastructure/abb_scan_evidence.py",
+      "checksum": "sha256:3050b773cbc0bd39409015b6f0a168fbea5722a3fdf3b663c94d426436f29aae"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/profiles/abb/scan_evidence.json",
+      "checksum": "sha256:6b33ad598438a32ebb4fe5c19989561d98c1e586cc5cf3b021c9faf58ec20f2e"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/lv11/stage2/lv11_205.markers.json",
+      "checksum": "sha256:bfcc03af7ca7684b8f55ece6e6fb6d7a11abf8011f45467a50a2b7b1e6cb3e51"
+    },
+    {
+      "path": "services/agent/src/agent/extraction_agent/prompts/abb/examples_wiring/lv11/coverage.json",
+      "checksum": "sha256:9881f6d2a730623b3d795ac7be9c53447ab3f5a3d56702994702f81c058dbdfe"
     }
   ],
   "runtime_contract": "stage2-script-aligned-v1"

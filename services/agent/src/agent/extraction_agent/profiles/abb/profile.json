@@ -1,7 +1,7 @@
 {
   "manifest_version": 1,
   "key": "abb",
-  "version": "1.2.1",
+  "version": "1.3.0",
   "display_name": "ABB 电气图纸",
   "description": "ABB small-circle wiring markers, terminal boundaries and Sheet-based principle numbers in the Stage 2 page workflow.",
   "status": "active",
@@ -10,14 +10,15 @@
   "resources": {
     "classification_prompt": "../../prompts/abb/page_classification.md",
     "page_scan_prompt": "../../prompts/abb/page_scan_index.md",
-    "cross_page_prompt": "../../prompts/abb/page_cross_page_completion.md",
+    "cross_page_prompt": "../../prompts/abb/page_connection_completion.md",
     "classification_examples": "../../prompts/abb/examples_page_classification",
-    "wiring_examples": "../../prompts/abb/examples_wiring/annotated",
+    "wiring_examples": "../../prompts/abb/examples_wiring/lv11",
     "resource_readme": "../../prompts/abb/README.md",
     "resource_changelog": "../../prompts/abb/CHANGELOG.md",
     "routing_rules": "rules.json",
     "completion_view_rules": "completion_view.json",
-    "completion_view_provenance": "completion_view.provenance.json"
+    "completion_view_provenance": "completion_view.provenance.json",
+    "scan_evidence_rules": "scan_evidence.json"
   },
   "capabilities": [
     "page_classification",

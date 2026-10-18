@@ -31,7 +31,8 @@ from src.profiles.registry import ProfileRegistry
 
 ROOT = Path(__file__).resolve().parents[4]
 RESOURCES = ROOT / "services" / "agent" / "src/agent/extraction_agent/prompts" / "abb"
-WIRING = RESOURCES / "examples_wiring" / "annotated"
+WIRING = RESOURCES / "examples_wiring" / "lv11"
+REFERENCE = ROOT / "services" / "agent" / "tests" / "fixtures" / "abb_reference"
 
 
 def test_abb_resources_are_independent_and_ready(tmp_path: Path) -> None:
@@ -43,15 +44,15 @@ def test_abb_resources_are_independent_and_ready(tmp_path: Path) -> None:
     registry.load_all()
     abb = registry.resolve("abb")
     assert abb.manifest.status == ProfileStatus.ACTIVE
-    assert abb.manifest.version == "1.2.1"
+    assert abb.manifest.version == "1.3.0"
     assert abb.manifest.adapter == "abb_native"
     assert "full_document_extraction" in abb.manifest.capabilities
     assert all("prompts/zh" not in str(path).replace("\\", "/") for path in abb.resolved_resources.values())
     package = build_package(abb, tmp_path / "package")
     verify_package(tmp_path / "package", package)
     assert any("provenance.json" in entry.path for entry in package.files)
-    # Classification205 plus the205/241/281 wiring images; originals remain outside the package.
-    assert sum(Path(entry.path).suffix == ".png" for entry in package.files) == 4
+    # Classification205 and current205/241 images; historical fixtures stay outside the package.
+    assert sum(Path(entry.path).suffix == ".png" for entry in package.files) == 3
 
 
 def test_abb_native_policy_is_registered_and_resolves_sheet_reference() -> None:
@@ -99,8 +100,8 @@ def test_abb_package_routes_all_three_stages_without_zh_rules() -> None:
             AgentSettings(model_base_url="http://model.invalid/v1", default_model="fake"),
             gateway=gateway,
         )
-        source = DrawingPageInput(pdf_page_number=1, image_path=RESOURCES / "1.png")
-        target = DrawingPageInput(pdf_page_number=2, image_path=RESOURCES / "2.png")
+        source = DrawingPageInput(pdf_page_number=1, image_path=WIRING / "images/lv11_205.png")
+        target = DrawingPageInput(pdf_page_number=2, image_path=WIRING / "images/lv12_241.png")
         result1 = await dispatcher.classify_page(
             PageClassificationRequest(
                 run_id="abb-run", project_id="abb-project", profile=binding, page=source
@@ -128,7 +129,8 @@ def test_abb_package_routes_all_three_stages_without_zh_rules() -> None:
         schema = json.loads(gateway.calls[1].messages[0]["content"].split("输出 JSON Schema：\n", 1)[1])
         assert "DrawingEndpoint" in schema["$defs"]
         assert "ZH" not in schema["$defs"]["DrawingEndpoint"]["properties"]["device"].get("description", "")
-        assert "endpoint_role" not in schema["$defs"]["ScannedConnection"].get("required", [])
+        required = schema["$defs"]["AbbScannedConnection"]["required"]
+        assert {"endpoint_role", "start_marker_number", "end_marker_number"} <= set(required)
         assert all(call.metadata["profile"] == "abb" for call in gateway.calls)
         request_text = "\n".join(
             str(message["content"])
@@ -136,7 +138,7 @@ def test_abb_package_routes_all_three_stages_without_zh_rules() -> None:
             for message in call.messages
             if message["role"] == "user"
         )
-        assert "不使用 ZH 起点白名单" in request_text
+        assert "start_marker_number/end_marker_number" in request_text
         assert "起点端子只能是 XD0" not in request_text
         assert sum(
             item.get("type") == "image_url"
@@ -152,7 +154,8 @@ def test_classification_uses_one_current_sheet_not_cont() -> None:
     example = examples[0]
     data = PageClassificationData.model_validate_json(example.expected_json)
     assert (data.plant_function, data.drawing_page_number) == ("LV11", 205)
-    assert len(example.images) == 1 and example.images[0].content == (RESOURCES / "1.png").read_bytes()
+    assert len(example.images) == 1
+    assert example.images[0].content == (WIRING / "images/lv11_205.png").read_bytes()
 
 
 def test_page_scan_uses_one_full_page_with_cross_page_connections() -> None:
@@ -161,9 +164,10 @@ def test_page_scan_uses_one_full_page_with_cross_page_connections() -> None:
     example = examples[0]
     data = PageScanData.model_validate_json(example.expected_json)
     assert data.pdf_page_number == 1
-    assert len(example.images) == 1 and example.images[0].content == (RESOURCES / "1.png").read_bytes()
-    assert example.images[0].note and "不是整页穷举结果" in example.images[0].note
-    assert len(data.units) == 5 and data.units[0].wire_number is None
+    assert len(example.images) == 1
+    assert example.images[0].content == (WIRING / "images/lv11_205.png").read_bytes()
+    assert example.images[0].note and "逐区扫描整页" in example.images[0].note
+    assert len(data.units) == 15 and data.units[0].wire_number is None
     connections = data.units[0].connections
     assert [c.line_number for c in connections] == ["Q4:2205", "Q4:4205", "Q4:6205", "Q4:8205"]
     assert [connection.start.terminal for connection in connections if connection.start] == [
@@ -186,7 +190,7 @@ def test_circle_examples_keep_direct_segments_and_source_sheet_numbers() -> None
     fallback = PageScanData.model_validate_json(examples[0].expected_json)
     assert [c.line_number for c in fallback.units[1].connections] == ["Q3:2205", "Q3:4205", "Q3:6205"]
     circles = PageScanData.model_validate_json(
-        (WIRING / "stage2/lv21_281_circles.expected.json").read_text(encoding="utf-8")
+        (REFERENCE / "stage2/lv21_281_circles.expected.json").read_text(encoding="utf-8")
     )
     connections = [c for u in circles.units for c in u.connections]
     assert len(connections) == 9
@@ -245,10 +249,22 @@ def test_cross_page_uses_one_target_and_compact_frozen_source() -> None:
     assert "start_terminal" not in example.input_json
     assert "terminal_coordinates" not in example.input_json
     assert [image.role for image in example.images] == ["target_page"]
-    assert example.images[0].content == (RESOURCES / "2.png").read_bytes()
+    assert example.images[0].content == (WIRING / "images/lv12_241.png").read_bytes()
     assert "start" not in json.loads(example.expected_json)
     assert result.end and (result.end.location, result.end.device, result.end.terminal) == (
         "+EH.Q21",
         "-Q1",
         "Q1:2",
     )
+
+
+def test_abb_resource_layout_matches_zh_completion_names() -> None:
+    assert {path.name for path in WIRING.iterdir()} == {
+        "images", "stage2", "completion", "manifest.json", "quality-provenance.json",
+        "README.md", "coverage.json",
+    }
+    assert (RESOURCES / "page_connection_completion.md").is_file()
+    assert not (RESOURCES / "page_cross_page_completion.md").exists()
+    manifest = json.loads((WIRING / "manifest.json").read_text(encoding="utf-8"))
+    assert all(case["input"].startswith("completion/") for case in manifest["stage3_cases"])
+    assert all(case["expected"].startswith("completion/") for case in manifest["stage3_cases"])

@@ -1,0 +1,87 @@
+{
+  "pdf_page_number": 2,
+  "drawing_function": "LV12",
+  "drawing_page_number": 241,
+  "units": [
+    {
+      "unit_id": "241-receivers",
+      "connections": [
+        {
+          "local_connection_id": "241-receiver-2",
+          "endpoint_role": "receiver",
+          "direction_basis": "沿原图直接连接/入页引用核对",
+          "line_number": null,
+          "start": null,
+          "end": {
+            "device": "-Q1",
+            "terminal": "Q1:2",
+            "location": "+EH.Q21",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.101,
+              "y": 0.248,
+              "pdf_page_number": 2
+            }
+          },
+          "references": [
+            {
+              "raw": "/205.3D / =LV11-Q4 L1",
+              "target_drawing_page": 205
+            }
+          ],
+          "is_cross_page": "cross_page"
+        },
+        {
+          "local_connection_id": "241-receiver-4",
+          "endpoint_role": "receiver",
+          "direction_basis": "沿原图直接连接/入页引用核对",
+          "line_number": null,
+          "start": null,
+          "end": {
+            "device": "-Q1",
+            "terminal": "Q1:4",
+            "location": "+EH.Q21",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.121,
+              "y": 0.248,
+              "pdf_page_number": 2
+            }
+          },
+          "references": [
+            {
+              "raw": "/205.3D / =LV11-Q4 L2",
+              "target_drawing_page": 205
+            }
+          ],
+          "is_cross_page": "cross_page"
+        },
+        {
+          "local_connection_id": "241-receiver-6",
+          "endpoint_role": "receiver",
+          "direction_basis": "沿原图直接连接/入页引用核对",
+          "line_number": null,
+          "start": null,
+          "end": {
+            "device": "-Q1",
+            "terminal": "Q1:6",
+            "location": "+EH.Q21",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.14,
+              "y": 0.248,
+              "pdf_page_number": 2
+            }
+          },
+          "references": [
+            {
+              "raw": "/205.3D / =LV11-Q4 L3",
+              "target_drawing_page": 205
+            }
+          ],
+          "is_cross_page": "cross_page"
+        }
+      ]
+    }
+  ]
+}

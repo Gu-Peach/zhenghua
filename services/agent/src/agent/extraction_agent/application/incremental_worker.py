@@ -189,12 +189,14 @@ async def execute_job(session: IncrementalSession, settings: AgentSettings) -> N
     )
 
 
-async def run_worker(settings: AgentSettings | None = None, *, once: bool = False) -> None:
+async def _run_extraction_worker(settings: AgentSettings | None = None, *, once: bool = False) -> None:
     settings = settings or AgentSettings.from_env()
     worker = f"extraction-{uuid4()}"
     logger.info(
         "Extraction Worker %s contract=%s model=%s",
-        worker, EXTRACTION_CONTRACT_VERSION, settings.default_model,
+        worker,
+        EXTRACTION_CONTRACT_VERSION,
+        settings.default_model,
     )
     async with httpx.AsyncClient(timeout=settings.supabase_request_timeout_seconds) as http:
         repository = IncrementalRepository(settings, http)
@@ -239,6 +241,27 @@ async def run_worker(settings: AgentSettings | None = None, *, once: bool = Fals
                 await asyncio.gather(heartbeat, task, return_exceptions=True)
             if once:
                 return
+
+
+async def run_worker(settings: AgentSettings | None = None, *, once: bool = False) -> None:
+    """One process hosts the existing extraction consumer and the independent rescan consumer."""
+    from src.agent.explain_agent.rescan_worker import run_rescan_worker
+
+    settings = settings or AgentSettings.from_env()
+    if once:
+        if not await run_rescan_worker(settings, once=True):
+            await _run_extraction_worker(settings, once=True)
+        return
+    tasks = [
+        asyncio.create_task(_run_extraction_worker(settings)),
+        asyncio.create_task(run_rescan_worker(settings)),
+    ]
+    try:
+        await asyncio.gather(*tasks)
+    finally:
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
 
 
 if __name__ == "__main__":

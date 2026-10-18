@@ -4,6 +4,23 @@
 
 ## 进行中
 
+- [x] 系统改名为振华重工放线表提取系统；项目级13列XLSX全量导出、版本核对/权限/空表、Explain拖动及按需历史。普通自动解释与任务差异解释禁用重扫工具，重扫按钮/主动需求保留。79项Agent、37项API、54项浏览器、类型/lint/build/Ruff/mypy及合成XLSX检查通过；未调用真实模型、导出实际用户数据或改库/服务。需重载8000 API2.9.0与8100、刷新前端，无新迁移。见ADR-0035与模块记录。
+
+- [x] 工作台交互完成：滚轮按指针缩放25%—400%、中键平移、目录侧栏收起/恢复、所选范围重扫自动发送、聊天图纸按轮嵌入正文之前与居中放大（含重扫证据）。65项相关浏览器用例、类型/lint/build及桌面/窄屏截图通过；未调用真实模型/重扫/业务写库，刷新前端即可。见`docs/apps/web/changelog/2026-10-18-workbench-interactions.md`。
+
+- [x] Cherry Studio对照阶段结束：当前同模型纯文本流式成功（21 Token，费用未返回），用户确认服务已恢复；未继续工具请求矩阵，不声称完整Explain已验收。此前“模型整体不可用”的过宽结论已纠正，无工具执行或业务写入。
+
+- [x] 006M01根因确认：两次受控请求均HTTP200后返回Provider internal_error，第二次取得`published MTP checkpoint is not materializable`。修复SSE error帧误归类Schema错误，安全提示模型服务错误；41项离线测试及Ruff/两源码mypy通过。未执行模型返回工具/重扫/业务写入；服务方检查点恢复或切换可用模型仍需后续处理，费用/Token用量未返回。
+
+- [x] zh_test/006M01 Explain排障：原页4行和只读取数正常，模型列表可见；补模型/存储错误分类及脱敏日志，35项离线测试、Ruff/单文件mypy通过。旧代码未留异常，历史根因无法恢复，需重载8100后重试确认；不改实际线表、不调用真实模型。见`docs/service/agent/changelog/2026-10-18-explain-errors.md`。
+
+
+- [x] ABB本地1.3.0识别优化：精简沿线/整页规则，57条适用连接/27条直接电流正例，私有原始双侧数字与程序拼Sheet、模糊读数/不同号和接收端约束；新资源显式启用，旧冻结包兼容。57×9字段静态比对、8路径/52摘要、3聚焦Schema、4Python AST/Ruff和2源码mypy通过；公共十四列/坐标及ZH/XMZ不改。未运行测试/模型/写库/发布，真实质量与分类429恢复待后续。见 `docs/service/agent/changelog/2026-10-18-abb-scan-evidence.md`。
+
+- [x] ABB本地包1.2.2资源命名对齐ZH：统一connection_completion、lv11/completion及quality-provenance，历史原图/离线案例移至测试夹具，引用/摘要同步。3Python AST/Ruff、16项引用/44摘要、Schema/绑定及17份原内容字节核对通过；规则、Expected和模型输入内容不变。未运行测试/模型或写库/发布，见 `docs/service/agent/changelog/2026-10-18-abb-resource-layout.md`。
+
+- [x] Explain重扫与细节图完成：原Stage2/Profile复用、原图/关联图+私有细节、行/页/工作区与空结果入口、租约Worker/检查点、保守匹配与候选确认，原行ID/归属固定。92项Agent、27项API/项目管理、11项隔离SQL、27项浏览器及布局复验、类型/lint/build/Ruff/mypy通过。20261018050000本地部署、三表摘要不变且REST可见；未创建真实任务/调用模型/改实际线表/启停服务，用户重载8000/8100及现有Worker。见ADR-0034及三模块交付记录。
+
 - [x] PDF遍历完成统一显示处理完成：Worker正常返回后提交finished，单页错误保留诊断；前端兼容旧EXTRACTION_PARTIAL，真正中断仍失败。Ruff/AST/Worker mypy、前端类型/lint/build及隔离浏览器/5截图/98摘要通过；未运行提取测试或模型、未改历史业务数据/任务/服务，见 `docs/service/agent/changelog/2026-10-18-extraction-finished-status.md`。
 
 - [x] 线表提取失败提示增加右侧关闭按钮：仅隐藏当前提示，保留重试行为，新失败重新展示；类型/lint/build及隔离浏览器桌面/窄屏/长文本/键盘/重试核对通过，8份截图在.runtime。未操作真实提取任务/数据库/服务，见 `docs/apps/web/changelog/2026-10-18-extraction-notice-dismiss.md`。

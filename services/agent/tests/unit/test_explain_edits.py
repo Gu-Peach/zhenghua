@@ -109,6 +109,7 @@ def test_edit_tool_creates_persisted_preview_then_returns_it_on_cached_retry():
             "search_connections",
             "view_drawings",
             "propose_connection_edit",
+            "rescan_connections",
         }
         retry = await assistant.ask(turn, actor)
         assert retry.cached and retry.proposals[0].proposal_id == result.proposals[0].proposal_id

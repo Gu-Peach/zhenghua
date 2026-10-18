@@ -4,6 +4,7 @@ import hashlib
 import json
 import re
 from collections.abc import Awaitable, Callable
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Literal, TypedDict
 
@@ -25,16 +26,38 @@ from .models import (
     ExplainResponse,
     ExplainTurn,
     ModelImage,
+    RescanRequest,
+    RescanRun,
     SearchResult,
     ToolActivity,
 )
 from .repository import ExplanationRepository
 from .tools.drawings import ViewDrawingsTool
 from .tools.edits import ProposeConnectionEditTool
+from .tools.rescan import RescanConnectionsTool
 from .tools.retrieval import ConnectionSearchTool, merge_drawings, query_coverage
 
 EventSink = Callable[[ExplainEvent], Awaitable[None]]
 MAX_TOOL_CALLS = 8
+
+
+def rescan_facts(run: RescanRun) -> dict[str, Any]:
+    value = run.model_dump(mode="json", exclude={"candidate"})
+    if run.candidate:
+        value["candidate"] = {
+            "changes": [
+                {
+                    **change.model_dump(mode="json", exclude={"evidence"}),
+                    "source_note": change.evidence.get("source_note")
+                    or (change.evidence.get("record") or {}).get("source_note"),
+                }
+                for change in run.candidate.changes[:20]
+            ],
+            "total_changes": len(run.candidate.changes),
+            "warnings": run.candidate.warnings[:20],
+            "unmatched_ids": [str(i) for i in run.candidate.unmatched_ids[:20]],
+        }
+    return value
 
 
 def unbacked_edit_claim(text: str) -> bool:
@@ -56,6 +79,8 @@ def unbacked_edit_claim(text: str) -> bool:
 
 
 class ExplainState(TypedDict, total=False):
+    rescan_created: bool
+    rescans: list[RescanRun]
     edit_repair_used: bool
     proposals: list[ConnectionEditProposal]
     cached_proposals: list[str]
@@ -97,7 +122,13 @@ def build_explain_graph(
         facts = [state["context"].model_facts(), *[item.model_facts() for item in state["retrievals"]]]
         image_hashes = [hashlib.sha256(image.data_url.encode()).hexdigest() for image in state["images"]]
         raw = prompt + json.dumps(
-            [facts, image_hashes, state["image_gaps"], [p.model_facts() for p in state.get("proposals", [])]],
+            [
+                facts,
+                image_hashes,
+                state["image_gaps"],
+                [p.model_facts() for p in state.get("proposals", [])],
+                [(str(r.id), r.status, r.checksum) for r in state.get("rescans", [])],
+            ],
             sort_keys=True,
             ensure_ascii=False,
         )
@@ -204,8 +235,12 @@ def build_explain_graph(
             "retrievals": retrievals,
             "tool_count": 0,
             "edit_repair_used": False,
+            "rescan_created": False,
             "images": images,
             "image_gaps": gaps,
+            "rescans": await repository.rescans(turn.model_copy(update={"batch_id": batch}), state["actor"])
+            if callable(getattr(repository, "rescans", None))
+            else [],
             "proposals": await repository.edit_proposals(
                 turn.model_copy(update={"batch_id": batch}), state["actor"], state["cached_proposals"]
             )
@@ -238,6 +273,8 @@ def build_explain_graph(
         facts = {
             "initial_selection": state["context"].model_facts(),
             "refreshed_retrievals": [item.model_facts() for item in state["retrievals"]],
+            "detail_attachment_ids": [str(value) for value in state["turn"].attachment_ids],
+            "rescans": [rescan_facts(run) for run in state.get("rescans", [])],
         }
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": prompt},
@@ -285,6 +322,7 @@ def build_explain_graph(
                 ConnectionSearchTool.definition(),
                 ViewDrawingsTool.definition(),
                 ProposeConnectionEditTool.definition(),
+                *([RescanConnectionsTool.definition()] if state["turn"].allow_rescan else []),
             ]
             if enabled
             else [],
@@ -308,6 +346,24 @@ def build_explain_graph(
             raise ExplainError("EMPTY_MODEL_ANSWER", "模型未返回有效解释，请重试。", 502)
         prefix = state["answer"]
         repaired = state.get("edit_repair_used", False)
+        if (
+            state.get("rescan_created")
+            and not state.get("proposals")
+            and unbacked_edit_claim(prefix + response.content)
+        ):
+            safe = "已提交重扫任务。正式线表尚未改动，请在任务卡查看真实进度及候选结果。"
+            if on_event:
+                await on_event(
+                    ExplainEvent(
+                        type="answer_reset",
+                        conversation_id=state["turn"].conversation_id,
+                        turn_id=state["turn"].turn_id,
+                        delta="",
+                    )
+                )
+            await emit(state, safe)
+            response = replace(response, content=safe, tool_calls=())
+            prefix = ""
         if not state.get("proposals") and unbacked_edit_claim(prefix + response.content):
             # Prose cannot be used as a proposal receipt or become confirmable business data.
             if on_event:
@@ -320,7 +376,10 @@ def build_explain_graph(
                     )
                 )
             prefix = ""
-            if not any(call.name == ProposeConnectionEditTool.name for call in response.tool_calls):
+            if not any(
+                call.name in {ProposeConnectionEditTool.name, RescanConnectionsTool.name}
+                for call in response.tool_calls
+            ):
                 if repaired or not enabled:
                     raise ExplainError(
                         "EDIT_PREVIEW_NOT_CREATED",
@@ -389,6 +448,8 @@ def build_explain_graph(
         gaps = list(state["image_gaps"])
         new_images: list[ModelImage] = []
         proposals = list(state.get("proposals", []))
+        rescans = list(state.get("rescans", []))
+        rescan_created = state.get("rescan_created", False)
         edit_index = 0
         for call in state["pending_calls"]:
             count += 1
@@ -397,13 +458,21 @@ def build_explain_graph(
                 {
                     "id": call.id,
                     "name": call.name
-                    if call.name in {"search_connections", "view_drawings", "propose_connection_edit"}
+                    if call.name
+                    in {
+                        "search_connections",
+                        "view_drawings",
+                        "propose_connection_edit",
+                        "rescan_connections",
+                    }
                     else "unsupported",
                 }
             )
             try:
                 parameters = (
-                    DrawingQuery
+                    RescanRequest
+                    if call.name == RescanConnectionsTool.name
+                    else DrawingQuery
                     if call.name == ViewDrawingsTool.name
                     else ConnectionEditRequest
                     if call.name == ProposeConnectionEditTool.name
@@ -419,6 +488,28 @@ def build_explain_graph(
             await activity(state, "tool_started", item)
             if count > MAX_TOOL_CALLS:
                 payload = {"error": "TOOL_LIMIT", "message": "本轮检索达到上限。"}
+            elif call.name == RescanConnectionsTool.name:
+                try:
+                    bound = state["turn"].model_copy(update={"batch_id": state["batch_id"]})
+                    run = await RescanConnectionsTool.execute(
+                        repository, bound, state["actor"], RescanRequest.model_validate_json(call.arguments)
+                    )
+                    rescans = [r for r in rescans if r.id != run.id] + [run]
+                    rescan_created = True
+                    payload = rescan_facts(run)
+                    if on_event:
+                        await on_event(
+                            ExplainEvent(
+                                type="rescan_started",
+                                conversation_id=bound.conversation_id,
+                                turn_id=bound.turn_id,
+                                rescan=run,
+                            )
+                        )
+                except (ValidationError, ValueError):
+                    payload = {"error": "INVALID_RESCAN", "message": "请明确重扫范围、端点及要求。"}
+                except ExplainError as exc:
+                    payload = {"error": exc.code, "message": exc.message}
             elif call.name == ProposeConnectionEditTool.name:
                 try:
                     request_edit = ConnectionEditRequest.model_validate_json(call.arguments)
@@ -522,6 +613,8 @@ def build_explain_graph(
             "images": images,
             "image_gaps": gaps,
             "proposals": proposals,
+            "rescans": rescans,
+            "rescan_created": rescan_created,
         }
 
     async def finish(state: ExplainState) -> dict[str, Any]:
@@ -559,6 +652,7 @@ def build_explain_graph(
                 visual_pages=[i.pdf_page_number for i in state["images"]],
                 gaps=gaps,
                 proposals=state.get("proposals", []),
+                rescans=state.get("rescans", []),
             ),
         }
 

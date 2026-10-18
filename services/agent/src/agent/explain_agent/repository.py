@@ -26,12 +26,18 @@ from .models import (
     ExplainTurn,
     ModelImage,
     ProfileEvidence,
+    RescanRequest,
+    RescanRun,
     SearchResult,
     TerminalPosition,
 )
 
 
 class ExplanationRepository(Protocol):
+    async def start_rescan(
+        self, turn: ExplainTurn, actor: ExplainActor, identifier: str, request: RescanRequest
+    ) -> RescanRun: ...
+    async def rescans(self, turn: ExplainTurn, actor: ExplainActor) -> list[RescanRun]: ...
     async def load(self, turn: ExplainTurn, actor: ExplainActor) -> ExplainContext: ...
 
     async def search(
@@ -60,6 +66,85 @@ def _object(value: Any) -> dict[str, Any]:
 
 
 class SupabaseExplanationRepository:
+    async def rescans(self, turn: ExplainTurn, actor: ExplainActor) -> list[RescanRun]:
+        await self._authorized_project(turn, actor)
+        filters = {
+            "project_id": f"eq.{turn.project_id}",
+            "created_by": f"eq.{actor.user_id}",
+            "order": "created_at.desc",
+            "limit": "5",
+            "select": ",".join(RescanRun.model_fields),
+        }
+        filters.update(
+            {"id": f"eq.{turn.rescan_id}"}
+            if turn.rescan_id
+            else {"batch_id": f"eq.{turn.batch_id}", "conversation_id": f"eq.{turn.conversation_id}"}
+        )
+        try:
+            rows = await self.client.select(
+                "connection_rescan_runs",
+                params=filters,
+            )
+        except Exception as exc:
+            from src.domain.errors import AgentServiceError
+
+            if isinstance(exc, AgentServiceError):
+                if turn.rescan_id:
+                    raise ExplainError(
+                        "RESCAN_UNAVAILABLE", "无法读取指定重扫任务，请刷新后重试。", 503
+                    ) from exc
+                return []  # Optional task history must not disable ordinary explanation during rollout.
+            raise
+        if turn.rescan_id and not rows:
+            raise ExplainError("RESCAN_NOT_FOUND", "指定重扫任务不存在或无权访问。", 404)
+        runs = [RescanRun.model_validate(row) for row in rows]
+        if any(
+            run.project_id != turn.project_id
+            or (run.id != turn.rescan_id if turn.rescan_id else run.batch_id != turn.batch_id)
+            or (not turn.rescan_id and run.conversation_id != turn.conversation_id)
+            for run in runs
+        ):
+            raise ExplainError("RESCAN_SCOPE_MISMATCH", "重扫结果不属于请求范围。", 403)
+        return runs
+
+    async def start_rescan(
+        self, turn: ExplainTurn, actor: ExplainActor, identifier: str, request: RescanRequest
+    ) -> RescanRun:
+        await self._authorized_project(turn, actor)
+        try:
+            result = await self.client.rpc(
+                "enqueue_connection_rescan",
+                {
+                    "value": {
+                        "id": identifier,
+                        "project_id": str(turn.project_id),
+                        "actor": str(actor.user_id),
+                        "conversation_id": str(turn.conversation_id),
+                        "batch_id": turn.batch_id,
+                        "attachment_ids": [str(item) for item in turn.attachment_ids],
+                        "request": request.model_dump(mode="json", exclude_none=True),
+                    }
+                },
+            )
+        except Exception as exc:
+            from src.domain.errors import AgentServiceError
+
+            if not isinstance(exc, AgentServiceError):
+                raise
+            raise ExplainError(
+                "RESCAN_UNAVAILABLE",
+                "重扫任务未创建，请检查范围、附件、原Profile及新增迁移；正式线表未改动。",
+                503,
+            ) from exc
+        run = RescanRun.model_validate(result)
+        if (
+            run.project_id != turn.project_id
+            or run.batch_id != turn.batch_id
+            or run.conversation_id != turn.conversation_id
+        ):
+            raise ExplainError("RESCAN_SCOPE_MISMATCH", "重扫回执不属于当前项目/批次/会话。", 403)
+        return run
+
     def __init__(self, client: SupabaseClient, *, bucket: str = "project-assets") -> None:
         self.client, self.bucket = client, bucket
 
@@ -347,6 +432,20 @@ class SupabaseExplanationRepository:
                     "该行起终点已人工调换，记录所属页与工作区保持；坐标自身PDF页号才是端点位置。历史方向说明和引用不能当成新方向的证明。"
                 )
         reasons = evidence.get("review_reasons")
+        rescan = _object(evidence.get("rescan"))
+        if rescan.get("run_id"):
+            detail = _object(rescan.get("evidence"))
+            fresh_record = _object(detail.get("record"))
+            recorded["rescan"] = {
+                "run_id": rescan["run_id"],
+                "profile": rescan.get("profile") or evidence.get("profile"),
+                "time": rescan.get("time"),
+                "attachment_ids": rescan.get("attachments", []),
+                "source_note": detail.get("source_note") or fresh_record.get("source_note"),
+                "direction_basis": fresh_record.get("direction_basis"),
+                "original_image_checksums": detail.get("original_image_checksums", {}),
+                "model_calls": detail.get("model_calls", [])[:20],
+            }
         if isinstance(reasons, list):
             recorded["review_reasons"] = [
                 {k: _text(v, 1000) for k, v in item.items() if k in {"code", "field", "message"}}

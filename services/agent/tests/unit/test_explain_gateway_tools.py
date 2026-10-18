@@ -184,3 +184,70 @@ def test_partial_tool_stream_is_not_retried_or_executed():
             assert len(calls) == 1
 
     asyncio.run(run())
+
+
+@pytest.mark.parametrize("prefix", ["", 'data: {"choices":[{"delta":{"content":"部分公开文本"}}]}\n\n'])
+def test_http_200_provider_error_frame_is_not_schema_error_or_retried(prefix):
+    async def run():
+        calls = []
+
+        def handle(req):
+            calls.append(req)
+            frame = {
+                "error": {
+                    "type": "internal_error",
+                    "message": "published MTP checkpoint is not materializable",
+                }
+            }
+            return httpx.Response(
+                200,
+                headers={"content-type": "text/event-stream"},
+                text=prefix + "data: " + json.dumps(frame) + "\n\ndata: [DONE]\n\n",
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handle)) as client:
+            gateway = OpenAICompatibleModelGateway(
+                base_url="https://model.invalid",
+                default_model="fake",
+                client=client,
+                retry_policy=RetryPolicy(max_retries=2, initial_backoff_seconds=0),
+            )
+            public = []
+
+            async def emit(text):
+                public.append(text)
+
+            with pytest.raises(ModelGatewayError) as caught:
+                await gateway.stream_text(request(), emit)
+            assert str(caught.value.code) == "MODEL_TEMPORARILY_UNAVAILABLE"
+            assert caught.value.details["failure_kind"] == "provider_stream_error"
+            assert caught.value.details["provider_type"] == "internal_error"
+            assert not caught.value.retryable and len(calls) == 1
+            assert public == (["部分公开文本"] if prefix else [])
+
+    asyncio.run(run())
+
+
+def test_malformed_sse_frame_remains_schema_error():
+    async def run():
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda _: httpx.Response(
+                    200,
+                    headers={"content-type": "text/event-stream"},
+                    text="data: {broken\n\n",
+                )
+            )
+        ) as client:
+            gateway = OpenAICompatibleModelGateway(
+                base_url="https://model.invalid", default_model="fake", client=client
+            )
+
+            async def emit(_):
+                pytest.fail("Malformed stream must not expose public output")
+
+            with pytest.raises(ModelGatewayError) as caught:
+                await gateway.stream_text(request(), emit)
+            assert str(caught.value.code) == "MODEL_SCHEMA_INVALID"
+
+    asyncio.run(run())

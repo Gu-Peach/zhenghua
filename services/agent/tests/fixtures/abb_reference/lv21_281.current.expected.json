@@ -1,0 +1,282 @@
+{
+  "pdf_page_number": 3,
+  "drawing_function": "LV21",
+  "drawing_page_number": 281,
+  "units": [
+    {
+      "unit_id": "281-focused",
+      "connections": [
+        {
+          "local_connection_id": "281-q2-in-1",
+          "endpoint_role": "source",
+          "direction_basis": "沿原图直接连接/入页引用核对",
+          "line_number": "552281",
+          "start": {
+            "device": "-Q2",
+            "terminal": "L1",
+            "location": "+CA.A1",
+            "name": "BUSBAR",
+            "terminal_coordinates": {
+              "x": 0.4151,
+              "y": 0.171,
+              "pdf_page_number": 3
+            }
+          },
+          "end": {
+            "device": "-Q2",
+            "terminal": "Q2:1",
+            "location": "+CA.A1",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.4151,
+              "y": 0.282,
+              "pdf_page_number": 3
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "281-q2-in-3",
+          "endpoint_role": "source",
+          "direction_basis": "沿原图直接连接/入页引用核对",
+          "line_number": "553281",
+          "start": {
+            "device": "-Q2",
+            "terminal": "L2",
+            "location": "+CA.A1",
+            "name": "BUSBAR",
+            "terminal_coordinates": {
+              "x": 0.434,
+              "y": 0.171,
+              "pdf_page_number": 3
+            }
+          },
+          "end": {
+            "device": "-Q2",
+            "terminal": "Q2:3",
+            "location": "+CA.A1",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.434,
+              "y": 0.282,
+              "pdf_page_number": 3
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "281-q2-in-5",
+          "endpoint_role": "source",
+          "direction_basis": "沿原图直接连接/入页引用核对",
+          "line_number": "554281",
+          "start": {
+            "device": "-Q2",
+            "terminal": "L3",
+            "location": "+CA.A1",
+            "name": "BUSBAR",
+            "terminal_coordinates": {
+              "x": 0.453,
+              "y": 0.171,
+              "pdf_page_number": 3
+            }
+          },
+          "end": {
+            "device": "-Q2",
+            "terminal": "Q2:5",
+            "location": "+CA.A1",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.453,
+              "y": 0.282,
+              "pdf_page_number": 3
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "281-q2-x1-4",
+          "endpoint_role": "source",
+          "direction_basis": "沿原图直接连接/入页引用核对",
+          "line_number": "757281",
+          "start": {
+            "device": "-Q2",
+            "terminal": "Q2:2",
+            "location": "+CA.A1",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.4151,
+              "y": 0.331,
+              "pdf_page_number": 3
+            }
+          },
+          "end": {
+            "device": "-X1",
+            "terminal": "X1:4",
+            "location": "+CA.A1",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.4151,
+              "y": 0.437,
+              "pdf_page_number": 3
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "281-q2-x1-5",
+          "endpoint_role": "source",
+          "direction_basis": "沿原图直接连接/入页引用核对",
+          "line_number": "758281",
+          "start": {
+            "device": "-Q2",
+            "terminal": "Q2:4",
+            "location": "+CA.A1",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.434,
+              "y": 0.331,
+              "pdf_page_number": 3
+            }
+          },
+          "end": {
+            "device": "-X1",
+            "terminal": "X1:5",
+            "location": "+CA.A1",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.434,
+              "y": 0.437,
+              "pdf_page_number": 3
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "281-q2-x1-6",
+          "endpoint_role": "source",
+          "direction_basis": "沿原图直接连接/入页引用核对",
+          "line_number": "759281",
+          "start": {
+            "device": "-Q2",
+            "terminal": "Q2:6",
+            "location": "+CA.A1",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.453,
+              "y": 0.331,
+              "pdf_page_number": 3
+            }
+          },
+          "end": {
+            "device": "-X1",
+            "terminal": "X1:6",
+            "location": "+CA.A1",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.453,
+              "y": 0.437,
+              "pdf_page_number": 3
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "281-x1-t1-4",
+          "endpoint_role": "source",
+          "direction_basis": "沿原图直接连接/入页引用核对",
+          "line_number": "X1:4281",
+          "start": {
+            "device": "-X1",
+            "terminal": "X1:4",
+            "location": "+CA.A1",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.4151,
+              "y": 0.437,
+              "pdf_page_number": 3
+            }
+          },
+          "end": {
+            "device": "-T1",
+            "terminal": "T1:1L1",
+            "location": null,
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.4151,
+              "y": 0.489,
+              "pdf_page_number": 3
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "281-x1-t1-5",
+          "endpoint_role": "source",
+          "direction_basis": "沿原图直接连接/入页引用核对",
+          "line_number": "X1:5281",
+          "start": {
+            "device": "-X1",
+            "terminal": "X1:5",
+            "location": "+CA.A1",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.434,
+              "y": 0.437,
+              "pdf_page_number": 3
+            }
+          },
+          "end": {
+            "device": "-T1",
+            "terminal": "T1:1L2",
+            "location": null,
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.434,
+              "y": 0.489,
+              "pdf_page_number": 3
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "281-x1-t1-6",
+          "endpoint_role": "source",
+          "direction_basis": "沿原图直接连接/入页引用核对",
+          "line_number": "X1:6281",
+          "start": {
+            "device": "-X1",
+            "terminal": "X1:6",
+            "location": "+CA.A1",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.453,
+              "y": 0.437,
+              "pdf_page_number": 3
+            }
+          },
+          "end": {
+            "device": "-T1",
+            "terminal": "T1:1L3",
+            "location": null,
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.453,
+              "y": 0.489,
+              "pdf_page_number": 3
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        }
+      ]
+    }
+  ]
+}

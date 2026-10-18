@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "sheet": 205,
+  "pdf_page_number": 1,
+  "expected_connections": 57,
+  "included_regions": [
+    "左侧Q3输入/外接Q106",
+    "Q5输入/N到X1及Q5到GRJ",
+    "Q4输入及241出页",
+    "Q6母排/断路器/X1/Q102/A1",
+    "Q7母排/断路器/X1/T1/X1/Q103/A2.1",
+    "F50母排到断路器",
+    "可见地端到A1/T1/A2.1的直接PE段"
+  ],
+  "excluded_regions": [
+    {
+      "region": "上方公共母线到插接母排模块输入",
+      "reason": "只见模块连接符号、未确认独立放线段，不把内部母排路径额外当外接线。"
+    },
+    {
+      "region": "GRJ与TRJ之间、TRJ向281出页的无圈段",
+      "reason": "未见独立小圆点，也不是本例明确的断路器对外接段；不穿过GRJ/TRJ端子延长上游段。"
+    },
+    {
+      "region": "Q106底部只有电位名的无圈箭头与左侧独立PE箭头",
+      "reason": "无标记，且缺少可定位出页地址/另一端设备，不补造目的地。"
+    },
+    {
+      "region": "F50输出到571",
+      "reason": "教学图标明仅蓝斜杠为内部线；本段未确认独立小圆点，保持排除。"
+    },
+    {
+      "region": "断路器辅助触点及关联页号",
+      "reason": "触点联动/位置引用不是本段对外导线。"
+    }
+  ],
+  "review_status": "coding_agent_image_transcription_pending_engineering_validation",
+  "current_examples": "单一直接设备标注100A/50A/60A/15A/42A/20A保留；90-225A和kVA/SET不计算；PE无电流。"
+}

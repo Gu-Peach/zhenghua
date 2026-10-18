@@ -1,0 +1,17 @@
+# Explain错误分类与006M01排障
+
+本次只读核对`zh_test/006M01`：现有4条记录仍属于该页，权限取数、事实包和初始模型请求构建在Fake Gateway下通过。模型列表GET返回200且包含当前配置模型。未执行真实模型生成、重扫或业务写入。
+
+旧Explain边界将所有AgentServiceError合并为“数据或模型服务暂不可用”，没有记录具体异常；SSE建立后的失败使用error事件传递，访问日志仍是HTTP200。因此不能根据现有历史日志判定这次是429、请求拒绝还是格式错误，模型列表可见也不证明生成请求必然成功。
+
+`explain_agent/api.py`现区分ModelGatewayError与存储异常，前端沿用原错误码，显示安全的HTTP状态或格式错误提示。普通HTTP和SSE失败均打印turn/project、异常类型、错误码和数字上游状态；不打印原始异常消息、Provider响应、图片、JWT或密钥。没有改变请求、Prompt、提取规则或业务数据。
+
+35项Explain/网关离线测试通过（含8项新HTTP/SSE分类与脱敏复现），Ruff和单文件mypy通过。未修改前端或公共DTO，无需重新生成Client；无需迁移或新配置。用户重载8100后在原页重试即可取得新的分类提示和日志。历史失败原因仍待一次新请求确认，未声称模型故障已经修复。
+
+## 后续根因确认与修复
+
+用户重试日志为ModelGatewayError/MODEL_SCHEMA_INVALID。两次受控请求只读取该页事实、截获初始请求后直接检查模型响应，不执行模型返回工具。当前`Qwen3.8 27B`在`api.3stooges.chat`均在HTTP200 SSE中返回error事件；第二次取得Provider原因为`internal_error: published MTP checkpoint is not materializable`。说明该模型服务的发布检查点无法加载，具体服务端配置需由供应方核查。请求耗时分别约0.16秒、0.18秒，均无有效生成结果，供应方未返回usage或费用，无法据此报告实际成本。
+
+共享网关现将合法SSE error事件识别为MODEL_TEMPORARILY_UNAVAILABLE/failure_kind=provider_stream_error，不再当成坏JSON或工具格式；事件后不自动重试，避免重复请求确定失败的发布资源。Explain公开提示联系模型服务方或切换可用模型，日志增加安全布尔stream_error。原始Provider消息不进入公开回答或终端日志，真实错误仅在本次受控诊断中经脱敏检查。
+
+补充Provider检查点错误、部分公开文本后错误、不重试及坏帧仍按Schema失败的回归。41项相关离线测试、Ruff和两源码mypy通过。未改实际线表、Profile、模型配置或启停用户服务。重载8100仅加载正确错误提示；生成能力仍依赖供应方恢复或用户选择可用模型。

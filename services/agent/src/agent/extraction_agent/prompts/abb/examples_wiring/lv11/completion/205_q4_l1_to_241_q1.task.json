@@ -1,0 +1,31 @@
+{
+  "context_version": 2,
+  "task_id": "205_q4_l1_to_241_q1",
+  "source_page": {
+    "pdf_page_number": 1,
+    "drawing_function": "LV11",
+    "drawing_page_number": 205,
+    "object_location": "+EH.Q1.1"
+  },
+  "target_page": {
+    "pdf_page_number": 2,
+    "drawing_function": "LV12",
+    "drawing_page_number": 241,
+    "object_location": "+EH.Q21"
+  },
+  "source_component": {
+    "device": "-Q4",
+    "location": "+EH.Q1.1"
+  },
+  "line_number": "Q4:2205",
+  "signal_name": "=LV11-Q4 L1",
+  "references": [
+    {
+      "raw": "/241.1A / =LV11-Q4 L1",
+      "target_function": "LV12",
+      "target_drawing_page": 241,
+      "target_pdf_page": 2,
+      "target_column": 1
+    }
+  ]
+}

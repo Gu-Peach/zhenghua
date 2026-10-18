@@ -1,4 +1,4 @@
-import { authenticatedFetch, request } from "./client";
+import { ApiError, authenticatedFetch, request } from "./client";
 import type { components } from "./generated";
 import type { Drawing, ProjectDetail, ProjectSummary, RuleLibraryItem, WiringRow, Workspace } from "./types";
 
@@ -22,6 +22,21 @@ function connection(row: Schema["SimpleConnectionRead"]): WiringRow {
 }
 
 export const projectApi = {
+  async exportXlsx(id: string): Promise<void> {
+    const response = await authenticatedFetch(`/api/v1/projects/${id}/export.xlsx`, { headers: { Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" } });
+    if (!response.ok) {
+      const value = await response.json().catch(() => null) as { detail?: { message?: string } } | null;
+      throw new ApiError(value?.detail?.message ?? "导出失败，请稍后重试", response.status);
+    }
+    if (!response.headers.get("content-type")?.includes("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")) throw new Error("导出服务没有返回有效的XLSX文件");
+    const encoded = response.headers.get("content-disposition")?.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+    let filename = "项目_放线表.xlsx";
+    try { if (encoded) filename = decodeURIComponent(encoded); } catch { /* Keep the safe local fallback. */ }
+    filename = Array.from(filename, character => character.charCodeAt(0) < 32 || '<>:"/\\|?*'.includes(character) ? "_" : character).join("");
+    const url = URL.createObjectURL(await response.blob());
+    const link = document.createElement("a"); link.href = url; link.download = filename; document.body.append(link); link.click(); link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  },
   async retryExtraction(id: string): Promise<void> { await request(`/api/v1/projects/${id}/extraction/retry`, { method: "POST" }); },
   async watchExtraction(id: string, signal: AbortSignal, changed: () => void, connectivity: (disconnected: boolean) => void): Promise<void> {
     let cursor = -1;

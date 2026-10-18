@@ -1,5 +1,9 @@
 # Server 文档
 
+- [项目XLSX导出](./changelog/2026-10-18-project-export.md)：当前正式批次全量13列、版本/权限核对、私有二进制响应，API2.9.0。
+
+- [重扫附件与确认事务](./changelog/2026-10-18-explain-rescan.md)：私有图片、租约任务、候选CAS及数据/文件删除一致性，API2.8.0。
+
 - [整组调换归属纠正](./explain-swap-origin-correction.md)：当前约定为所属页/工作区固定，坐标自带真实页号；新函数迁移和指定4行恢复已完成，取代此前迁页处理。
 
 - [删除副本与修改后空表排障](./changelog/2026-10-18-explain-delete-relocation.md)：物理删除及副本清理、最小幂等回执、新迁移本地部署；调换后来源页筛选跟随，行ID不变。

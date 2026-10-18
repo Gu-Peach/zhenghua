@@ -1,0 +1,51 @@
+{
+  "version": 7,
+  "description": "One source-page scan and one target-only completion example. Resource layout follows ZH. Historical fixtures are outside the runtime package under tests/fixtures/abb_reference. stage3_cases is the shared compatibility key for internal completion.",
+  "images": {
+    "lv11_205": "images/lv11_205.png",
+    "lv12_241": "images/lv12_241.png"
+  },
+  "stage2_cases": [
+    {
+      "id": "lv11_205",
+      "title": "LV11/205整页：逐区放线段、原始编号、端子分段与电流证据",
+      "expected": "stage2/lv11_205.expected.json",
+      "images": [
+        {
+          "path": "images/lv11_205.png",
+          "role": "source_page",
+          "note": "按当前规则逐区扫描整页，端子/数字来自本图，原始读数由配套markers文件提供；其他页不照抄本页设备、编号或条数。排除的内部段见coverage说明。"
+        }
+      ],
+      "checksums": {
+        "stage2/lv11_205.expected.json": "sha256:2486fc764964d245504b556c6e1677d8fb0927417a1f68641b8436c8a497b9d3",
+        "images/lv11_205.png": "sha256:5d33f36cfa99dd73b7159bda9969cb50761d273951294b9c12ccb50eedf8aecb",
+        "stage2/lv11_205.markers.json": "sha256:bfcc03af7ca7684b8f55ece6e6fb6d7a11abf8011f45467a50a2b7b1e6cb3e51",
+        "coverage.json": "sha256:9881f6d2a730623b3d795ac7be9c53447ab3f5a3d56702994702f81c058dbdfe"
+      },
+      "marker_readings": "stage2/lv11_205.markers.json",
+      "coverage": "coverage.json"
+    }
+  ],
+  "stage3_cases": [
+    {
+      "id": "205_q4_l1_to_241_q1",
+      "title": "LV11/205 Q4 L1 → LV12/241 Q1:2：目标图+冻结来源事实",
+      "input": "completion/205_q4_l1_to_241_q1.task.json",
+      "expected": "completion/205_q4_l1_to_241_q1.expected.json",
+      "images": [
+        {
+          "path": "images/lv12_241.png",
+          "role": "target_page",
+          "note": "Sheet 241 目标页：核对 =LV11-Q4 L1、/205.3D 并补全 +EH.Q21-Q1:2。物理页序号仅为样例位置。"
+        }
+      ],
+      "checksums": {
+        "completion/205_q4_l1_to_241_q1.expected.json": "sha256:c0e50b1eb7864857dd3e0d9afe3088ac6e9fe72a32cef0ae34719f7e1f8d5bc8",
+        "images/lv12_241.png": "sha256:9f6bbef109ee8e3830c86d5136540edbce040befd217e9720dedfaf7106746ca",
+        "completion/205_q4_l1_to_241_q1.task.json": "sha256:3ad5a17bef231dcb95f6d936d90ea2216bd958f0cf3996da01d6b729b6a8f072"
+      }
+    }
+  ],
+  "profile_version": "1.3.0"
+}

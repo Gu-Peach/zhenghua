@@ -1,5 +1,19 @@
 # Changelog
 
+2026-10-18：品牌更新为振华重工放线表提取系统，项目根范围支持全量正式线表13列XLSX导出（电压等级与端子排独立）；Explain可拖动，历史重扫按需查看，自动来源解释限制重扫工具。API2.9.0/OpenAPI/Client已同步，79项Agent、37项API、54项浏览器与静态检查通过，无数据库迁移或实际业务操作。见[ADR](../adr/0035-project-xlsx-export.md)、[Web](../apps/web/changelog/2026-10-18-project-export-chat.md)、[Server](../service/server/changelog/2026-10-18-project-export.md)、[Agent](../service/agent/changelog/2026-10-18-explain-request-modes.md)。
+
+2026-10-18：图纸预览滚轮缩放/中键拖动，项目目录侧栏可收起；重扫按钮自动发送所选范围请求，候选仍人工确认。Explain图片按消息显示，支持原界面居中放大。65项相关浏览器及静态/截图检查通过，无后端契约或数据库变更。见[Web记录](../apps/web/changelog/2026-10-18-workbench-interactions.md)。
+
+2026-10-18：Explain006M01失败复现为模型供应方发布检查点不可加载；共享网关将HTTP200 SSE中的error事件正确识别为模型服务错误，保留坏帧校验且不自动重试该错误。Explain给出对应安全提示，41项离线测试/Ruff/mypy通过；无实际线表、Profile或模型配置改动。见[根因记录](../service/agent/changelog/2026-10-18-explain-errors.md)。
+
+2026-10-18：Explain失败提示区分模型HTTP/格式与数据服务错误，补脱敏终端日志；SSE连接200后仍可能返回error事件。zh_test/006M01只读取数正常，历史具体异常未留存，重载8100后重试确认。35项离线测试及静态检查通过，无真实模型/业务写入。见[记录](../service/agent/changelog/2026-10-18-explain-errors.md)。
+
+2026-10-18：Explain新增原图与辅助截图重扫，复用提取核心和原Profile，支持行/页/工作区及零结果范围。前端准备/上传/粘贴、异步进度和候选对照，Server确认后CAS更新或新增，原行归属/ID不变、不自动删除。共享Worker且无新端口。92项Agent、27项API、11项独立SQL、27项浏览器与静态/布局验收通过，本地新迁移20261018050000已部署、三表摘要不变；未运行真实模型或提交真实业务修改。见[Agent](../service/agent/changelog/2026-10-18-explain-rescan.md)、[Server](../service/server/changelog/2026-10-18-explain-rescan.md)、[Web](../apps/web/changelog/2026-10-18-explain-rescan.md)。
+
+2026-10-18：ABB本地1.3.0按实际导线追踪整页端点，模型分开读两侧标记数字，程序生成原理号并保留依据；57条整页适用连接/电流示例和接收端等聚焦参考。公共十四列/坐标、ZH/XMZ与旧规则包契约保持；仅静态核对，未运行测试/模型或发布写库。见[Agent记录](../service/agent/changelog/2026-10-18-abb-scan-evidence.md)。
+
+2026-10-18：ABB本地包1.2.2统一补全Prompt和样例目录命名到ZH，历史原图/离线案例移到测试夹具，引用/摘要同步；提取规则、实际模型图片、Expected及十四列输出不变。仅静态检查，未运行测试或模型、不发布/写库。见[Agent记录](../service/agent/changelog/2026-10-18-abb-resource-layout.md)。
+
 2026-10-18：按用户确认，PDF遍历正常结束统一显示处理完成，单页错误保留诊断，不再让整任务失败；历史EXTRACTION_PARTIAL在前端兼容显示完成，真正中断仍失败。静态及隔离浏览器核对通过，无数据库/API结构变更，不改历史业务数据。见[记录](../service/agent/changelog/2026-10-18-extraction-finished-status.md)。
 
 2026-10-18：线表顶部提取未完成提示可通过右侧关闭按钮隐藏，保留任务失败状态和重试行为，新失败重新展示。前端类型/lint/build及隔离浏览器核对通过，无API/数据库变更。见[Web记录](../apps/web/changelog/2026-10-18-extraction-notice-dismiss.md)。

@@ -1,11 +1,26 @@
 from __future__ import annotations
 
+import json
+from typing import Any
+
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionRequest,
     PageClassificationRequest,
+    PageScanData,
     PageScanRequest,
 )
-from src.agent.extraction_agent.infrastructure.zh_vlm_stages import ZhVlmExtractionStageAdapter
+from src.agent.extraction_agent.infrastructure.abb_scan_evidence import (
+    AbbScanEvidenceContract,
+    AbbScanResponse,
+    finalize_abb_scan,
+    load_abb_readings,
+    raw_abb_scan_example,
+)
+from src.agent.extraction_agent.infrastructure.zh_vlm_stages import (
+    ZhVlmExtractionStageAdapter,
+    _normalize_page_scan,
+)
+from src.domain.models.profiles import ProfileBinding
 
 
 class AbbVlmExtractionStageAdapter(ZhVlmExtractionStageAdapter):
@@ -13,6 +28,64 @@ class AbbVlmExtractionStageAdapter(ZhVlmExtractionStageAdapter):
 
     enforce_evidence_contract = False
     zh_endpoint_semantics = False
+
+    def _uses_marker_readings(self, profile: ProfileBinding) -> bool:
+        path = profile.resolved_resources.get("scan_evidence_rules")
+        if path is None:
+            return False
+        AbbScanEvidenceContract.model_validate_json(path.read_text(encoding="utf-8"))
+        return True
+
+    async def scan_page(self, request: PageScanRequest) -> PageScanData:
+        if request.page.blank or request.page.non_wiring or not self._uses_marker_readings(request.profile):
+            return await super().scan_page(request)
+        response = await self._invoke_stage(
+            stage="page_scan",
+            request_id=request.run_id,
+            profile=request.profile,
+            prompt_resource="page_scan_prompt",
+            example_resource="wiring_examples",
+            example_section="stage2_cases",
+            images=[request.page],
+            user_text=self.scan_instruction(request),
+            output_model=AbbScanResponse,
+            normalize=lambda value: _normalize_page_scan(value, request.page.pdf_page_number),
+            item_id=f"pdf-page:{request.page.pdf_page_number}",
+        )
+        return finalize_abb_scan(response, source_sheet=request.page.drawing_page_number)
+
+    def _few_shot_messages(
+        self,
+        *,
+        profile: ProfileBinding,
+        resource: str,
+        section: str,
+        input_json: str | None,
+    ) -> list[dict[str, Any]]:
+        messages = super()._few_shot_messages(
+            profile=profile,
+            resource=resource,
+            section=section,
+            input_json=input_json,
+        )
+        if section != "stage2_cases" or not self._uses_marker_readings(profile):
+            return messages
+        folder = profile.resource(resource)
+        manifest = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
+        cases = manifest.get(section, [])
+        assistants = [message for message in messages if message["role"] == "assistant"]
+        if len(cases) != len(assistants):
+            raise ValueError("ABB scan examples do not match their manifest")
+        for case, message in zip(cases, assistants, strict=True):
+            evidence = load_abb_readings(folder, case.get("marker_readings", ""))
+            message["content"] = json.dumps(
+                raw_abb_scan_example(
+                    json.loads(message["content"]),
+                    evidence,
+                ),
+                ensure_ascii=False,
+            )
+        return messages
 
     def classification_instruction(self, request: PageClassificationRequest) -> str:
         return (
@@ -22,28 +95,17 @@ class AbbVlmExtractionStageAdapter(ZhVlmExtractionStageAdapter):
         )
 
     def scan_instruction(self, request: PageScanRequest) -> str:
+        if not self._uses_marker_readings(request.profile):
+            return (
+                "按当前Profile系统规则读取ABB当前页，输出PageScanData JSON。"
+                f"\nPDF物理页：{request.page.pdf_page_number}\n当前页上下文：{request.page_context or '无'}"
+            )
         return (
-            "扫描 ABB 当前来源页的全部放线连接。小空心圆是放线标记，大空心圆是实际端子；"
-            "从小圆点沿导线找到两侧实际端点，同一段两个同号小圆点只输出一条连接。"
-            "母线L1/L2/L3/N接点也是端点，不能因没有X排号而漏掉母线到设备的连接。"
-            "例如Sheet205的L1→Q3:1标记224，L2→Q3:3标记225，L3→Q3:5标记226；"
-            "Q5、Q4的输入段以及Q6母排L1/L2/L3到Q6:1/3/5同样提取。"
-            "小圆圈旁相同数字不重复计数，不跨大圆圈或设备合并；蓝斜杠不能代替小圆圈判断。"
-            "原理号为标记数字直接拼来源Sheet，无分隔符；无编号用完整端子标识拼Sheet。"
-            "原理号是组合生成值，224和Sheet205生成224205，不要求图上印有224205。"
-            "例如552和Sheet281生成552281；确实无编号时Q3:2和Sheet205生成Q3:2205。"
-            "有编号不回退：N→X1:1标记564时为564205，无编号X1:1段才用X1:1205。"
-            "terminal保存完整身份Q3:1、X1:11，不只填裸数字；母线保留L1/N原文。"
-            "同排-X1附近11/12/13是端子数字，不是排号X11；501等标记编号不是端子号。"
-            "没有编号的小圆圈仍提取；明确无圈的断路器对外出线同样按实际端子处理。"
-            "不使用 ZH 起点白名单。没有当前页终点的跨页线 end=null，并绑定 /Sheet.列行 引用。"
-            "Sheet 为业务页，Cont 不是当前页；/205.2D是引用地址，不能当标记编号拼原理号。"
-            "目标功能未知置空，不从源电位猜目标功能。"
-            "signal_name保存导线/箭头旁可见电位名称，如=LV11-Q4 L1，与原理号分开。"
-            "current 仅保留直接证据的单一电流，范围、电压或系数不得推算。"
-            "批注不作为业务值；没有证据置空并待复核。输出 PageScanData JSON。"
-            "可见start/end填写实际端子中心的整图归一化terminal_coordinates及当前PDF物理页，"
-            "小圆圈是放线标记，不能把它的坐标当成实际端子坐标。颜色暂不提取。"
+            "按系统规则扫描当前整页所有适用连接，不以示例区域或条数限制范围。"
+            "先沿实际导线确定端点及方向，再读本段两侧小圆点数字。"
+            "start_marker_number/end_marker_number分别填写原始数字字符串或null；line_number留null由程序生成。"
+            "端子从所属元件/排号和实际针脚读取，接收端明确标receiver，未知事实留空。"
+            "电流只读本段设备的明确单一值，保留窄范围原文。颜色留空。输出AbbScanResponse JSON。"
             f"\nPDF物理页：{request.page.pdf_page_number}\n当前页上下文：{request.page_context or '无'}"
         )
 

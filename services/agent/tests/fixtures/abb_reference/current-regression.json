@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "profile_version": "1.3.0",
+  "description": "Current focused image transcriptions for field-level offline review, never injected as extra model images.",
+  "cases": [
+    {
+      "id": "281-number-and-pins",
+      "image": "images/lv21_281.png",
+      "expected": "lv21_281.current.expected.json",
+      "negative_assertions": [
+        "No592/593/594",
+        "No792/793/794",
+        "X1 pins4/5/6, not11/12/13",
+        "Stop at Q2-BUSBAR L1/L2/L3"
+      ]
+    },
+    {
+      "id": "432-direct-wiring",
+      "image": "images/cv09_432.png",
+      "expected": "cv09_432.current.expected.json",
+      "negative_assertions": [
+        "No X91 0V to F11 24V short",
+        "No fictitious F12:8/F13:3/F14:5",
+        "MH.S2 is location, actual X3 pin71",
+        "Do not borrow numbering from adjacent segments"
+      ]
+    },
+    {
+      "id": "241-receivers",
+      "image": "images/lv12_241.png",
+      "expected": "lv12_241.receivers.expected.json",
+      "negative_assertions": [
+        "Incoming from205 is receiver, not new source",
+        "NoQ1:7 or Q1:PE invented pins"
+      ]
+    }
+  ]
+}

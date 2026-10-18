@@ -14,6 +14,11 @@ export interface ExplainSelection {
   query?: Schema["ConnectionQuery"];
   batchId?: string;
   recordVersion?: number;
+  sourcePdf?: number;
+  targetPdf?: number;
+  draftMessage?: string;
+  skipInitial?: boolean;
+  initialMessage?: string;
 }
 export interface EvidenceDrawing { key: string; title: string; role: string; url?: string; pdfPage: number }
 export interface ToolResultView { summary: string; connections: Array<{ id: string; number: string; start: string; end: string }>; pages: string[]; gaps: string[]; json: string }
@@ -25,14 +30,18 @@ export function explainSelection(row: WiringRow, scope: "row" | "page", batchId?
     connectionId: scope === "row" ? row.id : undefined,
     query: scope === "page" ? { drawing_page: row.page, offset: 0, limit: 50, ...(pdfPage ? { pdf_page_number: pdfPage } : {}) } : undefined,
     batchId: batchId ?? undefined, recordVersion: scope === "row" ? row.recordVersion : undefined,
+    sourcePdf: pdfPage, targetPdf: typeof row.raw?.target_pdf_page_number === "number" ? row.raw.target_pdf_page_number : undefined,
   };
 }
 
-export async function* streamExplanation(selection: ExplainSelection, projectId: string, conversationId: string, turnId: string, message: string, signal: AbortSignal): AsyncGenerator<ExplainEvent> {
+export async function* streamExplanation(selection: ExplainSelection, projectId: string, conversationId: string, turnId: string, message: string, signal: AbortSignal, attachmentIds: string[] = [], rescanId?: string, allowRescan = true): AsyncGenerator<ExplainEvent> {
   const body: Schema["ExplainTurn"] = {
     project_id: projectId, connection_id: selection.connectionId, query: selection.query,
     batch_id: selection.batchId, record_version: selection.recordVersion,
     conversation_id: conversationId, turn_id: turnId, message,
+    ...(attachmentIds.length ? { attachment_ids: attachmentIds } : {}),
+    rescan_id: rescanId,
+    allow_rescan: allowRescan,
   };
   let completed = false;
   for await (const frame of sse("/api/v1/explain/turns/stream", { method: "POST", body: JSON.stringify(body), signal })) {
@@ -61,6 +70,7 @@ export function evidenceDrawings(context: ExplainContext | ExplainResponse): Evi
 }
 
 export function toolLabel(tool: ToolActivity): string {
+  if (tool.name === "rescan_connections") return "创建重扫任务（确认前不改线表）";
   if (tool.name === "propose_connection_edit") return "生成线表修改对照（尚未写入线表）";
   if (tool.name === "load_connection") return "读取端子连接及来源证据";
   if (tool.name === "view_drawings") return `查看图纸 · PDF ${Array.isArray(tool.arguments?.pdf_page_numbers) ? tool.arguments.pdf_page_numbers.join("、") : ""}`;

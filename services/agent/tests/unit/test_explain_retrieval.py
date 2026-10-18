@@ -186,6 +186,7 @@ def test_model_calls_native_search_tool_and_paginates_before_explaining_page():
             "search_connections",
             "view_drawings",
             "propose_connection_edit",
+            "rescan_connections",
         }
         tool_message = next(m for m in gateway.calls[1].messages if m["role"] == "tool")
         assert len(json.loads(tool_message["content"])["rows"]) == 2

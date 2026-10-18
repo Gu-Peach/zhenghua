@@ -1,5 +1,13 @@
 # Agent Service
 
+Explain普通自动解释现在限定当前会话重扫事实，并通过allow_rescan=false隐藏/拒绝提取工具；用户主动输入或重扫按钮仍可调用，项目历史仅主动查看。需重载8100及8000 API2.9.0并刷新Web，Worker不因本轮改动调整，无新迁移。见[边界记录](../../docs/service/agent/changelog/2026-10-18-explain-request-modes.md)。
+
+若Explain出现`stream_error=true`，表示供应方在已建立的HTTP200流中返回错误。006M01已复现当前模型发布检查点不可加载，需供应方恢复或配置可用模型；重载8100只加载正确错误提示，不能修复供应方模型资源。见[根因记录](../../docs/service/agent/changelog/2026-10-18-explain-errors.md)。
+
+Explain排障：流式接口的HTTP200只表示连接建立，实际失败通过SSE error事件传递。重载8100后，前端会区分模型HTTP状态/格式错误与数据服务异常，终端打印`Explain request failed ... code=... upstream_status=...`，不打印密钥或模型原始响应。无需改启动命令、数据库或Worker配置。见[诊断记录](../../docs/service/agent/changelog/2026-10-18-explain-errors.md)。
+
+2026-10-18 Explain新增`rescan_connections`：按原Profile复用提取核心，原页/关联图加上传细节生成候选，用户确认后才更新线表。迁移`20261018050000`需先部署；加载8000 API2.8.0、8100及下方独立Worker的新代码。Worker启动指令不变，同一进程同时消费正常提取和重扫，不需要新增端口或再开一个重扫服务。使用独立Worker时保持`AGENT_INLINE_WORKER=false`；开发时可选择inline方式，二选一。见[交付](../../docs/service/agent/changelog/2026-10-18-explain-rescan.md)。
+
 2026-10-18按用户要求，整份PDF遍历正常结束即处理完成，单页错误只留诊断，不再提交EXTRACTION_PARTIAL失败；真正中断仍失败。刷新前端可兼容已跑完的旧部分失败项目，后续执行由用户重启实际提取Worker加载新代码，无需数据库/API迁移。见[说明](../../docs/service/agent/changelog/2026-10-18-extraction-finished-status.md)。
 
 2026-10-18提取初扫单页失败改为记录并继续后续页，全部遍历后若仍有错误则汇总未完成项，保留重试入口。重启实际提取Worker后，可在原失败项目点击“重试提取”，保持原模型/冻结规则/配置即可复用成功页，不必重新上传。配置/存储/租约/取消仍立即中止。本轮未重启服务或重跑模型，见[说明](../../docs/service/agent/changelog/2026-10-18-extraction-page-failure.md)。

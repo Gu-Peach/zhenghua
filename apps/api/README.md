@@ -1,5 +1,9 @@
 # 业务 API
 
+API2.9.0新增项目根范围XLSX下载，OpenAPI已定义二进制媒体类型和客户端契约；ExplainTurn同步allow_rescan，普通自动解释由前端传false。按下方原命令重新加载8000及8100，无新迁移、端口或生产依赖，刷新前端即可使用。见[Server交付](../../docs/service/server/changelog/2026-10-18-project-export.md)。
+
+API2.8.0提供项目级`rescan-assets`与`rescans`接口，浏览器只访问8000。先部署`20261018050000_explain_rescan.sql`，再按下方命令重新加载8000、[8100及独立Worker](../../services/agent/README.md)。上传细节图不修改规则，重扫候选确认后才事务提交。契约仍由`export_explain_contract.py`→`export_openapi.py`→Web的openapi-typescript生成。见[接口与事务](../../docs/service/server/changelog/2026-10-18-explain-rescan.md)。
+
 API2.7.1同步Explain的answer_reset公开事件。重载8000/8100与刷新前端后可撤回无真实方案的口述预览，补调失败明确报错；无需新增数据库迁移。
 
 API2.7.0增加`GET /api/v1/projects/{project}/connection-edits`及按proposal读取和`POST .../{proposal}/decision`。只接受checksum和accepted，实际修改来自持久方案并由Server事务确认。本项目本地已应用`20261018020000_explain_connection_edits.sql`，其他环境须先应用；加载8000/8100新代码，沿用下方启动方式。此轮未改真实线表。

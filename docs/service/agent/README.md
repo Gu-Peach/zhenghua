@@ -1,5 +1,15 @@
 # Agent 服务设计索引
 
+- [自动解释与主动重扫边界](./changelog/2026-10-18-explain-request-modes.md)：当前会话历史、显式历史入口与自动解释的工具执行限制。
+
+- [Explain失败分类与006M01排障](./changelog/2026-10-18-explain-errors.md)：SSE HTTP200不代表解释成功，重载8100后打印脱敏错误类别和上游状态；历史失败根因待新请求确认。
+
+- [Explain重扫工具](./changelog/2026-10-18-explain-rescan.md)：原Stage2与Profile复用、原图/细节图输入适配、候选隔离及共享Worker队列，见[ADR-0034](../../adr/0034-explain-rescan.md)。
+
+- [ABB整页扫描与原始编号](./changelog/2026-10-18-abb-scan-evidence.md)、[执行计划](./abb-scan-evidence-plan.md)：本地1.3.0用私有读数协议与程序拼号，57条图像示例/电流正例；公共十四列/坐标不变，旧冻结包保留原契约。仅静态检查，真实质量待用户重跑。
+
+- [ABB资源名称统一](./changelog/2026-10-18-abb-resource-layout.md)、[执行计划](./abb-resource-layout-plan.md)：本地包1.2.2使用lv11/completion/quality-provenance结构，历史图例移到测试夹具；规则/Expected/实际输入图片字节不变，脚本参数不变。
+
 - [PDF完成状态约定](./changelog/2026-10-18-extraction-finished-status.md)：遍历正常结束即处理完成，错误留诊断，真正中断仍失败；替代早期部分失败终态。
 
 - [ABB小圆点与端点修正](./changelog/2026-10-18-abb-marker-endpoints.md)、[执行计划](./abb-marker-endpoint-plan.md)：本地1.2.1补母线输入、双标记配对、完整端子及原理号组合，十四列/坐标契约不改；静态核对，真实模型待用户复测。

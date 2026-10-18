@@ -1,5 +1,19 @@
 # Server 业务服务
 
+API2.9.0新增鉴权项目全量导出`GET /api/v1/projects/{project_id}/export.xlsx`，13列区分电压等级/端子排；固定当前正式批次、并发版本/权限核对，私有内存下载。Explain新增向后兼容allow_rescan参数；重载8000/8100并刷新前端，无迁移或Worker变化。见[导出交付](../../docs/service/server/changelog/2026-10-18-project-export.md)和[ADR-0035](../../docs/adr/0035-project-xlsx-export.md)。
+
+导出离线验证：开发依赖可通过`.\.venv\Scripts\python.exe -m pip install -e 'services/server[test]'`安装，再运行`.\.venv\Scripts\python.exe -m pytest services/server/tests/test_project_export.py -q`。openpyxl仅作独立读取验证，生产导出不依赖它；测试不访问真实数据库或模型。
+
+2026-10-18 API2.8.0新增Explain重扫附件、任务/证据读取、取消与候选确认。正式线表只在用户确认后修改，版本冲突整批拒绝；已登记辅助文件纳入项目删除，行删除清除相关重扫副本。本项目本地已部署`20261018050000_explain_rescan.sql`且三表摘要不变，其他环境先按顺序应用迁移；再重载8000/8100及现有独立Worker，启动命令不变，无新端口/环境变量。见[交付](../../docs/service/server/changelog/2026-10-18-explain-rescan.md)。
+
+从仓库根目录部署或核验当前本地项目的单个迁移（脚本会检查容器项目标签并先备份Schema，不执行重扫）：
+
+```powershell
+.\.venv\Scripts\python.exe services/server/scripts/apply_explain_edits_migration.py --migration 20261018050000 --apply
+```
+
+隔离SQL验证（不连接当前业务库）：`$env:EXPLAIN_RESCAN_SQL_TEST="1"`后执行`.\.venv\Scripts\python.exe -m pytest services/server/tests/test_explain_rescan_sql.py -q`。候选有效24小时；需重新生成时在解释框明确要求重扫。其他环境按迁移顺序部署。
+
 2026-10-18 当前交换约定已纠正：记录所属页/工作区与关联图纸索引固定，只交换元件/描述/端子/坐标对象。`20261018040000_swap_endpoints_keep_origin.sql`已在本地部署，旧迁页方案提交返回409；前端亦停用。指定4行归属恢复006C01/006.C，已确认端点与坐标保留。其他环境按顺序应用迁移；本地核验命令为 `.\.venv\Scripts\python.exe services/server/scripts/apply_explain_edits_migration.py --migration 20261018040000`。无需新端口，前端刷新、Agent重载8100。恢复脚本只用于用户明确授权的旧方案和精确范围，默认只读预览，不应自动修复其他项目。见[记录](../../docs/service/server/explain-swap-origin-correction.md)。
 
 2026-10-18 已部署 `20261018030000_connection_delete_no_snapshot.sql`：后续删行移除业务行及其审计/旧请求副本和相关修改方案，仅保留无端点值的幂等回执。迁移不批量改写旧历史，部署前后三表摘要不变。根目录执行 `.\.venv\Scripts\python.exe services/server/scripts/apply_explain_edits_migration.py --migration 20261018030000 --apply` 可在明确的本地项目应用或核验；其他环境按迁移顺序部署。API形状不变，前端刷新、Agent重载8100。见[排障与验证](../../docs/service/server/changelog/2026-10-18-explain-delete-relocation.md)。

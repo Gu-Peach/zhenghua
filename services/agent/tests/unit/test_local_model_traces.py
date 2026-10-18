@@ -129,7 +129,10 @@ def test_length_limited_abb_output_is_not_retried_as_a_comma_error() -> None:
                     profile=registry.bind("abb"),
                     page=DrawingPageInput(
                         pdf_page_number=1,
-                        image_path=root / "services/agent/src/agent/extraction_agent/prompts/abb/1.png",
+                        image_path=root / (
+                            "services/agent/src/agent/extraction_agent/prompts/abb/"
+                            "examples_wiring/lv11/images/lv11_205.png"
+                        ),
                     ),
                 )
             )

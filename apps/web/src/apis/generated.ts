@@ -177,6 +177,23 @@ export interface paths {
         patch: operations["rename_api_v1_projects__project_id__patch"];
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/export.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Project */
+        get: operations["export_project_api_v1_projects__project_id__export_xlsx_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/source": {
         parameters: {
             query?: never;
@@ -344,6 +361,125 @@ export interface paths {
         put?: never;
         /** Upload */
         post: operations["upload_api_v1_imports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project}/rescan-assets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rescan Image */
+        post: operations["rescan_image_api_v1_projects__project__rescan_assets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project}/rescan-assets/{asset}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Rescan Image Url */
+        get: operations["rescan_image_url_api_v1_projects__project__rescan_assets__asset__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project}/rescans/{run}/evidence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Rescan Evidence */
+        get: operations["rescan_evidence_api_v1_projects__project__rescans__run__evidence_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project}/rescans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Rescan List */
+        get: operations["rescan_list_api_v1_projects__project__rescans_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project}/rescans/{run}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Rescan Get */
+        get: operations["rescan_get_api_v1_projects__project__rescans__run__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project}/rescans/{run}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rescan Decide */
+        post: operations["rescan_decide_api_v1_projects__project__rescans__run__decision_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/projects/{project}/rescans/{run}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rescan Cancel */
+        post: operations["rescan_cancel_api_v1_projects__project__rescans__run__cancel_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1305,7 +1441,7 @@ export interface components {
              * Type
              * @enum {string}
              */
-            type: "context" | "retrieval" | "answer_delta" | "answer_reset" | "completed" | "tool_started" | "tool_completed" | "tool_failed" | "edit_proposal";
+            type: "context" | "retrieval" | "answer_delta" | "answer_reset" | "completed" | "tool_started" | "tool_completed" | "tool_failed" | "edit_proposal" | "rescan_started";
             /**
              * Conversation Id
              * Format: uuid
@@ -1324,6 +1460,7 @@ export interface components {
             delta?: string | null;
             result?: components["schemas"]["ExplainResponse"] | null;
             proposal?: components["schemas"]["ConnectionEditProposal"] | null;
+            rescan?: components["schemas"]["RescanRun"] | null;
         };
         /** ExplainResponse */
         ExplainResponse: {
@@ -1368,6 +1505,8 @@ export interface components {
             cached: boolean;
             /** Proposals */
             proposals?: components["schemas"]["ConnectionEditProposal"][];
+            /** Rescans */
+            rescans?: components["schemas"]["RescanRun"][];
         };
         /** ExplainTurn */
         ExplainTurn: {
@@ -1398,6 +1537,15 @@ export interface components {
             batch_id?: string | null;
             /** Record Version */
             record_version?: number | null;
+            /** Attachment Ids */
+            attachment_ids?: string[];
+            /** Rescan Id */
+            rescan_id?: string | null;
+            /**
+             * Allow Rescan
+             * @default true
+             */
+            allow_rescan: boolean;
         };
         /** ExtractionProgress */
         ExtractionProgress: {
@@ -1796,6 +1944,227 @@ export interface components {
             endpoint: "start" | "end";
             /** Prefix */
             prefix: string;
+        };
+        /** RescanAsset */
+        RescanAsset: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /** Pdf Page Number */
+            pdf_page_number: number;
+            /**
+             * Role
+             * @enum {string}
+             */
+            role: "source" | "target";
+            /** Checksum */
+            checksum: string;
+            /** Width */
+            width: number;
+            /** Height */
+            height: number;
+        };
+        /** RescanCandidate */
+        RescanCandidate: {
+            /** Changes */
+            changes?: components["schemas"]["RescanChange"][];
+            /** Warnings */
+            warnings?: string[];
+            /** Unmatched Ids */
+            unmatched_ids?: string[];
+        };
+        /** RescanChange */
+        RescanChange: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "update" | "insert";
+            /**
+             * Connection Id
+             * Format: uuid
+             */
+            connection_id: string;
+            /** Record Version */
+            record_version: number;
+            /** Source Pdf Page Number */
+            source_pdf_page_number: number;
+            /** Source Drawing Page */
+            source_drawing_page?: string | null;
+            /** Workspace Code */
+            workspace_code?: string | null;
+            /** Principle Number */
+            principle_number?: string | null;
+            /** Before */
+            before?: {
+                [key: string]: unknown;
+            };
+            after: components["schemas"]["RescanFields"];
+            /** Evidence */
+            evidence?: {
+                [key: string]: unknown;
+            };
+        };
+        /** RescanDecision */
+        RescanDecision: {
+            /** Checksum */
+            checksum: string;
+            /** Accepted */
+            accepted: boolean;
+        };
+        /** RescanEvidenceImage */
+        RescanEvidenceImage: {
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Pdf Page Number */
+            pdf_page_number?: number | null;
+            /** Image Url */
+            image_url?: string | null;
+        };
+        /** RescanFields */
+        RescanFields: {
+            /** Principle Number */
+            principle_number?: string | null;
+            /** Terminal Strip */
+            terminal_strip?: string | null;
+            /** Start Code */
+            start_code?: string | null;
+            /** Start Description */
+            start_description?: string | null;
+            /** Start Terminal */
+            start_terminal?: string | null;
+            /** End Code */
+            end_code?: string | null;
+            /** End Description */
+            end_description?: string | null;
+            /** End Terminal */
+            end_terminal?: string | null;
+            /** Current Value */
+            current_value?: string | null;
+            /** Remark */
+            remark?: string | null;
+            start_terminal_coordinates?: components["schemas"]["TerminalPosition"] | null;
+            end_terminal_coordinates?: components["schemas"]["TerminalPosition"] | null;
+            /** Target Pdf Page Number */
+            target_pdf_page_number?: number | null;
+            /** Target Drawing Page */
+            target_drawing_page?: string | null;
+            /** Is Cross Page */
+            is_cross_page?: boolean | null;
+            /**
+             * Needs Review
+             * @default false
+             */
+            needs_review: boolean;
+        };
+        /** RescanRequest */
+        RescanRequest: {
+            scope: components["schemas"]["RescanScope"];
+            /**
+             * Fields
+             * @default all
+             * @enum {string}
+             */
+            fields: "all" | "start" | "end";
+            /**
+             * Instructions
+             * @default
+             */
+            instructions: string;
+        };
+        /** RescanRun */
+        RescanRun: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Project Id
+             * Format: uuid
+             */
+            project_id: string;
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /** Batch Id */
+            batch_id: string;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "queued" | "running" | "ready" | "failed" | "cancelled" | "applied" | "rejected";
+            /** Stage */
+            stage: string;
+            request: components["schemas"]["RescanRequest"];
+            /** Profile */
+            profile: {
+                [key: string]: unknown;
+            };
+            /** Progress */
+            progress?: {
+                [key: string]: unknown;
+            };
+            /** Versions */
+            versions?: {
+                [key: string]: number;
+            };
+            candidate?: components["schemas"]["RescanCandidate"] | null;
+            /** Checksum */
+            checksum?: string | null;
+            /** Error */
+            error?: string | null;
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+        };
+        /** RescanScope */
+        RescanScope: {
+            /** Workspace Code */
+            workspace_code?: string | null;
+            /** Drawing Page */
+            drawing_page?: string | null;
+            /** Connection Ids */
+            connection_ids?: string[];
+            /** Principle Numbers */
+            principle_numbers?: string[];
+            /** Pdf Page Numbers */
+            pdf_page_numbers?: number[];
+        };
+        /** RescanUpload */
+        RescanUpload: {
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /** Pdf Page Number */
+            pdf_page_number: number;
+            /**
+             * Role
+             * @default source
+             * @enum {string}
+             */
+            role: "source" | "target";
+            /** Content Base64 */
+            content_base64: string;
         };
         /** ResourceImage */
         ResourceImage: {
@@ -2275,7 +2644,7 @@ export interface components {
              * Name
              * @enum {string}
              */
-            name: "load_connection" | "search_connections" | "view_drawings" | "propose_connection_edit" | "unsupported";
+            name: "load_connection" | "search_connections" | "view_drawings" | "propose_connection_edit" | "rescan_connections" | "unsupported";
             /** Arguments */
             arguments?: {
                 [key: string]: unknown;
@@ -2768,6 +3137,39 @@ export interface operations {
             };
         };
     };
+    export_project_api_v1_projects__project_id__export_xlsx_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     source_api_v1_projects__project_id__source_get: {
         parameters: {
             query?: never;
@@ -3208,6 +3610,252 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SimpleImportRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rescan_image_api_v1_projects__project__rescan_assets_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                project: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RescanUpload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RescanAsset"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rescan_image_url_api_v1_projects__project__rescan_assets__asset__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                project: string;
+                asset: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: string;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rescan_evidence_api_v1_projects__project__rescans__run__evidence_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                project: string;
+                run: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RescanEvidenceImage"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rescan_list_api_v1_projects__project__rescans_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                project: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RescanRun"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rescan_get_api_v1_projects__project__rescans__run__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                project: string;
+                run: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RescanRun"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rescan_decide_api_v1_projects__project__rescans__run__decision_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                project: string;
+                run: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RescanDecision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RescanRun"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rescan_cancel_api_v1_projects__project__rescans__run__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                project: string;
+                run: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RescanRun"];
                 };
             };
             /** @description Validation Error */

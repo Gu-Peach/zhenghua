@@ -1,5 +1,19 @@
 # 开发路线
 
+2026-10-18项目全量13列XLSX、系统新名称和Explain拖动/按需历史完成。79项Agent、37项API、54项浏览器及类型/lint/build/Ruff/mypy通过，合成文件和桌面/窄屏截图核对完成。未操作真实业务库/模型或服务，需重载8000 API2.9.0、8100并刷新Web，无迁移；整体阶段状态不变。见[ADR-0035](./adr/0035-project-xlsx-export.md)。
+
+2026-10-18工作台图纸与Explain交互完成：滚轮缩放/中键拖动、目录侧栏收起/恢复、重扫自动发送、按轮图纸及居中放大。65项去重浏览器用例、类型/lint/build及桌面/窄屏截图通过；使用隔离夹具，未操作真实重扫或业务库，整体阶段状态不变。见[记录](./apps/web/changelog/2026-10-18-workbench-interactions.md)。
+
+2026-10-18 Explain006M01根因复现：Provider在HTTP200 SSE返回`published MTP checkpoint is not materializable`；修复合法error帧被误报MODEL_SCHEMA_INVALID，41项离线及静态检查通过。两次真实诊断均未执行工具或写业务数据，用量/费用未返回。模型服务恢复仍待供应方或配置可用模型，整体阶段状态不变。见[记录](./service/agent/changelog/2026-10-18-explain-errors.md)。
+
+2026-10-18 Explain失败诊断补齐：zh_test/006M01只读取数正常，新增模型HTTP/格式与存储错误分类、脱敏日志。35项离线测试、Ruff/mypy通过；未调用真实模型或改业务数据。历史异常无留存，需用户重载8100后重试确认根因，整体阶段状态不变。见[记录](./service/agent/changelog/2026-10-18-explain-errors.md)。
+
+2026-10-18 Explain原图/细节重扫交付：原Stage2与历史Profile复用，新增私有附件、租约任务、候选隔离与确认事务，支持空线表工作区入口，已有记录归属固定。92项Agent、27项API、11项隔离SQL、27项浏览器及静态/布局核对通过，新迁移本地部署且三表摘要不变。未触发真实重扫或模型调用，实际启用需重载8000/8100及Worker；整体阶段状态不变。见[ADR-0034](./adr/0034-explain-rescan.md)。
+
+2026-10-18 ABB本地1.3.0整页/端点/编号优化：57条图像示例、原始双侧数字与程序拼Sheet、明确电流及接收端/错连离线参考；公共Schema/十四列、ZH/XMZ与旧冻结包兼容。静态检查，按用户要求未运行测试或模型/发布/写库；真实质量和分类429索引恢复仍待验收，整体阶段状态不变。见[记录](./service/agent/changelog/2026-10-18-abb-scan-evidence.md)。
+
+2026-10-18 ABB本地资源包1.2.2完成ZH目录/命名统一，生效规则及Expected/图像字节保持1.2.1，历史资源独立到测试夹具；AST/Ruff与路径/摘要/Schema静态检查通过。按用户要求未运行测试/模型、不发布或写库，整体阶段状态及真实质量验收不变。见[记录](./service/agent/changelog/2026-10-18-abb-resource-layout.md)。
+
 2026-10-18按用户要求统一PDF遍历结束为“处理完成”，保留单页诊断和真正中断失败；历史EXTRACTION_PARTIAL前端兼容。静态及隔离浏览器检查完成，未运行提取测试/模型或操作历史数据/服务，整体阶段状态不变。见[交付](./service/agent/changelog/2026-10-18-extraction-finished-status.md)。
 
 2026-10-18线表提取未完成提示增加可访问关闭按钮，仅隐藏当前提示，新失败重新展示，重试行为保留。前端类型/lint/build及隔离浏览器桌面/窄屏核对通过；不操作实际提取任务或数据库，整体阶段状态不变。见[交付](./apps/web/changelog/2026-10-18-extraction-notice-dismiss.md)。

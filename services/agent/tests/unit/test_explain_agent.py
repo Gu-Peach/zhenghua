@@ -110,6 +110,8 @@ class Backend:
                     }
                 ],
             )
+        if request.url.path.endswith("/connection_rescan_runs"):
+            return httpx.Response(200, json=[])
         raise AssertionError(f"Unexpected endpoint: {request.url.path}")
 
 

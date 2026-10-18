@@ -16,6 +16,7 @@ MIGRATIONS = {
     VERSION: "explain_connection_edits",
     "20261018030000": "connection_delete_no_snapshot",
     "20261018040000": "swap_endpoints_keep_origin",
+    "20261018050000": "explain_rescan",
 }
 
 
@@ -154,6 +155,14 @@ def main() -> None:
             verified
             and sql(
                 "select position('EDIT_ORIGIN_CHANGE_FORBIDDEN_REGENERATE' in pg_get_functiondef('public.decide_explain_connection_edit(jsonb)'::regprocedure))>0;"
+            ).strip()
+            == "t"
+        )
+    if version == "20261018050000":
+        verified = (
+            verified
+            and sql(
+                "select to_regclass('public.connection_rescan_runs') is not null and to_regclass('public.connection_rescan_assets') is not null and to_regprocedure('public.enqueue_connection_rescan(jsonb)') is not null and to_regprocedure('public.claim_connection_rescan(text)') is not null and to_regprocedure('public.decide_connection_rescan(jsonb)') is not null;"
             ).strip()
             == "t"
         )

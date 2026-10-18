@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Wiring Workbench Server",
-    "version": "2.7.1"
+    "version": "2.9.0"
   },
   "paths": {
     "/api/v1/auth/login": {
@@ -639,6 +639,63 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/export.xlsx": {
+      "get": {
+        "summary": "Export Project",
+        "operationId": "export_project_api_v1_projects__project_id__export_xlsx_get",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -1542,6 +1599,480 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SimpleImportRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project}/rescan-assets": {
+      "post": {
+        "summary": "Rescan Image",
+        "operationId": "rescan_image_api_v1_projects__project__rescan_assets_post",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RescanUpload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RescanAsset"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project}/rescan-assets/{asset}": {
+      "get": {
+        "summary": "Rescan Image Url",
+        "operationId": "rescan_image_url_api_v1_projects__project__rescan_assets__asset__get",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project"
+            }
+          },
+          {
+            "name": "asset",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Asset"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Rescan Image Url Api V1 Projects  Project  Rescan Assets  Asset  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project}/rescans/{run}/evidence": {
+      "get": {
+        "summary": "Rescan Evidence",
+        "operationId": "rescan_evidence_api_v1_projects__project__rescans__run__evidence_get",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project"
+            }
+          },
+          {
+            "name": "run",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Run"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RescanEvidenceImage"
+                  },
+                  "title": "Response Rescan Evidence Api V1 Projects  Project  Rescans  Run  Evidence Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project}/rescans": {
+      "get": {
+        "summary": "Rescan List",
+        "operationId": "rescan_list_api_v1_projects__project__rescans_get",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RescanRun"
+                  },
+                  "title": "Response Rescan List Api V1 Projects  Project  Rescans Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project}/rescans/{run}": {
+      "get": {
+        "summary": "Rescan Get",
+        "operationId": "rescan_get_api_v1_projects__project__rescans__run__get",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project"
+            }
+          },
+          {
+            "name": "run",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Run"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RescanRun"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project}/rescans/{run}/decision": {
+      "post": {
+        "summary": "Rescan Decide",
+        "operationId": "rescan_decide_api_v1_projects__project__rescans__run__decision_post",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project"
+            }
+          },
+          {
+            "name": "run",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Run"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RescanDecision"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RescanRun"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project}/rescans/{run}/cancel": {
+      "post": {
+        "summary": "Rescan Cancel",
+        "operationId": "rescan_cancel_api_v1_projects__project__rescans__run__cancel_post",
+        "parameters": [
+          {
+            "name": "project",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project"
+            }
+          },
+          {
+            "name": "run",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Run"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RescanRun"
                 }
               }
             }
@@ -4918,7 +5449,8 @@
               "tool_started",
               "tool_completed",
               "tool_failed",
-              "edit_proposal"
+              "edit_proposal",
+              "rescan_started"
             ],
             "title": "Type"
           },
@@ -4991,6 +5523,16 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/ConnectionEditProposal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rescan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RescanRun"
               },
               {
                 "type": "null"
@@ -5091,6 +5633,13 @@
             },
             "type": "array",
             "title": "Proposals"
+          },
+          "rescans": {
+            "items": {
+              "$ref": "#/components/schemas/RescanRun"
+            },
+            "type": "array",
+            "title": "Rescans"
           }
         },
         "additionalProperties": false,
@@ -5174,6 +5723,32 @@
               }
             ],
             "title": "Record Version"
+          },
+          "attachment_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 6,
+            "title": "Attachment Ids"
+          },
+          "rescan_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rescan Id"
+          },
+          "allow_rescan": {
+            "type": "boolean",
+            "title": "Allow Rescan",
+            "default": true
           }
         },
         "additionalProperties": false,
@@ -6168,6 +6743,673 @@
           "prefix"
         ],
         "title": "RemoveTerminalPrefix"
+      },
+      "RescanAsset": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "pdf_page_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Pdf Page Number"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "source",
+              "target"
+            ],
+            "title": "Role"
+          },
+          "checksum": {
+            "type": "string",
+            "title": "Checksum"
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Width"
+          },
+          "height": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Height"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "project_id",
+          "conversation_id",
+          "pdf_page_number",
+          "role",
+          "checksum",
+          "width",
+          "height"
+        ],
+        "title": "RescanAsset"
+      },
+      "RescanCandidate": {
+        "properties": {
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/RescanChange"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "title": "Changes"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "title": "Warnings"
+          },
+          "unmatched_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "title": "Unmatched Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "RescanCandidate"
+      },
+      "RescanChange": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "update",
+              "insert"
+            ],
+            "title": "Action"
+          },
+          "connection_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Connection Id"
+          },
+          "record_version": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Record Version"
+          },
+          "source_pdf_page_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Source Pdf Page Number"
+          },
+          "source_drawing_page": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Drawing Page"
+          },
+          "workspace_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Code"
+          },
+          "principle_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Principle Number"
+          },
+          "before": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Before"
+          },
+          "after": {
+            "$ref": "#/components/schemas/RescanFields"
+          },
+          "evidence": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Evidence"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "action",
+          "connection_id",
+          "record_version",
+          "source_pdf_page_number",
+          "after"
+        ],
+        "title": "RescanChange"
+      },
+      "RescanDecision": {
+        "properties": {
+          "checksum": {
+            "type": "string",
+            "title": "Checksum"
+          },
+          "accepted": {
+            "type": "boolean",
+            "title": "Accepted"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "checksum",
+          "accepted"
+        ],
+        "title": "RescanDecision"
+      },
+      "RescanEvidenceImage": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "pdf_page_number": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pdf Page Number"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "RescanEvidenceImage"
+      },
+      "RescanFields": {
+        "properties": {
+          "principle_number": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Principle Number"
+          },
+          "terminal_strip": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terminal Strip"
+          },
+          "start_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Code"
+          },
+          "start_description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Description"
+          },
+          "start_terminal": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Terminal"
+          },
+          "end_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Code"
+          },
+          "end_description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Description"
+          },
+          "end_terminal": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Terminal"
+          },
+          "current_value": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 512
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Value"
+          },
+          "remark": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remark"
+          },
+          "start_terminal_coordinates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TerminalPosition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "end_terminal_coordinates": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TerminalPosition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "target_pdf_page_number": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Pdf Page Number"
+          },
+          "target_drawing_page": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Drawing Page"
+          },
+          "is_cross_page": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Cross Page"
+          },
+          "needs_review": {
+            "type": "boolean",
+            "title": "Needs Review",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "RescanFields"
+      },
+      "RescanRequest": {
+        "properties": {
+          "scope": {
+            "$ref": "#/components/schemas/RescanScope"
+          },
+          "fields": {
+            "type": "string",
+            "enum": [
+              "all",
+              "start",
+              "end"
+            ],
+            "title": "Fields",
+            "default": "all"
+          },
+          "instructions": {
+            "type": "string",
+            "maxLength": 4000,
+            "title": "Instructions",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "scope"
+        ],
+        "title": "RescanRequest"
+      },
+      "RescanRun": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "project_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Project Id"
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "batch_id": {
+            "type": "string",
+            "title": "Batch Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "ready",
+              "failed",
+              "cancelled",
+              "applied",
+              "rejected"
+            ],
+            "title": "Status"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage"
+          },
+          "request": {
+            "$ref": "#/components/schemas/RescanRequest"
+          },
+          "profile": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Profile"
+          },
+          "progress": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Progress"
+          },
+          "versions": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "type": "object",
+            "title": "Versions"
+          },
+          "candidate": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RescanCandidate"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "checksum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checksum"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "project_id",
+          "conversation_id",
+          "batch_id",
+          "status",
+          "stage",
+          "request",
+          "profile",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RescanRun"
+      },
+      "RescanScope": {
+        "properties": {
+          "workspace_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Code"
+          },
+          "drawing_page": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drawing Page"
+          },
+          "connection_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "title": "Connection Ids"
+          },
+          "principle_numbers": {
+            "items": {
+              "type": "string",
+              "maxLength": 200,
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "title": "Principle Numbers"
+          },
+          "pdf_page_numbers": {
+            "items": {
+              "type": "integer",
+              "minimum": 1.0
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "title": "Pdf Page Numbers"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "RescanScope"
+      },
+      "RescanUpload": {
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "pdf_page_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Pdf Page Number"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "source",
+              "target"
+            ],
+            "title": "Role",
+            "default": "source"
+          },
+          "content_base64": {
+            "type": "string",
+            "maxLength": 12000000,
+            "minLength": 1,
+            "title": "Content Base64"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "pdf_page_number",
+          "content_base64"
+        ],
+        "title": "RescanUpload"
       },
       "ResourceImage": {
         "properties": {
@@ -7519,6 +8761,7 @@
               "search_connections",
               "view_drawings",
               "propose_connection_edit",
+              "rescan_connections",
               "unsupported"
             ],
             "title": "Name"

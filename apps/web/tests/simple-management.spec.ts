@@ -10,6 +10,40 @@ const rowId = "00000000-0000-0000-0000-000000000015";
 const anotherProjectId = "00000000-0000-0000-0000-000000000016";
 const drawing = (id: string, page: number) => ({ id, project_id: projectId, workspace_id: workspaceId, pdf_page_number: page, workspace_page: `003C0${page}`, status: "scanned", image_url: "/fixture.png" });
 
+test("项目级导出全量XLSX，切回项目清除范围，品牌使用新名称", async ({ page }) => {
+  await fixture(page);
+  const exports: string[] = [];
+  await page.route("**/export.xlsx", route => {
+    exports.push(route.request().url());
+    return route.fulfill({ contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", headers: { "Content-Disposition": `attachment; filename*=UTF-8''${encodeURIComponent("项目_放线表.xlsx")}` }, body: Buffer.from("PK\u0003\u0004fixture") });
+  });
+  await page.goto(`/projects/${projectId}`);
+  await expect(page.getByRole("link", { name: "振华重工放线表提取系统首页", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "导出项目XLSX", exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: /^003\.C 003\.C/ }).click();
+  await expect(page.getByRole("button", { name: "导出项目XLSX", exact: true })).toHaveCount(0);
+  await page.getByRole("link", { name: "三表回归夹具项目", exact: true }).click();
+  await expect(page.getByRole("button", { name: "导出项目XLSX", exact: true })).toBeEnabled();
+  await page.getByLabel("搜索线表").fill("当前表格搜索不限制导出");
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "导出项目XLSX", exact: true }).click();
+  expect((await download).suggestedFilename()).toBe("项目_放线表.xlsx");
+  expect(exports).toHaveLength(1); expect(new URL(exports[0]).search).toBe("");
+  await page.screenshot({ path: test.info().outputPath("project-export-desktop.png") });
+});
+
+test("导出时等待可见，冲突失败不下载且可重试", async ({ page }) => {
+  await fixture(page);
+  let release!: () => void; const pending = new Promise<void>(resolve => { release = resolve; });
+  const downloads: string[] = []; page.on("download", value => downloads.push(value.suggestedFilename()));
+  await page.route("**/export.xlsx", async route => { await pending; return route.fulfill({ status: 409, json: { detail: { message: "导出期间线表发生变更，请重试" } } }); });
+  await page.goto(`/projects/${projectId}`);
+  const button = page.getByRole("button", { name: "导出项目XLSX", exact: true });
+  await button.click(); await expect(button).toBeDisabled(); await expect(button).toContainText("正在导出");
+  release(); await expect(page.getByRole("alert")).toContainText("发生变更");
+  await expect(button).toBeEnabled(); expect(downloads).toHaveLength(0);
+});
+
 async function fixture(page: Page, options: { empty?: boolean; failList?: boolean; denied?: boolean; failSave?: boolean; noIndex?: boolean; longName?: boolean; loading?: Promise<void>; realtime?: boolean; streamFailures?: number; treeOrder?: boolean; failRename?: boolean; renameGate?: Promise<void>; anotherProject?: boolean } = {}) {
   let exists = !options.empty;
   let failSave = options.failSave;

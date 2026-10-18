@@ -54,6 +54,9 @@ class ExplainTurn(StrictModel):
     )
     batch_id: str | None = Field(default=None, min_length=1, max_length=200)
     record_version: int | None = Field(default=None, ge=1)
+    attachment_ids: list[UUID] = Field(default_factory=list, max_length=6)
+    rescan_id: UUID | None = None
+    allow_rescan: bool = True
 
     @model_validator(mode="after")
     def check_selection(self) -> ExplainTurn:
@@ -261,6 +264,121 @@ class ExplainResponse(StrictModel):
     history_reset: bool = False
     cached: bool = False
     proposals: list[ConnectionEditProposal] = Field(default_factory=list)
+    rescans: list[RescanRun] = Field(default_factory=list)
+
+
+class RescanScope(StrictModel):
+    workspace_code: ExactText | None = None
+    drawing_page: ExactText | None = None
+    connection_ids: list[UUID] = Field(default_factory=list, max_length=1000)
+    principle_numbers: list[ExactText] = Field(default_factory=list, max_length=200)
+    pdf_page_numbers: list[Annotated[int, Field(ge=1)]] = Field(default_factory=list, max_length=1000)
+
+    @model_validator(mode="after")
+    def require_scope(self) -> RescanScope:
+        if not any(
+            (
+                self.workspace_code,
+                self.drawing_page,
+                self.connection_ids,
+                self.principle_numbers,
+                self.pdf_page_numbers,
+            )
+        ):
+            raise ValueError("请明确重扫工作区、页码或行ID")
+        return self
+
+
+class RescanRequest(StrictModel):
+    scope: RescanScope
+    fields: Literal["all", "start", "end"] = "all"
+    instructions: str = Field(default="", max_length=4000)
+
+
+class RescanAsset(StrictModel):
+    id: UUID
+    project_id: UUID
+    conversation_id: UUID
+    pdf_page_number: int = Field(ge=1)
+    role: Literal["source", "target"]
+    checksum: str
+    width: int = Field(ge=1)
+    height: int = Field(ge=1)
+
+
+class RescanUpload(StrictModel):
+    conversation_id: UUID
+    pdf_page_number: int = Field(ge=1)
+    role: Literal["source", "target"] = "source"
+    content_base64: str = Field(min_length=1, max_length=12_000_000, repr=False)
+
+
+class RescanFields(StrictModel):
+    principle_number: str | None = Field(default=None, max_length=512)
+    terminal_strip: str | None = Field(default=None, max_length=512)
+    start_code: str | None = Field(default=None, max_length=512)
+    start_description: str | None = Field(default=None, max_length=2000)
+    start_terminal: str | None = Field(default=None, max_length=512)
+    end_code: str | None = Field(default=None, max_length=512)
+    end_description: str | None = Field(default=None, max_length=2000)
+    end_terminal: str | None = Field(default=None, max_length=512)
+    current_value: str | None = Field(default=None, max_length=512)
+    remark: str | None = Field(default=None, max_length=2000)
+    start_terminal_coordinates: TerminalPosition | None = None
+    end_terminal_coordinates: TerminalPosition | None = None
+    target_pdf_page_number: int | None = Field(default=None, ge=1)
+    target_drawing_page: str | None = Field(default=None, max_length=200)
+    is_cross_page: bool | None = None
+    needs_review: bool = False
+
+
+class RescanChange(StrictModel):
+    action: Literal["update", "insert"]
+    connection_id: UUID
+    record_version: int = Field(ge=0)
+    source_pdf_page_number: int = Field(ge=1)
+    source_drawing_page: str | None = None
+    workspace_code: str | None = None
+    principle_number: str | None = None
+    before: dict[str, Any] = Field(default_factory=dict)
+    after: RescanFields
+    evidence: dict[str, Any] = Field(default_factory=dict)
+
+
+class RescanCandidate(StrictModel):
+    changes: list[RescanChange] = Field(default_factory=list, max_length=1000)
+    warnings: list[str] = Field(default_factory=list, max_length=1000)
+    unmatched_ids: list[UUID] = Field(default_factory=list, max_length=1000)
+
+
+class RescanRun(StrictModel):
+    id: UUID
+    project_id: UUID
+    conversation_id: UUID
+    batch_id: str
+    status: Literal["queued", "running", "ready", "failed", "cancelled", "applied", "rejected"]
+    stage: str
+    request: RescanRequest
+    profile: dict[str, Any]
+    progress: dict[str, Any] = Field(default_factory=dict)
+    versions: dict[str, int] = Field(default_factory=dict)
+    candidate: RescanCandidate | None = None
+    checksum: str | None = None
+    error: str | None = None
+    created_at: str
+    updated_at: str
+
+
+class RescanDecision(StrictModel):
+    checksum: str
+    accepted: bool
+
+
+class RescanEvidenceImage(StrictModel):
+    id: str
+    title: str
+    pdf_page_number: int | None = Field(default=None, ge=1)
+    image_url: str | None = None
 
 
 class SearchResult(StrictModel):
@@ -305,7 +423,12 @@ class DrawingReadResult(StrictModel):
 class ToolActivity(StrictModel):
     id: str
     name: Literal[
-        "load_connection", "search_connections", "view_drawings", "propose_connection_edit", "unsupported"
+        "load_connection",
+        "search_connections",
+        "view_drawings",
+        "propose_connection_edit",
+        "rescan_connections",
+        "unsupported",
     ]
     arguments: dict[str, Any] = Field(default_factory=dict)
     result: dict[str, Any] | None = None
@@ -323,6 +446,7 @@ class ExplainEvent(StrictModel):
         "tool_completed",
         "tool_failed",
         "edit_proposal",
+        "rescan_started",
     ]
     conversation_id: UUID
     turn_id: UUID
@@ -332,6 +456,7 @@ class ExplainEvent(StrictModel):
     delta: str | None = None
     result: ExplainResponse | None = None
     proposal: ConnectionEditProposal | None = None
+    rescan: RescanRun | None = None
 
 
 class ExplainError(RuntimeError):

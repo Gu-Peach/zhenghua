@@ -38,6 +38,7 @@ def test_generated_public_contract_matches_agent_models():
 
 def test_authenticated_server_agent_stream_is_read_only_and_identity_cannot_be_spoofed():
     backend = Backend()
+    backend.tables["connection_rescan_runs"] = []
     repository = SupabaseExplanationRepository(
         SupabaseClient(
             base_url="http://database",

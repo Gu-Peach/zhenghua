@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "description": "Offline historical fixtures, never injected into current extraction requests. Current contracts are in manifest.json.",
+  "description": "Historical ABB fixtures, excluded from runtime Profile packages; active examples are in prompts/abb/examples_wiring/lv11.",
   "images": {
     "lv11_205": "images/lv11_205.png",
     "lv12_241": "images/lv12_241.png",
@@ -48,8 +48,8 @@
     {
       "id": "205_q4_l1_to_241_q1",
       "title": "LV11/205 Q4:2 → LV12/241 Q1:2（原页+跨页）",
-      "input": "stage3/205_q4_l1_to_241_q1.task.json",
-      "expected": "stage3/205_q4_l1_to_241_q1.expected.json",
+      "input": "completion/205_q4_l1_to_241_q1.task.json",
+      "expected": "completion/205_q4_l1_to_241_q1.expected.json",
       "images": [
         {
           "path": "images/lv11_205.png",

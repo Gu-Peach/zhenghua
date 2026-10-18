@@ -1,0 +1,102 @@
+{
+  "pdf_page_number": 4,
+  "drawing_function": "CV09",
+  "drawing_page_number": 432,
+  "units": [
+    {
+      "unit_id": "432-focused",
+      "connections": [
+        {
+          "local_connection_id": "432-x93-1-k2",
+          "endpoint_role": "source",
+          "direction_basis": "沿原图直接连接/入页引用核对",
+          "line_number": "1008432",
+          "start": {
+            "device": "-X93",
+            "terminal": "X93:1",
+            "location": "+EH.K1",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.1556,
+              "y": 0.5597,
+              "pdf_page_number": 4
+            }
+          },
+          "end": {
+            "device": "-X93",
+            "terminal": "X93:1",
+            "location": "+EH.K2",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.184,
+              "y": 0.613,
+              "pdf_page_number": 4
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "432-x93-2-k2",
+          "endpoint_role": "source",
+          "direction_basis": "沿原图直接连接/入页引用核对",
+          "line_number": "1009432",
+          "start": {
+            "device": "-X93",
+            "terminal": "X93:2",
+            "location": "+EH.K1",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.165,
+              "y": 0.223,
+              "pdf_page_number": 4
+            }
+          },
+          "end": {
+            "device": "-X93",
+            "terminal": "X93:2",
+            "location": "+EH.K2",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.194,
+              "y": 0.263,
+              "pdf_page_number": 4
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        },
+        {
+          "local_connection_id": "432-x3-mh",
+          "endpoint_role": "source",
+          "direction_basis": "沿原图直接连接/入页引用核对",
+          "line_number": "X3:1432",
+          "start": {
+            "device": "-X3",
+            "terminal": "X3:1",
+            "location": "+EH.K1",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.45,
+              "y": 0.613,
+              "pdf_page_number": 4
+            }
+          },
+          "end": {
+            "device": "-X3",
+            "terminal": "X3:71",
+            "location": "+MH.S2",
+            "name": null,
+            "terminal_coordinates": {
+              "x": 0.45,
+              "y": 0.674,
+              "pdf_page_number": 4
+            }
+          },
+          "references": [],
+          "is_cross_page": "same_page"
+        }
+      ]
+    }
+  ]
+}

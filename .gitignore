@@ -73,3 +73,6 @@ docs/test/
 !services/agent/src/agent/extraction_agent/prompts/**/*.jpg
 !services/agent/src/agent/extraction_agent/prompts/**/*.jpeg
 !services/agent/src/agent/extraction_agent/prompts/**/*.webp
+
+# Preserved ABB reference drawings moved out of the active Profile package
+!services/agent/tests/fixtures/abb_reference/images/*.png

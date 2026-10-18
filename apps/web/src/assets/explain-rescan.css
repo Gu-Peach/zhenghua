@@ -1,0 +1,16 @@
+.rescan-attachments { font-size: 11px; max-height: 180px; overflow: auto; margin-bottom: 8px; }
+.rescan-attachments > div { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+.rescan-attachments label { min-width: 0; flex: 1; }
+.rescan-attachments select { max-width: 100%; min-width: 0; width: 100%; padding: 4px; border: 1px solid var(--border, #dbe3eb); border-radius: 4px; background: white; }
+.rescan-attachments button { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 4px 6px; }
+.rescan-attachments ul { padding: 0; list-style: none; margin: 5px 0; display: flex; flex-wrap: wrap; gap: 5px; }
+.rescan-attachments li { display: flex; align-items: center; gap: 5px; border: 1px solid #dbe3eb; border-radius: 4px; padding: 3px; max-width: 100%; }
+.rescan-attachments img { height: 35px; width: 44px; object-fit: contain; }
+.rescan-attachments p { margin: 5px 0; color: #65778a; }
+.explain-composer .rescan-attachments button { display: inline-flex; width: auto; height: auto; flex-shrink: 0; padding: 4px 6px; white-space: nowrap; background: white; color: #446173; border: 1px solid #dbe3eb; }
+.explain-composer .rescan-attachments li button { width: 22px; height: 22px; padding: 0; }
+.rescan-actions { position: sticky; bottom: 0; background: white; padding: 8px 0; border-top: 1px solid #e5eaf0; z-index: 1; }
+.rescan-image-evidence > div { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+.rescan-image-evidence figure { width: 140px; max-width: 100%; margin: 0; }
+.rescan-image-evidence img { max-width: 100%; height: 90px; object-fit: contain; }
+.rescan-image-evidence figcaption { overflow-wrap: anywhere; font-size: 11px; }

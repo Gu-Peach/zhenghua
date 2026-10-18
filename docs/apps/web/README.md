@@ -1,5 +1,11 @@
 # apps/web 前端归档
 
+- [项目导出与Explain窗口](./changelog/2026-10-18-project-export-chat.md)：系统新名称、项目全量13列XLSX、标题栏拖动与重扫历史按需展示。
+
+- [工作台图纸与聊天交互](./changelog/2026-10-18-workbench-interactions.md)：滚轮缩放/中键拖动、目录收起、重扫自动发送、消息内图纸与居中放大。
+
+- [Explain截图与重扫](./changelog/2026-10-18-explain-rescan.md)：粘贴/拖拽附件、原页绑定、进度与候选对照确认，保留记录归属。
+
 - [PDF完成状态显示](../../service/agent/changelog/2026-10-18-extraction-finished-status.md)：兼容已跑完的旧EXTRACTION_PARTIAL记录为处理完成，不改历史数据，真正中断保留失败。
 
 - [关闭提取未完成提示](./changelog/2026-10-18-extraction-notice-dismiss.md)：右侧关闭按钮、键盘操作、新失败重新展示，不改任务状态。

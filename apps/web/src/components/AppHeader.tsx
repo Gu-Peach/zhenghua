@@ -27,9 +27,9 @@ export function AppHeader({ project }: { project?: ProjectDetail }) {
 
   return (
     <header className="app-header">
-      <Link to="/projects" className="app-brand" aria-label="线表智能提取系统首页">
+      <Link to="/projects" className="app-brand" aria-label="振华重工放线表提取系统首页">
         <span className="app-brand-mark"><Cable size={21} /></span>
-        <span className="app-brand-copy"><strong>线表智能提取系统</strong><small>Drawing Intelligence</small></span>
+        <span className="app-brand-copy"><strong>振华重工放线表提取系统</strong><small>Drawing Intelligence</small></span>
       </Link>
       <div className="header-divider" />
       <div className="header-project"><span>{project ? "当前项目" : "工作区"}</span><strong>{project?.name ?? "未选择项目"}</strong></div>

@@ -2,12 +2,14 @@ import asyncio
 import json
 from time import monotonic
 from typing import Annotated, Any
+from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, Header, Query, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 
 from .models import DrawingRead, ResourcePackage
+from .project_export import XLSX_TYPE, ProjectExport
 from .repository import ServiceError
 from .simple_models import (
     ExtractionProgress,
@@ -31,7 +33,13 @@ def install_management_routes(app: FastAPI, identity: Any) -> None:
 
     @app.get("/api/v1/capabilities")
     async def capabilities(user: User) -> dict[str, bool]:
-        return {"data_management": True, "extraction": True, "explain": True, "profile": True, "supervisor": False}
+        return {
+            "data_management": True,
+            "extraction": True,
+            "explain": True,
+            "profile": True,
+            "supervisor": False,
+        }
 
     @app.get(
         "/api/v1/projects/{project_id}/extraction",
@@ -79,7 +87,9 @@ def install_management_routes(app: FastAPI, identity: Any) -> None:
                         yield f"id: {position}\nevent: refresh\ndata: {json.dumps({'seq': position})}\n\n"
                     progress = await service.extraction_progress(str(project_id), user)
                 except ServiceError as exc:
-                    event = "access_revoked" if exc.status in {403, 404} else "unavailable"
+                    event = (
+                        "access_revoked" if exc.status in {403, 404} else "unavailable"
+                    )
                     yield f"event: {event}\ndata: {{}}\n\n"
                     return
                 if progress and progress["stage"] in {"finished", "failed"}:
@@ -110,6 +120,33 @@ def install_management_routes(app: FastAPI, identity: Any) -> None:
     @app.get("/api/v1/projects/{project_id}", response_model=SimpleProjectRead)
     async def project(project_id: UUID, request: Request, user: User) -> Any:
         return await request.app.state.management.detail(str(project_id), user)
+
+    @app.get(
+        "/api/v1/projects/{project_id}/export.xlsx",
+        response_class=Response,
+        responses={
+            200: {
+                "content": {
+                    XLSX_TYPE: {"schema": {"type": "string", "format": "binary"}}
+                }
+            }
+        },
+    )
+    async def export_project(
+        project_id: UUID, request: Request, user: User
+    ) -> Response:
+        result = await ProjectExport(request.app.state.db).download(
+            str(project_id), user
+        )
+        return Response(
+            result.content,
+            media_type=XLSX_TYPE,
+            headers={
+                "Content-Disposition": f"attachment; filename=project.xlsx; filename*=UTF-8''{quote(result.filename)}",
+                "Cache-Control": "private, no-store",
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
 
     @app.patch("/api/v1/projects/{project_id}", response_model=SimpleProjectRead)
     async def rename(

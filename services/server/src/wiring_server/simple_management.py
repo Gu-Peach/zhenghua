@@ -486,7 +486,23 @@ class ManagementService:
             },
         ):
             raise ServiceError(409, "ACTIVE_RUN", "请先结束项目处理任务")
+        if await self.db.rows(
+            "connection_rescan_runs",
+            {
+                "project_id": f"eq.{project}",
+                "status": "in.(queued,running)",
+                "limit": "1",
+            },
+        ):
+            raise ServiceError(409, "ACTIVE_RESCAN", "请先取消或结束项目重扫任务")
         assets: dict[str, list[str]] = {}
+        details = await self.db.all_rows(
+            "connection_rescan_assets",
+            {"project_id": f"eq.{project}", "order": "id.asc"},
+        )
+        assets["project-assets"] = [
+            self.asset_path(project, item["storage_path"]) for item in details
+        ]
         if row.get("source_pdf_path"):
             assets.setdefault(row["source_pdf_bucket"], []).append(
                 self.asset_path(project, row["source_pdf_path"])
@@ -503,8 +519,12 @@ class ManagementService:
             prefix = self.asset_path(project, f"projects/{project}/runs/{run}")
             paths = assets.setdefault("project-assets", [])
             paths.append(f"{prefix}/profile.zip")
-            total = int(row.get("drawing_index", {}).get("source", {}).get("page_count", 0))
-            paths.extend(f"{prefix}/pages/{number}.png" for number in range(1, total + 1))
+            total = int(
+                row.get("drawing_index", {}).get("source", {}).get("page_count", 0)
+            )
+            paths.extend(
+                f"{prefix}/pages/{number}.png" for number in range(1, total + 1)
+            )
         archived = await self.db.update(
             "extraction_projects",
             {
