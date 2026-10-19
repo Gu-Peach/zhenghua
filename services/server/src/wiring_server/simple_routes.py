@@ -260,7 +260,7 @@ def install_management_routes(app: FastAPI, identity: Any) -> None:
     async def drawing(drawing_id: UUID, request: Request, user: User) -> Any:
         return await request.app.state.management.drawing(str(drawing_id), user)
 
-    # Static route must precede /{profile_id}.
+    # Historical /local URL remains compatible, but options now come only from stored packages.
     @app.get("/api/v1/rule-library/local", response_model=list[LocalProfileOption])
     async def available_profiles(request: Request, user: User) -> Any:
         options = await request.app.state.management.profiles.available(user)

@@ -126,8 +126,8 @@ class MemoryRescan:
         return {}
 
 
-@pytest.mark.parametrize("profile_key", ["zh", "zh_crop", "abb"])
-@pytest.mark.parametrize("mode", ["all", "end", "end_same"])
+@pytest.mark.parametrize("profile_key", ["zh", "abb"])
+@pytest.mark.parametrize("mode", ["all", "end", "end_same", "replace"])
 def test_real_page_graph_scans_completes_and_only_saves_candidates(tmp_path, profile_key, mode):
     async def run():
         pix = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 200, 150))
@@ -178,8 +178,9 @@ def test_real_page_graph_scans_completes_and_only_saves_candidates(tmp_path, pro
             "profile": binding.profile.model_dump(mode="json"),
             "baseline": [old],
             "request": {
-                "scope": {"connection_ids": [str(ROW)]},
-                "fields": "all" if mode == "all" else "end",
+                "scope": {"drawing_page": "002C01"} if mode == "replace" else {"connection_ids": [str(ROW)]},
+                "fields": "all" if mode in {"all", "replace"} else "end",
+                "result_mode": "replace_scope" if mode == "replace" else "patch",
                 "instructions": "核对上传细节",
             },
             "project_snapshot": {
@@ -235,7 +236,7 @@ def test_real_page_graph_scans_completes_and_only_saves_candidates(tmp_path, pro
             )
         gateway = FakeModelGateway(
             [json.dumps(scan), json.dumps(end)]
-            if mode == "all"
+            if mode in {"all", "replace"}
             else [json.dumps(scan)]
             if mode == "end_same"
             else [json.dumps(end)]
@@ -243,12 +244,15 @@ def test_real_page_graph_scans_completes_and_only_saves_candidates(tmp_path, pro
         session = CandidateSession(repo, job)
         await execute_rescan(session, settings, gateway=gateway, binding=binding)
         completed = next(event["candidate"] for event in repo.events if "candidate" in event)
-        assert len(completed["changes"]) == 1 and completed["changes"][0]["connection_id"] == str(ROW), (
-            completed
-        )
+        assert len(completed["changes"]) == 1
+        if mode == "replace":
+            assert completed["changes"][0]["action"] == "insert"
+            assert completed["replacement"]["removed"][0]["connection_id"] == str(ROW)
+        else:
+            assert completed["changes"][0]["connection_id"] == str(ROW)
         assert completed["changes"][0]["after"]["end_terminal"] == "XD21:7"
-        assert old["end_terminal"] == "OLD" and len(gateway.calls) == (2 if mode == "all" else 1)
-        if mode != "all":
+        assert old["end_terminal"] == "OLD" and len(gateway.calls) == (2 if mode in {"all", "replace"} else 1)
+        if mode not in {"all", "replace"}:
             assert "start_terminal" not in completed["changes"][0]["after"]
         text = json.dumps(gateway.calls[-1].messages, ensure_ascii=False)
         assert (

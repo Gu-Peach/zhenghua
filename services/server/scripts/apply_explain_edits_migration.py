@@ -17,6 +17,7 @@ MIGRATIONS = {
     "20261018030000": "connection_delete_no_snapshot",
     "20261018040000": "swap_endpoints_keep_origin",
     "20261018050000": "explain_rescan",
+    "20261019010000": "rescan_scope_replacement",
 }
 
 
@@ -163,6 +164,14 @@ def main() -> None:
             verified
             and sql(
                 "select to_regclass('public.connection_rescan_runs') is not null and to_regclass('public.connection_rescan_assets') is not null and to_regprocedure('public.enqueue_connection_rescan(jsonb)') is not null and to_regprocedure('public.claim_connection_rescan(text)') is not null and to_regprocedure('public.decide_connection_rescan(jsonb)') is not null;"
+            ).strip()
+            == "t"
+        )
+    if version == "20261019010000":
+        verified = (
+            verified
+            and sql(
+                "select to_regprocedure('public.decide_connection_rescan_patch(jsonb)') is not null and to_regprocedure('public.rescan_replacement_contract()') is not null and rescan_replacement_contract()=1 and position('Deletion preview must equal' in pg_get_functiondef('public.decide_connection_rescan(jsonb)'::regprocedure))>0;"
             ).strip()
             == "t"
         )

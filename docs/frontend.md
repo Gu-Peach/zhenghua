@@ -1,5 +1,9 @@
 # 线表智能提取系统产品需求
 
+2026-10-19上传PDF的规则选择与Extraction Skills统一读取数据库中已上传的完整Storage包，不合并本地目录；本地登记入口移除，缺包提示先发布。ZH2.3.0、ABB1.3.1、XMZ0.2.1已发布并读回，旧项目和冻结包保留，见[ADR-0037](./adr/0037-database-profile-catalog.md)。
+
+2026-10-19按用户确认，全部重扫在确认后删除所选旧范围并写入全部新结果；局部只替换选中行/字段，范围外不变。预览列出完整删除/写入内容，空结果确认后可删空范围；旧版合并候选需重扫，确认前旧数据保留。见[ADR-0036](./adr/0036-rescan-scope-replacement.md)及[前端交付](./apps/web/changelog/2026-10-19-rescan-scope-replacement.md)。
+
 2026-10-18系统名称更新为“振华重工放线表提取系统”；项目根范围提供全量当前正式批次13列XLSX导出，电压等级/端子排独立。Explain标题栏可拖动，普通打开只解释来源，项目重扫历史改为主动查看，自动解释禁止启动重扫。见[交付](./apps/web/changelog/2026-10-18-project-export-chat.md)与[ADR-0035](./adr/0035-project-xlsx-export.md)。
 
 2026-10-18图纸预览支持滚轮按指针缩放与中键拖动，目录侧栏可收起/恢复；所选范围重扫按钮自动发送请求，候选仍需确认保存。Explain图纸归属各轮消息，正文随后向下展示，来源/重扫图片可点击居中放大并Esc返回。见[前端交付](./apps/web/changelog/2026-10-18-workbench-interactions.md)。

@@ -1,11 +1,12 @@
 {
-  "version": 13,
-  "description": "ZH 2.1.1 curated C01-only examples: one 003C01 scan and five related target-only completion cases, including the retained repeated-N ambiguity negative. Context v2 omits source pins/coordinates; no extraction rule change.",
+  "version": 14,
+  "description": "ZH crop 2.2.1: preserve the v13 scan and completion fixtures; add paired repeated-N examples on 005C01. Runtime still selects one completion example.",
   "images": {
     "003c01": "images/003c01.png",
     "004c01": "images/004c01.png",
     "080c10": "images/080c10.png",
-    "003c31": "images/003c31.png"
+    "003c31": "images/003c31.png",
+    "005c01": "images/005c01.png"
   },
   "stage2_cases": [
     {
@@ -78,6 +79,30 @@
       "images": [
         {
           "path": "images/003c31.png",
+          "role": "target_page"
+        }
+      ]
+    },
+    {
+      "id": "c02_fc11_n_to_005c01_x21_5",
+      "title": "同页重复002C0600：来源004C02的-FC11_N对应X21:5，不选另一条N线",
+      "input": "completion/c02_fc11_n_to_005c01_x21_5.task.json",
+      "expected": "completion/c02_fc11_n_to_005c01_x21_5.expected.json",
+      "images": [
+        {
+          "path": "images/005c01.png",
+          "role": "target_page"
+        }
+      ]
+    },
+    {
+      "id": "c09_lcm_n_to_005c01_x2_10",
+      "title": "同页重复002C0600：来源004C09的-LCM_FC50_N对应X2:10，不选另一条N线",
+      "input": "completion/c09_lcm_n_to_005c01_x2_10.task.json",
+      "expected": "completion/c09_lcm_n_to_005c01_x2_10.expected.json",
+      "images": [
+        {
+          "path": "images/005c01.png",
           "role": "target_page"
         }
       ]

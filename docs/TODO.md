@@ -4,6 +4,16 @@
 
 ## 进行中
 
+- [x] 三套规则上传并切换数据库目录：ZH2.3.0、ABB1.3.1、XMZ0.2.1已存project-assets/登记extraction_profiles并读回，15组消息一致，原6条规则和项目绑定/线表版本摘要不变。上传选项/Skills只读已上传包，移除本地登记；类型/lint/build、Ruff/AST/3源码mypy、离线API及11截图通过。未跑pytest/模型或提取、未启停服务；用户重载8000刷新前端，见ADR-0037和Server交付。
+
+- [x] 清理ZH源码资源重复：prompts/zh单份维护Prompt/样例，profiles/zh引用，包内resources自动生成；移除重复副本并同步已删除zh_crop的测试引用，不恢复history。30资源/10策略/18组消息一致，60摘要、封装/独立加载/Server解包、6文件AST/Ruff和CLI帮助通过；未运行测试/模型或上传/写库，见 `docs/service/agent/changelog/2026-10-19-zh-source-cleanup.md`。
+
+- [x] ZH正式规则归拢：zh2.3.0自包含资源完整沿用zh_crop2.2.1，31资源/9类消息一致，37文件包及Server解包/独立加载、16历史/59来源摘要、Ruff/AST/mypy/两CLI帮助通过。旧资源兼容保留，补回归未运行测试/模型，不上传/写库/启停服务；本地ZIP在.runtime/zh-consolidation，见 `docs/service/agent/changelog/2026-10-19-zh-profile-consolidation.md`。
+
+- [x] 重扫确认后按范围替换完成：全量删除所选页/工作区旧范围并写入新结果，局部只修订选中行/字段；删除/新增与空结果完整预览、原子确认/回滚、旧候选禁用、会话切到新页。117项Agent、24项API、21新增/11旧隔离SQL、35浏览器及静态检查通过。本地20261019010000已部署、三表摘要不变且能力RPC=1，未执行实际替换/模型/服务重启。需重载8000 API2.10.0、8100/实际Worker并刷新Web，新建重扫任务；见ADR-0036。
+
+- [x] 006C01重扫覆盖/坐标排障：确认fields=all/附件1/初扫6，但旧匹配1更新3新增3保留；X3:1缺坐标是未覆盖旧行。修复原页跨方向端点匹配、唯一原理号与坐标优先级、单任务多图角色及定位冲突复核，输入契约v2隔离旧缓存。25项相关Fake/Mock、Ruff/两源码mypy通过，原任务前4行快照回放为4更新2新增。未调用模型或改实际7行数据；真实终点需新任务复测并确认。见`docs/service/agent/changelog/2026-10-19-rescan-identity-evidence.md`。
+
 - [x] 系统改名为振华重工放线表提取系统；项目级13列XLSX全量导出、版本核对/权限/空表、Explain拖动及按需历史。普通自动解释与任务差异解释禁用重扫工具，重扫按钮/主动需求保留。79项Agent、37项API、54项浏览器、类型/lint/build/Ruff/mypy及合成XLSX检查通过；未调用真实模型、导出实际用户数据或改库/服务。需重载8000 API2.9.0与8100、刷新前端，无新迁移。见ADR-0035与模块记录。
 
 - [x] 工作台交互完成：滚轮按指针缩放25%—400%、中键平移、目录侧栏收起/恢复、所选范围重扫自动发送、聊天图纸按轮嵌入正文之前与居中放大（含重扫证据）。65项相关浏览器用例、类型/lint/build及桌面/窄屏截图通过；未调用真实模型/重扫/业务写库，刷新前端即可。见`docs/apps/web/changelog/2026-10-18-workbench-interactions.md`。

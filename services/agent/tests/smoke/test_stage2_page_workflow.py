@@ -46,7 +46,8 @@ def forbid_network(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def binding():
     registry = ProfileRegistry(
-        profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles", workspace_root=ROOT, allow_legacy_references=True
+        profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles",
+        workspace_root=ROOT, allow_legacy_references=True,
     )
     registry.load_all()
     return registry.bind("zh")
@@ -191,7 +192,10 @@ def test_page_save_failure_stops_before_next_source_page(tmp_path: Path) -> None
                 "src.agent.extraction_agent.application.page_workflow_extraction.build_extraction_stage_dispatcher",
                 return_value=stages,
             ),
-            patch("src.agent.extraction_agent.graphs.document_extraction.page_extraction._write_json_atomic", save),
+            patch(
+                "src.agent.extraction_agent.graphs.document_extraction.page_extraction._write_json_atomic",
+                save,
+            ),
         ):
             with pytest.raises(OSError, match="persistence failure"):
                 await run_page_workflow_extraction(
@@ -210,7 +214,7 @@ def test_page_save_failure_stops_before_next_source_page(tmp_path: Path) -> None
 def test_target_image_completion_and_manifest_paths(tmp_path: Path) -> None:
     async def check() -> None:
         profile = binding()
-        assert profile.profile.version == "2.1.1"
+        assert profile.profile.version == "2.3.0"
         gateway = FakeModelGateway(['{"end":{"device":"-Q1","terminal":"L1"},"status":"resolved"}'])
         adapter = ZhVlmExtractionStageAdapter(AgentSettings(default_model="fake"), gateway)
         pages = []

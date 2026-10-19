@@ -40,7 +40,8 @@ class ManagementService:
         if not projects:
             return []
         profiles = {
-            row["id"]: row["profile_key"] for row in await self.profiles.list(user)
+            row["id"]: row["profile_key"]
+            for row in await self.db.all_rows("extraction_profiles", {"select": "id,profile_key"})
         }
         return [project_read(row, profiles.get(row["profile_id"])) for row in projects]
 
@@ -57,6 +58,8 @@ class ManagementService:
         if not profile_id:
             raise ServiceError(422, "PROFILE_REQUIRED", "请选择规则引用")
         profile = await self.profiles.get(profile_id)
+        if not self.profiles.is_uploaded(profile):
+            raise ServiceError(422, "PROFILE_NOT_AVAILABLE", "请先上传并发布完整规则包")
         row = await self.db.insert(
             "extraction_projects",
             {"name": name.strip(), "profile_id": profile_id, "owner_id": user},

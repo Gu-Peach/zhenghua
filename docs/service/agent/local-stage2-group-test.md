@@ -1,8 +1,10 @@
 # 本地 002.C / 002.M Stage 2 测试
 
+2026-10-19：正式ZH为 `zh@2.3.0`，`--profile zh`使用已验证的局部高清能力。Prompt/案例只维护在prompts/zh，裁剪/引用配置和Python策略位于profiles/zh；本地resources副本已删除。用户已移除zh_crop目录，命令统一为zh，详见[清理记录](./changelog/2026-10-19-zh-source-cleanup.md)。
+
 2026-10-18：脚本与平台共用`stage2-script-aligned-v1`请求/结果契约，专属禁色标提示已迁入共享层，模型Gateway/字段映射共用；参数与内存模式不变。新增请求指纹和过滤前计数，允许ZH0列，Prompt/样例不改。平台验证需先重启Worker，再新上传；详见[交付](./changelog/2026-10-18-extraction-entry-alignment.md)。
 
-ZH2.1.1补全只发送目标图及来源匹配事实（不传起点端子/坐标），`--profile zh`自动使用；命令参数不变，复测请使用新输出目录和run_id。ABB1.2.0/XMZ0.2.0同样使用目标图，并按独立列配置裁局部图，详见[修正记录](./changelog/2026-10-16-zh-cross-page-reading.md)。
+ZH补全只发送目标图及来源匹配事实（不传起点端子/坐标），正式zh2.3.0进一步沿用局部裁剪；命令参数不变，复测请使用新输出目录和run_id。ABB/XMZ同样使用目标图，并按独立列配置裁局部图，详见[修正记录](./changelog/2026-10-16-zh-cross-page-reading.md)。
 
 2026-10-15起PDF入口和拆页入口主表均复用ZH14列输出契约，ABB/XMZ同样包含两端坐标列；业务备注只取remark，读取依据保留在记录JSON。坐标读取要求和图像expected已同步，旧结果不自动补坐标或改写。ABB1.1.4/XMZ0.1.2应使用新输出目录复测，避免混用旧Profile指纹。见[统一记录](./changelog/2026-10-15-unified-table-coordinates.md)。
 
@@ -10,11 +12,11 @@ ZH2.1.1补全只发送目标图及来源匹配事实（不传起点端子/坐标
 
 该脚本默认绑定本地ZH，可用`--profile`切换本地规则键；模型适配器和确定性策略均按Profile.adapter绑定。其他模板资源缺失时告警后跳过，选中的规则无效仍停止。服务主入口的严格Profile加载不变，见[切换说明](./changelog/2026-10-15-local-profile-cli.md)。
 
-默认来源目录`docs/test/pages`，索引`docs/test/pages/agent/drawing_index.json`，已按用户移动后的实际位置更新。默认只扫描002.C的7页和002.M的5页，跨页可读取其他本地目标页。当前本地ZH为2.1.1；旧run_stage2产物来自2.0.0，run_stage2_v201来自2.0.1，不查询远端规则包。[电流规则](./changelog/2026-10-15-zh-ie-current.md)允许端点冻结后沿相线读取Ie明确A值；[坐标及样例记录](./changelog/2026-10-15-zh-c01-terminal-coordinates.md)明确归一化坐标与003C01案例，元件、直接端子段及程序分类规则沿用。
+默认来源目录`docs/test/pages`，索引`docs/test/pages/agent/drawing_index.json`，已按用户移动后的实际位置更新。默认只扫描002.C的7页和002.M的5页，跨页可读取其他本地目标页。当前本地ZH为2.3.0，沿用已验证的局部高清资源；旧run_stage2产物来自2.0.0，run_stage2_v201来自2.0.1，不查询远端规则包。[电流规则](./changelog/2026-10-15-zh-ie-current.md)允许端点冻结后沿相线读取Ie明确A值；[坐标及样例记录](./changelog/2026-10-15-zh-c01-terminal-coordinates.md)明确归一化坐标与003C01案例，元件、直接端子段及程序分类规则沿用。
 
 ## 命令
 
-规则键为`zh`（振华整页）、`zh_crop`（振华局部）、`abb`（1.2.0局部）、`zh_gantry_reel`（0.2.0局部，资源目录xmz）。使用规则键而非Prompt目录名；`--profile`只切换本地注册规则，不读取远端规则包。显式指定实验规则表示本次手工选择，不改变其发布状态。
+规则键为`zh`（正式2.3.0局部高清）、`abb`（ABB局部）、`zh_gantry_reel`（0.2.0局部，资源目录xmz）。使用规则键而非Prompt目录名；`--profile`只切换本地注册规则，不读取远端规则包。显式指定实验规则表示本次手工选择，不改变其发布状态。
 
 新PDF尚未拆页时使用完整入口，自动拆页、分类和提取（替换实际PDF路径）：
 

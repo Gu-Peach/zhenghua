@@ -47,7 +47,7 @@ def rescan_facts(run: RescanRun) -> dict[str, Any]:
         value["candidate"] = {
             "changes": [
                 {
-                    **change.model_dump(mode="json", exclude={"evidence"}),
+                    **change.model_dump(mode="json", exclude={"evidence"}, exclude_unset=True),
                     "source_note": change.evidence.get("source_note")
                     or (change.evidence.get("record") or {}).get("source_note"),
                 }
@@ -56,6 +56,14 @@ def rescan_facts(run: RescanRun) -> dict[str, Any]:
             "total_changes": len(run.candidate.changes),
             "warnings": run.candidate.warnings[:20],
             "unmatched_ids": [str(i) for i in run.candidate.unmatched_ids[:20]],
+            "replacement": {
+                "removed_count": len(run.candidate.replacement.removed),
+                "inserted_count": len(run.candidate.changes),
+                "scanned_pages": run.candidate.replacement.scanned_pages,
+                "removed": [row.model_dump(mode="json") for row in run.candidate.replacement.removed[:20]],
+            }
+            if run.candidate.replacement
+            else None,
         }
     return value
 
@@ -483,6 +491,10 @@ def build_explain_graph(
                     exclude_none=call.name != ProposeConnectionEditTool.name,
                     exclude_unset=call.name == ProposeConnectionEditTool.name,
                 )
+                if parameters is RescanRequest:
+                    item.arguments["result_mode"] = RescanRequest.model_validate(
+                        item.arguments
+                    ).resolved_mode()
             except (ValidationError, ValueError):
                 pass
             await activity(state, "tool_started", item)

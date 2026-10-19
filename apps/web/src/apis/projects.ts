@@ -6,7 +6,7 @@ type Schema = components["schemas"];
 const drawingOrder = new Intl.Collator("zh-CN", { numeric: true, sensitivity: "base" });
 export type ResultPage = Omit<Schema["SimpleConnectionPage"], "items"> & { items: WiringRow[] };
 export type RulePackage = Schema["ResourcePackage"];
-export type ProfileOption = Schema["LocalProfileOption"];
+export type ProfileOption = Pick<Schema["ProfileReferenceRead"], "profile_key" | "profile_version" | "display_name" | "checksum">;
 
 function summary(row: Schema["SimpleProjectRead"]): ProjectSummary {
   // Older workers reported page errors as a failure only after traversing the full PDF.
@@ -19,6 +19,11 @@ export function drawingFromDb(d: Schema["DrawingRead"]): Drawing {
 }
 function connection(row: Schema["SimpleConnectionRead"]): WiringRow {
   return { processingStatus: row.processing_status, reviewReasons: row.review_reasons, id: row.connection_id, workspaceId: row.workspace_id, drawingId: row.drawing_id, page: row.workspace_page ?? `${row.workspace_name} / PDF ${row.pdf_page_number}`, wireNumber: row.wire_number ?? "", lineNumber: row.principle_number ?? "", voltageLevel: row.voltage_level ?? "", terminalStrip: row.terminal_strip ?? "", startCode: row.start_code ?? "", startDescription: row.start_description ?? "", startTerminal: row.start_terminal ?? "", endCode: row.end_code ?? "", endDescription: row.end_description ?? "", endTerminal: row.end_terminal ?? "", startTerminalCoordinates: row.start_terminal_coordinates ?? null, endTerminalCoordinates: row.end_terminal_coordinates ?? null, current: row.current_value ?? "", remark: row.remark ?? "", colorMark: row.color_mark ?? "", status: row.needs_review ? "review" : "confirmed", confidence: 0, isCrossPage: row.is_cross_page, recordVersion: row.record_version, raw: row as unknown as Record<string, unknown> };
+}
+
+async function uploadedProfiles(): Promise<Schema["ProfileReferenceRead"][]> {
+  const rows = await request<Schema["ProfileReferenceRead"][]>("/api/v1/rule-library");
+  return rows.filter(row => row.resource_ref?.startsWith("storage://project-assets/profiles/"));
 }
 
 export const projectApi = {
@@ -103,11 +108,10 @@ export const projectApi = {
     await request(`/api/v1/connections/${row.id}`, { method: "PATCH", headers: { "Idempotency-Key": key }, body: JSON.stringify(body) });
   },
   async listRuleLibrary(): Promise<RuleLibraryItem[]> {
-    const rows = await request<Schema["ProfileReferenceRead"][]>("/api/v1/rule-library");
-    return rows.map(row => ({ id: row.id, key: row.profile_key, name: row.display_name, version: row.profile_version, checksum: row.checksum, summary: `规则引用 · ${row.checksum.slice(7, 19)}`, status: "published", updatedAt: row.created_at ?? "", canDelete: row.can_delete ?? false, isActive: true }));
+    const rows = await uploadedProfiles();
+    return rows.map(row => ({ id: row.id, key: row.profile_key, name: row.display_name, version: row.profile_version, checksum: row.checksum, summary: `规则包 · ${row.checksum.slice(7, 19)}`, status: "published", updatedAt: row.created_at ?? "", canDelete: row.can_delete ?? false, isActive: true }));
   },
-  async localProfiles(): Promise<ProfileOption[]> { return request("/api/v1/rule-library/local"); },
-  async createRule(body: Schema["ProfileReferenceCreate"]): Promise<void> { await request("/api/v1/rule-library", { method: "POST", body: JSON.stringify(body) }); },
+  async publishedProfiles(): Promise<ProfileOption[]> { return uploadedProfiles(); },
   async deleteRule(id: string): Promise<void> { await request(`/api/v1/rule-library/${id}?confirmed=true`, { method: "DELETE" }); },
   async package(id: string): Promise<RulePackage> { return request(`/api/v1/rule-library/${id}`); },
   async upload(file: File, profileKey: string, key: string): Promise<Schema["SimpleImportRead"]> {

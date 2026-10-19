@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[3]
 source = ROOT / "services/agent/src/agent/explain_agent/models.py"
 target = ROOT / "services/server/src/wiring_server/explain_contract.py"
 names = {
+    "RescanRemovedRow", "RescanReplacement",
     "RescanScope",
     "RescanEvidenceImage",
     "RescanRequest", "RescanAsset", "RescanUpload", "RescanFields", "RescanChange", "RescanCandidate", "RescanRun", "RescanDecision",

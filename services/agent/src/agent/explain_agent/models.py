@@ -293,6 +293,14 @@ class RescanRequest(StrictModel):
     scope: RescanScope
     fields: Literal["all", "start", "end"] = "all"
     instructions: str = Field(default="", max_length=4000)
+    result_mode: Literal["patch", "replace_scope"] = "patch"
+
+    def resolved_mode(self) -> Literal["patch", "replace_scope"]:
+        return (
+            "replace_scope"
+            if self.fields == "all" and not (self.scope.connection_ids or self.scope.principle_numbers)
+            else "patch"
+        )
 
 
 class RescanAsset(StrictModel):
@@ -345,10 +353,27 @@ class RescanChange(StrictModel):
     evidence: dict[str, Any] = Field(default_factory=dict)
 
 
+class RescanRemovedRow(StrictModel):
+    connection_id: UUID
+    record_version: int = Field(ge=1)
+    source_pdf_page_number: int = Field(ge=1)
+    source_drawing_page: str | None = None
+    workspace_code: str | None = None
+    principle_number: str | None = None
+    before: RescanFields
+
+
+class RescanReplacement(StrictModel):
+    version: Literal[1] = 1
+    scanned_pages: list[Annotated[int, Field(ge=1)]] = Field(min_length=1, max_length=1000)
+    removed: list[RescanRemovedRow] = Field(default_factory=list, max_length=1000)
+
+
 class RescanCandidate(StrictModel):
     changes: list[RescanChange] = Field(default_factory=list, max_length=1000)
     warnings: list[str] = Field(default_factory=list, max_length=1000)
     unmatched_ids: list[UUID] = Field(default_factory=list, max_length=1000)
+    replacement: RescanReplacement | None = None
 
 
 class RescanRun(StrictModel):

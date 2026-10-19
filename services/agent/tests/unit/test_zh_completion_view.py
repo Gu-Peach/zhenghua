@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
+
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionRequest,
     DrawingPageInput,
@@ -180,7 +181,7 @@ def test_single_completion_call_converts_view_coordinates_back_to_full_page(tmp_
             CrossPageCompletionRequest(
                 run_id="offline",
                 project_id="offline",
-                profile=registry.bind("zh_crop", allow_experimental=True),
+                profile=registry.bind("zh"),
                 task_id="one",
                 target_page=DrawingPageInput(pdf_page_number=139, image_path=path),
                 task_context=json.dumps(

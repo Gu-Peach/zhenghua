@@ -68,11 +68,11 @@ def test_frozen_platform_and_local_script_send_identical_scan_requests(tmp_path:
             workspace_root=ROOT, allow_legacy_references=True,
         )
         registry.load_all()
-        local = registry.bind("zh_crop", allow_experimental=True)
-        build_package(registry.resolve("zh_crop", allow_experimental=True), tmp_path / "profiles/selected")
+        local = registry.bind("zh")
+        build_package(registry.resolve("zh"), tmp_path / "profiles/selected")
         frozen_registry = ProfileRegistry(profile_root=tmp_path / "profiles", workspace_root=tmp_path)
         frozen_registry.load_all()
-        frozen = frozen_registry.bind("zh_crop", allow_experimental=True)
+        frozen = frozen_registry.bind("zh")
         directory = tmp_path / "platform"
         path = directory / "pages/004.G/6.png"
         _image(path)
@@ -187,7 +187,7 @@ def test_diagnostics_distinguish_empty_model_results_from_receiver_filtering(
 
         agent = PageScannerAgent(stages=SimpleNamespace(scan_page=scan))
         result = await agent.run(PageScanRequest(
-            run_id="offline", project_id="offline", profile=registry.bind("zh_crop", allow_experimental=True),
+            run_id="offline", project_id="offline", profile=registry.bind("zh"),
             page=DrawingPageInput(pdf_page_number=119, image_path=tmp_path / "not-opened.png"),
         ))
         assert result.scan_diagnostics.outcome == outcome

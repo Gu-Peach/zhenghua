@@ -57,7 +57,8 @@ def forbid_network(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def binding():
     registry = ProfileRegistry(
-        profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles", workspace_root=ROOT, allow_legacy_references=True
+        profile_root=ROOT / "services/agent/src/agent/extraction_agent/profiles",
+        workspace_root=ROOT, allow_legacy_references=True,
     )
     registry.load_all()
     return registry.bind("zh")
@@ -376,7 +377,10 @@ def test_fixed_actual_image_cases_validate_fields_and_manifest_paths() -> None:
         c.current_basis == "Ie" and c.current_source_text == f"Ie:(0.7-1)*{c.current}"
         for c in c01 if c.current is not None
     )
-    assert all(c.current is None for c in c01 if c.start.terminal in {"N-BAR", "PE"} or c.is_cross_page.value == "same_page")
+    assert all(
+        c.current is None for c in c01
+        if c.start.terminal in {"N-BAR", "PE"} or c.is_cross_page.value == "same_page"
+    )
     completion = CrossPageCompletionData.model_validate(
         json.loads((ASSETS / "completion/c01_xa8_to_080c10_xd10_1.expected.json").read_text(encoding="utf-8"))
     )
@@ -456,7 +460,9 @@ def test_source_component_completion_keeps_source_terminal_and_circuit_frozen() 
         )
 
 
-@pytest.mark.parametrize("x,y,page", [(1.1, 0.5, 60), (0.2, -0.1, 60), (float("nan"), 0.2, 60), (0.2, 0.3, 0)])
+@pytest.mark.parametrize(
+    "x,y,page", [(1.1, 0.5, 60), (0.2, -0.1, 60), (float("nan"), 0.2, 60), (0.2, 0.3, 0)],
+)
 def test_terminal_coordinate_contract_rejects_invalid_positions(x: float, y: float, page: int) -> None:
     with pytest.raises(ValueError):
         TerminalCoordinates(x=x, y=y, pdf_page_number=page)
@@ -468,21 +474,22 @@ def test_terminal_coordinates_bind_to_input_image_and_do_not_change_connection_i
         "t", target_pdf_page=403,
     )
     assert completion["end"]["terminal_coordinates"]["pdf_page_number"] == 403
-    first = WireConnection(start={"terminal": "XA:8", "terminal_coordinates": {"x": 0.2, "y": 0.4, "pdf_page_number": 60}})
+    first = WireConnection(
+        start={"terminal": "XA:8", "terminal_coordinates": {"x": 0.2, "y": 0.4, "pdf_page_number": 60}},
+    )
     second = first.model_copy(deep=True)
     second.start.terminal_coordinates.x = 0.21
     assert _connection_identity("unit", first) == _connection_identity("unit", second)
 
 
 def test_quality_asset_and_validator_checksums() -> None:
-    provenance = json.loads((ASSETS / "quality-provenance.json").read_text(encoding="utf-8"))
-    assert provenance["version"] == binding().profile.version == "2.1.1"
-    for section, directory in [("assets", ASSETS), ("policy_sources", ROOT), ("prompt_sources", ROOT)]:
-        for entry in provenance[section]:
-            assert (
-                "sha256:" + hashlib.sha256((directory / entry["path"]).read_bytes()).hexdigest()
-                == entry["checksum"]
-            )
+    current = binding()
+    formal = json.loads(current.resource("completion_view_provenance").read_text(encoding="utf-8"))
+    assert formal["version"] == current.profile.version == "2.3.0"
+    for entry in formal["files"]:
+        assert (
+            "sha256:" + hashlib.sha256((ROOT / entry["path"]).read_bytes()).hexdigest() == entry["checksum"]
+        )
 
 
 def test_fixed_cases_survive_fake_adapter_without_field_loss() -> None:
@@ -509,7 +516,9 @@ def test_fixed_cases_survive_fake_adapter_without_field_loss() -> None:
                     ),
                 )
             )
-            assert facts_only([c.model_dump(mode="json") for u in result.units for c in u.connections]) == facts_only([
+            assert facts_only([
+                c.model_dump(mode="json") for u in result.units for c in u.connections
+            ]) == facts_only([
                 c.model_dump(mode="json") for u in gold.units for c in u.connections
             ]), case["id"]
 

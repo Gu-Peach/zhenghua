@@ -1,5 +1,12 @@
 # ZH Prompt 变更记录
 
+## 2026-10-19：正式zh2.3.0单份源码资源
+
+- prompts/zh统一维护分类、初扫、局部跨页补全Prompt与1初扫/7补全案例；完整沿用用户已验证zh_crop2.2.1内容。
+- page_connection_completion.md使用已验证的局部视图规则，删除重复的page_connection_completion_crop.md及过期案例来源摘要；当前摘要由profiles/zh/completion_view.provenance.json维护。
+- profiles/zh只配置引用并提供运行策略，移除本地resources副本，包内resources由现有打包器生成。用户已移除的zh_crop/history不恢复，现有冻结任务不改。
+- 仅资源位置整理及静态/封装校验，不运行测试或模型，不上传或写库。
+
 2026-10-16：Profile保持2.1.1、Few-shot图像/提取事实不变；公共review契约1.0.0由程序生成裁决，模型Schema和示例隐藏裁决字段，uncertainties保留识图歧义。quality-provenance同步公共源码摘要，固定图像通过Fake VLM逐字段回放；未发布远端规则或运行付费模型。详见[增量提取记录](../../../../../../../docs/service/agent/changelog/2026-10-16-incremental-extraction.md)。
 
 ## 2026-10-15：补齐003C01中间组补全样例

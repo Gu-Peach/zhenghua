@@ -251,6 +251,38 @@ class ExplainRescan:
         self, project: str, identifier: str, user: str, body: RescanDecision | None
     ) -> RescanRun:
         await self.db.require_project(project, user, write=True)
+        if body and body.accepted:
+            current = await self.get(project, identifier, user)
+            if current.request.result_mode == "replace_scope":
+                if not current.candidate or not current.candidate.replacement:
+                    raise ServiceError(
+                        409,
+                        "RESCAN_REPLACEMENT_REQUIRED",
+                        "全量替换候选不完整，请重新发起重扫",
+                    )
+                try:
+                    contract = await self.db.rpc("rescan_replacement_contract", {})
+                except ServiceError as exc:
+                    raise ServiceError(
+                        503,
+                        "RESCAN_REPLACEMENT_UNAVAILABLE",
+                        "范围替换事务尚未部署，旧线表未改动；请先应用新迁移",
+                    ) from exc
+                if type(contract) is not int or contract != 1:
+                    raise ServiceError(
+                        503,
+                        "RESCAN_REPLACEMENT_UNAVAILABLE",
+                        "数据库尚不支持范围替换，旧线表未改动",
+                    )
+            elif (
+                current.status == "ready"
+                and current.request.resolved_mode() == "replace_scope"
+            ):
+                raise ServiceError(
+                    409,
+                    "RESCAN_REPLACEMENT_REQUIRED",
+                    "旧版全量候选不能按范围替换提交，请重新重扫",
+                )
         value: dict[str, Any] = {"project_id": project, "id": identifier, "actor": user}
         value.update(body.model_dump(mode="json") if body else {"action": "cancel"})
         result = await self.db.rpc("decide_connection_rescan", {"value": value})

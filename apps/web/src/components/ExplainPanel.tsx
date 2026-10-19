@@ -5,7 +5,7 @@ import { useExplainConversation, type ExplainTool } from "@/hooks/useExplainConv
 import { TypewriterAnswer } from "./TypewriterAnswer";
 import { ExplainEditProposal } from "./ExplainEditProposal";
 import type { EditProposal } from "@/apis/explain-edits";
-import type { RescanPageChoice } from "@/apis/rescan";
+import type { RescanPageChoice, RescanRun } from "@/apis/rescan";
 import { RescanAttachments, type RescanAttachmentHandle } from "./RescanAttachments";
 import { RescanTask } from "./RescanTask";
 import { DrawingLightbox, type LightboxImage } from "./DrawingLightbox";
@@ -34,8 +34,8 @@ function EvidenceImage({ drawing, onOpen }: { drawing: EvidenceDrawing; onOpen: 
   </figure>;
 }
 
-export function ExplainPanel({ projectId, selection, onClose, onModified, onRescanned, availablePages = [], readOnly = false }: { projectId: string; selection: ExplainSelection; onClose: () => void; onModified?: (proposal: EditProposal) => void; onRescanned?: () => void; availablePages?: RescanPageChoice[]; readOnly?: boolean }) {
-  const { messages, busy: talking, send, stop, proposals, proposalError, applyDecision, conversationId, rescans, setAttachmentIds, applyRescan, loadRescans, loadingRescans, rescanHistoryError } = useExplainConversation(projectId, selection);
+export function ExplainPanel({ projectId, selection, onClose, onModified, onRescanned, availablePages = [], readOnly = false }: { projectId: string; selection: ExplainSelection; onClose: () => void; onModified?: (proposal: EditProposal) => void; onRescanned?: (run: RescanRun) => void; availablePages?: RescanPageChoice[]; readOnly?: boolean }) {
+  const { messages, busy: talking, send, stop, proposals, proposalError, applyDecision, conversationId, rescans, setAttachmentIds, applyRescan, loadRescans, loadingRescans, rescanHistoryError, selectionNotice, currentTitle } = useExplainConversation(projectId, selection);
   const [lightbox, setLightbox] = useState<LightboxImage | null>(null);
   const [editing, setEditing] = useState(false); const [ready, setReady] = useState<Record<string, boolean>>({});
   const [uploading, setUploading] = useState(false); const uploader = useRef<RescanAttachmentHandle>(null);
@@ -49,8 +49,9 @@ export function ExplainPanel({ projectId, selection, onClose, onModified, onResc
   useEffect(() => { scrollToLatest(); }, [messages, proposals, rescans, ready, scrollToLatest]);
   function submit(event: FormEvent) { event.preventDefault(); if (!busy && draft.trim()) { void send(draft.trim()); setDraft(""); follow.current = true; } }
   return <section ref={panel} className={`explain-panel ${movement.dragging ? "is-dragging" : ""}`} style={movement.style} role="dialog" aria-modal="false" aria-label="来源解释" tabIndex={-1} onKeyDown={event => { if (event.key === "Escape" && !event.defaultPrevented) { event.preventDefault(); onClose(); } }}>
-    <header className="explain-header" {...movement.headerProps}><MessageCircle size={19} /><div><strong>来源解释</strong><p title={selection.title}>{selection.title}</p></div><button type="button" className="icon-button" aria-label="查看项目重扫记录" title="按需查看项目已有重扫任务，不会启动重扫" disabled={loadingRescans || busy} onClick={() => void loadRescans()}>{loadingRescans ? <Loader2 size={18} className="spin" /> : <History size={18} />}</button><button type="button" className="icon-button" aria-label="关闭来源解释" title="关闭并停止当前解释" onClick={onClose}><X size={19} /></button></header>
+    <header className="explain-header" {...movement.headerProps}><MessageCircle size={19} /><div><strong>来源解释</strong><p title={currentTitle}>{currentTitle}</p></div><button type="button" className="icon-button" aria-label="查看项目重扫记录" title="按需查看项目已有重扫任务，不会启动重扫" disabled={loadingRescans || busy} onClick={() => void loadRescans()}>{loadingRescans ? <Loader2 size={18} className="spin" /> : <History size={18} />}</button><button type="button" className="icon-button" aria-label="关闭来源解释" title="关闭并停止当前解释" onClick={onClose}><X size={19} /></button></header>
     <div ref={feed} className="explain-feed" onScroll={() => { if (feed.current) follow.current = feed.current.scrollHeight - feed.current.scrollTop - feed.current.clientHeight < 70; }}>
+      {selectionNotice ? <p className="explain-gap" role="status">{selectionNotice}</p> : null}
       {selection.skipInitial && !messages.length ? <p className="explain-gap">已选择{selection.title}。可先添加细节图并补充要求，再发送重扫请求；结果确认前线表保持原值。</p> : null}
       {messages.map(message => <article key={message.id} className="explain-turn">
         <p className="explain-question">{message.question}</p>
@@ -62,12 +63,12 @@ export function ExplainPanel({ projectId, selection, onClose, onModified, onResc
         {message.status === "failed" || message.status === "cancelled" ? <div className="explain-error" role={message.status === "failed" ? "alert" : "status"}><span>{message.error ?? "已停止生成，以上内容可能不完整。"}</span><button type="button" disabled={busy} onClick={() => void send(message.question, message.id)}>重试</button></div> : null}
       </article>)}
       {!talking && messages.every(message => !message.answer || ready[message.id]) ? proposals.map(proposal => <ExplainEditProposal key={proposal.proposal_id} proposal={proposal} disabled={busy || readOnly} onBusy={setEditing} onDecision={receipt => { applyDecision(receipt); if (receipt.status === "applied") onModified?.(proposal); }} />) : null}
-      {!talking && messages.every(message => !message.answer || ready[message.id]) ? rescans.map(run => <RescanTask key={run.id} initial={run} disabled={busy || readOnly} onBusy={setEditing} onProgress={scrollToLatest} onExplain={id => { void send(`请解释已有任务 ${id} 的重扫差异与原图依据，无需再次启动重扫。`, undefined, id, false); follow.current = true; }} onDecision={current => { applyRescan(current); if (current.status === "applied") onRescanned?.(); }} />) : null}
+      {!talking && messages.every(message => !message.answer || ready[message.id]) ? rescans.map(run => <RescanTask key={run.id} initial={run} disabled={busy || readOnly} onBusy={setEditing} onProgress={scrollToLatest} onExplain={id => { void send(`请解释已有任务 ${id} 的重扫差异与原图依据，无需再次启动重扫。`, undefined, id, false); follow.current = true; }} onDecision={current => { applyRescan(current); if (current.status === "applied") onRescanned?.(current); }} />) : null}
       {proposalError ? <p className="explain-gap">待确认方案列表暂不可用：{proposalError}。来源解释仍可使用。</p> : null}
       {rescanHistoryError ? <p className="explain-gap" role="status">{rescanHistoryError}</p> : null}
     </div>
     <form className="explain-composer" onSubmit={submit}>
-      <RescanAttachments ref={uploader} project={projectId} conversation={conversationId} pages={availablePages} sourcePdf={selection.sourcePdf} targetPdf={selection.targetPdf} disabled={busy || readOnly} onChange={setAttachmentIds} onBusy={setUploading} />
+      <RescanAttachments key={conversationId} ref={uploader} project={projectId} conversation={conversationId} pages={availablePages} sourcePdf={selection.sourcePdf} targetPdf={selection.targetPdf} disabled={busy || readOnly} onChange={setAttachmentIds} onBusy={setUploading} />
       <label className="visually-hidden" htmlFor="explain-question">追问来源解释</label><textarea id="explain-question" value={draft} maxLength={8000} placeholder="解释来源、提出修改，或要求重新扫描；可粘贴细节图…" rows={2} onPaste={event => { const files = Array.from(event.clipboardData.files); if (files.length) { event.preventDefault(); uploader.current?.addFiles(files); } }} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); if (!busy && draft.trim()) { void send(draft.trim()); setDraft(""); follow.current = true; } } }} />
       <div><span>{readOnly ? "提取处理中，暂不能保存线表修改" : uploading ? "正在上传细节图…" : "可解释与提出修改 · 确认后保存线表"}</span>{talking ? <button type="button" aria-label="停止生成" title="停止生成" onClick={stop}><Square size={15} /></button> : <button type="submit" aria-label="发送追问" title="发送追问" disabled={editing || uploading || !draft.trim()}><Send size={16} /></button>}</div>
     </form>

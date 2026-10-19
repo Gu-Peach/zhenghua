@@ -1,5 +1,15 @@
 # Changelog
 
+2026-10-19：ZH2.3.0、ABB1.3.1、XMZ0.2.1完整资源包已存入私有project-assets并登记数据库，读回/15组消息比对通过；ABB/XMZ补丁号仅用于不可变包发布，不改识别内容。上传PDF选项和Extraction Skills仅从已上传数据库包获取，移除本地登记UI；旧项目和6条旧规则不改。静态、离线API及11张界面截图通过，无模型/提取调用，启用需重载8000刷新前端。见[Server](../service/server/changelog/2026-10-19-database-profile-catalog.md)、[Web](../apps/web/changelog/2026-10-19-database-profile-options.md)。
+
+2026-10-19：用户确认重扫全量替换语义，整页/工作区删旧写新，局部仅更新选中行/字段；确认前保留旧数据，删除/新增及空结果明确预览。新迁移、能力门禁、并发/回滚/旧候选禁用及新行会话已实现并验证，本地三表摘要不变，未提交实际替换。见[ADR-0036](../adr/0036-rescan-scope-replacement.md)、[Agent](../service/agent/changelog/2026-10-19-rescan-scope-replacement.md)、[Server](../service/server/changelog/2026-10-19-rescan-scope-replacement.md)、[Web](../apps/web/changelog/2026-10-19-rescan-scope-replacement.md)。
+
+2026-10-19：按用户要求统一ZH源码资源来源：prompts/zh维护Prompt/样例，profiles/zh配置引用并提供运行策略，resources仅在打包时生成。清理重复源码副本、旧补全文件及失效测试引用；模型输入/策略不变，静态及封装校验通过，未上传或运行模型。见[去重记录](../service/agent/changelog/2026-10-19-zh-source-cleanup.md)。
+
+2026-10-19：正式ZH入口整理为zh2.3.0，完整沿用用户已验证的zh_crop2.2.1局部高清资源，全部资源自包含；旧命令/冻结包和运行策略保留。生成本地可校验ZIP，未自动上传或改项目规则；静态及资源/封装对照通过，未运行模型或测试。见[Agent记录](../service/agent/changelog/2026-10-19-zh-profile-consolidation.md)。
+
+2026-10-19：Explain重扫按原页端子/元件识别方向纠正后的同一行，单条补全明确主图与辅助图角色，针脚定位冲突进入复核。25项Fake/Mock及静态/回放通过，任务前4行回放为4更新2新增；未调用模型或改当前7行，需Worker新代码/新任务验证。见[记录](../service/agent/changelog/2026-10-19-rescan-identity-evidence.md)。
+
 2026-10-18：品牌更新为振华重工放线表提取系统，项目根范围支持全量正式线表13列XLSX导出（电压等级与端子排独立）；Explain可拖动，历史重扫按需查看，自动来源解释限制重扫工具。API2.9.0/OpenAPI/Client已同步，79项Agent、37项API、54项浏览器与静态检查通过，无数据库迁移或实际业务操作。见[ADR](../adr/0035-project-xlsx-export.md)、[Web](../apps/web/changelog/2026-10-18-project-export-chat.md)、[Server](../service/server/changelog/2026-10-18-project-export.md)、[Agent](../service/agent/changelog/2026-10-18-explain-request-modes.md)。
 
 2026-10-18：图纸预览滚轮缩放/中键拖动，项目目录侧栏可收起；重扫按钮自动发送所选范围请求，候选仍人工确认。Explain图片按消息显示，支持原界面居中放大。65项相关浏览器及静态/截图检查通过，无后端契约或数据库变更。见[Web记录](../apps/web/changelog/2026-10-18-workbench-interactions.md)。

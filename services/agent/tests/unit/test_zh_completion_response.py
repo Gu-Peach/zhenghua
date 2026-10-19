@@ -6,6 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
+
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionRequest,
     DrawingPageInput,
@@ -25,7 +26,6 @@ from src.profiles import ProfileRegistry
 
 ROOT = Path(__file__).resolve().parents[4]
 ASSETS = ROOT / "services/agent/src/agent/extraction_agent/prompts/zh/examples_wiring/002c"
-CROP = ROOT / "services/agent/src/agent/extraction_agent/profiles/zh_crop/examples_wiring"
 
 
 @pytest.mark.parametrize(
@@ -72,7 +72,7 @@ def _request() -> CrossPageCompletionRequest:
     return CrossPageCompletionRequest(
         run_id="offline",
         project_id="offline",
-        profile=registry.bind("zh_crop", allow_experimental=True),
+        profile=registry.bind("zh"),
         task_id="one",
         target_page=DrawingPageInput(pdf_page_number=403, image_path=ASSETS / "images/080c10.png"),
         task_context=json.dumps(
@@ -193,14 +193,14 @@ def test_failed_completion_does_not_block_the_next_connection(tmp_path: Path) ->
     [("c02_fc11_n_to_005c01_x21_5", "X21:5"), ("c09_lcm_n_to_005c01_x2_10", "X2:10")],
 )
 def test_repeated_n_selects_the_matching_source_signal_example(case_id: str, terminal: str) -> None:
-    manifest = json.loads((CROP / "manifest.json").read_text(encoding="utf-8"))
+    manifest = json.loads((ASSETS / "manifest.json").read_text(encoding="utf-8"))
     examples = [
-        {**case, "input_json": (CROP / case["input"]).read_text(encoding="utf-8")}
+        {**case, "input_json": (ASSETS / case["input"]).read_text(encoding="utf-8")}
         for case in manifest["stage3_cases"]
     ]
     case = next(item for item in examples if item["id"] == case_id)
     selected = _select_stage3_examples(examples, input_json=case["input_json"], limit=1)
     assert selected[0]["id"] == case_id
-    expected = json.loads((CROP / selected[0]["expected"]).read_text(encoding="utf-8"))
+    expected = json.loads((ASSETS / selected[0]["expected"]).read_text(encoding="utf-8"))
     assert expected["end"]["terminal"] == terminal
     assert expected["current"] is None

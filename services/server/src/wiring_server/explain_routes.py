@@ -54,18 +54,28 @@ def install_explain_routes(app: FastAPI, identity: Any) -> None:
             str(project), str(run), user
         )
 
-    @app.get("/api/v1/projects/{project}/rescans", response_model=list[RescanRun])
+    @app.get(
+        "/api/v1/projects/{project}/rescans",
+        response_model=list[RescanRun],
+        response_model_exclude_unset=True,
+    )
     async def rescan_list(project: UUID, request: Request, user: User) -> Any:
         return await ExplainRescan(request.app.state.db).list_runs(str(project), user)
 
-    @app.get("/api/v1/projects/{project}/rescans/{run}", response_model=RescanRun)
+    @app.get(
+        "/api/v1/projects/{project}/rescans/{run}",
+        response_model=RescanRun,
+        response_model_exclude_unset=True,
+    )
     async def rescan_get(project: UUID, run: UUID, request: Request, user: User) -> Any:
         return await ExplainRescan(request.app.state.db).get(
             str(project), str(run), user
         )
 
     @app.post(
-        "/api/v1/projects/{project}/rescans/{run}/decision", response_model=RescanRun
+        "/api/v1/projects/{project}/rescans/{run}/decision",
+        response_model=RescanRun,
+        response_model_exclude_unset=True,
     )
     async def rescan_decide(
         project: UUID, run: UUID, body: RescanDecision, request: Request, user: User
@@ -75,7 +85,9 @@ def install_explain_routes(app: FastAPI, identity: Any) -> None:
         )
 
     @app.post(
-        "/api/v1/projects/{project}/rescans/{run}/cancel", response_model=RescanRun
+        "/api/v1/projects/{project}/rescans/{run}/cancel",
+        response_model=RescanRun,
+        response_model_exclude_unset=True,
     )
     async def rescan_cancel(
         project: UUID, run: UUID, request: Request, user: User

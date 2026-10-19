@@ -209,6 +209,9 @@ def management(monkeypatch: pytest.MonkeyPatch):
     from wiring_server.profile_references import ProfileReferences
 
     backend = Backend()
+    backend.tables["extraction_profiles"][0]["resource_ref"] = (
+        f"storage://project-assets/profiles/{OWNER}/zh/2.1.0/" + "0" * 64 + ".zip"
+    )
     option = {**backend.tables["extraction_profiles"][0]}
     monkeypatch.setattr(ProfileReferences, "catalog", lambda self: {"zh": option})
     app = api.create_app(
@@ -353,7 +356,7 @@ def test_cross_page_image_and_invalid_foreign_asset_path(management) -> None:
     assert client.get(f"/api/v1/connections/{ROW}/target").status_code == 409
 
 
-def test_local_rule_reference_registration_and_in_use_guard(management) -> None:
+def test_uploaded_rule_lookup_and_in_use_guard(management) -> None:
     client, _ = management
     response = client.get("/api/v1/rule-library/local")
     assert response.status_code == 200

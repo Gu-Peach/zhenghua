@@ -1,9 +1,9 @@
 {
   "manifest_version": 1,
   "key": "zh",
-  "version": "2.1.1",
+  "version": "2.3.0",
   "display_name": "振华电气图纸",
-  "description": "Evidence-driven classification and Stage 2 page extraction workflow.",
+  "description": "Formal ZH package consolidated from verified zh_crop 2.2.1; identical extraction prompts, examples and target-column crops.",
   "status": "active",
   "adapter": "zh_native",
   "resource_mode": "legacy_reference",
@@ -13,7 +13,11 @@
     "cross_page_prompt": "../../prompts/zh/page_connection_completion.md",
     "classification_examples": "../../prompts/zh/examples_page_classification",
     "wiring_examples": "../../prompts/zh/examples_wiring/002c",
-    "routing_rules": "rules.json"
+    "routing_rules": "rules.json",
+    "completion_view_rules": "completion_view.json",
+    "completion_view_provenance": "completion_view.provenance.json",
+    "resource_readme": "README.md",
+    "resource_changelog": "CHANGELOG.md"
   },
   "capabilities": [
     "page_classification",

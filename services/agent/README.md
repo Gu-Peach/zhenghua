@@ -1,5 +1,13 @@
 # Agent Service
 
+2026-10-19三套资源包已发布到业务extraction_profiles/project-assets：ZH2.3.0、ABB1.3.1、XMZ0.2.1（后两者为上传补丁版本，来源本地1.3.0/0.2.0识别资源不变）。前端上传与Skills仅选数据库包；本地CLI仍读源码。初始化工具为 `scripts/bootstrap_database_profiles.py`，默认仅打包/只读预检，显式--apply才发布。既有Worker支持Storage包，重载8000刷新Web即可启用目录限制，未自动跑提取。见[交付](../../docs/service/server/changelog/2026-10-19-database-profile-catalog.md)。
+
+2026-10-19重扫现按用户要求区分：整页/工作区all确认后替换整个旧范围，行ID/原理号或单侧字段仅修局部。候选包含完整删除/写入预览，全部页成功才生成，空结果需明确确认；旧版全量/旧缓存需新建任务。新迁移本地已安装且业务表未变，重载8000 API2.10.0、8100及实际Worker后刷新Web；inline方式无需另开Worker。不会自动清理已有结果，也未执行真实重扫。见[交付](../../docs/service/agent/changelog/2026-10-19-rescan-scope-replacement.md)。
+
+2026-10-19正式ZH入口为 `zh@2.3.0`（振华电气图纸），已验证提示词/样例统一维护在 `src/agent/extraction_agent/prompts/zh`，profiles/zh只引用资源并提供策略；本地resources副本已移除，上传包的resources由现有打包器生成。新脚本统一使用 `--profile zh`，用户已移除zh_crop/history；已有冻结任务不改。最新本地未上传ZIP在 `.runtime/zh-source-cleanup/zh-2.3.0.zip`（仓库根目录），见[清理记录](../../docs/service/agent/changelog/2026-10-19-zh-source-cleanup.md)。
+
+2026-10-19修复Explain方向纠正后的旧行匹配，补来源/目标/辅助图角色与定位冲突复核，输入契约升级rescan-v2。重载实际Worker后新建一轮重扫；inline方式则重载8100。无需新迁移/依赖/8000或前端改动，既有错行不会自动回滚/删除，候选仍需确认，真实终点质量尚需复测。见[排障](../../docs/service/agent/changelog/2026-10-19-rescan-identity-evidence.md)。
+
 Explain普通自动解释现在限定当前会话重扫事实，并通过allow_rescan=false隐藏/拒绝提取工具；用户主动输入或重扫按钮仍可调用，项目历史仅主动查看。需重载8100及8000 API2.9.0并刷新Web，Worker不因本轮改动调整，无新迁移。见[边界记录](../../docs/service/agent/changelog/2026-10-18-explain-request-modes.md)。
 
 若Explain出现`stream_error=true`，表示供应方在已建立的HTTP200流中返回错误。006M01已复现当前模型发布检查点不可加载，需供应方恢复或配置可用模型；重载8100只加载正确错误提示，不能修复供应方模型资源。见[根因记录](../../docs/service/agent/changelog/2026-10-18-explain-errors.md)。

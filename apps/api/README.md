@@ -1,5 +1,7 @@
 # 业务 API
 
+API2.10.0同步范围替换DTO与确认门禁：只接收checksum/accepted，实际删除/写入来自持久化候选，数据库能力缺失则拒绝。新迁移本地已安装且业务表未变；重载8000、8100/Worker、刷新Web并新建任务。见[事务交付](../../docs/service/server/changelog/2026-10-19-rescan-scope-replacement.md)。
+
 API2.9.0新增项目根范围XLSX下载，OpenAPI已定义二进制媒体类型和客户端契约；ExplainTurn同步allow_rescan，普通自动解释由前端传false。按下方原命令重新加载8000及8100，无新迁移、端口或生产依赖，刷新前端即可使用。见[Server交付](../../docs/service/server/changelog/2026-10-18-project-export.md)。
 
 API2.8.0提供项目级`rescan-assets`与`rescans`接口，浏览器只访问8000。先部署`20261018050000_explain_rescan.sql`，再按下方命令重新加载8000、[8100及独立Worker](../../services/agent/README.md)。上传细节图不修改规则，重扫候选确认后才事务提交。契约仍由`export_explain_contract.py`→`export_openapi.py`→Web的openapi-typescript生成。见[接口与事务](../../docs/service/server/changelog/2026-10-18-explain-rescan.md)。

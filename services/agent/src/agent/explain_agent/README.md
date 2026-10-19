@@ -1,5 +1,7 @@
 # Explain Agent
 
+2026-10-19全部重扫确认后按范围删旧写新，局部仅修订选中行/字段；模式由程序根据scope/fields设置，模型不决定删除。新版候选含完整旧行清单和新结果，确认仍由Server原子执行，空结果/失败/旧候选有明确保护。需新迁移（本地已装）、8000 API2.10.0、8100/Worker与Web新代码，新建任务而非提交旧合并候选。见[ADR-0036](../../../../../docs/adr/0036-rescan-scope-replacement.md)。
+
 自动来源解释和既有任务差异解释由Web显式传allow_rescan=false，工具列表/执行边界均限制重扫；普通重扫事实只读取当前会话，历史单任务可通过rescan_id显式访问。默认true保留既有SDK兼容；用户主动输入/重扫按钮正常使用。需同步重载8000 API2.9.0和8100、刷新Web，无迁移。见[记录](../../../../../docs/service/agent/changelog/2026-10-18-explain-request-modes.md)。
 
 2026-10-18 新增重扫工具及辅助图：`rescan_connections`创建租约任务，原提取Stage2/Profile与完整原图/关联图复用，截图只辅助匹配。结果进入候选，模型不能确认写库；原行ID/所属页/工作区保持，未知或未唯一匹配不猜测、不自动删除。API2.8.0与`20261018050000`迁移、现有Worker新代码需要同步加载。见[实现](../../../../../docs/service/agent/changelog/2026-10-18-explain-rescan.md)与[ADR](../../../../../docs/adr/0034-explain-rescan.md)。

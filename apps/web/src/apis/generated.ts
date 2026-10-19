@@ -1984,6 +1984,7 @@ export interface components {
             warnings?: string[];
             /** Unmatched Ids */
             unmatched_ids?: string[];
+            replacement?: components["schemas"]["RescanReplacement"] | null;
         };
         /** RescanChange */
         RescanChange: {
@@ -2071,6 +2072,38 @@ export interface components {
              */
             needs_review: boolean;
         };
+        /** RescanRemovedRow */
+        RescanRemovedRow: {
+            /**
+             * Connection Id
+             * Format: uuid
+             */
+            connection_id: string;
+            /** Record Version */
+            record_version: number;
+            /** Source Pdf Page Number */
+            source_pdf_page_number: number;
+            /** Source Drawing Page */
+            source_drawing_page?: string | null;
+            /** Workspace Code */
+            workspace_code?: string | null;
+            /** Principle Number */
+            principle_number?: string | null;
+            before: components["schemas"]["RescanFields"];
+        };
+        /** RescanReplacement */
+        RescanReplacement: {
+            /**
+             * Version
+             * @default 1
+             * @constant
+             */
+            version: 1;
+            /** Scanned Pages */
+            scanned_pages: number[];
+            /** Removed */
+            removed?: components["schemas"]["RescanRemovedRow"][];
+        };
         /** RescanRequest */
         RescanRequest: {
             scope: components["schemas"]["RescanScope"];
@@ -2085,6 +2118,12 @@ export interface components {
              * @default
              */
             instructions: string;
+            /**
+             * Result Mode
+             * @default patch
+             * @enum {string}
+             */
+            result_mode: "patch" | "replace_scope";
         };
         /** RescanRun */
         RescanRun: {

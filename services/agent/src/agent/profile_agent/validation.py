@@ -12,7 +12,7 @@ from src.domain.models.profiles import ProfileManifest, ProfileRuleSet
 from src.profiles.package import checksum, safe_path
 
 from .models import TemplateFields, ValidationIssue, ValidationReport
-from .template import MODELS, fixed_schemas
+from .template import canonical_expected, fixed_schemas
 
 
 def edit_content_checksum(root: Path) -> str:
@@ -133,7 +133,8 @@ def check_structure(root: Path) -> list[ValidationIssue]:
         path = case["expected_path"]
         try:
             payload = json.loads(relative_file(root, path).read_text(encoding="utf-8"))
-            MODELS[case["stage"]].model_validate(payload)
+            # Existing packages may keep the legacy classification page_number alias.
+            canonical_expected(case["stage"], payload)
             if not case["images"]:
                 raise ValueError("案例必须有实际图片，不能只有文字")
             for image in case["images"]:

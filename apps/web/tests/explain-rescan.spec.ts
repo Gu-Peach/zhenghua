@@ -1,15 +1,15 @@
 import { test, expect, type Page } from "@playwright/test";
 
-const project = "00000000-0000-0000-0000-000000000010", row = "00000000-0000-0000-0000-000000000011", runId = "00000000-0000-0000-0000-000000000012", assetId = "00000000-0000-0000-0000-000000000013";
+const project = "00000000-0000-0000-0000-000000000010", row = "00000000-0000-0000-0000-000000000011", runId = "00000000-0000-0000-0000-000000000012", assetId = "00000000-0000-0000-0000-000000000013", newRow = "00000000-0000-0000-0000-000000000015";
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6h8AAAAASUVORK5CYII=", "base64");
-async function fixture(page: Page, options: { conflict?: boolean; restored?: boolean; uploadFails?: boolean; empty?: boolean } = {}) {
+async function fixture(page: Page, options: { conflict?: boolean; restored?: boolean; uploadFails?: boolean; empty?: boolean; replacement?: boolean; emptyResult?: boolean; legacyFull?: boolean } = {}) {
   let started = !!options.restored, status = options.restored ? "ready" : "queued", version = 1, historyReads = 0;
-  let scope: { connection_ids?: string[]; workspace_code?: string } = { connection_ids: [row] }; let fields: "all" | "end" = "end";
+  let scope: { connection_ids?: string[]; workspace_code?: string } = options.replacement || options.legacyFull ? { workspace_code: "003.C" } : { connection_ids: [row] }; let fields: "all" | "end" = options.replacement || options.legacyFull ? "all" : "end";
   const uploads: Record<string, unknown>[] = [], turns: Record<string, unknown>[] = [], decisions: Record<string, unknown>[] = [];
-  const connection = () => ({ connection_id: row, id: row, project_id: project, batch_id: "batch-a", record_version: version, workspace_id: "work", drawing_id: "drawing", workspace_name: "003.C", workspace_page: "003C01", pdf_page_number: 1, source_pdf_page_number: 1, source_drawing_page: "003C01", target_pdf_page_number: 2, start_terminal: "XA:8", end_terminal: version === 1 ? "OLD" : "X9:2", principle_number: "P1", is_cross_page: true });
+  const connection = () => ({ connection_id: options.replacement && status === "applied" ? newRow : row, id: options.replacement && status === "applied" ? newRow : row, project_id: project, batch_id: "batch-a", record_version: version, workspace_id: "work", drawing_id: "drawing", workspace_name: "003.C", workspace_page: "003C01", pdf_page_number: 1, source_pdf_page_number: 1, source_drawing_page: "003C01", target_pdf_page_number: 2, start_terminal: "XA:8", end_terminal: status === "applied" ? "X9:2" : "OLD", principle_number: "P1", is_cross_page: true });
   const run = () => ({ id: runId, project_id: project, conversation_id: "00000000-0000-0000-0000-000000000014", batch_id: "batch-a", status, stage: status === "ready" ? "ready" : status === "running" ? "completion" : status,
-    request: { scope, fields, instructions: "按细节复核终点" }, profile: { key: "zh", version: "2.1.1", checksum: "sha256:" + "a".repeat(64) }, progress: { pdf_page_number: 1 }, versions: status === "applied" ? { [row]: 2 } : {}, created_at: "2026-10-18", updated_at: "2026-10-18", checksum: "sha256:" + "b".repeat(64),
-    candidate: ["ready", "applied", "rejected"].includes(status) ? { changes: [{ action: "update", connection_id: row, record_version: 1, source_pdf_page_number: 1, source_drawing_page: "003C01", workspace_code: "003.C", principle_number: "P1", before: { end_terminal: "OLD" }, after: { end_terminal: "X9:2" } }], warnings: ["坐标按原始完整图定位，细节图仅辅助辨字。"], unmatched_ids: [] } : null });
+    request: { scope, fields, instructions: "按细节复核终点", result_mode: options.replacement ? "replace_scope" : "patch" }, profile: { key: "zh", version: "2.1.1", checksum: "sha256:" + "a".repeat(64) }, progress: { pdf_page_number: 1 }, versions: status === "applied" ? options.emptyResult ? {} : { [options.replacement ? newRow : row]: options.replacement ? 1 : 2 } : {}, created_at: "2026-10-18", updated_at: "2026-10-18", checksum: "sha256:" + "b".repeat(64),
+    candidate: ["ready", "applied", "rejected"].includes(status) ? { changes: options.emptyResult ? [] : [{ action: options.replacement ? "insert" : "update", connection_id: options.replacement ? newRow : row, record_version: options.replacement ? 0 : 1, source_pdf_page_number: 1, source_drawing_page: "003C01", workspace_code: "003.C", principle_number: "P1", before: options.replacement ? {} : { end_terminal: "OLD" }, after: { end_terminal: "X9:2" } }], replacement: options.replacement ? { version: 1, scanned_pages: [1], removed: [{ connection_id: row, record_version: 1, source_pdf_page_number: 1, source_drawing_page: "003C01", workspace_code: "003.C", principle_number: "P1", before: { start_terminal: "XA:8", end_terminal: "OLD" } }] } : null, warnings: ["坐标按原始完整图定位，细节图仅辅助辨字。"], unmatched_ids: [] } : null });
   await page.route("**/rescan-evidence.svg", route => route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="160"><rect width="300" height="160" fill="white"/><path d="M40 30V100H200" stroke="black" fill="none"/><text x="210" y="105">X9:2</text></svg>' }));
   await page.route("**/api/v1/**", async route => {
     const path = new URL(route.request().url()).pathname;
@@ -17,7 +17,7 @@ async function fixture(page: Page, options: { conflict?: boolean; restored?: boo
     const detail = { id: project, name: "重扫夹具项目", status: "ready", updated_at: "now", standard_profile: "zh", source_saved: false, batch_id: "batch-a", workspaces: [{ id: "work", code: "003.C", name: "003.C", drawings: [{ id: "drawing", workspace_id: "work", workspace_page: "003C01", pdf_page_number: 1, status: "completed" }, { id: "target", workspace_id: "work", workspace_page: "003C02", pdf_page_number: 2, status: "completed" }] }] };
     if (path === "/api/v1/projects") return route.fulfill({ json: [detail] });
     if (path === `/api/v1/projects/${project}`) return route.fulfill({ json: detail });
-    if (path.endsWith("/connections")) return route.fulfill({ json: { items: options.empty ? [] : [connection()], batch_id: "batch-a", offset: 0, limit: 100, has_more: false } });
+    if (path.endsWith("/connections")) return route.fulfill({ json: { items: options.empty || options.replacement && options.emptyResult && status === "applied" ? [] : [connection()], batch_id: "batch-a", offset: 0, limit: 100, has_more: false } });
     if (path.endsWith("/connection-edits")) return route.fulfill({ json: [] });
     if (path.endsWith("/rescan-assets")) {
       const body = route.request().postDataJSON(); uploads.push(body);
@@ -30,7 +30,7 @@ async function fixture(page: Page, options: { conflict?: boolean; restored?: boo
     if (path.endsWith("/decision")) {
       const body = route.request().postDataJSON(); decisions.push(body);
       if (options.conflict) return route.fulfill({ status: 409, json: { detail: { message: "数据已变更，请刷新后重试" } } });
-      status = body.accepted ? "applied" : "rejected"; if (body.accepted) version = 2;
+      status = body.accepted ? "applied" : "rejected"; if (body.accepted) version = options.replacement ? 1 : 2;
       return route.fulfill({ json: run() });
     }
     if (path.endsWith("/explain/turns/stream")) {
@@ -53,6 +53,72 @@ async function open(page: Page) {
   const panel = page.getByRole("dialog", { name: "来源解释", exact: true });
   await expect(panel.getByLabel("解释回复")).toContainText("当前数据库"); return panel;
 }
+
+async function requestFullScan(page: Page, state: Awaited<ReturnType<typeof fixture>>) {
+  const panel = await open(page);
+  await panel.getByLabel("追问来源解释").fill("全部重扫当前工作区，替换旧范围");
+  await panel.getByRole("button", { name: "发送追问", exact: true }).click();
+  await panel.getByRole("button", { name: "立即显示已收到内容", exact: true }).last().click();
+  state.ready();
+  return panel;
+}
+
+test("完整范围预览删除旧行并写入新行，确认后追问不查询已删除ID", async ({ page }) => {
+  const state = await fixture(page, { replacement: true });
+  const panel = await requestFullScan(page, state);
+  const confirm = panel.getByRole("button", { name: "确认范围替换 删除1行 写入1行", exact: true });
+  await expect(confirm).toBeEnabled();
+  await expect(panel.getByText("将删除的旧结果：1 行", { exact: true })).toBeVisible();
+  await expect(page.locator(".result-table").getByRole("cell", { name: "OLD", exact: true })).toBeVisible();
+  expect(state.decisions).toHaveLength(0);
+  await page.screenshot({ path: test.info().outputPath("rescan-replacement-preview.png") });
+  await confirm.click();
+  await expect(panel.getByText("范围结果已替换：删除旧结果 1 行，写入新结果 1 行。", { exact: true })).toBeVisible();
+  await expect(page.locator(".result-table").getByRole("cell", { name: "X9:2", exact: true })).toBeVisible();
+  expect(state.turns).toHaveLength(2);
+  await panel.getByLabel("追问来源解释").fill("现在这一页的新结果是什么");
+  await panel.getByRole("button", { name: "发送追问", exact: true }).click();
+  await expect.poll(() => state.turns.length).toBe(3);
+  expect(state.turns[2].connection_id).toBeUndefined(); expect(state.turns[2].query).toMatchObject({ pdf_page_number: 1 });
+  expect(state.turns[2].conversation_id).not.toBe(state.turns[1].conversation_id);
+  expect(state.decisions).toHaveLength(1);
+});
+
+test("空结果替换清楚提示删空，只有确认才删除原范围", async ({ page }) => {
+  const state = await fixture(page, { replacement: true, emptyResult: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  const panel = await requestFullScan(page, state);
+  await expect(panel.getByRole("alert")).toContainText("所选范围将被清空");
+  const confirm = panel.getByRole("button", { name: "确认范围替换 删除1行 写入0行", exact: true });
+  await expect(confirm).toBeEnabled();
+  await expect(page.locator(".result-table").getByRole("cell", { name: "OLD", exact: true })).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath("rescan-empty-replacement-mobile.png") });
+  await confirm.click();
+  await expect(page.locator(".result-table").getByRole("cell", { name: "OLD", exact: true })).toHaveCount(0);
+  await expect(panel.getByText("范围结果已替换：删除旧结果 1 行，写入新结果 0 行。", { exact: true })).toBeVisible();
+});
+
+test("旧版全量合并候选不能作为范围替换提交，仍可拒绝", async ({ page }) => {
+  const state = await fixture(page, { restored: true, legacyFull: true }); const panel = await open(page);
+  await panel.getByRole("button", { name: "查看项目重扫记录", exact: true }).click();
+  await expect(panel.getByRole("alert")).toContainText("旧版或不完整的全量候选");
+  await expect(panel.getByRole("button", { name: "确认重扫结果 1 行", exact: true })).toBeDisabled();
+  expect(state.decisions).toHaveLength(0);
+  await panel.getByRole("button", { name: "拒绝重扫结果", exact: true }).click();
+  expect(state.decisions[0]).toMatchObject({ accepted: false });
+  await expect(page.locator(".result-table").getByRole("cell", { name: "OLD", exact: true })).toBeVisible();
+});
+
+test("读取持久候选完成前不能确认范围删除", async ({ page }) => {
+  const state = await fixture(page, { replacement: true, restored: true });
+  let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; });
+  await page.route(`**/rescans/${runId}`, async route => { await gate; await route.fallback(); });
+  const panel = await open(page);
+  await panel.getByRole("button", { name: "查看项目重扫记录", exact: true }).click();
+  const button = panel.getByRole("button", { name: "确认范围替换 删除1行 写入1行", exact: true });
+  await expect(button).toBeDisabled(); expect(state.decisions).toHaveLength(0);
+  release(); await expect(button).toBeEnabled();
+});
 
 test("关联页细节随重扫发送，先回复后显示进度，确认前保持旧行", async ({ page }) => {
   const state = await fixture(page); const panel = await open(page);

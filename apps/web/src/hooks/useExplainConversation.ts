@@ -12,7 +12,11 @@ export interface ExplainMessage {
 }
 
 export function useExplainConversation(projectId: string, selection: ExplainSelection) {
-  const [conversationId] = useState(() => crypto.randomUUID());
+  const [conversationId, setConversationId] = useState(() => crypto.randomUUID());
+  const selectionOverride = useRef<ExplainSelection | null>(null);
+  const initialSent = useRef(false);
+  const [selectionNotice, setSelectionNotice] = useState("");
+  const [currentTitle, setCurrentTitle] = useState(selection.title);
   const [messages, setMessages] = useState<ExplainMessage[]>([]);
   const [busy, setBusy] = useState(false);
   const [proposals, setProposals] = useState<EditProposal[]>([]);
@@ -39,7 +43,8 @@ export function useExplainConversation(projectId: string, selection: ExplainSele
       if (!abort.signal.aborted) setMessages(previous => previous.map(item => item.id === id ? change(item) : item));
     };
     try {
-      const currentSelection = { ...selection, recordVersion: selection.connectionId ? versions.current[selection.connectionId] ?? selection.recordVersion : undefined };
+      const current = selectionOverride.current ?? selection;
+      const currentSelection = { ...current, recordVersion: current.connectionId ? versions.current[current.connectionId] ?? current.recordVersion : undefined };
       for await (const event of streamExplanation(currentSelection, projectId, conversationId, id, question, abort.signal, turnAttachments.current[id], turnRescans.current[id], turnPermissions.current[id])) {
         if (abort.signal.aborted) break;
         if (event.type === "answer_delta") update(item => ({ ...item, answer: item.answer + (event.delta ?? "") }));
@@ -77,9 +82,9 @@ export function useExplainConversation(projectId: string, selection: ExplainSele
   }, []);
 
   useEffect(() => {
-    if (selection.skipInitial) return () => { controller.current?.abort(); controller.current = null; };
+    if (selection.skipInitial || initialSent.current) return () => { controller.current?.abort(); controller.current = null; };
     const initial = selection.initialMessage ?? (selection.scope === "page" ? "请检索本页全部端子及相关跨页图纸，说明这些连接的信息来源与获取链路；需要时查看图纸。" : "请解释这条端子连接的获取链路，说明原页、跨页引用和已保存的提取依据；需要时查看图纸。");
-    const timer = window.setTimeout(() => { void send(initial, undefined, undefined, !!selection.initialMessage); }, 0);
+    const timer = window.setTimeout(() => { initialSent.current = true; void send(initial, undefined, undefined, !!selection.initialMessage); }, 0);
     return () => { window.clearTimeout(timer); controller.current?.abort(); controller.current = null; };
   }, [selection.scope, selection.skipInitial, selection.initialMessage, send]);
 
@@ -93,12 +98,26 @@ export function useExplainConversation(projectId: string, selection: ExplainSele
   const setAttachmentIds = useCallback((ids: string[]) => { attachmentIds.current = ids; }, []);
   const applyRescan = useCallback((run: RescanRun) => {
     setRescans(previous => [...previous.filter(r => r.id !== run.id), run]);
-    if (run.status === "applied") { versions.current = { ...versions.current, ...run.versions }; }
-  }, []);
+    if (run.status === "applied") {
+      versions.current = { ...versions.current, ...run.versions };
+      const removedRows = run.candidate?.replacement?.removed ?? [];
+      const deletedIds = new Set(removedRows.map(row => row.connection_id));
+      if (deletedIds.size) setProposals(previous => previous.filter(proposal => !proposal.changes.some(change => deletedIds.has(change.connection_id))));
+      const current = selectionOverride.current ?? selection;
+      const removed = removedRows.find(row => row.connection_id === current.connectionId);
+      if (removed) {
+        selectionOverride.current = { scope: "page", title: `${removed.source_drawing_page ?? `PDF ${removed.source_pdf_page_number}`} · 替换后结果`, query: { pdf_page_number: removed.source_pdf_page_number, offset: 0, limit: 50 }, batchId: run.batch_id, sourcePdf: removed.source_pdf_page_number };
+        setCurrentTitle(selectionOverride.current.title);
+        setSelectionNotice("原记录已按范围替换。后续提问查询该页的新结果；下方历史对话保留作本次操作说明。");
+        attachmentIds.current = []; turnAttachments.current = {}; turnRescans.current = {}; turnPermissions.current = {};
+        setConversationId(crypto.randomUUID());
+      }
+    }
+  }, [selection]);
   const applyDecision = useCallback((receipt: EditReceipt) => {
     setProposals(previous => previous.map(p => p.proposal_id === receipt.proposal_id ? { ...p, status: receipt.status } : p));
     if (receipt.status === "applied") { versions.current = { ...versions.current, ...receipt.versions }; }
   }, []);
 
-  return { messages, busy, send, stop, proposals, proposalError, applyDecision, conversationId, rescans, setAttachmentIds, applyRescan, loadRescans, loadingRescans, rescanHistoryError };
+  return { messages, busy, send, stop, proposals, proposalError, applyDecision, conversationId, rescans, setAttachmentIds, applyRescan, loadRescans, loadingRescans, rescanHistoryError, selectionNotice, currentTitle };
 }

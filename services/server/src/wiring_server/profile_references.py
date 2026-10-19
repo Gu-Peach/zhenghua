@@ -6,7 +6,6 @@ import json
 import mimetypes
 from pathlib import Path
 from typing import Any
-from uuid import NAMESPACE_URL, uuid5
 
 from .repository import Repository, ServiceError
 
@@ -15,7 +14,7 @@ PROFILE_ROOT = ROOT / "services/agent/src/agent/extraction_agent/profiles"
 
 
 class ProfileReferences:
-    """Read trusted local manifests; client input never selects an arbitrary file path."""
+    """Serve stored packages; retain local assets only for explicit publishing and legacy reads."""
 
     def __init__(self, db: Repository) -> None:
         self.db = db
@@ -70,72 +69,30 @@ class ProfileReferences:
         return resolved
 
     async def register(self, key: str, user: str) -> dict[str, Any]:
+        """Compatibility lookup: new imports must bind an already uploaded package."""
         option = (await self.available(user)).get(key)
         if option is None:
             raise ServiceError(
-                422, "PROFILE_NOT_AVAILABLE", "本地规则不存在或资源不完整"
+                422, "PROFILE_NOT_AVAILABLE", "规则尚未上传或不可用，请先发布规则包"
             )
-        if option["resource_ref"].startswith("storage://"):
-            return await self.get(option["id"])
-        identifier = str(
-            uuid5(
-                NAMESPACE_URL,
-                f"profile-ref:{key}:{option['profile_version']}:{option['checksum']}",
-            )
-        )
-        filters = {
-            "profile_key": f"eq.{key}",
-            "profile_version": f"eq.{option['profile_version']}",
-            "checksum": f"eq.{option['checksum']}",
-            "limit": "1",
-        }
-        rows = await self.db.rows("extraction_profiles", filters)
-        if rows:
-            return rows[0]
-        value = {
-            name: option[name]
-            for name in (
-                "profile_key",
-                "profile_version",
-                "display_name",
-                "checksum",
-                "resource_ref",
-            )
-        }
-        try:
-            return await self.db.insert(
-                "extraction_profiles", {**value, "id": identifier, "created_by": user}
-            )
-        except ServiceError:
-            rows = await self.db.rows("extraction_profiles", filters)
-            if rows:
-                return rows[0]
-            raise
+        return await self.get(option["id"])
 
     async def available(self, user: str) -> dict[str, dict[str, Any]]:
-        import asyncio
+        return {row["profile_key"]: row for row in await self.list(user)}
 
+    @staticmethod
+    def is_uploaded(row: dict[str, Any]) -> bool:
         from .profile_packages import REF
 
-        options = await asyncio.to_thread(self.catalog)
-        rows = await self.list(user)
-
-        def version(value: str) -> tuple[int, ...]:
-            return tuple(int(part) for part in value.split("."))
-
-        for row in rows:
-            if not REF.fullmatch(row["resource_ref"]):
-                continue
-            current = options.get(row["profile_key"])
-            try:
-                newer = not current or version(row["profile_version"]) >= version(
-                    current["profile_version"]
-                )
-            except ValueError:
-                continue
-            if newer:
-                options[row["profile_key"]] = row
-        return options
+        match = REF.fullmatch(str(row.get("resource_ref") or ""))
+        if not match:
+            return False
+        parts = match[1].split("/")
+        return (
+            parts[2] == row.get("profile_key")
+            and parts[3] == row.get("profile_version")
+            and "sha256:" + parts[4].removesuffix(".zip") == row.get("checksum")
+        )
 
     async def package(self, row: dict[str, Any]) -> dict[str, Any]:
         import asyncio
@@ -153,6 +110,8 @@ class ProfileReferences:
         )
         latest: dict[str, dict[str, Any]] = {}
         for row in rows:
+            if not self.is_uploaded(row):
+                continue
             current = latest.get(row["profile_key"])
 
             def version(value: str) -> tuple[int, ...]:

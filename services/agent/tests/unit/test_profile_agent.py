@@ -91,8 +91,8 @@ def test_fork_is_self_contained_versioned_and_never_edits_source(setup):
     original = ROOT / "services/agent/src/agent/extraction_agent/profiles/zh/profile.json"
     before = original.read_bytes()
     draft = create(setup, True)
-    assert draft.key == "zh" and draft.version == "2.1.2"
-    assert draft.source["version"] == "2.1.1"
+    assert draft.key == "zh" and draft.version == "2.3.1"
+    assert draft.source["version"] == "2.3.0"
     root, meta = agent.store.root_for(draft.draft_id, actor)
     assert validate_draft(root, meta).ready
     assert original.read_bytes() == before

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Wiring Workbench Server",
-    "version": "2.9.0"
+    "version": "2.10.0"
   },
   "paths": {
     "/api/v1/auth/login": {
@@ -6829,6 +6829,16 @@
             "type": "array",
             "maxItems": 1000,
             "title": "Unmatched Ids"
+          },
+          "replacement": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RescanReplacement"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -7166,6 +7176,104 @@
         "type": "object",
         "title": "RescanFields"
       },
+      "RescanRemovedRow": {
+        "properties": {
+          "connection_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Connection Id"
+          },
+          "record_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Record Version"
+          },
+          "source_pdf_page_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Source Pdf Page Number"
+          },
+          "source_drawing_page": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Drawing Page"
+          },
+          "workspace_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Code"
+          },
+          "principle_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Principle Number"
+          },
+          "before": {
+            "$ref": "#/components/schemas/RescanFields"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "connection_id",
+          "record_version",
+          "source_pdf_page_number",
+          "before"
+        ],
+        "title": "RescanRemovedRow"
+      },
+      "RescanReplacement": {
+        "properties": {
+          "version": {
+            "type": "integer",
+            "const": 1,
+            "title": "Version",
+            "default": 1
+          },
+          "scanned_pages": {
+            "items": {
+              "type": "integer",
+              "minimum": 1.0
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Scanned Pages"
+          },
+          "removed": {
+            "items": {
+              "$ref": "#/components/schemas/RescanRemovedRow"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "title": "Removed"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "scanned_pages"
+        ],
+        "title": "RescanReplacement"
+      },
       "RescanRequest": {
         "properties": {
           "scope": {
@@ -7186,6 +7294,15 @@
             "maxLength": 4000,
             "title": "Instructions",
             "default": ""
+          },
+          "result_mode": {
+            "type": "string",
+            "enum": [
+              "patch",
+              "replace_scope"
+            ],
+            "title": "Result Mode",
+            "default": "patch"
           }
         },
         "additionalProperties": false,

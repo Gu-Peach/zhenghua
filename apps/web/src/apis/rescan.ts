@@ -4,6 +4,11 @@ import type { components } from "./generated";
 export type RescanRun = components["schemas"]["RescanRun"];
 export type RescanAsset = components["schemas"]["RescanAsset"];
 export type RescanEvidenceImage = components["schemas"]["RescanEvidenceImage"];
+export type RescanRemovedRow = components["schemas"]["RescanRemovedRow"];
+
+export function legacyFullRescan(run: RescanRun): boolean {
+  return run.request.fields === "all" && !run.request.scope.connection_ids?.length && !run.request.scope.principle_numbers?.length && run.request.result_mode !== "replace_scope";
+}
 export interface RescanPageChoice { pdf: number; title: string }
 const path = (project: string) => `/api/v1/projects/${project}/rescans`;
 export const rescans = {

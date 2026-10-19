@@ -1,5 +1,9 @@
 # Server 文档
 
+- [数据库规则包目录](./changelog/2026-10-19-database-profile-catalog.md)：三套完整ZIP已发布，上传选项与Skills仅用数据库包，保留旧绑定；重载8000生效。
+
+- [范围替换确认事务](./changelog/2026-10-19-rescan-scope-replacement.md)：21项隔离事务、部署能力保护及本地新迁移，API2.10.0。
+
 - [项目XLSX导出](./changelog/2026-10-18-project-export.md)：当前正式批次全量13列、版本/权限核对、私有二进制响应，API2.9.0。
 
 - [重扫附件与确认事务](./changelog/2026-10-18-explain-rescan.md)：私有图片、租约任务、候选CAS及数据/文件删除一致性，API2.8.0。

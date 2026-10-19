@@ -6,6 +6,14 @@
 
 ## 1. 重构结论
 
+2026-10-19按用户要求，上传PDF选项与Extraction Skills统一以数据库中已上传完整规则包为来源，本地profiles/prompts仅供开发/CLI及显式发布；旧项目引用和冻结包保持，见[ADR-0037](./adr/0037-database-profile-catalog.md)。
+
+2026-10-19正式ZH规则为zh2.3.0，完整沿用用户已验证的局部补全资源；源码由prompts/zh单份维护Prompt/案例，profiles/zh配置引用并提供zh_native策略，打包器生成自包含resources。用户已移除的zh_crop/history不恢复，已有冻结包不改，见[整理方案](./service/agent/zh-profile-consolidation-plan.md)。
+
+2026-10-19用户明确要求重扫确认后按范围替换；全量删除原范围并写入新结果，局部仅修订选中行/字段，模型不持有提交权限。设计与旧候选隔离见[ADR-0036](./adr/0036-rescan-scope-replacement.md)。
+
+2026-10-19 Explain重扫仅在适配层修复跨方向原页端点匹配和多图角色标记，补一致性复核并升级输入缓存契约，不改变标准Stage2/历史Profile/所属页或确认写回语义；设计见[计划](./service/agent/rescan-identity-evidence-plan.md)。
+
 2026-10-18项目全量XLSX二进制导出及Explain按需重扫历史契约见[ADR-0035](./adr/0035-project-xlsx-export.md)：Server固定批次和版本核对，普通自动解释禁用重扫工具，拖动和项目级入口属于Web。
 
 2026-10-18 Explain重扫实施设计见[ADR-0034](./adr/0034-explain-rescan.md)：私有辅助图+原图/关联图、原Profile冻结、复用Stage2及候选隔离持久化、租约Worker和确认后原子ResultPatch，已有记录归属固定。

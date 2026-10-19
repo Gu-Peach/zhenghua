@@ -1,5 +1,15 @@
 # Agent 服务设计索引
 
+- [三套规则数据库发布](../server/changelog/2026-10-19-database-profile-catalog.md)：ZH2.3.0、ABB1.3.1、XMZ0.2.1已存入业务规则目录；本地源与CLI保持，Worker按已选Storage包加载。
+
+- [范围替换候选](./changelog/2026-10-19-rescan-scope-replacement.md)：程序决定全量/局部，完整扫描才生成替换候选，v3旧缓存隔离。
+
+- [ZH源码资源去重](./changelog/2026-10-19-zh-source-cleanup.md)：prompts单份维护、Profile引用、包内resources自动生成，保持模型输入。
+
+- [ZH正式规则归拢](./changelog/2026-10-19-zh-profile-consolidation.md)、[执行计划](./zh-profile-consolidation-plan.md)：zh2.3.0沿用已验证局部高清资源，资源自包含与上传包校验，旧入口兼容。
+
+- [重扫覆盖与多图证据修正](./changelog/2026-10-19-rescan-identity-evidence.md)：原页端点跨方向匹配、单任务角色/主图优先、位置冲突复核与v2缓存；实际数据未自动改写。
+
 - [自动解释与主动重扫边界](./changelog/2026-10-18-explain-request-modes.md)：当前会话历史、显式历史入口与自动解释的工具执行限制。
 
 - [Explain失败分类与006M01排障](./changelog/2026-10-18-explain-errors.md)：SSE HTTP200不代表解释成功，重载8100后打印脱敏错误类别和上游状态；历史失败根因待新请求确认。

@@ -75,7 +75,7 @@ async function fixture(page: Page, options: { empty?: boolean; failList?: boolea
       return options.failList ? route.fulfill({ status: 503, json: { detail: { message: "数据服务暂不可用" } } }) : route.fulfill({ json: exists ? [payload(), ...(options.anotherProject ? [another] : [])] : [] });
     }
     if (path === "/api/v1/rule-library/local") return route.fulfill({ json: [{ profile_key: "zh", profile_version: "2.1.0", display_name: "振华规则", checksum: "sha256:" + "0".repeat(64) }] });
-    if (path === "/api/v1/rule-library") return route.fulfill({ json: [{ id: profileId, profile_key: "zh", profile_version: "2.1.0", display_name: "振华规则", checksum: "sha256:" + "0".repeat(64), resource_ref: "local://zh/profile.json", created_at: "2026-10-16", can_delete: true }] });
+    if (path === "/api/v1/rule-library") return route.fulfill({ json: [{ id: profileId, profile_key: "zh", profile_version: "2.1.0", display_name: "振华规则", checksum: "sha256:" + "0".repeat(64), resource_ref: "storage://project-assets/profiles/owner/zh/2.1.0/" + "0".repeat(64) + ".zip", created_at: "2026-10-16", can_delete: true }] });
     if (path === `/api/v1/rule-library/${profileId}`) return route.fulfill({ json: { manifest: {}, files: ["classification", "page_scan", "cross_page"].map(stage => ({ path: `resources/${stage}_prompt.md`, content: `夹具 ${stage} 规则` })), images: [] } });
     if (path === "/api/v1/imports") { exists = true; detail.workspaces = []; detail.batch_id = null; return route.fulfill({ status: 201, json: { project_id: projectId, source_document_id: projectId, attachment_id: projectId, filename: "fixture.pdf", checksum: "sha256:fixture", size: 100, page_count: 2, extraction_started: true } }); }
     if (path === `/api/v1/projects/${projectId}` || path === `/api/v1/projects/${anotherProjectId}`) {
@@ -129,7 +129,7 @@ test("空工作区窄屏与规则入口", async ({ page }) => {
   await page.screenshot({ path: test.info().outputPath("empty-narrow.png"), fullPage: true });
   await page.locator(".account-trigger").click(); await page.getByRole("button", { name: "智能体中心", exact: true }).click();
   await page.getByRole("link", { name: /图纸提取智能体/ }).click();
-  await expect(page.getByRole("button", { name: "登记规则引用", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "登记规则引用", exact: true })).toHaveCount(0);
 });
 
 test("侧栏双击原地改名并保留删除，删除后回到空工作区", async ({ page }) => {

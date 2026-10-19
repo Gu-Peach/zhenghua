@@ -35,7 +35,7 @@ async function fixture(page: Page, options: { samePage?: boolean; swapped?: bool
       return options.failTarget ? route.fulfill({ status: 404, json: { detail: { message: "未找到目标页" } } }) : route.fulfill({ json: image(target, 2) });
     }
     if (path.startsWith("/api/v1/drawings/")) return route.fulfill({ json: path.endsWith(third) ? image(third, 3) : path.endsWith(target) ? image(target, 2) : image(source, 1) });
-    if (path === "/api/v1/rule-library") return route.fulfill({ json: [{ id: ruleId, profile_key: "zh", profile_version: "2.1.1", display_name: "振华提取规则", checksum: "sha256:" + "0".repeat(64), created_at: "2026-10-17" }] });
+    if (path === "/api/v1/rule-library") return route.fulfill({ json: [{ id: ruleId, profile_key: "zh", profile_version: "2.1.1", display_name: "振华提取规则", resource_ref: "storage://project-assets/profiles/owner/zh/2.1.1/package.zip", checksum: "sha256:" + "0".repeat(64), created_at: "2026-10-17" }] });
     if (path === `/api/v1/rule-library/${ruleId}`) return route.fulfill({ json: { manifest: {}, files: ["classification", "page_scan", "cross_page"].map(stage => ({ path: `resources/${stage}_prompt.md`, content: `夹具 ${stage} 规则` })), images: [] } });
     return route.fulfill({ status: 404, json: { detail: { message: "未定义夹具请求" } } });
   });

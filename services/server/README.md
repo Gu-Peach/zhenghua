@@ -1,5 +1,11 @@
 # Server 业务服务
 
+2026-10-19规则选择改为仅数据库上传包：/rule-library与历史/local兼容选项只展示有效Storage引用，登记接口只定位已有包，上传/新建不再绑定local://。ZH2.3.0、ABB1.3.1、XMZ0.2.1已发布到当前本地库；旧引用/项目保持。用户重载8000并刷新Web，无需迁移或新增Worker，见[交付](../../docs/service/server/changelog/2026-10-19-database-profile-catalog.md)。
+
+API2.10.0支持确认后的范围替换：全量删旧写新、局部仅更新选中内容，读持久候选/能力检测后才能提交。新增`20261019010000_rescan_scope_replacement.sql`已在本地应用，业务三表摘要不变，未执行替换。重载8000/8100/实际Worker并刷新Web，新建重扫；其他环境按顺序应用迁移。见[交付](../../docs/service/server/changelog/2026-10-19-rescan-scope-replacement.md)。
+
+其他本地实例按需安装该迁移：`.\.venv\Scripts\python.exe services/server/scripts/apply_explain_edits_migration.py --migration 20261019010000 --apply`。脚本检查明确的本地容器标签、备份Schema并核对业务表摘要；不会提交任何替换。缺迁移时API拒绝全量确认，防止旧RPC追加结果。
+
 API2.9.0新增鉴权项目全量导出`GET /api/v1/projects/{project_id}/export.xlsx`，13列区分电压等级/端子排；固定当前正式批次、并发版本/权限核对，私有内存下载。Explain新增向后兼容allow_rescan参数；重载8000/8100并刷新前端，无迁移或Worker变化。见[导出交付](../../docs/service/server/changelog/2026-10-18-project-export.md)和[ADR-0035](../../docs/adr/0035-project-xlsx-export.md)。
 
 导出离线验证：开发依赖可通过`.\.venv\Scripts\python.exe -m pip install -e 'services/server[test]'`安装，再运行`.\.venv\Scripts\python.exe -m pytest services/server/tests/test_project_export.py -q`。openpyxl仅作独立读取验证，生产导出不依赖它；测试不访问真实数据库或模型。

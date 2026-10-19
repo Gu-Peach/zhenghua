@@ -1,5 +1,9 @@
 # apps/web 前端归档
 
+- [数据库规则选项与Skills](./changelog/2026-10-19-database-profile-options.md)：统一已上传包来源，移除本地登记入口，空/失败/权限和桌面窄屏验证。
+
+- [重扫范围替换](./changelog/2026-10-19-rescan-scope-replacement.md)：全量删旧写新与局部字段修订、空结果确认、新行会话保护。
+
 - [项目导出与Explain窗口](./changelog/2026-10-18-project-export-chat.md)：系统新名称、项目全量13列XLSX、标题栏拖动与重扫历史按需展示。
 
 - [工作台图纸与聊天交互](./changelog/2026-10-18-workbench-interactions.md)：滚轮缩放/中键拖动、目录收起、重扫自动发送、消息内图纸与居中放大。

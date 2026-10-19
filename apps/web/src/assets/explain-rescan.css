@@ -14,3 +14,5 @@
 .rescan-image-evidence figure { width: 140px; max-width: 100%; margin: 0; }
 .rescan-image-evidence img { max-width: 100%; height: 90px; object-fit: contain; }
 .rescan-image-evidence figcaption { overflow-wrap: anywhere; font-size: 11px; }
+.replacement-removals { margin: 10px 0; }
+.replacement-removals > summary { color: #9b3c2a; font-weight: 600; cursor: pointer; margin-bottom: 8px; }
