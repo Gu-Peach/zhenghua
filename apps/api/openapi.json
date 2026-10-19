@@ -1414,6 +1414,70 @@
       }
     },
     "/api/v1/rule-library/{profile_id}": {
+      "patch": {
+        "summary": "Rename Profile",
+        "operationId": "rename_profile_api_v1_rule_library__profile_id__patch",
+        "parameters": [
+          {
+            "name": "profile_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Profile Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileReferenceRename"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileReferenceRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
       "delete": {
         "summary": "Remove Profile",
         "operationId": "remove_profile_api_v1_rule_library__profile_id__delete",
@@ -2890,6 +2954,65 @@
                 }
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/profile/drafts/{draft}": {
+      "delete": {
+        "summary": "Delete Draft",
+        "operationId": "delete_draft_api_v1_profile_drafts__draft__delete",
+        "parameters": [
+          {
+            "name": "draft",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Draft"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftDeleteInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
           },
           "422": {
             "description": "Validation Error",
@@ -4859,6 +4982,27 @@
         ],
         "title": "DraftCreate"
       },
+      "DraftDeleteInput": {
+        "properties": {
+          "revision": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Revision"
+          },
+          "confirmed": {
+            "type": "boolean",
+            "const": true,
+            "title": "Confirmed"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "revision",
+          "confirmed"
+        ],
+        "title": "DraftDeleteInput"
+      },
       "DraftView": {
         "properties": {
           "draft_id": {
@@ -6072,6 +6216,16 @@
             "minimum": 1.0,
             "title": "Page Count"
           },
+          "stage": {
+            "type": "string",
+            "enum": [
+              "classification",
+              "scan",
+              "completion"
+            ],
+            "title": "Stage",
+            "default": "classification"
+          },
           "pages": {
             "items": {
               "$ref": "#/components/schemas/SampledPdfPage"
@@ -6130,7 +6284,11 @@
           },
           "stage": {
             "type": "string",
-            "const": "classification",
+            "enum": [
+              "classification",
+              "scan",
+              "completion"
+            ],
             "title": "Stage",
             "default": "classification"
           }
@@ -6433,6 +6591,11 @@
             "title": "Can Delete",
             "default": false
           },
+          "can_rename": {
+            "type": "boolean",
+            "title": "Can Rename",
+            "default": false
+          },
           "cleanup_pending": {
             "type": "boolean",
             "title": "Cleanup Pending",
@@ -6454,6 +6617,30 @@
           "resource_ref"
         ],
         "title": "ProfileReferenceRead"
+      },
+      "ProfileReferenceRename": {
+        "properties": {
+          "display_name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Display Name"
+          },
+          "expected_display_name": {
+            "type": "string",
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Expected Display Name"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "display_name",
+          "expected_display_name"
+        ],
+        "title": "ProfileReferenceRename"
       },
       "ProfileReply": {
         "properties": {
@@ -8577,7 +8764,7 @@
               "format": "uuid"
             },
             "type": "array",
-            "maxItems": 2,
+            "maxItems": 4,
             "title": "Sample Images"
           },
           "targets": {
@@ -8980,6 +9167,15 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "error",
+              "warning"
+            ],
+            "title": "Severity",
+            "default": "error"
           }
         },
         "additionalProperties": false,
@@ -9011,7 +9207,7 @@
           "schema_version": {
             "type": "string",
             "title": "Schema Version",
-            "default": "extraction_stages_v1/review_1.0.0"
+            "default": "extraction_stages_v1/review_1.1.0"
           }
         },
         "additionalProperties": false,

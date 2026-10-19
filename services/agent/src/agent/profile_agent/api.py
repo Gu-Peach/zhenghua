@@ -13,7 +13,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 from pydantic import Field, ValidationError
 
 from src.domain.errors import AgentServiceError
@@ -24,6 +24,7 @@ from .diagnostics import public_model_error
 from .editing import ProfileEditor
 from .models import (
     DraftCreate,
+    DraftDeleteInput,
     DraftView,
     EditFilesInput,
     ExportReceipt,
@@ -139,6 +140,13 @@ def create_profile_router(
     @router.get("/drafts", response_model=list[DraftView])
     async def drafts(actor: ProfileActor = identity) -> Any:
         return await execute(lambda: asyncio.to_thread(agent.store.list_drafts, actor))
+
+    @router.delete("/drafts/{draft}", status_code=204)
+    async def delete_draft(
+        draft: UUID, body: DraftDeleteInput, actor: ProfileActor = identity
+    ) -> Response:
+        await execute(lambda: asyncio.to_thread(agent.store.delete, draft, actor, body.revision))
+        return Response(status_code=204)
 
     @router.get("/drafts/{draft}/wizard", response_model=WizardState)
     async def state(draft: UUID, actor: ProfileActor = identity) -> Any:

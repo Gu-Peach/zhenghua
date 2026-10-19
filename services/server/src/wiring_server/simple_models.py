@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from .models import ConnectionFields, Model, ReadModel, WorkspaceRead
 
@@ -21,8 +21,19 @@ class ProfileReferenceRead(ReadModel):
     resource_ref: str
     created_at: str = ""
     can_delete: bool = False
+    can_rename: bool = False
     cleanup_pending: bool = False
     previous_version_retained: bool = False
+
+
+class ProfileReferenceRename(Model):
+    display_name: str = Field(min_length=1, max_length=120, pattern=r"\S")
+    expected_display_name: str = Field(min_length=1, max_length=240)
+
+    @field_validator("display_name", mode="before")
+    @classmethod
+    def trim_name(cls, value: Any) -> Any:
+        return value.strip() if isinstance(value, str) else value
 
 
 class LocalProfileOption(Model):

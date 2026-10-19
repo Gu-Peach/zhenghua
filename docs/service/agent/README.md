@@ -1,5 +1,13 @@
 # Agent 服务设计索引
 
+- [不完整样例允许发布](./changelog/2026-10-19-permissive-publication.md)：三阶段确认后缺有效起点降为warning，端点留空，完整性提示保留。
+
+- [规则对话输入缺项恢复](./changelog/2026-10-19-profile-dialogue-input-recovery.md)：DIALOGUE_INPUT_INVALID、内部说明恢复、缺来源追问及复用已上传图片；需重载8100。
+
+- [图像驱动规则配置](./changelog/2026-10-19-guided-profile-authoring.md)：多图独立答案、PDF阶段证据复用、公开处理链路和受控修正，见ADR-0038。
+
+- [规则会话删除](./changelog/2026-10-19-profile-conversation-delete.md)、[设计](./profile-conversation-management.md)：草稿墓碑、所有者/修订和不可写回约束，发布包保留。
+
 - [三套规则数据库发布](../server/changelog/2026-10-19-database-profile-catalog.md)：ZH2.3.0、ABB1.3.1、XMZ0.2.1已存入业务规则目录；本地源与CLI保持，Worker按已选Storage包加载。
 
 - [范围替换候选](./changelog/2026-10-19-rescan-scope-replacement.md)：程序决定全量/局部，完整扫描才生成替换候选，v3旧缓存隔离。

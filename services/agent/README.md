@@ -1,5 +1,9 @@
 # Agent Service
 
+2026-10-19规则配置修复DIALOGUE_INPUT_INVALID：模型漏内部读取说明不再直接中断，沿用实际样图与用户上下文生成候选；真正缺来源会追问，首次失败恢复后可复用已存图片。重载8100后原页重试，或恢复会话输入继续；无前端/API迁移，未运行真实模型或修改实际草稿。见[排障](../../docs/service/agent/changelog/2026-10-19-profile-dialogue-input-recovery.md)。
+
+2026-10-19规则配置主聊天移除阶段切换栏，支持图片/PDF先暂存、发送或Enter后建草稿和读图、逐阶段公开链路与用户确认后自动继续；手动多图分类逐图生成，PDF真实抽样图可复用，缺接线/目标图时追问。用户仍需确认候选并最后手动发布。需重载8100和8000后刷新Web，无新迁移/环境变量，未运行真实模型或操作实际草稿；见[交付](../../docs/service/agent/changelog/2026-10-19-guided-profile-authoring.md)与[ADR-0038](../../docs/adr/0038-guided-profile-authoring.md)。
+
 2026-10-19三套资源包已发布到业务extraction_profiles/project-assets：ZH2.3.0、ABB1.3.1、XMZ0.2.1（后两者为上传补丁版本，来源本地1.3.0/0.2.0识别资源不变）。前端上传与Skills仅选数据库包；本地CLI仍读源码。初始化工具为 `scripts/bootstrap_database_profiles.py`，默认仅打包/只读预检，显式--apply才发布。既有Worker支持Storage包，重载8000刷新Web即可启用目录限制，未自动跑提取。见[交付](../../docs/service/server/changelog/2026-10-19-database-profile-catalog.md)。
 
 2026-10-19重扫现按用户要求区分：整页/工作区all确认后替换整个旧范围，行ID/原理号或单侧字段仅修局部。候选包含完整删除/写入预览，全部页成功才生成，空结果需明确确认；旧版全量/旧缓存需新建任务。新迁移本地已安装且业务表未变，重载8000 API2.10.0、8100及实际Worker后刷新Web；inline方式无需另开Worker。不会自动清理已有结果，也未执行真实重扫。见[交付](../../docs/service/agent/changelog/2026-10-19-rescan-scope-replacement.md)。

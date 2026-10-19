@@ -18,10 +18,11 @@ export const profileApi = {
   list: async () => (await request<ProfileDraft[]>(base)).filter(draft => !draft.source?.profile_id),
   create: (key: string, displayName: string, draftId: string = crypto.randomUUID()) => request<ProfileDraft>(base, { method: "POST", body: JSON.stringify({ draft_id: draftId, key, display_name: displayName }) }),
   conversation: (id: string) => request<ProfileConversationState>(`${base}/${id}/conversation`),
-  async samplePdf(draft: ProfileDraft, file: File, requestId: string, signal?: AbortSignal): Promise<ProfilePdfSample> {
+  remove: (draft: ProfileDraft) => request<void>(`${base}/${draft.draft_id}`, { method: "DELETE", body: JSON.stringify({ revision: draft.revision, confirmed: true } satisfies components["schemas"]["DraftDeleteInput"]) }),
+  async samplePdf(draft: ProfileDraft, file: File, requestId: string, signal?: AbortSignal, stage: ProfileStage = "classification"): Promise<ProfilePdfSample> {
     if (!file.size || file.size > 50 * 1024 * 1024 || !file.name.toLowerCase().endsWith(".pdf")) throw new Error("请上传不超过50MiB的有效PDF文件。");
     const content = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result).split(",")[1]); reader.onerror = () => reject(new Error("PDF读取失败")); reader.readAsDataURL(file); });
-    return request<ProfilePdfSample>(`${base}/${draft.draft_id}/pdf-samples`, { method: "POST", signal, body: JSON.stringify({ revision: draft.revision, request_id: requestId, filename: file.name, content_base64: content, stage: "classification" }) });
+    return request<ProfilePdfSample>(`${base}/${draft.draft_id}/pdf-samples`, { method: "POST", signal, body: JSON.stringify({ revision: draft.revision, request_id: requestId, filename: file.name, content_base64: content, stage }) });
   },
   state: (id: string) => request<ProfileState>(`${base}/${id}/wizard`),
   pixels: (id: string, image: string) => request<{ data_url: string }>(`${base}/${id}/images/${image}`),

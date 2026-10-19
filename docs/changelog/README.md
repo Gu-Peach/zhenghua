@@ -1,5 +1,19 @@
 # Changelog
 
+2026-10-19：已发布规则支持创建者修改目录显示名，主标题/上传选项/预览显示数据库名称，内部标识、版本、ZIP及项目绑定保持。新增鉴权PATCH/旧名条件更新，OpenAPI/TS同步；5项Server、16项浏览器及静态检查通过，无实际改名/模型/业务库/服务操作，重载8000刷新Web即可。见[Server](../service/server/changelog/2026-10-19-profile-display-name.md)、[Web](../apps/web/changelog/2026-10-19-profile-display-name.md)。
+
+2026-10-19：三阶段确认后缺有效起点不再阻断规则发布，空端点保留且提示后续校验；ValidationIssue.severity、review_1.1.0、Server/OpenAPI/TS同步。13项后端和3项浏览器及静态检查通过，实际test修订9只读验证ready=true，未代发规则/调用真实模型或操作业务库/服务；重载8000/8100刷新Web即可。见[Agent](../service/agent/changelog/2026-10-19-permissive-publication.md)、[Web](../apps/web/changelog/2026-10-19-permissive-publication.md)。
+
+2026-10-19：修复规则配置内部参数缺项导致DIALOGUE_INPUT_INVALID的中断；已上传图片可继续使用，缺来源在聊天中追问，候选仍需确认。去重40项离线及Ruff/mypy通过，无真实模型/草稿写入或业务库/服务操作；重载8100生效。见[Agent交付](../service/agent/changelog/2026-10-19-profile-dialogue-input-recovery.md)。
+
+2026-10-19：按用户纠正，规则配置图片/PDF附件统一先暂存，点击发送/Enter才建草稿、上传和请求读取；支持补充说明、移除及Shift+Enter换行。去重25项浏览器及类型/lint/build通过，无真实模型/会话/服务操作，本次只需刷新Web。见[显式发送修正](../apps/web/changelog/2026-10-19-profile-explicit-send.md)。
+
+2026-10-19：规则配置改为聊天引导，支持图片/PDF拖拽自动建草稿和读取、逐阶段公开识别链路、用户意见修正、确认后自动尝试下一阶段；界面移除阶段切换栏，发布仍需手动。PDF任意阶段抽样和4张分类图片契约同步，已提供样图可复用；39项Agent、5项Server、去重24项浏览器与静态检查通过。无真实模型/实际草稿/业务库/服务操作，需重载8000/8100刷新Web，见[ADR-0038](../adr/0038-guided-profile-authoring.md)、[Web](../apps/web/changelog/2026-10-19-guided-profile-authoring.md)、[Agent](../service/agent/changelog/2026-10-19-guided-profile-authoring.md)。
+
+2026-10-19：规则会话删除改到下拉列表每行右侧，无需先恢复；打开与删除独立，删除其他会话保留当前编辑，支持键盘、外侧关闭和长名称省略。19项会话+2项登录/工作台浏览器及类型/lint/build通过；沿用已有API，本轮仅刷新Web，无真实会话或模型操作。见[Web交付](../apps/web/changelog/2026-10-19-profile-conversation-controls.md)。
+
+2026-10-19：规则配置智能体支持确认删除已保存会话，已发布规则保留；上传PDF/图片合并为发送旁图标，原阶段/重试限制保留。Agent墓碑存储、Server鉴权DELETE/204、OpenAPI/TS同步，11项后端及17项浏览器和静态检查通过，未操作真实会话/模型或启停服务。需重载8000/8100刷新Web，见[Web](../apps/web/changelog/2026-10-19-profile-conversation-controls.md)、[Server](../service/server/changelog/2026-10-19-profile-conversation-delete.md)、[Agent](../service/agent/changelog/2026-10-19-profile-conversation-delete.md)。
+
 2026-10-19：ZH2.3.0、ABB1.3.1、XMZ0.2.1完整资源包已存入私有project-assets并登记数据库，读回/15组消息比对通过；ABB/XMZ补丁号仅用于不可变包发布，不改识别内容。上传PDF选项和Extraction Skills仅从已上传数据库包获取，移除本地登记UI；旧项目和6条旧规则不改。静态、离线API及11张界面截图通过，无模型/提取调用，启用需重载8000刷新前端。见[Server](../service/server/changelog/2026-10-19-database-profile-catalog.md)、[Web](../apps/web/changelog/2026-10-19-database-profile-options.md)。
 
 2026-10-19：用户确认重扫全量替换语义，整页/工作区删旧写新，局部仅更新选中行/字段；确认前保留旧数据，删除/新增及空结果明确预览。新迁移、能力门禁、并发/回滚/旧候选禁用及新行会话已实现并验证，本地三表摘要不变，未提交实际替换。见[ADR-0036](../adr/0036-rescan-scope-replacement.md)、[Agent](../service/agent/changelog/2026-10-19-rescan-scope-replacement.md)、[Server](../service/server/changelog/2026-10-19-rescan-scope-replacement.md)、[Web](../apps/web/changelog/2026-10-19-rescan-scope-replacement.md)。

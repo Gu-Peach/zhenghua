@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { MessagesSquare, X } from "lucide-react";
 import { projectApi, type RulePackage } from "@/apis/projects";
 import { ruleStages } from "@/apis/rule-resources";
+import { skillName } from "@/apis/agents";
 import { profileEditorApi, type EditProposal, type ProfileEditState } from "@/apis/profile-editor";
 import type { ProfileStage } from "@/apis/profile";
 import type { RuleLibraryItem } from "@/apis/types";
@@ -86,7 +87,7 @@ export function RuleResources({ rule, onClose, asSkill = false, onChanged }: { r
   }
   const confirmable = state && (state.validation.issues ?? []).every(i => ["EDITS_UNCONFIRMED", "EXPECTED_UNCONFIRMED"].includes(i.code));
   return <div className="modal-backdrop"><section className={`resource-modal${chat ? " resource-modal-editing" : ""}`} role="dialog" aria-modal="true" aria-labelledby="rule-heading">
-    <header><h2 id="rule-heading">{rule.name} · {state ? `${state.draft.version} 编辑草稿` : rule.version} · {asSkill ? "提取 Skill" : "规则引用"}</h2><div><button type="button" disabled={blocked || !!editing} onClick={() => void action("正在恢复最新内容…", async () => { if (state) update(await profileEditorApi.state(state.draft.draft_id)); else setRefresh(n => n + 1); })}>刷新资源</button><button type="button" disabled={blocked || !!editing || !canEdit} onClick={() => void action("正在加载规则编辑上下文…", async () => { await ensure(); setChat(value => !value); })}><MessagesSquare size={16} />{chat ? "收起辅助编辑" : "AI 辅助编辑"}</button><button type="button" onClick={close} aria-label="关闭规则面板"><X size={18} /></button></div></header>
+    <header><h2 id="rule-heading">{rule.name}{asSkill ? ` · ${skillName(rule.key)}` : ""} · {state ? `${state.draft.version} 编辑草稿` : rule.version} · {asSkill ? "提取 Skill" : "规则引用"}</h2><div><button type="button" disabled={blocked || !!editing} onClick={() => void action("正在恢复最新内容…", async () => { if (state) update(await profileEditorApi.state(state.draft.draft_id)); else setRefresh(n => n + 1); })}>刷新资源</button><button type="button" disabled={blocked || !!editing || !canEdit} onClick={() => void action("正在加载规则编辑上下文…", async () => { await ensure(); setChat(value => !value); })}><MessagesSquare size={16} />{chat ? "收起辅助编辑" : "AI 辅助编辑"}</button><button type="button" onClick={close} aria-label="关闭规则面板"><X size={18} /></button></div></header>
     {error && <p className="inline-error" role="alert">{error}<button type="button" disabled={blocked || !!editing} onClick={() => void action("正在恢复草稿…", async () => { const current = await ensure(); update(await profileEditorApi.state(current.draft.draft_id)); })}>恢复编辑草稿</button></p>}
     {busy && <p className="profile-edit-progress" role="status">{busy}</p>}{notice && <p className="profile-edit-notice" role="status">{notice}</p>}
     <div className="resource-editor-layout"><section className="resource-main" aria-label="规则内容">

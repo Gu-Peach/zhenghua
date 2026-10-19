@@ -83,6 +83,11 @@ class Attachment(StrictModel):
     origin: Literal["upload", "pdf_sample"] = "upload"
 
 
+class DraftDeleteInput(StrictModel):
+    revision: int = Field(ge=1)
+    confirmed: Literal[True]
+
+
 class DraftView(StrictModel):
     draft_id: UUID
     revision: int
@@ -101,7 +106,7 @@ class PdfSampleRequest(StrictModel):
     request_id: UUID = Field(default_factory=uuid4)
     filename: str = Field(min_length=1, max_length=200)
     content_base64: str = Field(min_length=1, max_length=70 * 1024 * 1024)
-    stage: Literal["classification"] = "classification"
+    stage: Literal["classification", "scan", "completion"] = "classification"
 
 
 class SampledPdfPage(StrictModel):
@@ -114,6 +119,7 @@ class PdfSampleInfo(StrictModel):
     filename: str
     checksum: str
     page_count: int = Field(ge=1)
+    stage: Literal["classification", "scan", "completion"] = "classification"
     pages: list[SampledPdfPage] = Field(min_length=1, max_length=2)
     notice: str | None = None
 
@@ -184,13 +190,14 @@ class ValidationIssue(StrictModel):
     code: str
     path: str | None = None
     message: str
+    severity: Literal["error", "warning"] = "error"
 
 
 class ValidationReport(StrictModel):
     ready: bool
     issues: list[ValidationIssue] = Field(default_factory=list)
     case_count: int = 0
-    schema_version: str = "extraction_stages_v1/review_1.0.0"
+    schema_version: str = "extraction_stages_v1/review_1.1.0"
 
 
 class ProfileReply(StrictModel):

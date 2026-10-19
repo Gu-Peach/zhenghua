@@ -855,3 +855,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   .drawing-lightbox header strong { flex-basis: 100%; }
   .drawing-lightbox header .preview-actions { margin-left: auto; }
 }
+
+.rule-row-copy strong, .rule-skill-code { overflow-wrap:anywhere; }
+.rule-name-trigger { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; padding:0; border:1px solid var(--border); border-radius:4px; background:white; color:#526075; cursor:pointer; }
+.rule-name-form { display:flex; align-items:center; flex-wrap:wrap; gap:6px; flex:1; min-width:0; }
+.rule-name-form input { flex:1 1 160px; min-width:0; max-width:100%; border:1px solid var(--border); border-radius:4px; padding:7px 9px; }
+.rule-name-form .rule-details-button { display:inline-flex; align-items:center; gap:4px; }

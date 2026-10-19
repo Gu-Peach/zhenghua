@@ -1,5 +1,15 @@
 # apps/web 前端归档
 
+- [规则名称编辑](./changelog/2026-10-19-profile-display-name.md)：主标题用显示名、名称旁铅笔、Enter保存/Esc取消、失败保留及权限/窄屏验证。
+
+- [不完整样例允许发布](./changelog/2026-10-19-permissive-publication.md)：已确认流程可发布空端点样例，保留提示；真正阻断如实显示。
+
+- [附件显式发送](./changelog/2026-10-19-profile-explicit-send.md)：图片/PDF先暂存，发送或Enter后才上传、抽样和读取；保留说明及移除。
+
+- [图像驱动规则配置对话](./changelog/2026-10-19-guided-profile-authoring.md)：拖拽建草稿、按阶段说明识别链路/确认后自动继续，移除阶段切换栏。
+
+- [规则会话管理与上传图标](./changelog/2026-10-19-profile-conversation-controls.md)：下拉列表逐行直接删除、失败/删除其他会话保留输入，PDF/图片入口紧邻发送及窄屏验证。
+
 - [数据库规则选项与Skills](./changelog/2026-10-19-database-profile-options.md)：统一已上传包来源，移除本地登记入口，空/失败/权限和桌面窄屏验证。
 
 - [重扫范围替换](./changelog/2026-10-19-rescan-scope-replacement.md)：全量删旧写新与局部字段修订、空结果确认、新行会话保护。

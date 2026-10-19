@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
 from pathlib import Path
@@ -34,11 +35,19 @@ from .wizard import (
 
 TITLES = {"classification": "拆分与页面分类", "scan": "本页提取", "completion": "跨页补全"}
 QUESTIONS = {
-    "classification": "请上传PDF，我会随机抽取两页，对照说明工作区、业务页号和分页命名规则；"
-    "只保留抽中的样图。你可以补充或纠正。",
-    "scan": "请上传一张包含放线标记和跨页引用的原图。我会展示放线标记、起点、同页终点和跨页引用，请你核对。",
+    "classification": "请拖入图纸图片或PDF，我会对照实际样图说明工作区、业务页号和分页命名规则；"
+    "PDF仅随机抽取两页。你可以补充或纠正。",
+    "scan": "优先沿用已有样图识别放线标记、起点、同页终点和跨页引用；"
+    "已有图无法说明接线时，再请补充包含标记的原图。",
     "completion": "请上传刚才原图对应的跨页目标图。我会核对业务页号、来源回指和实际终点，"
     "说明可核对的连接路径。",
+}
+CHAINS = {
+    "classification": "读取样图标题栏 → 区分工作区、业务页号与PDF物理页 → 确定分组及命名映射。",
+    "scan": "定位实际放线标记 → 沿两侧走线寻找直接端子 → 核对箭头方向 → 读取原理号、"
+    "元件、电流及跨页引用；跨页终点暂留空。",
+    "completion": "沿用已确认起点与引用 → 核对目标页身份和来源回指 → 沿对应接线找到终点；"
+    "证据不足时留空，不改起点。",
 }
 
 
@@ -85,6 +94,7 @@ class DialogueDecision(StrictModel):
     targets: list[TargetImage] = Field(default_factory=list, max_length=4)
     negative_images: list[UUID] = Field(default_factory=list, max_length=3)
     action: Literal["continue", "revise_scan", "replace_scan_source"] = "continue"
+    revision_stage: Stage | None = None
 
 
 class TurnState(TypedDict, total=False):
@@ -114,7 +124,7 @@ class ProfileConversation:
             messages=chat.get("messages", []),
             publish_ready=report.ready,
             issues=[i.message for i in report.issues],
-            pdf_sample=meta.get("classification_pdf_sample"),
+            pdf_sample=meta.get("latest_pdf_sample", meta.get("classification_pdf_sample")),
         )
 
     async def turn(
@@ -200,9 +210,21 @@ class ProfileConversation:
             if not confirmation:
                 raw = metadata.get("wizard", {}).get("candidates", {}).get(stage)
                 if raw and raw["id"] == str(body.turn_id):
-                    answer += (
-                        "\n\n已生成本阶段候选，请核对下方规则与读图结果。"
-                        "可以直接告诉我哪里需要修改，或确认保存。"
+                    evidence = []
+                    for reading in raw.get("readings", [])[:4]:
+                        if reading.get("summary"):
+                            evidence.append(reading["summary"])
+                        if reading.get("wire_marker"):
+                            evidence.append("放线标记：" + reading["wire_marker"])
+                        evidence.extend(reading.get("evidence_steps", [])[:6])
+                    answer = (
+                        f"### {TITLES[stage]}\n\n{answer}\n\n本阶段处理链路：{CHAINS[stage]}"
+                        + (
+                            "\n\n本次图纸依据：\n" + "\n".join(f"- {item}" for item in evidence)
+                            if evidence else ""
+                        )
+                        + f"\n\n候选规则：\n{raw['rule_text']}\n\n"
+                        "请核对规则和读图结果，可以直接提出修改意见；确认后才会继续，全部确认后可手动发布。"
                     )
             messages = [
                 *chat.get("messages", []),
@@ -268,6 +290,9 @@ class ProfileConversation:
                 nonlocal answer, stage
                 decision = state["decision"]
                 answer = decision.reply
+                if decision.revision_stage:
+                    self.wizard.require_previous(meta, decision.revision_stage)
+                    stage = decision.revision_stage
                 revision_context: dict[str, Any] | None = None
                 previous_scan = current.wizard.candidates.get("scan")
                 previous_source = previous_scan.cases[0].images[0].attachment_id if previous_scan else None
@@ -322,14 +347,23 @@ class ProfileConversation:
                         )
                 if decision.ready:
                     sample_images: list[UUID] = []
-                    if stage == "classification" and current.pdf_sample:
-                        sample_images = [p.attachment_id for p in current.pdf_sample.pages]
-                        decision.source_image = sample_images[0]
+                    if stage == "classification":
+                        sample_images = list(body.attachment_ids)
+                        if not sample_images and current.pdf_sample and current.pdf_sample.stage == stage:
+                            sample_images = [p.attachment_id for p in current.pdf_sample.pages]
+                        if not sample_images:
+                            existing = current.wizard.candidates.get(stage)
+                            sample_images = (
+                                list(existing.request.sample_images) if existing and existing.request else []
+                            )
+                        if not sample_images and stage not in current.wizard.candidates:
+                            sample_images = [image.id for image in current.wizard.draft.attachments[-4:]]
+                        sample_images = [i for i in sample_images if i not in decision.negative_images][:4]
+                        if sample_images:
+                            decision.source_image = sample_images[0]
                         decision.negative_images = [
                             i for i in decision.negative_images if i not in sample_images
                         ]
-                    if not decision.source_image or not decision.description.strip():
-                        raise ProfileError("DIALOGUE_INPUT_INVALID", "图片或读取说明不足，请补充后重试", 422)
                     if stage == "completion":
                         scan = current.wizard.candidates["scan"]
                         # Source replacement must first rebuild and confirm scan, never silently complete.
@@ -344,7 +378,27 @@ class ProfileConversation:
                         elif not decision.targets:
                             decision.ready = False
                             answer += "\n\n请上传对应跨页图，并说明标题栏中的工作区和业务页号。"
-                    if decision.ready:
+                    if decision.ready and not decision.source_image:
+                        decision.ready = False
+                        answer += "\n\n还需要确定用于读取的原图，请说明哪张是原页；已有图片无需重复上传。"
+                        logging.getLogger(__name__).warning(
+                            "Profile decision needs source clarification stage=%s attachments=%s",
+                            stage, len(body.attachment_ids),
+                        )
+                    if decision.ready and not decision.description.strip():
+                        parts = [f"当前读取目标：{QUESTIONS[stage]}"]
+                        if body.message.strip():
+                            parts.append("用户本轮说明：\n" + body.message.strip()[:6000])
+                        existing = current.wizard.candidates.get(stage)
+                        if existing and existing.cases[0].images[0].attachment_id == decision.source_image:
+                            parts.append("同一原图的既有读取说明：\n" + existing.description[:1400])
+                        decision.description = "\n\n".join(parts)[:8000]
+                        logging.getLogger(__name__).warning(
+                            "Profile decision recovered missing=description stage=%s attachments=%s",
+                            stage, len(body.attachment_ids),
+                        )
+                        model_calls[-1]["recovered_fields"] = ["description"]
+                    if decision.ready and decision.source_image is not None:
                         if emit:
                             await emit(
                                 ConversationEvent(
@@ -433,7 +487,7 @@ class ProfileConversation:
             if message.role == "user" and message.stage in {"scan", "completion"}
             for image in message.attachment_ids
         } | set(body.attachment_ids)
-        return {a.id for a in current.wizard.draft.attachments if a.origin == "upload" and a.id in supplied}
+        return {a.id for a in current.wizard.draft.attachments if a.id in supplied}
 
     @staticmethod
     def _source_feedback(
@@ -472,6 +526,15 @@ class ProfileConversation:
             for image in message.attachment_ids
         ]
         selected = list(dict.fromkeys([*selected, *prior_images]))[:4]
+        if not selected and stage == "classification" and not candidate:
+            # An interrupted first read may leave valid uploads but no persisted chat turn.
+            selected = [image.id for image in current.wizard.draft.attachments[-4:]]
+        classification = current.wizard.candidates.get("classification")
+        if stage == "scan" and classification:
+            reusable = [image.attachment_id for case in classification.cases for image in case.images]
+            selected = list(dict.fromkeys(
+                [*selected, *reusable] if candidate or body.attachment_ids else [*reusable, *selected]
+            ))[:4]
         if candidate and candidate.request:
             selected = list(
                 dict.fromkeys(
@@ -485,7 +548,10 @@ class ProfileConversation:
         if stage == "completion":
             source = current.wizard.candidates["scan"].cases[0].images[0].attachment_id
             selected = list(dict.fromkeys([source, *selected]))[:5]
-        if stage == "classification" and current.pdf_sample:
+        if (
+            stage == "classification" and not body.attachment_ids
+            and current.pdf_sample and current.pdf_sample.stage == stage
+        ):
             selected = list(dict.fromkeys([*(p.attachment_id for p in current.pdf_sample.pages), *selected]))[
                 :4
             ]
@@ -500,12 +566,12 @@ class ProfileConversation:
             "attachments": [
                 {"id": str(a.id), "filename": a.filename, "origin": a.origin}
                 for a in attachments
-                if stage == "classification" or a.origin == "upload"
             ],
             "current_candidate": candidate.model_dump(mode="json") if candidate else None,
             "pdf_sample": current.pdf_sample.model_dump(mode="json")
-            if stage == "classification" and current.pdf_sample
+            if current.pdf_sample
             else None,
+            "confirmed_classification": classification.model_dump(mode="json") if classification else None,
             "confirmed_scan": current.wizard.candidates["scan"].model_dump(mode="json")
             if stage == "completion"
             else None,
@@ -582,14 +648,19 @@ class ProfileConversation:
         }
         if not identifiers.issubset(lookup):
             raise ProfileError("IMAGE_NOT_FOUND", "模型引用的图片不属于当前草稿，请重新选择图片", 422)
-        if stage != "classification" and any(lookup[i].origin == "pdf_sample" for i in identifiers):
-            decision.ready = False
-            decision.reply = QUESTIONS[stage]
+        effective_stage = decision.revision_stage or stage
         if (
-            stage in {"scan", "completion"}
+            effective_stage == "scan" and body.attachment_ids and decision.source_image
+            and decision.source_image not in body.attachment_ids
+            and decision.action != "revise_scan"
+        ):
+            decision.ready = False
+            decision.reply = "请以本轮新上传的原图为准，我需要重新核对来源图片。"
+        if (
+            effective_stage in {"scan", "completion"}
             and decision.source_image is not None
             and decision.source_image not in selected
-            and (stage == "scan" or decision.source_image in self._source_uploads(current, body))
+            and (effective_stage == "scan" or decision.source_image in self._source_uploads(current, body))
         ):
             decision.ready = False
             decision.action = "continue"

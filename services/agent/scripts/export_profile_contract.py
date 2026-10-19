@@ -10,6 +10,7 @@ names = {
     "ImageUse",
     "ExampleCase",
     "DraftCreate",
+    "DraftDeleteInput",
     "Attachment",
     "DraftView",
     "TargetImage",

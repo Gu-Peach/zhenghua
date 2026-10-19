@@ -49,6 +49,9 @@ class PdfSamplingTool:
     def sample(self, draft: UUID, body: PdfSampleRequest, actor: ProfileActor) -> PdfSampleResult:
         view = self.store.get(draft, actor)
         _, _, metadata = self.store.snapshot(draft, actor, view.revision)
+        from .wizard import ProfileWizard
+
+        ProfileWizard.require_previous(metadata, body.stage)
         try:
             content = base64.b64decode(body.content_base64, validate=True)
         except (ValueError, binascii.Error) as exc:
@@ -60,7 +63,7 @@ class PdfSamplingTool:
         cached = metadata.get("pdf_samples", {}).get(str(body.request_id))
         if cached:
             sample = PdfSampleInfo.model_validate(cached)
-            if sample.checksum != digest or sample.filename != filename:
+            if sample.checksum != digest or sample.filename != filename or sample.stage != body.stage:
                 raise ProfileError("OPERATION_CONFLICT", "同一抽样请求的PDF内容已变化", 409)
             return PdfSampleResult(draft=view, sample=sample)
         if body.revision != view.revision:
@@ -86,6 +89,7 @@ class PdfSamplingTool:
             filename=filename,
             checksum=digest,
             page_count=count,
+            stage=body.stage,
             pages=[SampledPdfPage(attachment_id=uuid4(), pdf_page_number=i + 1) for i in indices],
             notice="PDF只有1页，仅使用这一页，不重复抽取。" if count == 1 else None,
         )

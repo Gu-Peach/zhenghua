@@ -21,6 +21,8 @@ class AgentBridge:
         response = await self.open(method, path, **kwargs)
         try:
             await response.aread()
+            if response.status_code == 204:
+                return None
             return response.json()
         finally:
             await response.aclose()

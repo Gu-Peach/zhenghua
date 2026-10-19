@@ -16,6 +16,7 @@ from .simple_models import (
     LocalProfileOption,
     ProfileReferenceCreate,
     ProfileReferenceRead,
+    ProfileReferenceRename,
     SimpleConnectionCreate,
     SimpleConnectionDelete,
     SimpleConnectionEdit,
@@ -283,6 +284,14 @@ def install_management_routes(app: FastAPI, identity: Any) -> None:
             body.profile_key, user
         )
         return {**row, "can_delete": row["created_by"] == user}
+
+    @app.patch("/api/v1/rule-library/{profile_id}", response_model=ProfileReferenceRead)
+    async def rename_profile(
+        profile_id: UUID, body: ProfileReferenceRename, request: Request, user: User
+    ) -> Any:
+        return await request.app.state.management.profiles.rename(
+            str(profile_id), user, body.display_name, body.expected_display_name
+        )
 
     @app.delete("/api/v1/rule-library/{profile_id}", status_code=204)
     async def remove_profile(

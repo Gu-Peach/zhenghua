@@ -347,7 +347,8 @@ export interface paths {
         delete: operations["remove_profile_api_v1_rule_library__profile_id__delete"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** Rename Profile */
+        patch: operations["rename_profile_api_v1_rule_library__profile_id__patch"];
         trace?: never;
     };
     "/api/v1/imports": {
@@ -686,6 +687,23 @@ export interface paths {
         /** Create */
         post: operations["create_api_v1_profile_drafts_post"];
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/profile/drafts/{draft}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Draft */
+        delete: operations["delete_draft_api_v1_profile_drafts__draft__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1241,6 +1259,16 @@ export interface components {
             /** Source Version */
             source_version?: string | null;
         };
+        /** DraftDeleteInput */
+        DraftDeleteInput: {
+            /** Revision */
+            revision: number;
+            /**
+             * Confirmed
+             * @constant
+             */
+            confirmed: true;
+        };
         /** DraftView */
         DraftView: {
             /**
@@ -1677,6 +1705,12 @@ export interface components {
             checksum: string;
             /** Page Count */
             page_count: number;
+            /**
+             * Stage
+             * @default classification
+             * @enum {string}
+             */
+            stage: "classification" | "scan" | "completion";
             /** Pages */
             pages: components["schemas"]["SampledPdfPage"][];
             /** Notice */
@@ -1698,9 +1732,9 @@ export interface components {
             /**
              * Stage
              * @default classification
-             * @constant
+             * @enum {string}
              */
-            stage: "classification";
+            stage: "classification" | "scan" | "completion";
         };
         /** PdfSampleResult */
         PdfSampleResult: {
@@ -1816,6 +1850,11 @@ export interface components {
              */
             can_delete: boolean;
             /**
+             * Can Rename
+             * @default false
+             */
+            can_rename: boolean;
+            /**
              * Cleanup Pending
              * @default false
              */
@@ -1825,6 +1864,13 @@ export interface components {
              * @default false
              */
             previous_version_retained: boolean;
+        };
+        /** ProfileReferenceRename */
+        ProfileReferenceRename: {
+            /** Display Name */
+            display_name: string;
+            /** Expected Display Name */
+            expected_display_name: string;
         };
         /** ProfileReply */
         ProfileReply: {
@@ -2716,6 +2762,12 @@ export interface components {
             path?: string | null;
             /** Message */
             message: string;
+            /**
+             * Severity
+             * @default error
+             * @enum {string}
+             */
+            severity: "error" | "warning";
         };
         /** ValidationReport */
         ValidationReport: {
@@ -2730,7 +2782,7 @@ export interface components {
             case_count: number;
             /**
              * Schema Version
-             * @default extraction_stages_v1/review_1.0.0
+             * @default extraction_stages_v1/review_1.1.0
              */
             schema_version: string;
         };
@@ -3626,6 +3678,43 @@ export interface operations {
             };
         };
     };
+    rename_profile_api_v1_rule_library__profile_id__patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                profile_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileReferenceRename"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileReferenceRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     upload_api_v1_imports_post: {
         parameters: {
             query: {
@@ -4356,6 +4445,41 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["DraftView"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_draft_api_v1_profile_drafts__draft__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                draft: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DraftDeleteInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

@@ -1,5 +1,13 @@
 # Server 文档
 
+- [规则显示名称](./changelog/2026-10-19-profile-display-name.md)：所有者可按旧名称条件修改目录显示名，固定标识/ZIP/项目绑定，新增PATCH契约。
+
+- [不完整样例发布契约](../agent/changelog/2026-10-19-permissive-publication.md)：ValidationIssue.severity和review_1.1.0同步，6项含实际打包/Mock发布的回归通过。
+
+- [引导式规则配置契约](./changelog/2026-10-19-guided-profile-contract.md)：PDF任意阶段抽样、阶段来源和最多4张分类样图，需8000/8100同步加载。
+
+- [规则会话删除API](./changelog/2026-10-19-profile-conversation-delete.md)：带修订/确认的DELETE、内部身份转发与204空响应。
+
 - [数据库规则包目录](./changelog/2026-10-19-database-profile-catalog.md)：三套完整ZIP已发布，上传选项与Skills仅用数据库包，保留旧绑定；重载8000生效。
 
 - [范围替换确认事务](./changelog/2026-10-19-rescan-scope-replacement.md)：21项隔离事务、部署能力保护及本地新迁移，API2.10.0。

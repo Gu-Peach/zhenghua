@@ -45,7 +45,7 @@ class StageGenerate(StrictModel):
     request_id: UUID = Field(default_factory=uuid4)
     description: str = Field(min_length=1, max_length=8000, pattern=r"\S")
     source_image: UUID
-    sample_images: list[UUID] = Field(default_factory=list, max_length=2)
+    sample_images: list[UUID] = Field(default_factory=list, max_length=4)
     targets: list[TargetImage] = Field(default_factory=list, max_length=30)
     negative_images: list[UUID] = Field(default_factory=list, max_length=3)
 
@@ -153,12 +153,6 @@ class ProfileWizard:
         }
         if not requested.issubset(lookup):
             raise ProfileError("IMAGE_NOT_FOUND", "请先上传本草稿的样例图片", 422)
-        if stage != "classification" and any(
-            a.id in requested and a.origin == "pdf_sample" for a in view.attachments
-        ):
-            raise ProfileError(
-                "MANUAL_IMAGE_REQUIRED", "本页提取和跨页补全请使用用户上传的图纸，不能自动使用PDF抽样页", 422
-            )
         calls: list[dict[str, Any]] = []
 
         async def infer(images: list[UUID], context: dict[str, Any]) -> GeneratedAnswer:
@@ -212,6 +206,9 @@ class ProfileWizard:
                             "纠正和原图重新核对，移除误判的引用，生成待确认候选，不重复追问已答复的问题。"
                             "若revision_context.source_replacement=true，原图已更换，"
                             "只读本次实际新图，不沿用旧图端子、页号、坐标、引用或同页结论。"
+                            "rule_text按输入证据→定位方式→读取/匹配步骤→输出字段→不确定处理的顺序"
+                            "写成用户能核对的可复用处理链路。evidence_steps必须结合当前图片实际标注"
+                            "说明怎么找到结果，不要仅复述字段名称或声称已分析未提供页面。"
                         )
                         + "\n完整响应JSON Schema（最外层必须有rule_text和expected，禁止增加字段）：\n"
                         + json.dumps(GeneratedAnswer.model_json_schema(), ensure_ascii=False),
@@ -260,6 +257,11 @@ class ProfileWizard:
             return answer
 
         source_use = ImageUse(attachment_id=body.source_image, role="source_page")
+        pdf_pages = {
+            page["attachment_id"]: (sample["filename"], page["pdf_page_number"])
+            for sample in meta.get("pdf_samples", {}).values()
+            for page in sample.get("pages", [])
+        }
         cases: list[ExampleCase] = []
         readings: list[CaseReading] = []
 
@@ -276,14 +278,12 @@ class ProfileWizard:
         rule_text = body.description
         if stage != "completion":
             rules: list[str] = []
-            sample = meta.get("classification_pdf_sample", {}) if stage == "classification" else {}
-            pages = {p["attachment_id"]: p["pdf_page_number"] for p in sample.get("pages", [])}
             for index, image in enumerate(body.sample_images or [body.source_image]):
-                physical = pages.get(str(image))
+                pdf_name, physical = pdf_pages.get(str(image), (None, None))
                 context = (
                     {
                         "source_pdf_page_number": physical,
-                        "pdf_filename": sample.get("filename"),
+                        "pdf_filename": pdf_name,
                         "comparison_rule": body.description,
                     }
                     if physical
@@ -337,6 +337,8 @@ class ProfileWizard:
                 reading(f"wizard_{stage}_negative_{index}", negative)
         else:
             scan = StageCandidate.model_validate(meta["wizard"]["candidates"]["scan"])
+            if any(t.attachment_id == body.source_image for t in body.targets):
+                raise ProfileError("TARGET_IMAGE_MISMATCH", "跨页目标图不能使用已确认的来源图", 422)
             if scan.cases[0].images[0].attachment_id != body.source_image:
                 raise ProfileError("SOURCE_IMAGE_MISMATCH", "补全原页必须是已确认初扫的原图", 422)
             tasks = [
@@ -399,7 +401,13 @@ class ProfileWizard:
                         )
                     )
                 else:
-                    answer = await infer([body.source_image, target.attachment_id], task)
+                    target_pdf = pdf_pages.get(str(target.attachment_id))
+                    context = {
+                        **task,
+                        "target_pdf_filename": target_pdf[0] if target_pdf else None,
+                        "target_pdf_page_number": target_pdf[1] if target_pdf else None,
+                    }
+                    answer = await infer([body.source_image, target.attachment_id], context)
                     rule_text = answer.rule_text
                     result = {**answer.expected, "task_id": task_id}
                     images = [source_use, ImageUse(attachment_id=target.attachment_id, role="target_page")]

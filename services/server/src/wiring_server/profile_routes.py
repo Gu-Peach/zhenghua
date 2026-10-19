@@ -2,7 +2,7 @@ from typing import Annotated, Any
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from .profile_authoring import ProfileAuthoring
@@ -11,6 +11,7 @@ from .profile_contract import (
     ConversationState,
     ConversationTurn,
     DraftCreate,
+    DraftDeleteInput,
     DraftView,
     EditFilesInput,
     PdfSampleRequest,
@@ -136,6 +137,15 @@ def install_profile_routes(app: FastAPI, identity: Any) -> None:
     @app.get("/api/v1/profile/drafts", response_model=list[DraftView])
     async def drafts(request: Request, user: User) -> Any:
         return await service(request).call("GET", "/drafts", user)
+
+    @app.delete("/api/v1/profile/drafts/{draft}", status_code=204)
+    async def delete_draft(
+        draft: UUID, body: DraftDeleteInput, request: Request, user: User
+    ) -> Response:
+        await service(request).call(
+            "DELETE", f"/drafts/{draft}", user, body.model_dump(mode="json")
+        )
+        return Response(status_code=204)
 
     @app.post("/api/v1/profile/drafts", response_model=DraftView)
     async def create(body: DraftCreate, request: Request, user: User) -> Any:

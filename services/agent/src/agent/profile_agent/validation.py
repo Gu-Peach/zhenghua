@@ -266,7 +266,17 @@ def validate_draft(root: Path, metadata: dict[str, Any]) -> ValidationReport:
                     ValidationIssue(code="RULE_UNCONFIRMED", message=f"{stage}规则已改变，需要重新确认")
                 )
     if not positive_scan:
-        issues.append(
-            ValidationIssue(code="POSITIVE_CASE_MISSING", message="需提供至少一个包含实际来源端子的初扫正例")
+        confirmed_workflow = bool(
+            wizard and set(wizard.get("confirmed", {})) == {"classification", "scan", "completion"}
         )
-    return ValidationReport(ready=not issues, issues=issues, case_count=len(cases))
+        issues.append(
+            ValidationIssue(
+                code="POSITIVE_CASE_MISSING",
+                message="初扫样例尚未识别出实际来源端子；允许发布，后续请校验完善。"
+                if confirmed_workflow else "需提供至少一个包含实际来源端子的初扫正例",
+                severity="warning" if confirmed_workflow else "error",
+            )
+        )
+    return ValidationReport(
+        ready=not any(issue.severity == "error" for issue in issues), issues=issues, case_count=len(cases)
+    )

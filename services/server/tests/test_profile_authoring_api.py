@@ -208,12 +208,9 @@ def test_pdf_sampling_contract_and_authenticated_proxy(tmp_path):
                 and sampled["sample"]["page_count"] == 3
             )
             assert client.post(path, headers=headers, json=body).json() == sampled
-            assert (
-                client.post(
-                    path, headers=headers, json={**body, "stage": "scan"}
-                ).status_code
-                == 422
-            )
+            blocked = client.post(path, headers=headers, json={**body, "stage": "scan"})
+            assert blocked.status_code == 409
+            assert blocked.json()["detail"]["code"] == "PREVIOUS_STAGE_REQUIRED"
             restored = client.get(
                 path.replace("/pdf-samples", "/conversation"), headers=headers
             ).json()
@@ -245,7 +242,8 @@ def test_storage_transport_and_invalid_archives_are_safe():
     assert caught.value.code == "PROFILE_PACKAGE_INVALID"
 
 
-def test_authoring_proxy_confirmation_publish_catalog_and_preview(tmp_path):
+@pytest.mark.parametrize("missing_source", [False, True])
+def test_authoring_proxy_confirmation_publish_catalog_and_preview(tmp_path, missing_source):
     gateway = FakeModelGateway(
         [
             json.dumps(answer)
@@ -263,7 +261,7 @@ def test_authoring_proxy_confirmation_publish_catalog_and_preview(tmp_path):
                                 "unit_id": "a",
                                 "connections": [
                                     {
-                                        "start": {"terminal": "X3:51"},
+                                        "start": None if missing_source else {"terminal": "X3:51"},
                                         "references": [
                                             {
                                                 "raw": "=080.C/42",
@@ -279,7 +277,7 @@ def test_authoring_proxy_confirmation_publish_catalog_and_preview(tmp_path):
                 },
                 {
                     "rule_text": "按回指匹配最近终点",
-                    "expected": {"end": {"terminal": "XD21:60"}},
+                    "expected": {"end": None if missing_source else {"terminal": "XD21:60"}},
                 },
             ]
         ]
@@ -462,6 +460,10 @@ def test_authoring_proxy_confirmation_publish_catalog_and_preview(tmp_path):
                 )
                 assert response.status_code == 200, response.text
                 draft = response.json()["draft"]
+            conversation = client.get(path + "/conversation").json()
+            assert conversation["publish_ready"]
+            if missing_source:
+                assert any("允许发布" in issue for issue in conversation["issues"])
             response = client.post(
                 path + "/publish", json={"revision": draft["revision"]}
             )
@@ -488,6 +490,8 @@ def test_authoring_proxy_confirmation_publish_catalog_and_preview(tmp_path):
                 ).json()["id"]
                 == receipt["id"]
             )
+            if missing_source:
+                return  # This branch verifies incomplete publication and visibility; editing is covered below.
             fork_url = f"/api/v1/profile/references/{receipt['id']}/draft"
             fork_body = {"draft_id": str(uuid4()), "base_checksum": receipt["checksum"]}
             assert client.post(fork_url, json=fork_body, headers={"Authorization": "Bearer other"}).status_code == 403

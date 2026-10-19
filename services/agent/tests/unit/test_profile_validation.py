@@ -132,3 +132,34 @@ def test_optional_negative_does_not_remove_stage_confirmation_requirement(packag
     metadata["wizard"]["confirmed"].pop("completion")
     report = validate_draft(root, metadata)
     assert not report.ready and "STAGES_UNCONFIRMED" in {issue.code for issue in report.issues}
+
+
+def test_confirmed_workflow_with_empty_source_is_publishable_with_warning(package):
+    root, metadata, *_ = package
+    scan = next(case for case in case_files(root) if case["stage"] == "scan")
+    path = root / scan["expected_path"]
+    value = json.loads(path.read_text(encoding="utf-8"))
+    value["units"][0]["connections"][0]["start"] = None
+    path.write_text(json.dumps(value), encoding="utf-8")
+    confirm_answers(root, metadata)
+    report = validate_draft(root, metadata)
+    assert report.ready
+    assert [(issue.code, issue.severity) for issue in report.issues] == [("POSITIVE_CASE_MISSING", "warning")]
+    assert json.loads(path.read_text(encoding="utf-8"))["units"][0]["connections"][0]["start"] is None
+    metadata["wizard"]["confirmed"].pop("completion")
+    assert not validate_draft(root, metadata).ready
+
+
+def test_missing_source_warning_does_not_hide_unconfirmed_expected_or_broken_files(package):
+    root, metadata, *_ = package
+    scan = next(case for case in case_files(root) if case["stage"] == "scan")
+    path = root / scan["expected_path"]
+    value = json.loads(path.read_text(encoding="utf-8"))
+    value["units"][0]["connections"][0]["start"] = None
+    path.write_text(json.dumps(value), encoding="utf-8")
+    assert not validate_draft(root, metadata).ready
+    confirm_answers(root, metadata)
+    image = root / scan["images"][0]["path"]
+    image.unlink()
+    report = validate_draft(root, metadata)
+    assert not report.ready and "CASE_INVALID" in {issue.code for issue in report.issues}

@@ -125,7 +125,8 @@ class ProfileReferences:
             ):
                 latest[row["profile_key"]] = row
         return [
-            {**row, "can_delete": row["created_by"] == user} for row in latest.values()
+            {**row, "can_delete": row["created_by"] == user, "can_rename": row["created_by"] == user}
+            for row in latest.values()
         ]
 
     async def get(self, identifier: str) -> dict[str, Any]:
@@ -149,6 +150,26 @@ class ProfileReferences:
             "/rest/v1/extraction_profiles",
             params={"id": f"eq.{identifier}", "created_by": f"eq.{user}"},
         )
+
+    async def rename(self, identifier: str, user: str, name: str, expected_name: str) -> dict[str, Any]:
+        """Rename catalog metadata without changing immutable package bytes or project bindings."""
+        row = await self.get(identifier)
+        if row["created_by"] != user:
+            raise ServiceError(403, "ACCESS_DENIED", "只能修改自己发布的规则名称")
+        if not self.is_uploaded(row):
+            raise ServiceError(422, "PROFILE_NOT_AVAILABLE", "仅已上传的规则包支持修改名称")
+        if row["display_name"] == name:
+            return {**row, "can_delete": True, "can_rename": True}
+        if row["display_name"] != expected_name:
+            raise ServiceError(409, "PROFILE_NAME_CONFLICT", "规则名称已变化，请刷新后重试")
+        updated = await self.db.update(
+            "extraction_profiles",
+            {"id": f"eq.{identifier}", "created_by": f"eq.{user}", "display_name": f"eq.{expected_name}"},
+            {"display_name": name},
+        )
+        if not updated:
+            raise ServiceError(409, "PROFILE_NAME_CONFLICT", "规则名称已变化，请刷新后重试")
+        return {**updated[0], "can_delete": True, "can_rename": True}
 
     def resource_package(self, row: dict[str, Any]) -> dict[str, Any]:
         option = self.catalog().get(row["profile_key"])

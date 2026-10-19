@@ -6,6 +6,10 @@
 
 ## 1. 重构结论
 
+2026-10-19规则目录显示名与不可变包身份分开：extraction_profiles.display_name由所有者条件更新，包内原名、key/version/checksum及项目冻结绑定不动；见[设计](./service/server/profile-display-name.md)。
+
+2026-10-19规则配置采用图像驱动对话，移除阶段切换栏；拖拽图片/PDF、逐阶段解释/确认、已有证据复用和受控回退修改，仍通过原Wizard及手动发布。设计见[ADR-0038](./adr/0038-guided-profile-authoring.md)。
+
 2026-10-19按用户要求，上传PDF选项与Extraction Skills统一以数据库中已上传完整规则包为来源，本地profiles/prompts仅供开发/CLI及显式发布；旧项目引用和冻结包保持，见[ADR-0037](./adr/0037-database-profile-catalog.md)。
 
 2026-10-19正式ZH规则为zh2.3.0，完整沿用用户已验证的局部补全资源；源码由prompts/zh单份维护Prompt/案例，profiles/zh配置引用并提供zh_native策略，打包器生成自包含resources。用户已移除的zh_crop/history不恢复，已有冻结包不改，见[整理方案](./service/agent/zh-profile-consolidation-plan.md)。

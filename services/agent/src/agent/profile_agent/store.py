@@ -9,6 +9,7 @@ import shutil
 import sqlite3
 from collections.abc import Callable, Iterator, Sequence, Set
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, cast
 from uuid import UUID, uuid4
@@ -68,12 +69,16 @@ class DraftStore:
             db.close()
 
     @staticmethod
-    def _owned(db: sqlite3.Connection, draft: UUID, actor: ProfileActor) -> sqlite3.Row:
+    def _owned(
+        db: sqlite3.Connection, draft: UUID, actor: ProfileActor, *, include_deleted: bool = False
+    ) -> sqlite3.Row:
         row = db.execute("select * from drafts where id=?", (str(draft),)).fetchone()
         if row is None:
             raise ProfileError("DRAFT_NOT_FOUND", "规则草稿不存在", 404)
         if row["owner"] != str(actor.user_id):
             raise ProfileError("ACCESS_DENIED", "无权访问该规则草稿", 403)
+        if not include_deleted and json.loads(row["metadata"]).get("deleted_at"):
+            raise ProfileError("DRAFT_NOT_FOUND", "规则会话已删除", 404)
         return cast(sqlite3.Row, row)
 
     def _path(self, value: str) -> Path:
@@ -153,9 +158,26 @@ class DraftStore:
             return [
                 self._view(row)
                 for row in db.execute(
-                    "select * from drafts where owner=? order by rowid desc limit 100", (str(actor.user_id),)
+                    "select * from drafts where owner=? and json_extract(metadata,'$.deleted_at') is null "
+                    "order by rowid desc limit 100", (str(actor.user_id),)
                 )
             ]
+
+    def delete(self, draft: UUID, actor: ProfileActor, revision: int) -> None:
+        """Hide an owned conversation atomically; retain revision files and published packages."""
+        with self._db() as db:
+            db.execute("begin immediate")
+            row = self._owned(db, draft, actor, include_deleted=True)
+            meta = json.loads(row["metadata"])
+            if meta.get("deleted_at"):
+                return
+            if row["revision"] != revision:
+                raise ProfileError("VERSION_CONFLICT", "会话已更新，请恢复对话后重新确认删除", 409)
+            meta["deleted_at"] = datetime.now(timezone.utc).isoformat()
+            db.execute(
+                "update drafts set metadata=?,checksum=? where id=?",
+                (json.dumps(meta), self.digest(self._path(row["path"]), meta), str(draft)),
+            )
 
     def root_for(self, draft: UUID, actor: ProfileActor) -> tuple[Path, dict[str, Any]]:
         with self._db() as db:
@@ -465,10 +487,22 @@ class DraftStore:
                 )
             info = sample.model_dump(mode="json")
             meta.setdefault("pdf_samples", {})[str(sample.request_id)] = info
-            meta["classification_pdf_sample"] = info
-            meta["wizard"] = {"candidates": {}, "confirmed": {}, "requests": {}, "seals": {}}
-            meta["confirmed_expected"] = {}
-            meta.setdefault("conversation", {})["active_stage"] = "classification"
+            meta["latest_pdf_sample"] = info
+            meta.setdefault("pdf_stage_samples", {})[sample.stage] = info
+            if sample.stage == "classification":
+                meta["classification_pdf_sample"] = info
+            stages = ("classification", "scan", "completion")
+            affected = stages[stages.index(sample.stage):]
+            wizard = meta.setdefault("wizard", {})
+            for key in ("candidates", "confirmed", "requests", "seals"):
+                for stage in affected:
+                    wizard.setdefault(key, {}).pop(stage, None)
+            from .validation import case_files
+
+            for entry in case_files(root):
+                if entry["stage"] in affected:
+                    meta.setdefault("confirmed_expected", {}).pop(entry["expected_path"], None)
+            meta.setdefault("conversation", {})["active_stage"] = sample.stage
             return {"action": "pdf_sample", "sample": info}
 
         return self.mutate(

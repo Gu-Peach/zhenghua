@@ -48,6 +48,65 @@ def new(client):
     return response.json()
 
 
+def test_delete_conversation_requires_owner_confirmation_and_current_revision(api):
+    client, agent, actor, gateway = api
+    draft = new(client)
+    path = f"/v1/profile/drafts/{draft['draft_id']}"
+    body = {"revision": draft["revision"], "confirmed": True}
+    assert client.request("DELETE", path, json={"revision": 1}).status_code == 422
+    assert client.request("DELETE", path, json={**body, "confirmed": False}).status_code == 422
+    assert client.request(
+        "DELETE", path, json=body, headers={"X-Test-Actor": str(uuid4())}
+    ).status_code == 403
+    updated = agent.store.mutate(
+        UUID(draft["draft_id"]), actor, draft["revision"], "another-window", lambda *_: {}
+    ).model_dump(mode="json")
+    response = client.request("DELETE", path, json=body)
+    assert response.status_code == 409 and response.json()["detail"]["code"] == "VERSION_CONFLICT"
+    assert client.get(path).json() == updated
+    body["revision"] = updated["revision"]
+    response = client.request("DELETE", path, json=body)
+    assert response.status_code == 204 and response.content == b""
+    assert client.request("DELETE", path, json=body).status_code == 204
+    assert client.get(path).status_code == 404
+    assert client.get(path + "/conversation").status_code == 404
+    assert client.get("/v1/profile/drafts").json() == []
+    assert gateway.calls == []
+
+
+def test_deleted_draft_cannot_be_recreated_or_changed_by_an_in_flight_request(api):
+    client, agent, actor, gateway = api
+    draft = new(client)
+    other = client.post(
+        "/v1/profile/drafts", json={"key": "remaining", "display_name": "保留会话"}
+    ).json()
+    identifier = UUID(draft["draft_id"])
+    root, _ = agent.store.root_for(identifier, actor)
+    files = {path: agent.store.file(root, path).read_bytes() for path in agent.store.inventory(root)}
+    history = agent.store.audit(identifier, actor)
+    agent.store.delete(identifier, actor, draft["revision"])
+    with pytest.raises(ProfileError, match="已删除"):
+        agent.store.mutate(identifier, actor, draft["revision"], "late-turn", lambda *_: {})
+    response = client.post(
+        "/v1/profile/drafts",
+        json={"draft_id": str(identifier), "key": draft["key"], "display_name": "测试草稿"},
+    )
+    assert response.status_code == 404
+    assert client.get("/v1/profile/drafts").json() == [other]
+    assert {path: agent.store.file(root, path).read_bytes() for path in files} == files
+    with agent.store._db() as db:
+        count = db.execute(
+            "select count(*) from revisions where draft=?", (str(identifier),)
+        ).fetchone()[0]
+        assert count == len(history)
+    # Reopening the repository must retain the tombstone across process restarts.
+    from src.agent.profile_agent.store import DraftStore
+
+    reopened = DraftStore(agent.store.root, agent.store.registry)
+    assert [item.draft_id for item in reopened.list_drafts(actor)] == [UUID(other["draft_id"])]
+    assert gateway.calls == []
+
+
 def test_router_is_independently_mountable_and_caller_identity_is_not_model_input(api):
     client, agent, actor, gateway = api
     draft = new(client)

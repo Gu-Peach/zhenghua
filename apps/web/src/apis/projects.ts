@@ -109,10 +109,14 @@ export const projectApi = {
   },
   async listRuleLibrary(): Promise<RuleLibraryItem[]> {
     const rows = await uploadedProfiles();
-    return rows.map(row => ({ id: row.id, key: row.profile_key, name: row.display_name, version: row.profile_version, checksum: row.checksum, summary: `规则包 · ${row.checksum.slice(7, 19)}`, status: "published", updatedAt: row.created_at ?? "", canDelete: row.can_delete ?? false, isActive: true }));
+    return rows.map(row => ({ id: row.id, key: row.profile_key, name: row.display_name, version: row.profile_version, checksum: row.checksum, summary: `规则包 · ${row.checksum.slice(7, 19)}`, status: "published", updatedAt: row.created_at ?? "", canDelete: row.can_delete ?? false, canRename: row.can_rename ?? false, isActive: true }));
   },
   async publishedProfiles(): Promise<ProfileOption[]> { return uploadedProfiles(); },
   async deleteRule(id: string): Promise<void> { await request(`/api/v1/rule-library/${id}?confirmed=true`, { method: "DELETE" }); },
+  async renameRule(rule: RuleLibraryItem, name: string): Promise<void> {
+    const body: Schema["ProfileReferenceRename"] = { display_name: name, expected_display_name: rule.name };
+    await request(`/api/v1/rule-library/${rule.id}`, { method: "PATCH", body: JSON.stringify(body) });
+  },
   async package(id: string): Promise<RulePackage> { return request(`/api/v1/rule-library/${id}`); },
   async upload(file: File, profileKey: string, key: string): Promise<Schema["SimpleImportRead"]> {
     const params = new URLSearchParams({ profile_key: profileKey, project_name: file.name.replace(/\.pdf$/i, ""), filename: file.name });
