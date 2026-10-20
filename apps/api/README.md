@@ -1,5 +1,11 @@
 # 业务 API
 
+API2.16.0新增当前项目/工作区/图纸/搜索范围一键审核，含所有分页、版本/权限/原子确认；OpenAPI/生成类型同步，本地20261020020000已安装。重载8000刷新Web，见[交付](../../docs/apps/api/changelog/2026-10-20-bulk-review.md)。
+
+API2.15.0新增人工复核POST路由和needs_review_count，OpenAPI/Web生成类型同步。本地20261020010000迁移已安装，重载8000并刷新Web生效，本轮无8100/Worker变更，见[交付](../../docs/apps/api/changelog/2026-10-20-connection-review.md)。
+
+API2.14.0同步重扫requirements DTO/OpenAPI，历史任务可缺省，新Explain模型工具要求完整需求并校验范围/字段能力。无新路由或migration；先重载8000，再加载8100/实际Worker与刷新Web新建任务，见[契约交付](../../docs/apps/api/changelog/2026-10-20-rescan-requirements.md)。
+
 API2.13.0新增主助手历史删除 `DELETE /api/v1/assistant/conversations/{conversation}`，成功返回204。需新增20261019050000迁移，本地已安装且当前8000已加载2.13.0，刷新Web即可；无8100/Worker变更。见[交付](../../docs/apps/api/changelog/2026-10-19-assistant-history-delete.md)。
 
 API2.10.0同步范围替换DTO与确认门禁：只接收checksum/accepted，实际删除/写入来自持久化候选，数据库能力缺失则拒绝。新迁移本地已安装且业务表未变；重载8000、8100/Worker、刷新Web并新建任务。见[事务交付](../../docs/service/server/changelog/2026-10-19-rescan-scope-replacement.md)。

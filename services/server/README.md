@@ -1,5 +1,11 @@
 # Server 业务服务
 
+2026-10-20一键审核使用review_extraction_scope原子事务及API2.16.0。限定迁移脚本新增 `--migration 20261020020000 --apply`，本地已安装且业务摘要不变；重载8000刷新Web，见[记录](../../docs/service/server/changelog/2026-10-20-bulk-review.md)。
+
+API2.15.0新增版本化人工复核、当前批次待复核聚合和目录状态覆盖；20261020010000迁移已安装本地且业务摘要不变。其他本地实例可用限定脚本 `services/server/scripts/apply_explain_edits_migration.py --migration 20261020010000 --apply`，需重载8000并刷新Web，见[交付](../../docs/service/server/changelog/2026-10-20-connection-review.md)。
+
+API2.14.0同步Explain重扫requirements（所需字段/起点集合/同页约束）生成DTO，历史缺省JSON保持可读；确认事务与权限沿用，无migration。先重载8000再加载8100/实际Worker，刷新Web并新建任务，见[契约](../../docs/apps/api/changelog/2026-10-20-rescan-requirements.md)。本轮未修改真实库。
+
 API2.13.0增加主助手历史永久删除及附件GC：`DELETE /api/v1/assistant/conversations/{id}`返回204，保留正式结果与独立任务。新增20261019050000迁移本地已部署，8000已加载，刷新Web即可；其他实例的部署/回滚边界及测试命令见[交付](../../docs/service/server/changelog/2026-10-19-assistant-conversation-deletion.md)。
 
 2026-10-19 API2.12.0新增终点重扫target_bindings，Agent→Server→OpenAPI/TS及主助手参数已同步，无新迁移。重载8000及Agent/Worker后新建任务，见[契约记录](../../docs/service/server/changelog/2026-10-19-rescan-target-contract.md)。

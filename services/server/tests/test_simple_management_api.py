@@ -150,6 +150,27 @@ class Backend:
             return httpx.Response(
                 200, json={"run_id": value["requested_run"], "status": "QUEUED"}
             )
+        if path == "/rest/v1/rpc/review_extraction_scope":
+            value = json.loads(request.content)["value"]
+            return httpx.Response(
+                200,
+                json={
+                    "project_id": value["project_id"],
+                    "batch_id": value["body"]["batch_id"],
+                    "reviewed_count": 2,
+                },
+            )
+        if path == "/rest/v1/rpc/review_extraction_connection":
+            value = json.loads(request.content)["value"]
+            return httpx.Response(
+                200,
+                json={
+                    "connection_id": value["connection_id"],
+                    "batch_id": "run-one",
+                    "action": "review",
+                    "record_version": 2,
+                },
+            )
         if path == "/rest/v1/rpc/manage_extraction_connection":
             value = json.loads(request.content)["value"]
             return httpx.Response(
@@ -167,7 +188,7 @@ class Backend:
 
         def matches(row: dict) -> bool:
             return all(
-                str(row.get(key)) == value[3:]
+                str(row.get(key)).lower() == value[3:].lower()
                 for key, value in request.url.params.items()
                 if value.startswith("eq.")
             ) and all(
@@ -244,6 +265,164 @@ def test_project_tree_and_pagination_use_json_index(management) -> None:
         f"/api/v1/projects/{PROJECT}/connections?batch_id=missing"
     ).is_success
     assert all("wiring_units" not in str(call.url) for call in backend.calls)
+
+
+def test_review_uses_versioned_rpc_and_owner_boundary(management) -> None:
+    client, backend = management
+    body = {"record_version": 1, "confirmed": True}
+    endpoint = f"/api/v1/connections/{ROW}/review"
+    response = client.post(endpoint, json=body, headers={"Idempotency-Key": "review-1"})
+    assert response.status_code == 200, response.text
+    request = next(
+        call
+        for call in backend.calls
+        if call.url.path.endswith("/review_extraction_connection")
+    )
+    value = json.loads(request.content)["value"]
+    assert value == {
+        "actor": OWNER,
+        "project_id": PROJECT,
+        "connection_id": ROW,
+        "key": "review-1",
+        "body": body,
+    }
+    assert (
+        client.post(
+            endpoint,
+            json=body,
+            headers={"Authorization": "Bearer other", "Idempotency-Key": "other"},
+        ).status_code
+        == 403
+    )
+    assert (
+        client.post(
+            endpoint,
+            json={**body, "confirmed": False},
+            headers={"Idempotency-Key": "invalid"},
+        ).status_code
+        == 422
+    )
+    backend.tables["extraction_projects"][0]["status"] = "processing"
+    assert (
+        client.post(
+            endpoint, json=body, headers={"Idempotency-Key": "busy"}
+        ).status_code
+        == 409
+    )
+
+
+def test_bulk_review_is_owner_only_and_preserves_exact_scope(management) -> None:
+    client, backend = management
+    tree = client.get(f"/api/v1/projects/{PROJECT}").json()
+    workspace = tree["workspaces"][0]
+    body = {
+        "batch_id": "run-one",
+        "expected_updated_at": STAMP,
+        "confirmed": True,
+        "workspace_id": workspace["id"],
+        "drawing_id": workspace["drawings"][0]["id"],
+        "search": "XA:8%*",
+    }
+    path = f"/api/v1/projects/{PROJECT}/connections/review"
+    response = client.post(path, json=body, headers={"Idempotency-Key": "bulk-one"})
+    assert response.status_code == 200, response.text
+    call = next(
+        call
+        for call in backend.calls
+        if call.url.path.endswith("/review_extraction_scope")
+    )
+    payload = json.loads(call.content)["value"]
+    assert payload["scope"] == {
+        "workspace_code": "003.C",
+        "pdf_page_number": 1,
+        "search": "XA:8",
+    }
+    assert payload["body"]["batch_id"] == "run-one" and payload["key"] == "bulk-one"
+    assert (
+        client.post(
+            path,
+            json=body,
+            headers={"Authorization": "Bearer other", "Idempotency-Key": "other"},
+        ).status_code
+        == 403
+    )
+    assert (
+        client.post(
+            path,
+            json={**body, "confirmed": False},
+            headers={"Idempotency-Key": "invalid"},
+        ).status_code
+        == 422
+    )
+    assert (
+        client.post(
+            path,
+            json={**body, "drawing_id": str(uuid4())},
+            headers={"Idempotency-Key": "outside"},
+        ).status_code
+        == 404
+    )
+    assert (
+        client.post(
+            path,
+            json={**body, "drawing_id": tree["workspaces"][1]["drawings"][0]["id"]},
+            headers={"Idempotency-Key": "different-workspace"},
+        ).status_code
+        == 404
+    )
+    assert (
+        client.post(
+            path,
+            json={**body, "expected_updated_at": "not-a-date"},
+            headers={"Idempotency-Key": "invalid-date"},
+        ).status_code
+        == 422
+    )
+    backend.tables["extraction_projects"][0]["status"] = "processing"
+    assert (
+        client.post(path, json=body, headers={"Idempotency-Key": "busy"}).status_code
+        == 409
+    )
+
+
+def test_review_tree_uses_whole_active_batch_not_frozen_page_flags(management) -> None:
+    client, backend = management
+    project = backend.tables["extraction_projects"][0]
+    project["drawing_index"]["active_batch_id"] = "run-one"
+    for page in project["drawing_index"]["pages"]:
+        page["status"] = "needs_review"
+    row = backend.tables["extraction_connection_rows"][0]
+    row["needs_review"] = True
+    backend.tables["extraction_connection_rows"].append(
+        {**row, "id": str(uuid4()), "batch_id": "old", "source_pdf_page_number": 2}
+    )
+    tree = client.get(f"/api/v1/projects/{PROJECT}").json()
+    assert tree["needs_review_count"] == 1
+    assert tree["workspaces"][0]["drawings"][0]["status"] == "needs_review"
+    assert tree["workspaces"][1]["drawings"][0]["status"] == "completed"
+    row["needs_review"] = False
+    tree = client.get(f"/api/v1/projects/{PROJECT}").json()
+    assert tree["needs_review_count"] == 0
+    assert tree["workspaces"][0]["drawings"][0]["status"] == "completed"
+    assert client.get("/api/v1/projects").json()[0]["needs_review_count"] == 0
+
+
+def test_review_tree_reads_past_one_database_page_and_keeps_failure_state(
+    management,
+) -> None:
+    client, backend = management
+    project = backend.tables["extraction_projects"][0]
+    project["drawing_index"]["active_batch_id"] = "run-one"
+    project["drawing_index"]["pages"][0]["status"] = "completed"
+    project["drawing_index"]["pages"][1]["status"] = "failed"
+    row = backend.tables["extraction_connection_rows"][0]
+    backend.tables["extraction_connection_rows"] = [
+        {**row, "id": str(uuid4()), "needs_review": True} for _ in range(1001)
+    ]
+    tree = client.get(f"/api/v1/projects/{PROJECT}").json()
+    assert tree["needs_review_count"] == 1001
+    assert tree["workspaces"][0]["drawings"][0]["status"] == "needs_review"
+    assert tree["workspaces"][1]["drawings"][0]["status"] == "failed"
 
 
 def test_processing_rows_are_read_only_and_return_review_reasons(management) -> None:

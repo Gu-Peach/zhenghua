@@ -13,13 +13,20 @@ for path in (AGENT_ROOT, REPOSITORY_ROOT, Path(__file__).resolve().parent):
         sys.path.insert(0, str(path))
 
 # isort: split
+from local_extraction_runtime import activate_test_extraction, assert_test_extraction_loaded  # noqa: E402
+
+if __name__ == "__main__":
+    print(f"Local test Agent: {activate_test_extraction()}", flush=True)
+
+# isort: split
 from run_stage2_groups import load_local_profile, memory_settings  # noqa: E402
+
 from src.agent.extraction_agent.application.page_workflow_extraction import (  # noqa: E402
     run_page_workflow_extraction,
 )
+from src.agent.extraction_agent.infrastructure.document.model_traces import LocalModelTraceStore  # noqa: E402
 from src.config import AgentSettings  # noqa: E402
 from src.domain.errors import AgentServiceError  # noqa: E402
-from src.agent.extraction_agent.infrastructure.document.model_traces import LocalModelTraceStore  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -41,6 +48,7 @@ async def main() -> int:
     args = parse_args()
     if not args.allow_real_model:
         raise SystemExit("Real VLM calls require --allow-real-model; offline smoke tests use pytest.")
+    assert_test_extraction_loaded()
     pdf_path = args.pdf.resolve()
     if not pdf_path.is_file():
         raise SystemExit(f"PDF not found: {pdf_path}")

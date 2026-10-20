@@ -32,6 +32,7 @@ from .models import (
     SearchResult,
     TerminalPosition,
 )
+from .rescan_targets import RescanTargetError, resolve_target_page
 
 
 class ExplanationRepository(Protocol):
@@ -150,7 +151,19 @@ class SupabaseExplanationRepository:
     async def start_rescan(
         self, turn: ExplainTurn, actor: ExplainActor, identifier: str, request: RescanRequest
     ) -> RescanRun:
-        await self._authorized_project(turn, actor)
+        project = await self._authorized_project(turn, actor)
+        if request.target_bindings:
+            metadata = {
+                int(page["pdf_page_number"]): {
+                    "workspace_page": page.get("drawing_page"), "function": page.get("workspace_code"),
+                }
+                for page in (project.get("drawing_index") or {}).get("pages", [])
+            }
+            try:
+                for binding in request.target_bindings:
+                    resolve_target_page(binding, metadata)
+            except RescanTargetError as exc:
+                raise ExplainError("RESCAN_TARGET_INVALID", str(exc), 422) from exc
         try:
             result = await self.client.rpc(
                 "enqueue_connection_rescan",

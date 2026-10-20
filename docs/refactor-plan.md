@@ -1,5 +1,9 @@
 # 线表智能提取系统重构方案
 
+2026-10-20人工复核与表内新增按[ADR-0043](./adr/0043-connection-review-and-inline-create.md)实施：复核为独立版本化事务，目录聚合当前批次数据库事实，表格草稿新增复用原创建接口，来源聊天窗口支持缩放。
+
+2026-10-20重扫需求与执行路由按[ADR-0042](./adr/0042-rescan-requirements-and-routing.md)渐进修复：结构化验收要求、独立写入掩码，同页识别复用本页Graph，跨页保留定向补全，整页生成范围替换候选。实施状态以TODO/模块验收记录为准。
+
 > 状态：Draft for review  
 > 日期：2026-10-09  
 > 目标技术栈：React + Vite + TypeScript、FastAPI + Python、LangGraph、Supabase、PostgreSQL

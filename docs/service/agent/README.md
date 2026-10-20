@@ -1,5 +1,17 @@
 # Agent 服务设计索引
 
+- [Explain结构化格式失败诊断](./changelog/2026-10-20-explain-schema-diagnostics.md)：兼容分支已运行但本地格式拒绝，安全字段路径/类型/计数、旧日志限度及76项离线验收。
+
+- [Explain动作完成与假进度](./changelog/2026-10-20-explain-action-completion.md)：真实0工具/0任务诊断，直接命令受控补调、进度正文/缓存保护及动作事实精简，148项分批验收。
+
+- [目标工作区入队校验与失败事件](./changelog/2026-10-20-target-workspace-preflight.md)：002M03正确页号被误带源002.C、精确冲突反馈/同轮参数修正及error:null成功事件修复，88项离线验收。
+
+- [重扫需求与执行路由修复](./changelog/2026-10-20-rescan-requirements-routing.md)：需求/字段/范围门禁，同页本页扫描、跨页冻结补全、整页原理号与缺项候选；API2.14.0/rescan-v7，真实质量待新任务验收。
+
+- [agent_test本地提取整页试验](./changelog/2026-10-20-local-extraction-test-runtime.md)：两个CLI切换代码/规则到忽略副本，ZH整页目标及示例、002C03/原理号规则，30项离线和正式目录摘要核对；[命令](./local-extraction-test-runtime.md)。
+
+- [Explain同页重扫质量诊断](./changelog/2026-10-20-explain-same-page-quality-diagnosis.md)：实际任务漏入起点、end模式不含原理号、同页误用跨页回指补全；仅完成定位，修复尚未实施。
+
 - [Explain工具选择兼容](./changelog/2026-10-20-explain-tool-choice-compatibility.md)：HTTP400/tool_choice_not_supported已定位，Schema决策降级与真实工具/回执门禁，重载8100后复试。
 
 - [Explain补调与聊天图片](./changelog/2026-10-20-explain-required-tools.md)：required/精简事实，本轮私有图片实际进入模型；155项离线通过，真实供应方待复试。

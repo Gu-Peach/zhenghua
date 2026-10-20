@@ -1,5 +1,15 @@
 # Agent Service
 
+2026-10-20 Explain的MODEL_SCHEMA_INVALID细分schema_validation，并输出脱敏Schema字段路径/错误类型/计数；不存模型原文、不放宽校验或自动重试。仅重载8100后对未来错误生效，旧c24fb14e未保留具体字段、不能还原，见[记录](../../docs/service/agent/changelog/2026-10-20-explain-schema-diagnostics.md)。
+
+2026-10-20 Explain明确重新识别时不能以“正在读取”正文结束：本轮回执门禁/受控补调、规划正文不作进度和动作事实精简，兼容不支持required的服务。仅重载8100再发送，无本轮8000/Web/Worker或迁移变更，见[交付](../../docs/service/agent/changelog/2026-10-20-explain-action-completion.md)。
+
+2026-10-20显式目标页新增授权目录入队前校验：scope源工作区不继承到目标binding，冲突返回实际目标工作区/PDF，Worker继续严格检查冻结目录；修复成功回执error:null误发失败事件。重载8100及实际重扫Worker后新建任务，无迁移/8000/Web变化，见[交付](../../docs/service/agent/changelog/2026-10-20-target-workspace-preflight.md)。
+
+2026-10-20 Explain重扫规划与Worker路由按ADR-0042更新：新模型任务显式需求/范围能力校验，整页提取包含原理号和漏提候选，同页端点走本页识别、跨页保留冻结补全。先加载8000 API2.14.0，再重载8100/实际Worker，刷新Web新建重扫；rescan-v7不混用旧checkpoint。无迁移、无新增环境变量/服务种类，未改真实结果或生产Profile，真实质量待复试，见[交付](../../docs/service/agent/changelog/2026-10-20-rescan-requirements-routing.md)。
+
+2026-10-20本地提取测试脚本现在从仓库根`agent_test/extraction_agent`加载代码及规则，目录整体Git忽略；正式Worker/服务和数据库已发布包不变。测试ZH2.3.1改为整页补全、加入002C03/原理号规则。副本缺失或正式模块已先加载时报错，启动打印实际路径；[初始化边界、测试命令与限制](../../docs/service/agent/local-extraction-test-runtime.md)。
+
 2026-10-20 当前模型服务已明确拒绝required工具选择，Explain现仅对此400启用Pydantic JSON决策兼容，仍走原工具/权限/任务回执。重载8100后从失败消息重试，无新迁移、凭据或8000/Worker变化；169个场景分批离线通过，未跑真实模型，见[排障](../../docs/service/agent/changelog/2026-10-20-explain-tool-choice-compatibility.md)。
 
 2026-10-20 Explain补调使用required工具选择和精简事实，本轮私有图片校验后实际进入视觉输入；其他Agent默认工具策略保持。重载8100并刷新Web重开窗口后发送，无迁移/8000或Worker变化。155项离线通过，当前供应方required支持待实测，见[记录](../../docs/service/agent/changelog/2026-10-20-explain-required-tools.md)。

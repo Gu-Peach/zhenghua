@@ -215,7 +215,9 @@ def test_target_image_completion_and_manifest_paths(tmp_path: Path) -> None:
     async def check() -> None:
         profile = binding()
         assert profile.profile.version == "2.3.0"
-        gateway = FakeModelGateway(['{"end":{"device":"-Q1","terminal":"L1"},"status":"resolved"}'])
+        gateway = FakeModelGateway([
+            '{"end":{"device":"-Q1","terminal":"L1"},"source_note":"Fake target terminal evidence"}',
+        ])
         adapter = ZhVlmExtractionStageAdapter(AgentSettings(default_model="fake"), gateway)
         pages = []
         for number in (1, 2):

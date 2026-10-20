@@ -217,7 +217,7 @@ def test_completion_keeps_primary_target_after_auxiliary_images_and_binds_one_so
         assert "本条终点所在的目标页" in texts and "本条已冻结起点所在的来源页" in texts
         assert "禁止当作目标页读取终点" in texts
         assert result.metadata["rescan_task"]["frozen_start_terminal"] == "X3:1"
-        assert result.metadata["rescan_input_contract"] == 3
+        assert result.metadata["rescan_input_contract"] == 4
         assert all(image["kind"] == "input" for image in result.metadata["vision_images"])
 
     asyncio.run(run())

@@ -3,14 +3,14 @@ import { test, expect, type Page } from "@playwright/test";
 
 const project = "00000000-0000-0000-0000-000000000010", row = "00000000-0000-0000-0000-000000000011", runId = "00000000-0000-0000-0000-000000000012", assetId = "00000000-0000-0000-0000-000000000013", newRow = "00000000-0000-0000-0000-000000000015";
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6h8AAAAASUVORK5CYII=", "base64");
-async function fixture(page: Page, options: { conflict?: boolean; restored?: boolean; uploadFails?: boolean; empty?: boolean; replacement?: boolean; emptyResult?: boolean; legacyFull?: boolean } = {}) {
+async function fixture(page: Page, options: { conflict?: boolean; restored?: boolean; uploadFails?: boolean; empty?: boolean; replacement?: boolean; emptyResult?: boolean; legacyFull?: boolean; requirements?: boolean; failedAttempt?: boolean } = {}) {
   let started = !!options.restored, status = options.restored ? "ready" : "queued", version = 1, historyReads = 0;
   let scope: { connection_ids?: string[]; workspace_code?: string } = options.replacement || options.legacyFull ? { workspace_code: "003.C" } : { connection_ids: [row] }; let fields: "all" | "end" = options.replacement || options.legacyFull ? "all" : "end";
   const uploads: Record<string, unknown>[] = [], turns: Record<string, unknown>[] = [], decisions: Record<string, unknown>[] = [];
   const connection = () => ({ connection_id: options.replacement && status === "applied" ? newRow : row, id: options.replacement && status === "applied" ? newRow : row, project_id: project, batch_id: "batch-a", record_version: version, workspace_id: "work", drawing_id: "drawing", workspace_name: "003.C", workspace_page: "003C01", pdf_page_number: 1, source_pdf_page_number: 1, source_drawing_page: "003C01", target_pdf_page_number: 2, start_terminal: "XA:8", end_terminal: status === "applied" ? "X9:2" : "OLD", principle_number: "P1", is_cross_page: true });
   const run = () => ({ id: runId, project_id: project, conversation_id: "00000000-0000-0000-0000-000000000014", batch_id: "batch-a", status, stage: status === "ready" ? "ready" : status === "running" ? "completion" : status,
-    request: { scope, fields, instructions: "按细节复核终点", result_mode: options.replacement ? "replace_scope" : "patch" }, profile: { key: "zh", version: "2.1.1", checksum: "sha256:" + "a".repeat(64) }, progress: { pdf_page_number: 1 }, versions: status === "applied" ? options.emptyResult ? {} : { [options.replacement ? newRow : row]: options.replacement ? 1 : 2 } : {}, created_at: "2026-10-18", updated_at: "2026-10-18", checksum: "sha256:" + "b".repeat(64),
-    candidate: ["ready", "applied", "rejected"].includes(status) ? { changes: options.emptyResult ? [] : [{ action: options.replacement ? "insert" : "update", connection_id: options.replacement ? newRow : row, record_version: options.replacement ? 0 : 1, source_pdf_page_number: 1, source_drawing_page: "003C01", workspace_code: "003.C", principle_number: "P1", before: options.replacement ? {} : { end_terminal: "OLD" }, after: { end_terminal: "X9:2" } }], replacement: options.replacement ? { version: 1, scanned_pages: [1], removed: [{ connection_id: row, record_version: 1, source_pdf_page_number: 1, source_drawing_page: "003C01", workspace_code: "003.C", principle_number: "P1", before: { start_terminal: "XA:8", end_terminal: "OLD" } }] } : null, warnings: ["坐标按原始完整图定位，细节图仅辅助辨字。"], unmatched_ids: [] } : null });
+    request: { scope, fields, instructions: "按细节复核终点", result_mode: options.replacement ? "replace_scope" : "patch", ...(options.requirements ? { requirements: { required_fields: ["start_terminal", "end_terminal", "principle_number"], expected_start_terminals: ["XA:8", "PE-BAR"], connection_set: "rebuild", endpoint_location: "same_page" } } : {}) }, profile: { key: "zh", version: "2.1.1", checksum: "sha256:" + "a".repeat(64) }, progress: { pdf_page_number: 1 }, versions: status === "applied" ? options.emptyResult ? {} : { [options.replacement ? newRow : row]: options.replacement ? 1 : 2 } : {}, created_at: "2026-10-18", updated_at: "2026-10-18", checksum: "sha256:" + "b".repeat(64),
+    candidate: ["ready", "applied", "rejected"].includes(status) ? { changes: options.emptyResult ? [] : [{ action: options.replacement ? "insert" : "update", connection_id: options.replacement ? newRow : row, record_version: options.replacement ? 0 : 1, source_pdf_page_number: 1, source_drawing_page: "003C01", workspace_code: "003.C", principle_number: "P1", before: options.replacement ? {} : { end_terminal: "OLD" }, after: { end_terminal: "X9:2" } }], replacement: options.replacement ? { version: 1, scanned_pages: [1], removed: [{ connection_id: row, record_version: 1, source_pdf_page_number: 1, source_drawing_page: "003C01", workspace_code: "003.C", principle_number: "P1", before: { start_terminal: "XA:8", end_terminal: "OLD" } }] } : null, warnings: options.requirements ? ["未识别到预期起点：PE-BAR", "所需原理号仍有1条未确认"] : ["坐标按原始完整图定位，细节图仅辅助辨字。"], unmatched_ids: [] } : null });
   await page.route("**/rescan-evidence.svg", route => route.fulfill({ contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="160"><rect width="300" height="160" fill="white"/><path d="M40 30V100H200" stroke="black" fill="none"/><text x="210" y="105">X9:2</text></svg>' }));
   await page.route("**/api/v1/**", async route => {
     const path = new URL(route.request().url()).pathname;
@@ -40,7 +40,7 @@ async function fixture(page: Page, options: { conflict?: boolean; restored?: boo
       const answer = scanning ? "已提交重扫任务，将读取原图、关联图与细节图，正式线表尚未改变。".repeat(15) : "当前数据库保存的终点为OLD。";
       const event = (type: string, value: object) => `event: ${type}\ndata: ${JSON.stringify({ type, conversation_id: body.conversation_id, turn_id: body.turn_id, ...value })}\n\n`;
       const context = { project_name: "重扫夹具项目", row: connection(), drawings: [], recorded: {}, evidence_path: [], gaps: [] };
-      return route.fulfill({ contentType: "text/event-stream", body: event("context", { context }) + (scanning ? event("rescan_started", { rescan: run() }) : "") + event("answer_delta", { delta: answer }) + event("completed", { result: { conversation_id: body.conversation_id, turn_id: body.turn_id, answer, context, drawings: [], rescans: scanning ? [run()] : [], proposals: [], retrievals: [], history_reset: false } }) });
+      return route.fulfill({ contentType: "text/event-stream", body: event("context", { context }) + (options.failedAttempt ? event("tool_failed", { tool: { id: "attempt-1", name: "rescan_connections", arguments: {}, error: "该次范围不完整" } }) : "") + (scanning ? event("rescan_started", { rescan: run() }) + (options.failedAttempt ? event("tool_completed", { tool: { id: "attempt-2", name: "rescan_connections", arguments: {}, result: run() } }) : "") : "") + event("answer_delta", { delta: answer }) + event("completed", { result: { conversation_id: body.conversation_id, turn_id: body.turn_id, answer, context, drawings: [], rescans: scanning ? [run()] : [], proposals: [], retrievals: [], history_reset: false } }) });
     }
     return route.fulfill({ status: 404, json: { detail: "未定义夹具" } });
   });
@@ -109,6 +109,48 @@ async function requestFullScan(page: Page, state: Awaited<ReturnType<typeof fixt
   return panel;
 }
 
+test("任务展示完整提取要求和缺项，候选不会自动保存", async ({ page }) => {
+  const state = await fixture(page, { restored: true, replacement: true, requirements: true });
+  const panel = await open(page, false);
+  await panel.getByRole("button", { name: "查看项目重扫记录", exact: true }).click();
+  await expect(panel.getByText(/本轮要求：起点端子、终点端子、原理号/)).toBeVisible();
+  await expect(panel.getByText(/预期起点 2 个：XA:8、PE-BAR/)).toBeVisible();
+  await expect(panel.getByText("未识别到预期起点：PE-BAR", { exact: true })).toBeVisible();
+  await expect(panel.getByText("所需原理号仍有1条未确认", { exact: true })).toBeVisible();
+  expect(state.decisions).toHaveLength(0);
+  await page.screenshot({ path: test.info().outputPath("requirements-desktop.png") });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: test.info().outputPath("requirements-mobile.png") });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+});
+
+test("同轮先失败后创建时区分失败尝试和真实任务", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const state = await fixture(page, { failedAttempt: true });
+  const panel = await open(page, false);
+  await panel.getByLabel("追问来源解释").fill("重扫当前终点");
+  await panel.getByRole("button", { name: "发送追问", exact: true }).click();
+  await expect(panel.getByText("尝试失败 · 本轮已有任务", { exact: true })).toBeVisible();
+  await expect(panel.getByRole("region", { name: "重扫任务与结果", exact: true })).toBeVisible();
+  expect(state.decisions).toHaveLength(0);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await panel.getByText("尝试失败 · 本轮已有任务", { exact: true }).scrollIntoViewIfNeeded();
+  expect(await panel.locator(".explain-feed").evaluate(node => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+  await page.screenshot({ path: test.info().outputPath("recovered-attempt-mobile.png") });
+});
+
+test("历史任务不能将本轮创建失败显示成已创建", async ({ page }) => {
+  const state = await fixture(page, { failedAttempt: true, restored: true });
+  const panel = await open(page, false);
+  await panel.getByRole("button", { name: "查看项目重扫记录", exact: true }).click();
+  await expect(panel.getByRole("region", { name: "重扫任务与结果", exact: true })).toBeVisible();
+  await panel.getByLabel("追问来源解释").fill("请解释当前连接的来源");
+  await panel.getByRole("button", { name: "发送追问", exact: true }).click();
+  await expect(panel.getByText("执行失败", { exact: true })).toBeVisible();
+  await expect(panel.getByText("尝试失败 · 本轮已有任务", { exact: true })).toHaveCount(0);
+  expect(state.decisions).toHaveLength(0);
+});
+
 test("完整范围预览删除旧行并写入新行，确认后追问不查询已删除ID", async ({ page }) => {
   const state = await fixture(page, { replacement: true });
   const panel = await requestFullScan(page, state);
@@ -173,7 +215,8 @@ test("聊天图片随重扫发送，先回复后显示进度，确认前保持�
   expect(state.uploads).toHaveLength(0);
   await panel.getByLabel("追问来源解释").fill("请重扫这个终点，核对截图里的细节"); await panel.getByRole("button", { name: "发送追问", exact: true }).click();
   await expect(panel.getByRole("region", { name: "重扫任务与结果" })).toHaveCount(0);
-  await panel.getByRole("button", { name: "立即显示已收到内容" }).last().click();
+  const currentTurn = panel.locator(".explain-turn").filter({ has: page.getByText("请重扫这个终点，核对截图里的细节", { exact: true }) });
+  await currentTurn.getByRole("button", { name: "立即显示已收到内容", exact: true }).click();
   await expect(panel.getByText("正在生成候选，正式线表尚未改动。", { exact: false })).toBeVisible();
   expect(state.turns.at(-1)?.attachment_ids).toEqual([assetId]); expect(state.uploads[0].pdf_page_number).toBe(1);
   await expect(panel.locator(".explain-composer img")).toHaveCount(0);

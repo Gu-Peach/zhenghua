@@ -11,7 +11,10 @@ from time import perf_counter
 from typing import Any
 from uuid import UUID, uuid4
 
+from pydantic import BaseModel
+
 from src.agent.extraction_agent.infrastructure.document.model_traces import LocalModelTraceStore
+from src.domain.enums import ErrorCode
 from src.domain.errors import AgentServiceError
 from src.harness.model_gateway import ModelGateway, ModelRequest, ModelResponse
 
@@ -70,7 +73,9 @@ def error_summary(error: Exception) -> dict[str, Any]:
     if not isinstance(error, AgentServiceError):
         return {"error_type": type(error).__name__, "cause": "unknown"}
     text = str(error.details.get("provider_message", "")).casefold()
-    if error.details.get("provider_code") == "tool_choice_not_supported":
+    if error.code == ErrorCode.MODEL_SCHEMA_INVALID:
+        cause = "schema_validation"
+    elif error.details.get("provider_code") == "tool_choice_not_supported":
         cause = "tool_choice_compatibility"
     elif "mtp" in text and ("materializ" in text or "checkpoint" in text):
         cause = "model_checkpoint"
@@ -107,6 +112,74 @@ def error_summary(error: Exception) -> dict[str, Any]:
     if type(error.details.get("status_code")) is int:
         result["status_code"] = error.details["status_code"]
     return result
+
+
+def schema_error_summary(error: AgentServiceError, model: type[BaseModel] | None) -> dict[str, Any]:
+    """Persist only own-schema path names and canonical error types, never model-supplied keys/values."""
+    names: set[str] = set()
+
+    def visit(value: Any) -> None:
+        if isinstance(value, dict):
+            properties = value.get("properties")
+            if isinstance(properties, dict):
+                names.update(properties)
+            if isinstance(value.get("const"), str):
+                names.add(value["const"])
+            for item in value.values():
+                visit(item)
+        elif isinstance(value, list):
+            for item in value:
+                visit(item)
+
+    if model is not None:
+        visit(model.model_json_schema())
+    kinds = {
+        "missing",
+        "extra_forbidden",
+        "union_tag_invalid",
+        "union_tag_not_found",
+        "invalid_json",
+        "json_invalid",
+        "literal_error",
+        "string_type",
+        "dict_type",
+        "list_type",
+        "model_type",
+        "uuid_parsing",
+        "uuid_type",
+        "int_parsing",
+        "int_type",
+        "greater_than_equal",
+        "less_than_equal",
+        "too_long",
+        "too_short",
+        "string_too_long",
+        "string_too_short",
+        "value_error",
+    }
+    errors = error.details.get("validation_errors")
+    if not isinstance(errors, list):
+        return {"validation_error_count": 0, "validation_errors": []}
+    safe = []
+    for item in errors[:12]:
+        if not isinstance(item, dict):
+            continue
+        path = item.get("location")
+        location = (
+            [
+                part
+                if ((isinstance(part, str) and part in names) or (type(part) is int and 0 <= part < 10000))
+                else "<field>"
+                for part in path[:12]
+            ]
+            if isinstance(path, list)
+            else []
+        )
+        kind = item.get("type")
+        safe.append(
+            {"location": location, "type": kind if isinstance(kind, str) and kind in kinds else "other"}
+        )
+    return {"validation_error_count": len(errors), "validation_errors": safe}
 
 
 class ExplainDiagnosticGateway:
@@ -162,17 +235,20 @@ class ExplainDiagnosticGateway:
             return result
         except Exception as error:
             details = error_summary(error)
+            if isinstance(error, AgentServiceError) and error.code == ErrorCode.MODEL_SCHEMA_INVALID:
+                details.update(schema_error_summary(error, request.output_model))
             if isinstance(error, AgentServiceError):
                 error.details.update(
                     diagnostic_id=identifier, diagnostic_cause=details["cause"], request_summary=summary
                 )
             record.update(error_type=type(error).__name__, schema_error=details)
             logger.error(
-                "Explain model failed run=%s diagnostic_id=%s cause=%s summary=%s",
+                "Explain model failed run=%s diagnostic_id=%s cause=%s summary=%s validation=%s",
                 request.run_id,
                 identifier,
                 details["cause"],
                 summary,
+                details.get("validation_errors", []),
             )
             raise
         finally:

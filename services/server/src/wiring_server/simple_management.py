@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
-from typing import Any
+from typing import Any, cast
 from urllib.parse import quote
 from uuid import NAMESPACE_URL, uuid5
 
@@ -18,9 +18,11 @@ from .simple_index import (
     project_read,
 )
 from .simple_models import (
+    SimpleBulkReview,
     SimpleConnectionCreate,
     SimpleConnectionDelete,
     SimpleConnectionEdit,
+    SimpleConnectionReview,
 )
 
 
@@ -30,6 +32,13 @@ class ManagementService:
     def __init__(self, db: Repository) -> None:
         self.db = db
         self.profiles = ProfileReferences(db)
+
+    @staticmethod
+    def search_text(search: str) -> str:
+        """Keep the table read and bulk review search filters identical."""
+        return "".join(char for char in search if char.isalnum() or char in " :_-+")[
+            :100
+        ]
 
     async def projects(self, user: str, token: str) -> list[dict[str, Any]]:
         projects = await self.db.all_rows(
@@ -41,16 +50,56 @@ class ManagementService:
             return []
         profiles = {
             row["id"]: row["profile_key"]
-            for row in await self.db.all_rows("extraction_profiles", {"select": "id,profile_key"})
+            for row in await self.db.all_rows(
+                "extraction_profiles", {"select": "id,profile_key"}
+            )
         }
-        return [project_read(row, profiles.get(row["profile_id"])) for row in projects]
+        return [
+            await self.review_tree(row, profiles.get(row["profile_id"]))
+            for row in projects
+        ]
+
+    async def review_tree(
+        self, row: dict[str, Any], profile_key: str | None
+    ) -> dict[str, Any]:
+        """Overlay review flags from the entire active batch, independent of UI filters."""
+        result = project_read(row, profile_key)
+        batch = await self.batch(row)
+        result["batch_id"] = batch
+        pending = (
+            await self.db.all_rows(
+                "extraction_connection_rows",
+                {
+                    "project_id": f"eq.{row['id']}",
+                    "batch_id": f"eq.{batch}",
+                    "needs_review": "eq.true",
+                    "select": "source_pdf_page_number",
+                    "order": "id.asc",
+                },
+            )
+            if batch
+            else []
+        )
+        result["needs_review_count"] = len(pending)
+        pages = {item["source_pdf_page_number"] for item in pending}
+        for workspace in result["workspaces"]:
+            for drawing in workspace["drawings"]:
+                if batch and drawing["status"] in {
+                    "completed",
+                    "scanned",
+                    "needs_review",
+                }:
+                    drawing["status"] = (
+                        "needs_review"
+                        if drawing["pdf_page_number"] in pages
+                        else "completed"
+                    )
+        return result
 
     async def detail(self, project: str, user: str) -> dict[str, Any]:
         row = await self.db.require_project(project, user)
         profile = await self.profiles.get(row["profile_id"])
-        result = project_read(row, profile["profile_key"])
-        result["batch_id"] = await self.batch(row)
-        return result
+        return await self.review_tree(row, profile["profile_key"])
 
     async def create(
         self, name: str, profile_id: str | None, user: str
@@ -142,9 +191,7 @@ class ManagementService:
         if drawing:
             match = self.find_drawing(row, drawing)
             params["source_pdf_page_number"] = f"eq.{match['pdf_page_number']}"
-        safe = "".join(char for char in search if char.isalnum() or char in " :_-+")[
-            :100
-        ]
+        safe = self.search_text(search)
         if safe:
             params["or"] = (
                 "("
@@ -289,6 +336,81 @@ class ManagementService:
         row, _ = await self.connection(identifier, user, write=True)
         return await self.mutate(
             row["project_id"], user, "edit", key, identifier=identifier, body=body
+        )
+
+    async def review(
+        self, identifier: str, user: str, body: SimpleConnectionReview, key: str
+    ) -> dict[str, Any]:
+        """Confirm precisely the row version the human reviewed, with an atomic audit."""
+        row, project = await self.connection(identifier, user, write=True)
+        if project["status"] == "processing":
+            raise ServiceError(
+                409, "EXTRACTION_IN_PROGRESS", "提取期间结果只读，请等待处理完成"
+            )
+        return cast(
+            dict[str, Any],
+            await self.db.rpc(
+                "review_extraction_connection",
+                {
+                    "value": {
+                        "actor": user,
+                        "project_id": row["project_id"],
+                        "connection_id": identifier,
+                        "key": key,
+                        "body": body.model_dump(mode="json"),
+                    }
+                },
+            ),
+        )
+
+    async def review_scope(
+        self, project: str, user: str, body: SimpleBulkReview, key: str
+    ) -> dict[str, Any]:
+        """Atomically confirm the entire selected scope, including unrendered result pages."""
+        row = await self.db.require_project(project, user, write=True)
+        if row["status"] == "processing":
+            raise ServiceError(
+                409, "EXTRACTION_IN_PROGRESS", "提取期间结果只读，请等待处理完成"
+            )
+        catalog = index_drawings(row)
+        workspace = None
+        if body.workspace_id:
+            match = next(
+                (
+                    page
+                    for page in catalog
+                    if page["workspace_id"] == str(body.workspace_id)
+                ),
+                None,
+            )
+            if match is None:
+                raise ServiceError(404, "WORKSPACE_NOT_FOUND", "工作区不属于当前项目")
+            workspace = match["workspace_code"]
+        drawing = (
+            self.find_drawing(row, str(body.drawing_id)) if body.drawing_id else None
+        )
+        if drawing and workspace is not None and drawing["workspace_code"] != workspace:
+            raise ServiceError(404, "DRAWING_NOT_FOUND", "图纸不属于所选工作区")
+        return cast(
+            dict[str, Any],
+            await self.db.rpc(
+                "review_extraction_scope",
+                {
+                    "value": {
+                        "project_id": project,
+                        "actor": user,
+                        "key": key,
+                        "body": body.model_dump(mode="json"),
+                        "scope": {
+                            "workspace_code": workspace,
+                            "pdf_page_number": drawing["pdf_page_number"]
+                            if drawing
+                            else None,
+                            "search": self.search_text(body.search),
+                        },
+                    }
+                },
+            ),
         )
 
     async def import_pdf(
@@ -506,14 +628,21 @@ class ManagementService:
         assets["project-assets"] = [
             self.asset_path(project, item["storage_path"]) for item in details
         ]
-        assistant_assets = await self.db.all_rows("assistant_attachments", {
-            "project_id": f"eq.{project}", "owner_id": f"eq.{user}", "order": "id.asc",
-        })
+        assistant_assets = await self.db.all_rows(
+            "assistant_attachments",
+            {
+                "project_id": f"eq.{project}",
+                "owner_id": f"eq.{user}",
+                "order": "id.asc",
+            },
+        )
         for item in assistant_assets:
             prefix = f"assistant/{user}/{item['conversation_id']}/{item['id']}/"
             path = item["storage_path"]
             if not path.startswith(prefix) or ".." in path.split("/") or "\\" in path:
-                raise ServiceError(409, "ATTACHMENT_SCOPE_MISMATCH", "助手附件路径不属于当前用户会话")
+                raise ServiceError(
+                    409, "ATTACHMENT_SCOPE_MISMATCH", "助手附件路径不属于当前用户会话"
+                )
             assets["project-assets"].append(path)
         if row.get("source_pdf_path"):
             assets.setdefault(row["source_pdf_bucket"], []).append(

@@ -46,7 +46,7 @@ test("导出时等待可见，冲突失败不下载且可重试", async ({ page 
   await expect(button).toBeEnabled(); expect(downloads).toHaveLength(0);
 });
 
-async function fixture(page: Page, options: { empty?: boolean; failList?: boolean; denied?: boolean; failSave?: boolean; noIndex?: boolean; longName?: boolean; loading?: Promise<void>; realtime?: boolean; streamFailures?: number; treeOrder?: boolean; failRename?: boolean; renameGate?: Promise<void>; anotherProject?: boolean } = {}) {
+async function fixture(page: Page, options: { bulkCount?: number; bulkGate?: Promise<void>; more?: boolean; review?: boolean; emptyRows?: boolean; empty?: boolean; failList?: boolean; denied?: boolean; failSave?: boolean; noIndex?: boolean; longName?: boolean; loading?: Promise<void>; realtime?: boolean; streamFailures?: number; treeOrder?: boolean; failRename?: boolean; renameGate?: Promise<void>; anotherProject?: boolean } = {}) {
   let exists = !options.empty;
   let failSave = options.failSave;
   const calls: string[] = []; const keys: string[] = [];
@@ -62,9 +62,12 @@ async function fixture(page: Page, options: { empty?: boolean; failList?: boolea
     { id: "work-006-c", code: "006.C", name: "006.C", drawings: [{ ...drawing("c01", 3), workspace_page: "006C01" }] },
   ];
   const another = { ...detail, id: anotherProjectId, name: "第二项目" };
+  if (options.review) detail.workspaces[0].drawings[0].status = "needs_review";
+  row.needs_review = !!options.review;
+  const payloads: unknown[] = [];
   let phase = 0; let streamFailures = options.streamFailures ?? 0;
   const progress = () => ({ run_id: "run-one", stage: phase === 0 ? "render" : phase === 1 ? "scan" : phase === 2 ? "completion" : "finished", total_pages: 2, rendered_pages: phase === 0 ? 1 : 2, classified_pages: phase === 0 ? 0 : 2, completed_pages: phase === 3 ? 2 : 0, row_count: phase ? 1 : 0 });
-  const payload = () => options.realtime ? { ...detail, status: phase === 3 ? "ready" : "processing", processing: progress(), workspaces: phase === 0 ? [] : detail.workspaces } : detail;
+  const payload = () => options.realtime ? { ...detail, status: phase === 3 ? "ready" : "processing", processing: progress(), workspaces: phase === 0 ? [] : detail.workspaces } : { ...detail, needs_review_count: row.needs_review ? 1 : 0 };
   await page.route("**/fixture.png", route => route.fulfill({ contentType: "image/png", body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aYyQAAAAASUVORK5CYII=", "base64") }));
   await page.route("**/api/v1/**", async route => {
     const request = route.request(); const url = new URL(request.url()); const path = url.pathname;
@@ -93,7 +96,26 @@ async function fixture(page: Page, options: { empty?: boolean; failList?: boolea
     }
     if (path.endsWith("/extraction/events") && streamFailures-- > 0) return route.fulfill({ contentType: "text/event-stream", body: "event: unavailable\ndata: {}\n\n" });
     if (path.endsWith("/extraction/events")) return route.fulfill({ contentType: "text/event-stream", body: `id: ${phase}\nevent: refresh\ndata: {}\n\n${phase === 3 ? "event: done\ndata: {}\n\n" : ""}` });
-    if (path === `/api/v1/projects/${projectId}/connections`) return route.fulfill({ json: { items: options.noIndex || !detail.workspaces.length || (options.realtime && phase === 0) ? [] : [{ ...row, ...(options.realtime ? { end_terminal: phase >= 2 ? "XD21:7" : null, processing_status: phase === 1 ? "pending_completion" : phase === 2 ? "scanned" : "completed" } : {}) }], batch_id: detail.batch_id, offset: 0, limit: 100, has_more: false } });
+    if (path === `/api/v1/projects/${projectId}/connections/review`) {
+      keys.push(request.headers()["idempotency-key"]); payloads.push(request.postDataJSON());
+      if (options.bulkGate) await options.bulkGate;
+      if (failSave) { failSave = false; return route.fulfill({ status: 409, json: { detail: { message: "结果已变化，请刷新后重新审核" } } }); }
+      const count = options.bulkCount ?? (row.needs_review ? 1 : 0);
+      if (count) { row.needs_review = false; row.record_version += 1; detail.workspaces[0].drawings[0].status = "completed"; }
+      return route.fulfill({ json: { project_id: projectId, batch_id: "run-one", reviewed_count: count } });
+    }
+    if (path === `/api/v1/projects/${projectId}/connections` && request.method() === "POST") {
+      keys.push(request.headers()["idempotency-key"]); payloads.push(request.postDataJSON());
+      if (failSave) { failSave = false; return route.fulfill({ status: 503, json: { detail: { message: "新增失败，请重试" } } }); }
+      return route.fulfill({ json: { connection_id: rowId, batch_id: "run-one", action: "add", record_version: 1 } });
+    }
+    if (path === `/api/v1/connections/${rowId}/review`) {
+      keys.push(request.headers()["idempotency-key"]); payloads.push(request.postDataJSON());
+      if (failSave) { failSave = false; return route.fulfill({ status: 409, json: { detail: { message: "复核保存失败，请刷新后重试" } } }); }
+      row.needs_review = false; row.record_version += 1; detail.workspaces[0].drawings[0].status = "completed";
+      return route.fulfill({ json: { connection_id: rowId, batch_id: "run-one", action: "review", record_version: row.record_version } });
+    }
+    if (path === `/api/v1/projects/${projectId}/connections`) return route.fulfill({ json: { items: options.emptyRows || options.noIndex || !detail.workspaces.length || (options.realtime && phase === 0) ? [] : [{ ...row, ...(options.realtime ? { end_terminal: phase >= 2 ? "XD21:7" : null, processing_status: phase === 1 ? "pending_completion" : phase === 2 ? "scanned" : "completed" } : {}) }], batch_id: detail.batch_id, offset: 0, limit: 100, has_more: options.more ?? false } });
     if (path === `/api/v1/connections/${rowId}` && request.method() === "PATCH") {
       keys.push(request.headers()["idempotency-key"]);
       if (failSave) { failSave = false; return route.fulfill({ status: 409, json: { detail: { message: "数据已变更，请刷新后重试" } } }); }
@@ -104,8 +126,104 @@ async function fixture(page: Page, options: { empty?: boolean; failList?: boolea
     if (path.startsWith("/api/v1/drawings/")) return route.fulfill({ json: detail.workspaces.flatMap(workspace => workspace.drawings).find(d => path.endsWith(d.id)) ?? drawing(sourceId, 1) });
     return route.fulfill({ status: 404, json: { detail: { message: "未配置的夹具请求" } } });
   });
-  return { calls, keys, renames, advance: (next: number) => { phase = next; } };
+  return { calls, keys, payloads, renames, advance: (next: number) => { phase = next; } };
 }
+
+test("待复核行显示透明勾号，确认后行和目录变色，双击仍可编辑", async ({ page }) => {
+  const state = await fixture(page, { review: true, failSave: true });
+  await page.goto(`/projects/${projectId}?workspace=${workspaceId}&drawing=${sourceId}`);
+  const confirm = page.getByRole("button", { name: "确认复核 XA:8", exact: true });
+  await expect(confirm).toBeEnabled();
+  expect(await confirm.evaluate(e => getComputedStyle(e).backgroundColor)).toBe("rgba(0, 0, 0, 0)");
+  await expect(page.getByRole("button", { name: /^编辑 XA/ })).toHaveCount(0);
+  await expect(page.locator(".drawing-row.active .status-dot")).toHaveClass(/status-review/);
+  await confirm.click(); await expect(page.getByRole("alert")).toContainText("复核保存失败");
+  await expect(page.locator(".row-state")).toHaveText("待复核");
+  await confirm.click(); await expect(confirm).toHaveCount(0);
+  await expect(page.locator(".row-state")).toHaveCount(0);
+  await expect(page.locator(".drawing-row.active .status-dot")).toHaveClass(/status-completed/);
+  await expect(page.locator(".workspace-row .status-dot")).toHaveClass(/status-completed/);
+  await expect(page.locator(".project-row.active .status-dot")).toHaveClass(/status-completed/);
+  expect(state.keys[0]).toBe(state.keys[1]);
+  expect(state.payloads[0]).toEqual({ record_version: 1, confirmed: true });
+  await page.getByRole("cell", { name: "XA:8", exact: true }).dblclick();
+  await expect(page.getByRole("textbox", { name: "起点端子", exact: true })).toHaveValue("XA:8");
+  await expect(page.getByRole("button", { name: "新增端子", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "一键审核", exact: true })).toBeDisabled();
+  await page.getByRole("textbox", { name: "起点端子", exact: true }).press("Escape");
+  await expect(page.getByRole("button", { name: "新增端子", exact: true })).toBeEnabled();
+  await page.screenshot({ path: test.info().outputPath("review-confirmed-desktop.png") });
+});
+
+test("新增直接插入当前图纸草稿，失败保留输入并复用幂等键", async ({ page }) => {
+  const state = await fixture(page, { failSave: true });
+  await page.goto(`/projects/${projectId}?workspace=${workspaceId}&drawing=${targetId}`);
+  await page.getByRole("button", { name: "新增端子", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "新增连接" })).toHaveCount(0);
+  await expect(page.getByLabel("新增来源图纸")).toHaveValue(targetId);
+  await page.getByRole("button", { name: "保存新增端子" }).click();
+  await expect(page.getByRole("alert")).toContainText("填写起点端子"); expect(state.payloads).toHaveLength(0);
+  await page.getByLabel("新增起点端子", { exact: true }).fill("XA:99");
+  await page.getByLabel("新增原理号", { exact: true }).fill("003C0299");
+  await page.getByLabel("新增终点端子", { exact: true }).fill("XD1:9");
+  await page.getByRole("button", { name: "保存新增端子" }).click();
+  await expect(page.getByRole("alert")).toContainText("新增失败");
+  await expect(page.getByLabel("新增起点端子", { exact: true })).toHaveValue("XA:99");
+  await page.screenshot({ path: test.info().outputPath("inline-create-desktop.png") });
+  await page.getByLabel("新增起点端子", { exact: true }).press("Enter");
+  await expect(page.getByRole("row", { name: "新增端子草稿" })).toHaveCount(0);
+  expect(state.keys[0]).toBe(state.keys[1]);
+  expect(state.payloads[1]).toMatchObject({ batch_id: "run-one", source_drawing_id: targetId, fields: { start_terminal: "XA:99", principle_number: "003C0299", end_terminal: "XD1:9" } });
+});
+
+test("空表也可新增，取消零写入，窄屏保留表格横向滚动", async ({ page }) => {
+  const state = await fixture(page, { emptyRows: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/projects/${projectId}`);
+  await page.getByRole("button", { name: "新增端子", exact: true }).click();
+  await page.getByLabel("新增起点端子", { exact: true }).fill("XA:1");
+  await page.screenshot({ path: test.info().outputPath("inline-create-narrow.png") });
+  await page.getByLabel("新增起点端子", { exact: true }).press("Escape");
+  await expect(page.getByRole("row", { name: "新增端子草稿" })).toHaveCount(0);
+  expect(state.payloads).toHaveLength(0);
+});
+
+test("一键审核覆盖所选图纸及搜索全部分页，冲突后重试并更新目录", async ({ page }) => {
+  const state = await fixture(page, { review: true, bulkCount: 105, more: true, failSave: true });
+  await page.goto(`/projects/${projectId}?workspace=${workspaceId}&drawing=${sourceId}`);
+  const filtered = page.waitForResponse(response => response.url().includes("/connections?") && new URL(response.url()).searchParams.get("search") === "XA:8");
+  await page.getByLabel("搜索线表").fill("XA:8"); await filtered;
+  const button = page.locator(".result-table thead th").last().getByRole("button", { name: "一键审核", exact: true });
+  await expect(page.locator(".table-toolbar").getByRole("button", { name: "一键审核", exact: true })).toHaveCount(0);
+  await expect(button).toBeEnabled(); await expect(button).toHaveAttribute("title", /当前图纸的搜索结果.*所有分页/);
+  await button.click(); await expect(page.getByRole("alert")).toContainText("结果已变化");
+  await expect(page.locator(".row-state")).toHaveText("待复核");
+  await button.click(); await expect(page.getByRole("status")).toContainText("已审核 105 条");
+  await expect(page.locator(".result-table .row-state")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "确认复核 XA:8", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "删除 XA:8", exact: true })).toBeVisible();
+  await expect(page.locator(".drawing-row.active .status-dot")).toHaveClass(/status-completed/);
+  expect(state.keys).toHaveLength(2); expect(state.keys[0]).toBe(state.keys[1]);
+  expect(state.payloads[1]).toMatchObject({ batch_id: "run-one", expected_updated_at: "2026-10-16", workspace_id: workspaceId, drawing_id: sourceId, search: "XA:8", confirmed: true });
+  await page.screenshot({ path: test.info().outputPath("bulk-review-desktop.png") });
+});
+
+test("一键审核期间互斥，项目范围不传目录限制，窄屏空审核提示可见", async ({ page }) => {
+  let release!: () => void; const gate = new Promise<void>(resolve => { release = resolve; });
+  const state = await fixture(page, { bulkGate: gate });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto(`/projects/${projectId}`);
+  const button = page.locator(".result-table thead th").last().getByRole("button", { name: "一键审核", exact: true });
+  await expect(button).toBeEnabled(); await button.click();
+  await expect(button).toBeDisabled(); await expect(button).toContainText("审核中");
+  await expect(page.getByLabel("搜索线表")).toBeDisabled();
+  await expect(page.getByRole("button", { name: "新增端子", exact: true })).toBeDisabled();
+  release(); await expect(page.getByRole("status")).toContainText("当前范围没有待复核记录");
+  expect(state.payloads[0]).toMatchObject({ workspace_id: null, drawing_id: null, search: "" });
+  expect(state.keys).toHaveLength(1);
+  await expect(page.locator(".result-table .row-state")).toHaveCount(0);
+  await page.screenshot({ path: test.info().outputPath("bulk-review-narrow.png") });
+});
 
 test("空数据库直接显示完整工作区", async ({ page }) => {
   await fixture(page, { empty: true }); await page.goto("/projects");
@@ -292,7 +410,7 @@ test("按批次读取、跨页双图和行内编辑", async ({ page }) => {
   await expect(page.locator(".connection-preview.has-target")).toBeVisible();
   await expect(page.locator(".connection-preview .drawing-preview")).toHaveCount(2);
   await page.getByRole("button", { name: "线表工作区", exact: true }).click();
-  await page.getByRole("button", { name: "编辑 XA:8", exact: true }).click();
+  await page.getByRole("cell", { name: "XA:8", exact: true }).dblclick();
   await page.getByRole("textbox", { name: "终点端子", exact: true }).fill("XD10:2");
   await page.getByRole("textbox", { name: "终点端子", exact: true }).press("Enter");
   await expect(page.getByRole("button", { name: "XD10:2", exact: false })).toBeVisible();
@@ -300,7 +418,7 @@ test("按批次读取、跨页双图和行内编辑", async ({ page }) => {
 
 test("版本冲突保留草稿，重试复用幂等键", async ({ page }) => {
   const { keys } = await fixture(page, { failSave: true }); await page.goto(`/projects/${projectId}`);
-  await page.getByRole("button", { name: "编辑 XA:8", exact: true }).click();
+  await page.getByRole("cell", { name: "XA:8", exact: true }).dblclick();
   const terminal = page.getByRole("textbox", { name: "终点端子", exact: true });
   await terminal.fill("XD10:3"); await terminal.press("Enter");
   await expect(page.getByText("数据已变更，请刷新后重试")).toBeVisible();
@@ -329,7 +447,7 @@ test("拆页等待、初扫与补全结果实时更新且处理期间只读", as
   state.advance(1);
   await expect(page.getByRole("cell", { name: "XA:8", exact: true })).toBeVisible({ timeout: 10000 });
   await expect(page.locator(".row-state")).toHaveText("待补全");
-  await expect(page.getByRole("button", { name: "编辑 XA:8", exact: true })).toBeDisabled();
+  await expect(page.locator(".result-table .editable-cell")).toHaveCount(0);
   await expect(page.locator(".workspace-node")).toHaveCount(1);
   state.advance(2);
   await expect(page.getByRole("button", { name: "XD21:7", exact: false })).toBeVisible({ timeout: 10000 });
@@ -337,8 +455,8 @@ test("拆页等待、初扫与补全结果实时更新且处理期间只读", as
   await page.screenshot({ path: test.info().outputPath("completion.png"), fullPage: true });
   state.advance(3);
   await expect(page.locator(".extraction-progress")).toHaveCount(0, { timeout: 10000 });
-  await expect(page.locator(".row-state")).toHaveText("已完成");
-  await expect(page.getByRole("button", { name: "编辑 XA:8", exact: true })).toBeEnabled();
+  await expect(page.locator(".row-state")).toHaveCount(0);
+  await expect(page.locator(".result-table .editable-cell").first()).toBeVisible();
 });
 
 

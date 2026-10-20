@@ -17,10 +17,13 @@ from .simple_models import (
     ProfileReferenceCreate,
     ProfileReferenceRead,
     ProfileReferenceRename,
+    SimpleBulkReview,
+    SimpleBulkReviewReceipt,
     SimpleConnectionCreate,
     SimpleConnectionDelete,
     SimpleConnectionEdit,
     SimpleConnectionPage,
+    SimpleConnectionReview,
     SimpleImportRead,
     SimpleMutationReceipt,
     SimpleProjectInput,
@@ -203,6 +206,21 @@ def install_management_routes(app: FastAPI, identity: Any) -> None:
         )
 
     @app.post(
+        "/api/v1/projects/{project_id}/connections/review",
+        response_model=SimpleBulkReviewReceipt,
+    )
+    async def review_scope(
+        project_id: UUID,
+        body: SimpleBulkReview,
+        request: Request,
+        user: User,
+        idempotency_key: Key,
+    ) -> Any:
+        return await request.app.state.management.review_scope(
+            str(project_id), user, body, idempotency_key
+        )
+
+    @app.post(
         "/api/v1/projects/{project_id}/connections",
         response_model=SimpleMutationReceipt,
         status_code=201,
@@ -250,6 +268,21 @@ def install_management_routes(app: FastAPI, identity: Any) -> None:
         idempotency_key: Key,
     ) -> Any:
         return await request.app.state.management.edit(
+            str(connection_id), user, body, idempotency_key
+        )
+
+    @app.post(
+        "/api/v1/connections/{connection_id}/review",
+        response_model=SimpleMutationReceipt,
+    )
+    async def review(
+        connection_id: UUID,
+        body: SimpleConnectionReview,
+        request: Request,
+        user: User,
+        idempotency_key: Key,
+    ) -> Any:
+        return await request.app.state.management.review(
             str(connection_id), user, body, idempotency_key
         )
 

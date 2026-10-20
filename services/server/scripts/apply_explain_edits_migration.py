@@ -21,6 +21,8 @@ MIGRATIONS = {
     "20261019020000": "main_assistant",
     "20261019030000": "rescan_project_profile",
     "20261019050000": "assistant_conversation_deletion",
+    "20261020010000": "connection_review",
+    "20261020020000": "bulk_connection_review",
 }
 
 
@@ -202,6 +204,16 @@ def main() -> None:
           and (select relrowsecurity from pg_class where oid='public.assistant_asset_gc'::regclass)
           and not has_function_privilege('authenticated','public.assistant_delete_conversation(uuid,uuid)','execute')
           and has_function_privilege('service_role','public.assistant_delete_conversation(uuid,uuid)','execute');""").strip() == "t"
+    if version == "20261020010000":
+        verified = sql("""select to_regprocedure('public.review_extraction_connection(jsonb)') is not null
+          and not has_function_privilege('authenticated','public.review_extraction_connection(jsonb)','execute')
+          and not has_function_privilege('anon','public.review_extraction_connection(jsonb)','execute')
+          and has_function_privilege('service_role','public.review_extraction_connection(jsonb)','execute');""").strip() == "t"
+    if version == "20261020020000":
+        verified = sql("""select to_regprocedure('public.review_extraction_scope(jsonb)') is not null
+          and not has_function_privilege('authenticated','public.review_extraction_scope(jsonb)','execute')
+          and not has_function_privilege('anon','public.review_extraction_scope(jsonb)','execute')
+          and has_function_privilege('service_role','public.review_extraction_scope(jsonb)','execute');""").strip() == "t"
     sql("notify pgrst, 'reload schema';")
     result = {
         "migration": version,

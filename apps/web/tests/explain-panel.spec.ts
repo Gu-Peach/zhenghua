@@ -6,6 +6,32 @@ const projectId = "00000000-0000-0000-0000-000000000010";
 const rowId = "00000000-0000-0000-0000-000000000015";
 const sourceId = "00000000-0000-0000-0000-000000000012";
 const servers = new Set<Server>();
+test("来源聊天支持鼠标和键盘缩放，拖动及窄屏边界正常", async ({ page }) => {
+  const state = await fixture(page);
+  const panel = await openRow(page, false);
+  const handle = panel.getByRole("button", { name: "缩放来源解释窗口" });
+  const initial = (await panel.boundingBox())!;
+  const point = (await handle.boundingBox())!;
+  await page.mouse.move(point.x + point.width / 2, point.y + point.height / 2);
+  await page.mouse.down(); await page.mouse.move(point.x - 100, point.y - 80, { steps: 8 }); await page.mouse.up();
+  await expect.poll(async () => (await panel.boundingBox())!.width).toBeLessThan(initial.width - 80);
+  const smaller = (await panel.boundingBox())!;
+  await handle.focus(); await handle.press("ArrowRight");
+  await expect.poll(async () => (await panel.boundingBox())!.width).toBeGreaterThan(smaller.width);
+  await handle.press("Home");
+  await expect.poll(async () => Math.round((await panel.boundingBox())!.width)).toBe(Math.round(initial.width));
+  const header = panel.getByLabel("来源解释窗口标题栏");
+  await header.focus(); await header.press("ArrowLeft");
+  await expect.poll(async () => (await panel.boundingBox())!.x).toBeLessThan(initial.x);
+  await page.screenshot({ path: test.info().outputPath("chat-resize-desktop.png") });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await handle.focus(); await handle.press("ArrowRight");
+  const narrow = (await panel.boundingBox())!;
+  expect(narrow.x).toBeGreaterThanOrEqual(0); expect(narrow.x + narrow.width).toBeLessThanOrEqual(390);
+  expect(narrow.y + narrow.height).toBeLessThanOrEqual(844);
+  await page.screenshot({ path: test.info().outputPath("chat-resize-narrow.png") });
+  expect(state.requests).toHaveLength(0);
+});
 test.afterEach(async () => {
   for (const server of servers) { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); }
   servers.clear();

@@ -90,6 +90,75 @@ def test_rescan_tool_binds_attachment_ids_and_only_enqueues(reply):
     asyncio.run(run())
 
 
+def test_wrong_target_workspace_is_corrected_in_same_turn_before_enqueue():
+    class Backend(AttachmentBackend):
+        def __init__(self):
+            super().__init__()
+            self.project["drawing_index"] = {
+                "pages": [
+                    {"drawing_page": "002M03", "workspace_code": "002.M", "pdf_page_number": 56},
+                ]
+            }
+            self.enqueued = []
+
+        def request(self, request):
+            if request.url.path.endswith("/rpc/enqueue_connection_rescan"):
+                value = json.loads(request.content)["value"]
+                self.enqueued.append(value)
+                return httpx.Response(
+                    200,
+                    json={
+                        "id": value["id"],
+                        "project_id": str(PROJECT),
+                        "conversation_id": value["conversation_id"],
+                        "batch_id": "batch-a",
+                        "request": value["request"],
+                        "status": "queued",
+                        "stage": "queued",
+                        "profile": {"key": "zh", "version": "1.0.0"},
+                        "created_at": "now",
+                        "updated_at": "now",
+                    },
+                )
+            if request.url.path.endswith("/connection_rescan_runs"):
+                return httpx.Response(200, json=[])
+            return super().request(request)
+
+    async def run():
+        backend = Backend()
+        bad = {
+            "scope": {"connection_ids": [str(ROW)]},
+            "fields": "end",
+            "instructions": "只补终点",
+            "target_bindings": [
+                {"connection_ids": [str(ROW)], "drawing_page": "002M03", "workspace_code": "002.C"}
+            ],
+        }
+        corrected = copy.deepcopy(bad)
+        corrected["target_bindings"][0].update(workspace_code="002.M", pdf_page_number=56)
+        assistant, gateway = agent(
+            backend,
+            [tool("rescan_connections", bad), tool("rescan_connections", corrected), "已创建重扫任务。"],
+        )
+        events = []
+
+        async def emit(event):
+            events.append(event)
+
+        result = await assistant.ask(
+            ExplainTurn(project_id=PROJECT, connection_id=ROW, message="起点正确，终点在002M03，重新提取"),
+            ExplainActor(user_id=OWNER),
+            on_event=emit,
+        )
+        assert len(backend.enqueued) == 1 and len(result.rescans) == 1
+        assert backend.enqueued[0]["request"]["target_bindings"] == corrected["target_bindings"]
+        failed = [event for event in events if event.type == "tool_failed"]
+        assert len(failed) == 1 and "002.M / PDF 56" in str(failed[0])
+        assert len(gateway.calls) == 3 and not backend.preparations
+
+    asyncio.run(run())
+
+
 class MemoryRescan:
     def __init__(self, image, detail):
         self.image, self.detail = image, detail
@@ -240,8 +309,13 @@ def test_real_page_graph_scans_completes_and_only_saves_candidates(tmp_path, pro
             old["target_pdf_page_number"] = None
             repo.asset["role"] = "source"
         gateway = FakeModelGateway(
-            [json.dumps(scan), json.dumps(end)] if mode in {"all", "replace"}
-            else [] if mode == "end_missing" else [json.dumps(end)]
+            [json.dumps(scan), json.dumps(end)]
+            if mode in {"all", "replace"}
+            else [json.dumps(scan)]
+            if mode == "end_same"
+            else []
+            if mode == "end_missing"
+            else [json.dumps(end)]
         )
         session = CandidateSession(repo, job)
         await execute_rescan(session, settings, gateway=gateway, binding=binding)
@@ -260,10 +334,12 @@ def test_real_page_graph_scans_completes_and_only_saves_candidates(tmp_path, pro
         assert old["end_terminal"] == "OLD" and len(gateway.calls) == (2 if mode in {"all", "replace"} else 1)
         if mode not in {"all", "replace"}:
             assert "start_terminal" not in completed["changes"][0]["after"]
-            assert gateway.calls[0].metadata["rescan_task"] is not None
+            assert (gateway.calls[0].metadata["rescan_task"] is None) == (mode == "end_same")
         text = json.dumps(gateway.calls[-1].messages, ensure_ascii=False)
         assert (
-            "原始完整图，PDF物理页1" in text and "原始完整图，PDF物理页2" in text and "用户target细节" in text
+            "原始完整图，PDF物理页1" in text
+            and ("原始完整图，PDF物理页2" in text) == (mode != "end_same")
+            and "用户target细节" in text
         )
         assert gateway.calls[-1].metadata["rescan"] is True
 

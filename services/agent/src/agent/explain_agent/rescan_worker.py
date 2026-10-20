@@ -17,6 +17,7 @@ from src.domain.models.runs import ProfileRef
 
 from .models import RescanRequest
 from .rescan_execution import CandidateSession, execute_rescan
+from .rescan_planning import RescanPlanError
 from .rescan_targets import RescanTargetError
 
 logger = logging.getLogger(__name__)
@@ -71,7 +72,7 @@ async def process_rescan(repository: Any, job: dict[str, Any], settings: AgentSe
             await session.advance(
                 stage="failed",
                 error=str(exc)
-                if isinstance(exc, RescanTargetError)
+                if isinstance(exc, (RescanTargetError, RescanPlanError))
                 else "重扫未完成，原线表保留。请检查原图、任务选定的规则包和模型配置后重新发起。",
             )
     finally:

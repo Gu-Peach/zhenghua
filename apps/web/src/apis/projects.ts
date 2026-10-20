@@ -11,7 +11,7 @@ export type ProfileOption = Pick<Schema["ProfileReferenceRead"], "profile_key" |
 function summary(row: Schema["SimpleProjectRead"]): ProjectSummary {
   // Older workers reported page errors as a failure only after traversing the full PDF.
   const traversedWithPageErrors = row.status === "failed" && row.processing?.error?.code === "EXTRACTION_PARTIAL";
-  const status = traversedWithPageErrors ? "completed" : row.status === "failed" || row.status === "archived" ? "failed" : row.status === "processing" ? "processing" : row.status === "ready" ? "completed" : "queued";
+  const status = traversedWithPageErrors ? "completed" : row.status === "failed" || row.status === "archived" ? "failed" : row.status === "processing" ? "processing" : row.status === "ready" ? (row.needs_review_count ? "review" : "completed") : "queued";
   return { id: row.id, name: row.name, company: "", profile: row.standard_profile ?? "未指定", status, progress: row.status === "ready" ? 100 : 0, workspaceCount: row.workspaces?.length ?? 0, drawingCount: row.workspaces?.reduce((n, w) => n + (w.drawings?.length ?? 0), 0) ?? 0, updatedAt: row.updated_at };
 }
 export function drawingFromDb(d: Schema["DrawingRead"]): Drawing {
@@ -82,7 +82,7 @@ export const projectApi = {
   async list(): Promise<ProjectSummary[]> { return (await request<Schema["SimpleProjectRead"][]>("/api/v1/projects")).map(summary); },
   async get(id: string): Promise<ProjectDetail> {
     const row = await request<Schema["SimpleProjectRead"]>(`/api/v1/projects/${id}`);
-    const workspaces: Workspace[] = (row.workspaces ?? []).map(w => ({ id: w.id, code: w.code ?? w.name, name: w.name, status: "completed" as const, drawings: (w.drawings ?? []).map(drawingFromDb).sort((a, b) => drawingOrder.compare(a.drawingPage, b.drawingPage) || a.pdfPage - b.pdfPage || a.id.localeCompare(b.id)) }));
+    const workspaces: Workspace[] = (row.workspaces ?? []).map(w => ({ id: w.id, code: w.code ?? w.name, name: w.name, status: (w.drawings ?? []).some(d => d.status === "failed") ? "failed" : (w.drawings ?? []).some(d => d.status === "needs_review") ? "review" : (w.drawings ?? []).some(d => ["rendered", "classified", "scan", "completion"].includes(d.status)) ? "processing" : "completed", drawings: (w.drawings ?? []).map(drawingFromDb).sort((a, b) => drawingOrder.compare(a.drawingPage, b.drawingPage) || a.pdfPage - b.pdfPage || a.id.localeCompare(b.id)) }));
     workspaces.sort((a, b) => drawingOrder.compare(a.code, b.code) || a.id.localeCompare(b.id));
     return { ...summary(row), processing: row.processing, sourceAvailable: row.source_saved, sourceFilename: row.sources?.[0]?.original_filename ?? "", projectNo: row.id, resultVersion: row.batch_id ? `批次 ${row.batch_id}` : "暂无结果", workspaces };
   },
@@ -118,6 +118,15 @@ export const projectApi = {
   async deleteConnection(id: string, row: WiringRow, key: string): Promise<void> {
     const body: Schema["SimpleConnectionDelete"] = { record_version: row.recordVersion!, confirmed: true };
     await request(`/api/v1/projects/${id}/connections/${row.id}`, { method: "DELETE", headers: { "Idempotency-Key": key }, body: JSON.stringify(body) });
+  },
+  async review(row: WiringRow, key: string): Promise<void> {
+    const body: Schema["SimpleConnectionReview"] = { record_version: row.recordVersion!, confirmed: true };
+    await request(`/api/v1/connections/${row.id}/review`, { method: "POST", headers: { "Idempotency-Key": key }, body: JSON.stringify(body) });
+  },
+  async reviewScope(project: ProjectDetail, scope: { batchId: string; workspaceId: string | null; drawingId: string | null; search: string }, key: string): Promise<number> {
+    const body: Schema["SimpleBulkReview"] = { batch_id: scope.batchId, expected_updated_at: project.updatedAt, confirmed: true, workspace_id: scope.workspaceId, drawing_id: scope.drawingId, search: scope.search };
+    const result = await request<Schema["SimpleBulkReviewReceipt"]>(`/api/v1/projects/${project.id}/connections/review`, { method: "POST", headers: { "Idempotency-Key": key }, body: JSON.stringify(body) });
+    return result.reviewed_count;
   },
   async target(row: WiringRow, signal?: AbortSignal): Promise<Drawing> { return drawingFromDb(await request<Schema["DrawingRead"]>(`/api/v1/connections/${row.id}/target`, { signal })); },
   async edit(row: WiringRow, _page: ResultPage, changes: Schema["ConnectionFields"], key: string = crypto.randomUUID()): Promise<void> {

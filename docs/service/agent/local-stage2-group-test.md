@@ -1,5 +1,7 @@
 # 本地 002.C / 002.M Stage 2 测试
 
+2026-10-20：两个本地CLI现在加载仓库根`agent_test/extraction_agent`测试副本的代码、策略和资源；不会调用正式提取实现。测试ZH2.3.1使用完整目标页及补全样例，新增002C03本页16条、初扫line_number/wire_number=null及回指缺失时原理号回退。副本整体Git忽略，正式ZH2.3.0/数据库包保持；启动显示Local test Agent实际路径。默认输出改为agent_test/runs/stage2，独立试跑使用新目录和run-id，见[当前命令](./local-extraction-test-runtime.md)。以下旧日期记录及显式输出参数保留。
+
 2026-10-19：正式ZH为 `zh@2.3.0`，`--profile zh`使用已验证的局部高清能力。Prompt/案例只维护在prompts/zh，裁剪/引用配置和Python策略位于profiles/zh；本地resources副本已删除。用户已移除zh_crop目录，命令统一为zh，详见[清理记录](./changelog/2026-10-19-zh-source-cleanup.md)。
 
 2026-10-18：脚本与平台共用`stage2-script-aligned-v1`请求/结果契约，专属禁色标提示已迁入共享层，模型Gateway/字段映射共用；参数与内存模式不变。新增请求指纹和过滤前计数，允许ZH0列，Prompt/样例不改。平台验证需先重启Worker，再新上传；详见[交付](./changelog/2026-10-18-extraction-entry-alignment.md)。
@@ -80,7 +82,7 @@ ZH补全只发送目标图及来源匹配事实（不传起点端子/坐标）�
 
 ## 产物
 
-统一写入 `docs/test/run_stage2`（Git 已忽略）：
+默认写入 `agent_test/runs/stage2`（Git 已忽略），也可显式指定独立输出目录：
 
 - `result.xlsx`：Sheet1，前12列沿用 `1641.xlsx`：页码、原理号、端子排、起点元件、起点描述、起点端子、终点元件、终点描述、终点端子、电流、色标、备注；再追加起点端子坐标、终点端子坐标，共14列。色标按用户要求全部为空。坐标保存JSON对象，例如`{"x":0.178,"y":0.173,"pdf_page_number":403}`，左上角为原点、整图归一化0～1，各端绑定各自图片物理页；未知留空，不修改参考模板。
 - `table.json`、`records.json`：标准行与完整结构化记录；业务备注不混入诊断原因，缺失值保持 null，不伪造电流 0。

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import Field, field_validator
+from pydantic import AwareDatetime, Field, field_validator
 
 from .models import ConnectionFields, Model, ReadModel, WorkspaceRead
 
@@ -87,6 +87,7 @@ class SimpleProjectRead(ReadModel):
     extraction_available: bool = True
     processing: ExtractionProgress | None = None
     source_saved: bool = False
+    needs_review_count: int = 0
 
 
 class TerminalCoordinates(Model):
@@ -155,10 +156,31 @@ class SimpleConnectionDelete(Model):
     confirmed: Literal[True]
 
 
+class SimpleConnectionReview(Model):
+    record_version: int = Field(ge=1)
+    confirmed: Literal[True]
+
+
+class SimpleBulkReview(Model):
+    batch_id: str = Field(min_length=1, max_length=200)
+    expected_updated_at: AwareDatetime
+    workspace_id: UUID | None = None
+    drawing_id: UUID | None = None
+    search: str = Field(default="", max_length=100)
+    confirmed: Literal[True]
+
+
+class SimpleBulkReviewReceipt(Model):
+    project_id: str
+    batch_id: str
+    reviewed_count: int = Field(ge=0)
+    idempotent: bool = False
+
+
 class SimpleMutationReceipt(Model):
     connection_id: str
     batch_id: str
-    action: Literal["add", "edit", "remove"]
+    action: Literal["add", "edit", "remove", "review"]
     record_version: int
     idempotent: bool = False
 

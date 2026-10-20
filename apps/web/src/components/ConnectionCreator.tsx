@@ -1,25 +1,43 @@
-import { useRef, useState, type FormEvent } from "react";
-import { X } from "lucide-react";
+import { Check, Loader2, X } from "lucide-react";
+import { useRef, useState, type KeyboardEvent } from "react";
 import { projectApi, type ResultPage } from "@/apis/projects";
-import { editableConnectionFields } from "@/apis/connection-fields";
+import { editableConnectionFields, type ConnectionDraft } from "@/apis/connection-fields";
 import type { components } from "@/apis/generated";
 import type { ProjectDetail } from "@/apis/types";
 
-export function ConnectionCreator({ project, page, onClose, onSaved }: { project: ProjectDetail; page: ResultPage; onClose: () => void; onSaved: () => void }) {
-  const [error, setError] = useState(""); const [saving, setSaving] = useState(false);
+export function ConnectionCreator({ project, page, defaultDrawingId, workspaceId, disabled, onError: setError, onClose, onSaved }: { project: ProjectDetail; page: ResultPage; defaultDrawingId?: string; workspaceId: string | null; disabled: boolean; onError: (message: string) => void; onClose: () => void; onSaved: () => void }) {
+  const drawings = project.workspaces.filter(w => !workspaceId || w.id === workspaceId).flatMap(w => w.drawings);
+  const allDrawings = project.workspaces.flatMap(w => w.drawings);
+  const [source, setSource] = useState(defaultDrawingId ?? drawings[0]?.id ?? "");
+  const [target, setTarget] = useState("");
+  const [draft, setDraft] = useState<ConnectionDraft>(() => Object.fromEntries(editableConnectionFields.map(f => [f.key, ""])) as ConnectionDraft);
+  const [saving, setSaving] = useState(false);
+  const [batch] = useState(page.batch_id ?? "manual");
+  const lock = useRef(false);
   const submission = useRef<{ fingerprint: string; key: string } | null>(null);
-  const drawings = project.workspaces.flatMap(workspace => workspace.drawings.map(d => ({ ...d, workspace: workspace.name })));
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setSaving(true); setError("");
-    const form = new FormData(event.currentTarget);
-    const fields: components["schemas"]["ConnectionFields"] = {};
-    for (const field of editableConnectionFields) fields[field.key] = String(form.get(field.key) ?? "").trim() || null;
-    const body: components["schemas"]["SimpleConnectionCreate"] = { batch_id: String(form.get("batch_id")), source_drawing_id: String(form.get("source_drawing_id")), target_drawing_id: String(form.get("target_drawing_id") ?? "") || null, wire_number: String(form.get("wire_number") ?? "").trim() || null, fields };
+  async function save() {
+    if (lock.current || disabled) return;
+    if (batch !== (page.batch_id ?? "manual")) { setError("结果批次已变化，请取消后重新新增。"); return; }
+    if (!source || !draft.start_terminal.trim()) { setError("请选择来源图纸并填写起点端子。"); return; }
+    const fields = Object.fromEntries(editableConnectionFields.map(f => [f.key, draft[f.key].trim() || null])) as components["schemas"]["ConnectionFields"];
+    const body: components["schemas"]["SimpleConnectionCreate"] = { batch_id: batch, source_drawing_id: source, target_drawing_id: target || null, fields };
     const fingerprint = JSON.stringify(body);
     if (submission.current?.fingerprint !== fingerprint) submission.current = { fingerprint, key: crypto.randomUUID() };
+    lock.current = true; setSaving(true); setError("");
     try { await projectApi.addConnection(project.id, body, submission.current.key); onSaved(); onClose(); }
-    catch (reason) { setError(String(reason)); }
-    finally { setSaving(false); }
+    catch (reason) { setError(reason instanceof Error ? reason.message : "新增失败，请重试"); }
+    finally { lock.current = false; setSaving(false); }
   }
-  return <div className="modal-backdrop"><section className="resource-modal" role="dialog" aria-modal="true" aria-labelledby="create-heading"><header><h2 id="create-heading">新增连接</h2><button type="button" disabled={saving} onClick={onClose} aria-label="关闭新增连接"><X size={18} /></button></header>{!drawings.length ? <p>项目尚无图纸索引，暂不能新增连接。上传原始 PDF 不会自动生成提取结果。</p> : <form className="edit-grid" onSubmit={submit}><label>结果批次<input name="batch_id" defaultValue={page.batch_id ?? "manual"} maxLength={200} required disabled={saving} /></label><label>线号（可留空）<input name="wire_number" maxLength={200} disabled={saving} /></label><label>来源图纸<select name="source_drawing_id" aria-label="来源图纸" required disabled={saving}>{drawings.map(d => <option value={d.id} key={d.id}>{d.workspace} / {d.drawingPage} · PDF {d.pdfPage}</option>)}</select></label><label>跨页目标（可选）<select name="target_drawing_id" aria-label="跨页目标（可选）" disabled={saving}><option value="">同页 / 未确认</option>{drawings.map(d => <option value={d.id} key={d.id}>{d.workspace} / {d.drawingPage} · PDF {d.pdfPage}</option>)}</select></label>{editableConnectionFields.map(field => <label key={field.key}>{field.label}<input name={field.key} required={field.key === "start_terminal"} maxLength={field.maxLength} disabled={saving} /></label>)}{error ? <p role="alert">{error}</p> : null}<footer><button type="button" disabled={saving} onClick={onClose}>取消</button><button type="submit" disabled={saving} className="primary-button">{saving ? "正在保存…" : "保存连接"}</button></footer></form>}</section></div>;
+  function keyboard(event: KeyboardEvent) {
+    if (event.nativeEvent.isComposing) return;
+    if (event.key === "Enter") { event.preventDefault(); void save(); }
+    if (event.key === "Escape" && !lock.current) { event.preventDefault(); onClose(); }
+  }
+  return <>
+    <tr className="editing-row new-connection-row" aria-label="新增端子草稿" onKeyDown={keyboard}>
+      <td className="editing-cell"><select aria-label="新增来源图纸" value={source} onChange={event => setSource(event.target.value)} disabled={saving || disabled}>{drawings.map(d => <option key={d.id} value={d.id}>{d.drawingPage} · PDF {d.pdfPage}</option>)}</select><select aria-label="新增跨页目标" value={target} onChange={event => setTarget(event.target.value)} disabled={saving || disabled}><option value="">同页 / 未确认</option>{allDrawings.map(d => <option key={d.id} value={d.id}>{d.drawingPage} · PDF {d.pdfPage}</option>)}</select></td>
+      {editableConnectionFields.map(f => <td key={f.key} className="editing-cell"><input aria-label={`新增${f.label}`} placeholder={f.key === "start_terminal" ? "填写端子" : ""} autoFocus={f.key === "start_terminal"} value={draft[f.key]} maxLength={f.maxLength} disabled={saving || disabled} onChange={event => setDraft(current => ({ ...current, [f.key]: event.target.value }))} /></td>)}
+      <td className="row-actions"><span className="row-state">新端子</span><button type="button" className="row-menu inline-save" aria-label="保存新增端子" title="保存新增端子（Enter）" disabled={saving || disabled} onClick={() => void save()}>{saving ? <Loader2 size={16} className="spin" /> : <Check size={16} />}</button><button type="button" className="row-menu" aria-label="取消新增端子" title="取消新增端子（Esc）" disabled={saving || disabled} onClick={onClose}><X size={16} /></button></td>
+    </tr>
+  </>;
 }

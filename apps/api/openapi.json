@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Wiring Workbench Server",
-    "version": "2.13.0"
+    "version": "2.16.0"
   },
   "paths": {
     "/api/v1/auth/login": {
@@ -1583,6 +1583,83 @@
         }
       }
     },
+    "/api/v1/projects/{project_id}/connections/review": {
+      "post": {
+        "summary": "Review Scope",
+        "operationId": "review_scope_api_v1_projects__project_id__connections_review_post",
+        "parameters": [
+          {
+            "name": "project_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Project Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimpleBulkReview"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleBulkReviewReceipt"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/projects/{project_id}/connections/{connection_id}": {
       "delete": {
         "summary": "Remove",
@@ -1719,6 +1796,83 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SimpleConnectionEdit"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimpleMutationReceipt"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/connections/{connection_id}/review": {
+      "post": {
+        "summary": "Review",
+        "operationId": "review_api_v1_connections__connection_id__review_post",
+        "parameters": [
+          {
+            "name": "connection_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Connection Id"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SimpleConnectionReview"
               }
             }
           }
@@ -8652,6 +8806,16 @@
             "type": "array",
             "maxItems": 200,
             "title": "Target Bindings"
+          },
+          "requirements": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RescanRequirements"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -8660,6 +8824,59 @@
           "scope"
         ],
         "title": "RescanRequest"
+      },
+      "RescanRequirements": {
+        "properties": {
+          "required_fields": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "start_terminal",
+                "end_terminal",
+                "principle_number"
+              ]
+            },
+            "type": "array",
+            "maxItems": 3,
+            "minItems": 1,
+            "title": "Required Fields"
+          },
+          "expected_start_terminals": {
+            "items": {
+              "type": "string",
+              "maxLength": 200,
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "title": "Expected Start Terminals"
+          },
+          "connection_set": {
+            "type": "string",
+            "enum": [
+              "preserve",
+              "rebuild"
+            ],
+            "title": "Connection Set",
+            "default": "preserve"
+          },
+          "endpoint_location": {
+            "type": "string",
+            "enum": [
+              "unspecified",
+              "same_page"
+            ],
+            "title": "Endpoint Location",
+            "default": "unspecified"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "required_fields"
+        ],
+        "title": "RescanRequirements"
       },
       "RescanRun": {
         "properties": {
@@ -9214,6 +9431,94 @@
         ],
         "title": "SetConnectionFields"
       },
+      "SimpleBulkReview": {
+        "properties": {
+          "batch_id": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Batch Id"
+          },
+          "expected_updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expected Updated At"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          },
+          "drawing_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drawing Id"
+          },
+          "search": {
+            "type": "string",
+            "maxLength": 100,
+            "title": "Search",
+            "default": ""
+          },
+          "confirmed": {
+            "type": "boolean",
+            "const": true,
+            "title": "Confirmed"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "batch_id",
+          "expected_updated_at",
+          "confirmed"
+        ],
+        "title": "SimpleBulkReview"
+      },
+      "SimpleBulkReviewReceipt": {
+        "properties": {
+          "project_id": {
+            "type": "string",
+            "title": "Project Id"
+          },
+          "batch_id": {
+            "type": "string",
+            "title": "Batch Id"
+          },
+          "reviewed_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Reviewed Count"
+          },
+          "idempotent": {
+            "type": "boolean",
+            "title": "Idempotent",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "project_id",
+          "batch_id",
+          "reviewed_count"
+        ],
+        "title": "SimpleBulkReviewReceipt"
+      },
       "SimpleConnectionCreate": {
         "properties": {
           "batch_id": {
@@ -9596,6 +9901,27 @@
         ],
         "title": "SimpleConnectionRead"
       },
+      "SimpleConnectionReview": {
+        "properties": {
+          "record_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Record Version"
+          },
+          "confirmed": {
+            "type": "boolean",
+            "const": true,
+            "title": "Confirmed"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "record_version",
+          "confirmed"
+        ],
+        "title": "SimpleConnectionReview"
+      },
       "SimpleImportRead": {
         "properties": {
           "project_id": {
@@ -9671,7 +9997,8 @@
             "enum": [
               "add",
               "edit",
-              "remove"
+              "remove",
+              "review"
             ],
             "title": "Action"
           },
@@ -9805,6 +10132,11 @@
             "type": "boolean",
             "title": "Source Saved",
             "default": false
+          },
+          "needs_review_count": {
+            "type": "integer",
+            "title": "Needs Review Count",
+            "default": 0
           }
         },
         "type": "object",

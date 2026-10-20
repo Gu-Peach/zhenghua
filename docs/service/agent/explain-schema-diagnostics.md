@@ -1,0 +1,7 @@
+# Explain结构化决策失败诊断
+
+2026-10-20，用户轮次03be5d8a：c0b392a1在0.6072秒被服务拒绝required（HTTP400/tool_choice_not_supported），随后c24fb14e的无tools/无tool_choice结构化兼容请求在5.5445秒抛MODEL_SCHEMA_INVALID。附件已上传，最新同会话未产生重扫任务。
+
+可以确定兼容分支已运行，失败发生在结构化响应/工具格式校验，未进入提取Worker。当前Trace只存unknown，缺少底层validation_errors，因此无法从旧日志判定无效JSON、缺字段、错误标签或意外工具调用的具体一种；不猜测为缺起点/图片故障或输入超限。
+
+补充安全诊断：MODEL_SCHEMA_INVALID分类为schema_validation；只记录Pydantic错误类型、校验项数量、来自本地Schema的字段路径/数组索引，未知路径替换为占位符。禁止记录模型原文、字段值、异常输入或第三方消息。原错误拒绝语义保持，不自动重试Schema错误、不放宽结构、不代重提取。无API/数据库/Profile契约变化。

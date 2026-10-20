@@ -10,6 +10,22 @@ from fastapi.testclient import TestClient
 from test_simple_management_api import OTHER, OWNER, PROJECT, Backend, api
 
 
+def test_requirements_contract_roundtrip_and_legacy_request_compatibility():
+    from wiring_server.explain_contract import RescanRequest
+    requirements = {"required_fields": ["start_terminal", "end_terminal", "principle_number"],
+                    "expected_start_terminals": ["X1:1", "PE-BAR"], "connection_set": "rebuild",
+                    "endpoint_location": "same_page"}
+    request = RescanRequest.model_validate({"scope": {"pdf_page_numbers": [1]}, "fields": "all",
+                                           "requirements": requirements})
+    assert request.model_dump(mode="json")["requirements"] == requirements
+    assert RescanRequest(scope={"pdf_page_numbers": [1]}, fields="end").requirements is None
+    schema = api.create_app(
+        api.Settings("http://database", "test-key"), httpx.MockTransport(Backend().respond)
+    ).openapi()
+    assert schema["info"]["version"] == "2.14.0"
+    assert "RescanRequirements" in schema["components"]["schemas"]
+
+
 def test_detail_upload_is_private_page_bound_idempotent_and_validated():
     backend = Backend()
     backend.tables["connection_rescan_assets"] = []

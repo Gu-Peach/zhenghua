@@ -53,6 +53,7 @@ tmp/start-test.txt
 services/agent/agent_test/**/runs/
 
 # Local tooling and extraction outputs
+/agent_test/
 .mypy_cache/
 .ruff_cache/
 .runtime/

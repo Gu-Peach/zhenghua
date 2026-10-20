@@ -1,5 +1,5 @@
-import { Check, ExternalLink, Loader2, MessageCircle, Pencil, Trash2, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { Check, ExternalLink, Loader2, MessageCircle, Trash2, X } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { changedConnectionFields, connectionDraft, editableConnectionFields, type ConnectionChanges, type ConnectionDraft, type EditableConnectionKey } from "@/apis/connection-fields";
 import type { WiringRow } from "@/apis/types";
 
@@ -19,11 +19,23 @@ function ExplainButton({ row, scope, onExplain }: { row: WiringRow; scope: "row"
 type SaveRow = (row: WiringRow, changes: ConnectionChanges, idempotencyKey: string) => Promise<void>;
 type RowEditor = { row: WiringRow; draft: ConnectionDraft; focus: EditableConnectionKey; save: SaveRow };
 
-export function ResultTable({ rows, onOpenDrawing, onOpenTarget, onHoverTarget, highlightedRowId, onSave, onRefresh, onDelete, onExplain, compact = false, onSelectConnection }: { rows: WiringRow[]; onOpenDrawing: (drawingId: string) => void; onOpenTarget: (row: WiringRow) => void; onHoverTarget: (rowId: string | null) => void; highlightedRowId: string | null; onSave?: SaveRow; onRefresh?: () => void; onDelete?: (row: WiringRow) => void; onExplain?: (row: WiringRow, scope: "row" | "page") => void; compact?: boolean; onSelectConnection?: (row: WiringRow) => void }) {
+export function ResultTable({ rows, onOpenDrawing, onOpenTarget, onHoverTarget, highlightedRowId, onSave, onRefresh, onDelete, onExplain, compact = false, onSelectConnection, onReview, draftRow, onBusy, actionHeader }: { rows: WiringRow[]; actionHeader?: ReactNode; onBusy?: (busy: boolean) => void; onReview?: (row: WiringRow, key: string) => Promise<void>; draftRow?: ReactNode; onOpenDrawing: (drawingId: string) => void; onOpenTarget: (row: WiringRow) => void; onHoverTarget: (rowId: string | null) => void; highlightedRowId: string | null; onSave?: SaveRow; onRefresh?: () => void; onDelete?: (row: WiringRow) => void; onExplain?: (row: WiringRow, scope: "row" | "page") => void; compact?: boolean; onSelectConnection?: (row: WiringRow) => void }) {
   const [editor, setEditor] = useState<RowEditor | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const savingLock = useRef(false);
+  useEffect(() => () => onBusy?.(false), [onBusy]);
+  const [reviewing, setReviewing] = useState<string | null>(null);
+  const reviewKeys = useRef(new Map<string, string>());
+  async function review(row: WiringRow) {
+    if (!onReview || savingLock.current || editor) return;
+    const fingerprint = `${row.id}:${row.recordVersion}`;
+    if (!reviewKeys.current.has(fingerprint)) reviewKeys.current.set(fingerprint, crypto.randomUUID());
+    savingLock.current = true; onBusy?.(true); setReviewing(row.id); setError("");
+    try { await onReview(row, reviewKeys.current.get(fingerprint)!); }
+    catch (reason) { setError(reason instanceof Error ? reason.message : "确认失败，请重试"); }
+    finally { savingLock.current = false; onBusy?.(false); setReviewing(null); }
+  }
   const submission = useRef<{ fingerprint: string; key: string } | null>(null);
 
   function beginEdit(row: WiringRow, focus: EditableConnectionKey = "start_terminal") {
@@ -31,11 +43,11 @@ export function ResultTable({ rows, onOpenDrawing, onOpenTarget, onHoverTarget, 
     submission.current = null;
     setError("");
     // Freeze the baseline and callback, including the parent's revision at edit start.
-    setEditor({ row, draft: connectionDraft(row), focus, save: onSave });
+    setEditor({ row, draft: connectionDraft(row), focus, save: onSave }); onBusy?.(true);
   }
   function cancel() {
     if (savingLock.current) return;
-    setEditor(null); setError(""); submission.current = null;
+    setEditor(null); onBusy?.(false); setError(""); submission.current = null;
   }
   async function save() {
     if (!editor || savingLock.current) return;
@@ -44,14 +56,14 @@ export function ResultTable({ rows, onOpenDrawing, onOpenTarget, onHoverTarget, 
     const fingerprint = JSON.stringify(changes);
     if (submission.current?.fingerprint !== fingerprint) submission.current = { fingerprint, key: crypto.randomUUID() };
     savingLock.current = true; setSaving(true); setError("");
-    try { await editor.save(editor.row, changes, submission.current.key); setEditor(null); submission.current = null; }
+    try { await editor.save(editor.row, changes, submission.current.key); setEditor(null); onBusy?.(false); submission.current = null; }
     catch (reason) { setError(reason instanceof Error ? reason.message : "保存失败，请重试"); }
     finally { savingLock.current = false; setSaving(false); }
   }
   const editorVisible = editor && rows.some(row => row.id === editor.row.id);
   const shownColumns = compact ? columns.filter(column => ["page", "lineNumber", "startTerminal", "endTerminal", "current"].includes(column.key)) : columns;
   const showActions = !compact;
-  if (!rows.length && !editor) return <div className="table-empty"><span>0</span><strong>当前范围没有线表记录</strong><p>请选择包含已提取结果的图纸或工作区。</p></div>;
+  if (!rows.length && !editor && !draftRow) return <div className="table-empty"><span>0</span><strong>当前范围没有线表记录</strong><p>请选择包含已提取结果的图纸或工作区。</p></div>;
   return (
     <div className="inline-table">
       {editor ? <div className="table-edit-notice" role="status">{saving ? "正在保存…" : "表格编辑中 · Enter 保存 · Esc 取消"}<span>修改仅应用于本行，并保留修改前后记录</span>{compact ? <span><button type="button" disabled={saving} onClick={() => void save()}>保存本行修改</button><button type="button" disabled={saving} onClick={cancel}>取消本行修改</button></span> : null}</div> : null}
@@ -60,8 +72,8 @@ export function ResultTable({ rows, onOpenDrawing, onOpenTarget, onHoverTarget, 
     <div className="result-table-shell">
       <table className={`result-table ${compact ? "compact-table" : ""}`}>
         <colgroup>{shownColumns.map((column) => <col key={column.key} style={{ width: compact ? compactWidths[column.key] : column.width }} />)}{showActions ? <col style={{ width: 170 }} /> : null}</colgroup>
-        <thead><tr>{shownColumns.map((column) => <th key={column.key}>{column.label}</th>)}{showActions ? <th aria-label="操作" /> : null}</tr></thead>
-        <tbody>{rows.map((row, index) => (
+        <thead><tr>{shownColumns.map((column) => <th key={column.key}>{column.label}</th>)}{showActions ? <th className="actions-header" aria-label="操作">{actionHeader}</th> : null}</tr></thead>
+        <tbody>{draftRow}{rows.map((row, index) => (
           <tr key={row.id} className={`${row.status === "review" ? "review-row" : ""} ${highlightedRowId === row.id ? "target-row" : ""} ${editor?.row.id === row.id ? "editing-row" : ""}`}>
             {shownColumns.map((column) => {
               const value = row[column.key];
@@ -74,7 +86,7 @@ export function ResultTable({ rows, onOpenDrawing, onOpenTarget, onHoverTarget, 
               if (column.key === "current") return <td key={column.key} {...cellProps}><span className={value ? "current-value" : "empty-value"}>{String(value || "-")}</span></td>;
               return <td key={column.key} {...cellProps} title={String(value || "")}>{String(value || "-")}</td>;
             })}
-            {showActions ? <td className="row-actions"><span className={`row-state ${row.status}`} title={(row.reviewReasons ?? []).map(r => r.message).join("；")}>{row.processingStatus === "pending_completion" ? "待补全" : row.processingStatus === "scanned" ? "初扫" : row.status === "review" ? "待复核" : "已完成"}</span>{editor?.row.id === row.id ? <><button type="button" className="row-menu inline-save" disabled={saving} aria-label="保存本行修改" title="保存本行修改（Enter）" onClick={() => void save()}>{saving ? <Loader2 size={16} className="spin" /> : <Check size={16} />}</button><button type="button" className="row-menu" disabled={saving} aria-label="取消本行修改" title="取消本行修改（Esc）" onClick={cancel}><X size={16} /></button></> : <><button type="button" className="row-menu" disabled={!onSave || !!editor || !row.recordVersion} aria-label={`编辑 ${row.startTerminal}`} title="在表格内编辑" onClick={() => beginEdit(row)}><Pencil size={16} /></button><button type="button" className="row-menu" disabled={!onDelete || !!editor} aria-label={`删除 ${row.startTerminal}`} title="永久删除此行及相关修改方案" onClick={() => onDelete?.(row)}><Trash2 size={16} /></button></>}</td> : null}
+            {showActions ? <td className="row-actions">{row.status === "review" || row.processingStatus === "pending_completion" || row.processingStatus === "scanned" ? <span className={`row-state ${row.status}`} title={(row.reviewReasons ?? []).map(r => r.message).join("；")}>{row.processingStatus === "pending_completion" ? "待补全" : row.processingStatus === "scanned" ? "初扫" : row.status === "review" ? "待复核" : ""}</span> : null}{editor?.row.id === row.id ? <><button type="button" className="row-menu inline-save" disabled={saving} aria-label="保存本行修改" title="保存本行修改（Enter）" onClick={() => void save()}>{saving ? <Loader2 size={16} className="spin" /> : <Check size={16} />}</button><button type="button" className="row-menu" disabled={saving} aria-label="取消本行修改" title="取消本行修改（Esc）" onClick={cancel}><X size={16} /></button></> : <>{row.status === "review" ? <button type="button" className="row-menu review-confirm" disabled={!onReview || !!editor || !!reviewing || !row.recordVersion} aria-label={`确认复核 ${row.startTerminal}`} title="确认此行已复核" onClick={() => void review(row)}>{reviewing === row.id ? <Loader2 size={16} className="spin" /> : <Check size={17} />}</button> : null}<button type="button" className="row-menu" disabled={!onDelete || !!editor || !!reviewing} aria-label={`删除 ${row.startTerminal}`} title="永久删除此行及相关修改方案" onClick={() => onDelete?.(row)}><Trash2 size={16} /></button></>}</td> : null}
           </tr>
         ))}</tbody>
       </table>

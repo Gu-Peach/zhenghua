@@ -1,5 +1,11 @@
 # Server 文档
 
+- [一键审核事务](./changelog/2026-10-20-bulk-review.md)：目录/搜索跨分页、所有者/版本/幂等及逐行审计，本地迁移安装与验收。
+
+- [人工复核与目录状态](./changelog/2026-10-20-connection-review.md)：独立审计事务、版本/所有者/幂等保护、全批次聚合及本地迁移验收。
+
+- [API2.14.0重扫需求契约](../../apps/api/changelog/2026-10-20-rescan-requirements.md)：生成DTO与历史JSONB兼容，确认事务沿用，无migration。
+
 - [主助手历史永久删除](./changelog/2026-10-19-assistant-conversation-deletion.md)、[设计](./assistant-conversation-deletion.md)：所有者删除、活动保护、级联元数据、持久附件清理及本地迁移/验收。
 
 - [终点重扫目标绑定契约](./changelog/2026-10-19-rescan-target-contract.md)：API2.12.0/DTO/主助手传递，Worker按项目目录验证，无新迁移。

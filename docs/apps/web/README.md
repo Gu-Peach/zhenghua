@@ -1,5 +1,13 @@
 # apps/web 前端归档
 
+- [GCR101关联项目Mock](./changelog/2026-10-20-project-relations-mock.md)、[设计](./project-relations-mock.md)：前端两个模拟项目、目录Mock文件夹、端子图谱与往返导航。
+
+- [隐藏完成标记/一键审核](./changelog/2026-10-20-bulk-review.md)：当前目录与搜索全部分页、失败重试、互斥和目录同步。
+
+- [人工复核/表内新增/聊天缩放](./changelog/2026-10-20-inline-review.md)：透明勾号、目录状态聚合、当前图纸草稿和可访问缩放手柄。
+
+- [重扫要求与缺项提示](./changelog/2026-10-20-rescan-requirements.md)：任务字段/预期起点摘要、复核提示与未完成计数，确认门禁保持。
+
 - [Explain聊天图片](./changelog/2026-10-20-explain-chat-images.md)：移除图纸附件设置、发送时上传/本轮消息展示，下一轮不带旧图、失败可重试。
 
 - [Explain显式发送](./changelog/2026-10-20-explain-explicit-send.md)：打开不自动解释，用户发送后按意图处理，关闭重开独立会话，保留工具栏直接重扫。

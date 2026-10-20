@@ -4,6 +4,37 @@
 
 ## 进行中
 
+- [x] GCR101 跨项目关联 Mock：仅前端内存，项目目录 Mock 分组及两个模拟项目、关联项目图谱、逐端子映射与往返跳转。
+  - [x] P1：确认展示边界和前端设计，见 docs/apps/web/project-relations-mock.md。
+  - [x] P2：实现本地数据、目录分组和关联视图。
+  - [x] P3：46项浏览器回归（含6项新关联/登录检查）、TypeScript/lint/build通过，桌面/390px窄屏及长文本截图核对；模拟项目无业务API请求或写入，真实数据库/Storage/Agent未操作。见 docs/apps/web/changelog/2026-10-20-project-relations-mock.md。
+
+- [x] Explain结构化决策失败诊断：03be5d8a已确认required拒绝后兼容格式失败/本轮0任务，旧日志无法确定具体字段；新增安全Schema路径/类型/计数与schema_validation分类。5项先失败、76项回归及Ruff/源码mypy通过；无真实模型/任务/线表或服务操作。重载8100后未来失败可细分，未声称旧模型输出问题已修复，见[记录](./service/agent/changelog/2026-10-20-explain-schema-diagnostics.md)。
+
+- [x] 一键审核移至线表最后操作列表头，工具栏不重复，范围/禁用/幂等逻辑保持。9项浏览器、类型/lint/build和桌面/窄屏截图通过；仅Web，刷新生效，见[验收](./apps/web/changelog/2026-10-20-bulk-review.md)。
+
+- [x] 隐藏完成标记/一键审核 P1：ADR-0043补充目录/搜索/全分页与版本化原子审核契约，API失败回归已复现。
+- [x] 隐藏完成标记/一键审核 P2：完成标记隐藏、工具栏审核及原子范围确认/目录刷新完成，API2.16.0/OpenAPI/类型同步。
+- [x] 隐藏完成标记/一键审核 P3：23项API、4项隔离SQL、28项浏览器与类型/lint/build/Ruff/OpenAPI检查通过，桌面/窄屏/异常截图核对。严格mypy6项既有问题与HEAD一致。本地20261020020000已安装且业务摘要不变，未代审核/调用模型/启停服务；重载8000至2.16.0刷新Web，见[交付](./apps/web/changelog/2026-10-20-bulk-review.md)。
+
+- [x] Explain“正在读取”假进度 P1：最新附件/诊断同属150d8a89，模型43.709秒stop/0工具/0任务；四项失败回归已复现，设计见Agent动作完成约定。
+- [x] Explain“正在读取”假进度 P2：直接重识别命令终答必须有本轮回执或明确错误/澄清，一次受控补调与兼容降级；规划正文不作进度、缓存保护及当前字段/目录/分页事实精简完成。
+- [x] Explain“正在读取”假进度 P3：148项相关场景分批通过，最终61项门禁/兼容回归、Ruff和3源码严格mypy通过。无真实模型/重提取/业务写入或启停，当前8100仍旧进程；重载8100再发送即可，本轮无Worker/API/Web变化，见[交付](./service/agent/changelog/2026-10-20-explain-action-completion.md)。
+
+- [x] 显式目标页误带源工作区 P1：只读确认002M03唯一属于002.M/PDF56，任务错误传002.C；5项失败回归已复现，设计见Agent目标页校验说明。
+- [x] 显式目标页误带源工作区 P2：入队前授权目录校验、冲突/不存在/歧义分别反馈及Explain独立目标检索指引，Worker复用严格约束。
+- [x] 显式目标页误带源工作区 P3：88项离线、Ruff/4源码严格mypy通过；实际冻结请求只读内存纠正后5条到PDF53/4条到PDF56，原任务摘要不变。无模型/实际任务或线表写入/服务启停，重载8100/Worker后新建任务，见[交付](./service/agent/changelog/2026-10-20-target-workspace-preflight.md)。
+
+- [x] 线表复核与输入交互 P1：ADR-0043确认复核/目录聚合契约，新增API失败回归已复现。
+- [x] 线表复核与输入交互 P2：版本化确认、目录状态更新、透明图标、表内新增与来源聊天缩放已实现。
+- [x] 线表复核与输入交互 P3：22项API、2项隔离SQL、43项浏览器及最终5项复验通过；类型/lint/build/Ruff与桌面/窄屏/异常截图完成。严格mypy6个既有问题与HEAD一致。API2.15.0/生成类型同步，本地20261020010000迁移安装成功且业务摘要不变，未代点真实复核/调用模型/启停服务。重载8000刷新Web，见[交付](./apps/web/changelog/2026-10-20-inline-review.md)。
+
+- [x] ADR-0042重扫规划/执行P1—P3完成：结构化需求与范围/字段门禁、整页Graph复用、同页端点冻结patch与跨页分流、原理号/起点缺项报告及本轮失败尝试提示，API2.14.0/生成类型同步。213项Agent、46项Server、21项浏览器分批通过，16项SQL默认跳过；Ruff/8源码及生成DTO mypy、Web类型/lint/build/Schema一致性与桌面/窄屏截图通过。无真实模型、实际任务/线表或生产Profile修改/服务启停。先加载8000再重载8100/实际Worker，刷新Web新建任务验证真实质量，见[交付](./service/agent/changelog/2026-10-20-rescan-requirements-routing.md)。
+
+- [x] agent_test本地提取隔离完成：两个CLI的代码/策略/资源切至忽略副本，ZH2.3.1整页目标及Few-shot、002C03同页16条和原理号规则；默认独立输出、启动来源/缺失混用保护。30项离线、实际预检、40文件本地包及207正式文件摘要核对通过，Ruff/新加载器与PDF入口mypy通过；分组脚本10项既有类型问题与HEAD相同。未调用真实模型、上传数据库/Storage或启停服务，见[说明与命令](./service/agent/local-extraction-test-runtime.md)。
+
+- [x] Explain同页重扫质量诊断完成：五起点请求实际仅四行end补全，漏掉新增起点/保留多提行；原理号无输出字段且被end掩码排除，同页复用跨页回指规则导致空值/错线，四行变更含两行清空。仅定位与文档归档，无产品修复/测试/模型重跑或数据修改，修复与质量验收尚待实施，见[诊断](./service/agent/changelog/2026-10-20-explain-same-page-quality-diagnosis.md)。
+
 - [x] Explain HTTP400兼容修复：确认当前服务拒绝required参数；补精确错误触发的Pydantic结构化决策降级，复用原权限/范围/幂等/回执及8次工具预算，修复安全分类与工具计数记录。168项相关/13项兼容复验、Ruff与4源码mypy通过（169个场景分批），无真实模型/实际任务或线表写入/启停操作。需重载8100后复试，无迁移/8000或Worker变化，见[记录](./service/agent/changelog/2026-10-20-explain-tool-choice-compatibility.md)。
 
 - [x] Explain聊天附件与任务未创建P1—P3完成代码/离线验收：移除图纸附件设置，图片随轮发送/输入清空/消息预览/重试；补required工具选择、精简事实和本轮私有图片视觉输入。155项后端、39项Explain及7项工作台分批通过，最终38项/图片4项与类型/lint/build/Ruff/5源码mypy复验通过，桌面/窄屏截图已核对。未调用真实模型/创建任务/改线表/启停用户服务；重载8100刷新Web后复试，供应方required支持待验证，见[Web记录](./apps/web/changelog/2026-10-20-explain-chat-images.md)与[Agent记录](./service/agent/changelog/2026-10-20-explain-required-tools.md)。

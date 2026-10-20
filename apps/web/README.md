@@ -1,5 +1,11 @@
 # Web 前端
 
+2026-10-20完成行隐藏状态标记，工具栏一键审核当前目录/搜索全部分页。API2.16.0及本地迁移已就绪，重载8000刷新Web使用，见[交付](../../docs/apps/web/changelog/2026-10-20-bulk-review.md)。
+
+2026-10-20线表仅待复核行显示透明确认勾号，双击编辑；新增端子改为表内草稿，来源聊天右下角支持缩放。复核需8000加载API2.15.0后刷新Web，本地迁移已安装，见[交付](../../docs/apps/web/changelog/2026-10-20-inline-review.md)。
+
+2026-10-20 重扫任务卡新增本轮字段要求/预期起点与复核提示，变更条数不代表识别全部完成；API2.14.0类型同步，历史任务保持可读。需先重载8000/8100/实际Worker并刷新Web新建重扫，无迁移，见[交付](../../docs/apps/web/changelog/2026-10-20-rescan-requirements.md)。
+
 2026-10-20 Explain只保留聊天与上传图标，图片先暂存、发送后归入本轮消息并清空草稿，下一轮不带旧图，原轮重试复用附件。刷新Web重开窗口；图片视觉输入/工具补调另需重载8100，无迁移/8000变化，见[交付](../../docs/apps/web/changelog/2026-10-20-explain-chat-images.md)。
 
 主助手历史列表每行提供×，直接永久删除对应会话。删其他历史保留当前草稿和附件；删当前回到新对话，失败可重试。依赖API2.13.0与20261019050000迁移，本地已加载，刷新Web即可。见[历史删除交付](../../docs/apps/web/changelog/2026-10-19-assistant-history-delete.md)。
@@ -146,3 +152,11 @@ corepack pnpm build:web
 浏览器回归：`corepack pnpm --filter @wiring/web exec playwright test`。使用显式HTTP夹具、本地Chrome和独立5186端口，截图存于忽略的`.runtime/simple-management-browser`，不调用模型。旧业务表/Agent合约留在tests/legacy-workbench.fixture.ts，不计入当前回归。生成接口类型：先执行`apps/api/scripts/export_openapi.py`，再执行`openapi-typescript ../api/openapi.json -o src/apis/generated.ts`。
 
 旧 Vite 前端继续使用 `5173`，新前端使用 `5174`，迁移期间可以同时运行。
+
+## GCR101 关联项目演示
+
+选择 `1002001693大车卷盘图纸 → GCR.1 → GCR101`，点击“答案对比”旁的“关联项目”。图谱显示低压配电系统与照明配电系统，支持按0261/0262/0263查看端子对、点击项目/图纸跳转及返回GCR101。项目目录的Mock文件夹也可直接打开两个模拟项目。
+
+数据在 `src/apis/mock/project-relations.ts`，仅前端只读展示；模拟项目/页码不代表已核验关联，不会向业务API登记或提交。只有目录中存在大车卷盘来源项目时才展示Mock目录。刷新Web即可使用，无后端/数据库部署步骤。
+
+验证：`node node_modules/@playwright/test/cli.js test tests/project-relations.spec.ts tests/simple-management.spec.ts tests/answer-comparison.spec.ts --workers=2`。交付见[关联演示](../../docs/apps/web/changelog/2026-10-20-project-relations-mock.md)。

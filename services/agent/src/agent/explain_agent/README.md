@@ -1,5 +1,13 @@
 # Explain Agent
 
+2026-10-20格式校验诊断补充：MODEL_SCHEMA_INVALID分类schema_validation，控制台/Trace只记录本地Schema允许字段路径、白名单错误类型及计数；原文/输入/未知字段名不留存，错误仍拒绝执行。重载8100后未来错误生效，见[说明](../../../../../docs/service/agent/changelog/2026-10-20-explain-schema-diagnostics.md)。
+
+2026-10-20动作完成门禁补强：明确重识别命令没有本轮回执时受控补调一次，仍无工具则报错；规划正文不当进度，缓存假进度拒绝，普通解释/否定保持只读。动作首调/检索精简嵌套历史证据，真实ID/分页/来源证据保持，见[交付](../../../../../docs/service/agent/changelog/2026-10-20-explain-action-completion.md)。需重载8100后新发问题。
+
+2026-10-20目标业务页与源工作区分开：入队前完整目录校验，冲突返回真实工作区/PDF供本轮修正，不能把002M03附加源002.C后声称用户页号不明确。成功回执error:null发tool_completed，真实错误保留tool_failed。重载8100/Worker后新建任务，见[记录](../../../../../docs/service/agent/changelog/2026-10-20-target-workspace-preflight.md)。
+
+2026-10-20 重扫需求与路由已分离：新工具必须提供requirements（字段/预期起点/保留重建/同页约束），不兼容掩码或局部范围不完整时拒绝创建；同页端点复用本页Graph并冻结写入掩码，整页all生成范围替换候选，跨页维持补全。rescan-v7/输入4，API2.14.0与前端同步。加载8000、8100/Worker并刷新Web后新建任务，正式结果/生产Profile不自动改写，见[交付](../../../../../docs/service/agent/changelog/2026-10-20-rescan-requirements-routing.md)。
+
 2026-10-20 required被供应方以HTTP400/tool_choice_not_supported拒绝时，改为本地Schema校验的结构化决策，不发送工具选择或response_format；有效决策仍经原工具/repository入队，普通正文与未知操作不执行，8次工具预算/真实回执保持。重载8100后实际复试，见[记录](../../../../../docs/service/agent/changelog/2026-10-20-explain-tool-choice-compatibility.md)。
 
 2026-10-20 缺回执补调通过tool_choice=required请求工具，使用当前行/图纸索引/分页精简事实；未返回工具时明确失败。本轮附件按所有者/项目/会话/路径/checksum校验后进入视觉输入，不冒充已查看原图页、下一轮不自动复用。重载8100并刷新Web后复试，见[记录](../../../../../docs/service/agent/changelog/2026-10-20-explain-required-tools.md)。

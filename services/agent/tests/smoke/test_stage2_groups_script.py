@@ -11,7 +11,6 @@ from zipfile import ZipFile
 import httpx
 import pytest
 
-from src.config import AgentSettings
 from src.agent.extraction_agent.domain.models.extraction_stages import (
     CrossPageCompletionData,
     DrawingEndpoint,
@@ -19,6 +18,7 @@ from src.agent.extraction_agent.domain.models.extraction_stages import (
     ScannedConnection,
     ScannedWireUnit,
 )
+from src.config import AgentSettings
 from src.infrastructure.supabase_client import SupabaseClient
 
 ROOT = Path(__file__).resolve().parents[4]
@@ -28,6 +28,14 @@ spec = importlib.util.spec_from_file_location(
 runner = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = runner
 spec.loader.exec_module(runner)
+
+
+@pytest.fixture(autouse=True)
+def stable_assets_for_mocked_runner(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Legacy Fake-stage helper tests remain independent of the user's ignored copy."""
+    monkeypatch.setattr(
+        runner, "test_extraction_root", lambda: ROOT / "services/agent/src/agent/extraction_agent",
+    )
 
 
 def inputs(tmp_path: Path) -> argparse.Namespace:
@@ -198,7 +206,8 @@ def test_pdf_cli_accepts_explicit_profile_and_model(monkeypatch: pytest.MonkeyPa
     pdf_spec.loader.exec_module(pdf_runner)
     monkeypatch.setattr(
         sys, "argv",
-        ["local_pdf_cli", "sample.pdf", "--profile", "abb", "--model", "test-model", "--output-dir", "output"],
+        ["local_pdf_cli", "sample.pdf", "--profile", "abb", "--model", "test-model",
+         "--output-dir", "output"],
     )
     args = pdf_runner.parse_args()
     assert args.profile == "abb"

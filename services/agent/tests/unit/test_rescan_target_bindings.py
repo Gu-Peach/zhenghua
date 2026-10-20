@@ -96,6 +96,14 @@ def test_given_two_business_pages_complete_all_nine_frozen_sources():
     assert [r["target_drawing_page"] for r in session.endpoint_rows] == ["002C11"] * 5 + ["002M03"] * 4
 
 
+def test_wrong_inherited_source_workspace_reports_actual_target_before_extraction():
+    session, catalog, client, calls, _ = context()
+    session.job["request"]["target_bindings"][1]["workspace_code"] = "002.C"
+    with pytest.raises(ValueError, match=r"002M03.*002.M.*56.*002.C"):
+        asyncio.run(rescan_ends(session, catalog, client, session.job["baseline"]))
+    assert not calls and not session.endpoint_rows
+
+
 def test_existing_resolved_reference_is_used_without_rescanning_start():
     session, catalog, client, calls, rows = context()
     session.job["request"]["target_bindings"] = []

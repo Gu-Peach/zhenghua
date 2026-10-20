@@ -8,6 +8,45 @@ from typing import Any
 from .models import ExplainContext, ExplainTurn, RescanRun, SearchResult
 
 
+def requests_rescan(text: str) -> bool:
+    """Recognize direct commands only; explanation, history and negations remain read-only."""
+    plain = re.sub(r'“[^”]*”|‘[^’]*’|「[^」]*」|"[^"\n]*"|`[^`\n]*`', "", text)
+    for clause in re.split(r"[。，,；;！？!?\n]", plain):
+        for match in re.finditer(r"重新(?:识别|提取|扫描)|重扫|重提取|再次(?:识别|提取|扫描)", clause):
+            before, after = clause[: match.start()], clause[match.end() :]
+            if re.search(
+                r"无需|无须|不要|不用|不必|不需要|不想|不允许|请勿|不是|取消|停止|暂停"
+                r"|(?<!识)别|禁止|不得|只解释|不执行|没有|尚未|还没|未曾",
+                before,
+            ):
+                continue
+            if re.search(r"为什么|为何|怎么|如何|是否|有没有|是不是|上轮|上次|之前|历史|已经|刚才", before):
+                continue
+            if re.match(
+                r"(?:的)?(?:流程|链路|原理|方式|原因|状态|进度|结果|意思|怎么|如何|为什么|是否"
+                r"|失败|成功|完成|卡住|耗时|费用|次数)",
+                after,
+            ):
+                continue
+            if clause.endswith("吗") and not re.search(r"请|帮我|给我|一下", clause):
+                continue
+            return True
+    return False
+
+
+def claims_tool_progress(text: str) -> bool:
+    """A final answer cannot pretend a textual tool marker is a live background operation."""
+    plain = re.sub(r'“[^”]*”|「[^」]*」|"[^"\n]*"|`[^`\n]*`', "", text)
+    return bool(
+        re.search(
+            r"\[(?:turn\s*\d+\s+)?tool[ _]call\]"
+            r"|(?:正在|即将|马上)(?:读取|查看|加载|检索)(?:图纸|PDF|原图|目标页)[^\n。]*[…。]*$",
+            plain.strip(),
+            flags=re.IGNORECASE,
+        )
+    )
+
+
 def rescan_tool_context(
     turn: ExplainTurn, context: ExplainContext | SearchResult, retrievals: list[SearchResult]
 ) -> dict[str, Any]:

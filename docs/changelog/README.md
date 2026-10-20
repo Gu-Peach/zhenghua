@@ -1,5 +1,23 @@
 # Changelog
 
+2026-10-20新增GCR101跨项目关联前端Mock：目录Mock分组含两个模拟项目，图谱及10条端子对、按线号筛选和项目/图纸往返。正式线表、API、数据库、Storage和Agent保持，46项浏览器回归及静态构建/截图通过。见[Web交付](../apps/web/changelog/2026-10-20-project-relations-mock.md)。
+
+2026-10-20 Explain兼容分支格式失败诊断：required拒绝已被接住，后续MODEL_SCHEMA_INVALID发生在本地格式校验，本轮未入队；旧日志无字段信息，新增schema_validation及脱敏校验路径/类型/计数。76项离线与静态验收通过，不改变执行门禁/重试，不调用实际模型或改线表，见[记录](../service/agent/changelog/2026-10-20-explain-schema-diagnostics.md)。
+
+2026-10-20“一键审核”移入线表最后操作列表头，工具栏入口移除，原审核范围/禁用/幂等保持。9项浏览器及类型/lint/build、桌面/窄屏截图通过；仅Web位置调整，刷新即可，见[验收](../apps/web/changelog/2026-10-20-bulk-review.md)。
+
+2026-10-20线表完成标记隐藏、工具栏新增一键审核：当前项目/工作区/图纸及搜索全部分页原子确认，校验批次/版本并保留审计和幂等，目录同步。API2.16.0/类型同步，本地20261020020000已安装且业务摘要不变；23项API、4项SQL、28项浏览器/静态验收通过。重载8000刷新Web，未代审核实际数据，见[Web](../apps/web/changelog/2026-10-20-bulk-review.md)与[Server](../service/server/changelog/2026-10-20-bulk-review.md)。
+
+2026-10-20 Explain“正在读取图纸”假进度修复：直接重新识别命令不能无工具/无任务回执结束，复用受控补调/兼容降级，规划正文不当进度；动作事实精简，普通解释/否定/来源证据保持。148项分批离线与静态检查通过，无实际模型/业务写入，重载8100后重新发送，见[交付](../service/agent/changelog/2026-10-20-explain-action-completion.md)。
+
+2026-10-20修复Explain目标页参数错误延迟到Worker失败：授权目录入队前校验，精确区分冲突/缺页/多个候选，目标工作区不继承源scope；同时修复成功回执error:null误显示工具失败。实际002M03唯一为002.M/PDF56，88项离线与Ruff/4源码mypy通过，真实冻结请求内存纠正可分5条到53/4条到56。无实际模型/任务或线表写入，重载8100/Worker后新建任务，见[交付](../service/agent/changelog/2026-10-20-target-workspace-preflight.md)。
+
+2026-10-20人工复核、表内新增与聊天缩放完成：待复核行勾号确认、当前批次聚合驱动图纸/工作区/项目状态，透明图标与来源聊天缩放。API2.15.0/类型同步，本地20261020010000迁移已安装且业务摘要不变；22项API、2项隔离SQL、43项浏览器及最终5项复验、类型/lint/build通过。8000待重载，未点击实际复核或调用模型，见[Web](../apps/web/changelog/2026-10-20-inline-review.md)与[Server](../service/server/changelog/2026-10-20-connection-review.md)。
+
+2026-10-20 Explain重扫需求/写入权限/执行路径分离：结构化要求防止漏入起点和字段模式不兼容，同页使用本页识别、跨页保留冻结补全，整页生成包含原理号与缺失连接的范围替换候选，任务展示要求和缺口。API2.14.0/生成契约同步，rescan-v7隔离旧缓存；213项Agent、46项Server、21项浏览器分批及静态检查通过，16项SQL默认跳过。无真实模型/业务写入或Profile发布，重载8000/8100/Worker刷新Web后新建任务复试，见[交付](../service/agent/changelog/2026-10-20-rescan-requirements-routing.md)。
+
+2026-10-20两个本地提取脚本切至用户agent_test副本，代码/策略/规则来源一致，目录整体Git忽略；测试ZH2.3.1使用整页目标及补全样例，新增002C03和原理号匹配，正式提取目录及数据库发布包保持。30项离线、预检/本地包/来源摘要检查通过；未调用真实模型或上传，类型检查既有问题和操作边界见[记录](../service/agent/changelog/2026-10-20-local-extraction-test-runtime.md)。
+
 2026-10-20 Explain兼容当前服务不支持required工具选择：仅精确HTTP400/tool_choice_not_supported降级为Pydantic结构化决策，原范围/权限/幂等/候选确认及真实回执校验保持，修正安全错误分类/诊断计数。169个场景分批与静态检查通过，无DTO/数据库变化或真实模型/任务写入；重载8100后复试，见[Agent记录](../service/agent/changelog/2026-10-20-explain-tool-choice-compatibility.md)。
 
 2026-10-20 Explain输入简化为聊天/上传图标，图片随问题发送后归入本轮消息、清空输入区，下一轮不复用；原轮失败可重试。现场确认补调仍无工具，改为required/精简事实，并将私有图片实际接入Explain视觉输入。155项后端与Web分批/静态验收通过，无DTO/数据库变化或真实模型/业务写入；重载8100并刷新Web后复试，见[Web记录](../apps/web/changelog/2026-10-20-explain-chat-images.md)与[Agent记录](../service/agent/changelog/2026-10-20-explain-required-tools.md)。

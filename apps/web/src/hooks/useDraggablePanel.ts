@@ -22,7 +22,7 @@ export function useDraggablePanel(panel: RefObject<HTMLElement | null>) {
     active.current = null; setDragging(false);
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   };
-  return { dragging, style: position ? { ...position, right: "auto", bottom: "auto" } as CSSProperties : undefined, headerProps: {
+  return { dragging, setPosition, style: position ? { ...position, right: "auto", bottom: "auto" } as CSSProperties : undefined, headerProps: {
     tabIndex: 0,
     title: "拖动标题栏移动窗口，也可聚焦后用方向键移动，Home恢复位置",
     "aria-label": "来源解释窗口标题栏",

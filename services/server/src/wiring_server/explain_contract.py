@@ -295,12 +295,22 @@ class RescanTargetBinding(StrictModel):
     pdf_page_number: int | None = Field(default=None, ge=1)
 
 
+class RescanRequirements(StrictModel):
+    required_fields: list[Literal["start_terminal", "end_terminal", "principle_number"]] = Field(
+        min_length=1, max_length=3
+    )
+    expected_start_terminals: list[ExactText] = Field(default_factory=list, max_length=1000)
+    connection_set: Literal["preserve", "rebuild"] = "preserve"
+    endpoint_location: Literal["unspecified", "same_page"] = "unspecified"
+
+
 class RescanRequest(StrictModel):
     scope: RescanScope
     fields: Literal["all", "start", "end"] = "all"
     instructions: str = Field(default="", max_length=4000)
     result_mode: Literal["patch", "replace_scope"] = "patch"
     target_bindings: list[RescanTargetBinding] = Field(default_factory=list, max_length=200)
+    requirements: RescanRequirements | None = None
 
     @model_validator(mode="after")
     def validate_targets(self) -> RescanRequest:

@@ -29,14 +29,34 @@ def unsupported():
 
 
 def planned(action, **arguments):
+    if action == "rescan_connections" and "requirements" not in arguments["request"]:
+        mode = arguments["request"].get("fields", "all")
+        arguments["request"] = {
+            **arguments["request"],
+            "requirements": {
+                "expected_start_terminals": [],
+                "endpoint_location": "unspecified",
+                "required_fields": ["start_terminal", "end_terminal"]
+                if mode == "all"
+                else [f"{mode}_terminal"],
+                "connection_set": "rebuild"
+                if mode == "all"
+                and not (
+                    arguments["request"].get("scope", {}).get("connection_ids")
+                    or arguments["request"].get("scope", {}).get("principle_numbers")
+                )
+                else "preserve",
+            },
+        }
     return json.dumps({"decision": {"action": action, **arguments}})
 
 
-def test_rejected_required_uses_schema_decision_and_real_receipt_once():
+@pytest.mark.parametrize("first", [CLAIM, "[turn 4 tool call]正在读取图纸页002C06…", "好的，稍后处理。"])
+def test_rejected_required_uses_schema_decision_and_real_receipt_once(first):
     async def run():
         backend = RescanBackend()
         assistant, gateway = agent(
-            backend, [CLAIM, unsupported(), planned("rescan_connections", request=REQUEST)]
+            backend, [first, unsupported(), planned("rescan_connections", request=REQUEST)]
         )
         turn = ExplainTurn(project_id=PROJECT, connection_id=ROW, message="只重新提取本页终点")
         result = await assistant.ask(turn, ExplainActor(user_id=OWNER))
@@ -190,6 +210,7 @@ def test_actual_http_payload_falls_back_without_tool_choice_or_response_format()
         planned("rescan_connections", request={"scope": {}, "fields": "end"}),
         planned("rescan_connections", request={**REQUEST, "actor": "foreign"}),
         planned("rescan_connections", request={**REQUEST, "result_mode": "replace_scope"}),
+        planned("clarify", question="[turn 4 tool call]正在读取图纸页002C06…"),
     ],
 )
 def test_invalid_decision_never_enqueues_or_commits(response):

@@ -81,6 +81,25 @@ def agent(backend, responses):
 
 
 def tool(name, arguments):
+    if name == "rescan_connections" and "requirements" not in arguments:
+        mode = arguments.get("fields", "all")
+        arguments = {
+            **arguments,
+            "requirements": {
+                "expected_start_terminals": [],
+                "endpoint_location": "unspecified",
+                "required_fields": ["start_terminal", "end_terminal"]
+                if mode == "all"
+                else [f"{mode}_terminal"],
+                "connection_set": "rebuild"
+                if mode == "all"
+                and not (
+                    arguments.get("scope", {}).get("connection_ids")
+                    or arguments.get("scope", {}).get("principle_numbers")
+                )
+                else "preserve",
+            },
+        }
     return ModelResponse(
         "", None, "fake", 0, 1, tool_calls=(ModelToolCall("call-1", name, json.dumps(arguments)),)
     )

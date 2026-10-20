@@ -367,6 +367,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/projects/{project_id}/connections/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review Scope */
+        post: operations["review_scope_api_v1_projects__project_id__connections_review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/projects/{project_id}/connections/{connection_id}": {
         parameters: {
             query?: never;
@@ -399,6 +416,23 @@ export interface paths {
         head?: never;
         /** Edit */
         patch: operations["edit_api_v1_connections__connection_id__patch"];
+        trace?: never;
+    };
+    "/api/v1/connections/{connection_id}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review */
+        post: operations["review_api_v1_connections__connection_id__review_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/connections/{connection_id}/target": {
@@ -2528,6 +2562,26 @@ export interface components {
             result_mode: "patch" | "replace_scope";
             /** Target Bindings */
             target_bindings?: components["schemas"]["RescanTargetBinding"][];
+            requirements?: components["schemas"]["RescanRequirements"] | null;
+        };
+        /** RescanRequirements */
+        RescanRequirements: {
+            /** Required Fields */
+            required_fields: ("start_terminal" | "end_terminal" | "principle_number")[];
+            /** Expected Start Terminals */
+            expected_start_terminals?: string[];
+            /**
+             * Connection Set
+             * @default preserve
+             * @enum {string}
+             */
+            connection_set: "preserve" | "rebuild";
+            /**
+             * Endpoint Location
+             * @default unspecified
+             * @enum {string}
+             */
+            endpoint_location: "unspecified" | "same_page";
         };
         /** RescanRun */
         RescanRun: {
@@ -2724,6 +2778,44 @@ export interface components {
             kind: "set_fields";
             changes: components["schemas"]["ConnectionFieldValues"];
         };
+        /** SimpleBulkReview */
+        SimpleBulkReview: {
+            /** Batch Id */
+            batch_id: string;
+            /**
+             * Expected Updated At
+             * Format: date-time
+             */
+            expected_updated_at: string;
+            /** Workspace Id */
+            workspace_id?: string | null;
+            /** Drawing Id */
+            drawing_id?: string | null;
+            /**
+             * Search
+             * @default
+             */
+            search: string;
+            /**
+             * Confirmed
+             * @constant
+             */
+            confirmed: true;
+        };
+        /** SimpleBulkReviewReceipt */
+        SimpleBulkReviewReceipt: {
+            /** Project Id */
+            project_id: string;
+            /** Batch Id */
+            batch_id: string;
+            /** Reviewed Count */
+            reviewed_count: number;
+            /**
+             * Idempotent
+             * @default false
+             */
+            idempotent: boolean;
+        };
         /** SimpleConnectionCreate */
         SimpleConnectionCreate: {
             /** Batch Id */
@@ -2830,6 +2922,16 @@ export interface components {
             /** Review Reasons */
             review_reasons?: components["schemas"]["ReviewReason"][];
         };
+        /** SimpleConnectionReview */
+        SimpleConnectionReview: {
+            /** Record Version */
+            record_version: number;
+            /**
+             * Confirmed
+             * @constant
+             */
+            confirmed: true;
+        };
         /** SimpleImportRead */
         SimpleImportRead: {
             /** Project Id */
@@ -2864,7 +2966,7 @@ export interface components {
              * Action
              * @enum {string}
              */
-            action: "add" | "edit" | "remove";
+            action: "add" | "edit" | "remove" | "review";
             /** Record Version */
             record_version: number;
             /**
@@ -2913,6 +3015,11 @@ export interface components {
              * @default false
              */
             source_saved: boolean;
+            /**
+             * Needs Review Count
+             * @default 0
+             */
+            needs_review_count: number;
         };
         /** SimpleSourceRead */
         SimpleSourceRead: {
@@ -4091,6 +4198,44 @@ export interface operations {
             };
         };
     };
+    review_scope_api_v1_projects__project_id__connections_review_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+                authorization?: string | null;
+            };
+            path: {
+                project_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimpleBulkReview"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimpleBulkReviewReceipt"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     remove_api_v1_projects__project_id__connections__connection_id__delete: {
         parameters: {
             query?: never;
@@ -4145,6 +4290,44 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SimpleConnectionEdit"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SimpleMutationReceipt"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    review_api_v1_connections__connection_id__review_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+                authorization?: string | null;
+            };
+            path: {
+                connection_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SimpleConnectionReview"];
             };
         };
         responses: {

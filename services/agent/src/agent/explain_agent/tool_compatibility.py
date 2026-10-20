@@ -19,7 +19,8 @@ from src.harness.model_gateway import (
 )
 
 from .models import ConnectionQuery, DrawingQuery, ExplainError, RescanRequest
-from .rescan_receipts import claims_rescan_execution
+from .rescan_planning import require_tool_requirements
+from .rescan_receipts import claims_rescan_execution, claims_tool_progress
 
 
 class RescanDecision(StrictModel):
@@ -59,7 +60,7 @@ def unsupported_tool_choice(error: ModelGatewayError) -> bool:
 async def structured_tool_decision(gateway: ModelGateway, request: ModelRequest) -> ModelResponse:
     """Validate a JSON decision and route it through the existing tool execution boundary."""
     schema = ToolDecision.model_json_schema()
-    schema["$defs"]["RescanRequest"]["properties"].pop("result_mode", None)
+    require_tool_requirements(schema, schema["$defs"]["RescanRequest"])
     response = await gateway.invoke(
         replace(
             request,
@@ -92,8 +93,10 @@ async def structured_tool_decision(gateway: ModelGateway, request: ModelRequest)
         raise ExplainError("RESCAN_NOT_CREATED", "模型未返回有效重扫决策，任务未创建，正式线表未改动。", 502)
     decision = response.parsed.decision
     if isinstance(decision, ClarifyDecision):
-        if claims_rescan_execution(decision.question) or any(
-            term in decision.question for term in ("修改预览", "修改方案")
+        if (
+            claims_rescan_execution(decision.question)
+            or claims_tool_progress(decision.question)
+            or any(term in decision.question for term in ("修改预览", "修改方案"))
         ):
             raise ExplainError(
                 "RESCAN_NOT_CREATED", "模型未返回有效重扫决策，任务未创建，正式线表未改动。", 502

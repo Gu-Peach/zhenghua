@@ -1,5 +1,11 @@
 # API 入口归档
 
+- [API2.16.0范围审核](./changelog/2026-10-20-bulk-review.md)：原子批量审核路由、当前批次/项目版本与OpenAPI/生成类型同步。
+
+- [API2.15.0人工复核](./changelog/2026-10-20-connection-review.md)：版本化确认路由、当前批次待复核计数及OpenAPI/生成类型。
+
+- [API2.14.0重扫需求](./changelog/2026-10-20-rescan-requirements.md)：requirements可选DTO兼容、新工具必填门禁、OpenAPI/前端类型同步，无migration。
+
 - [API2.13.0主助手历史删除](./changelog/2026-10-19-assistant-history-delete.md)：204 DELETE、鉴权、Server事务和生成契约同步。
 
 - [API2.12.0终点重扫目标绑定](./changelog/2026-10-19-rescan-target-bindings.md)：target_bindings与生成契约同步，需重载服务。

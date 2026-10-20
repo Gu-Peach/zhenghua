@@ -32,7 +32,13 @@ from .models import (
     ToolActivity,
 )
 from .repository import ExplanationRepository
-from .rescan_receipts import claims_rescan_execution, rescan_receipt_text, rescan_tool_context
+from .rescan_receipts import (
+    claims_rescan_execution,
+    claims_tool_progress,
+    requests_rescan,
+    rescan_receipt_text,
+    rescan_tool_context,
+)
 from .tool_compatibility import structured_tool_decision, unsupported_tool_choice
 from .tools.drawings import ViewDrawingsTool
 from .tools.edits import ProposeConnectionEditTool
@@ -155,6 +161,9 @@ def build_explain_graph(
     def tool(state: ExplainState) -> ConnectionSearchTool:
         bound = state["turn"].model_copy(update={"batch_id": state["batch_id"]})
         return ConnectionSearchTool(repository, bound, state["actor"])
+
+    def action_requested(state: ExplainState) -> bool:
+        return state["turn"].allow_rescan and requests_rescan(state["turn"].message)
 
     def allowed_images(state: ExplainState) -> set[int]:
         drawings = state["context"].drawings + [d for item in state["retrievals"] for d in item.drawings]
@@ -313,6 +322,14 @@ def build_explain_graph(
             "detail_attachment_ids": [str(value) for value in state["turn"].attachment_ids],
             "rescans": [rescan_facts(run) for run in state.get("rescans", [])],
         }
+        if action_requested(state):
+            facts = {
+                **rescan_tool_context(state["turn"], state["context"], state["retrievals"]),
+                "rescans": [
+                    {"id": str(run.id), "status": run.status, "stage": run.stage}
+                    for run in state.get("rescans", [])
+                ],
+            }
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": prompt},
             {
@@ -360,6 +377,8 @@ def build_explain_graph(
             and state.get("cached_fingerprint") == state["fingerprint"]
             and (state.get("proposals") or not unbacked_edit_claim(state["cached_answer"] or ""))
             and (state.get("rescan_receipt_ids") or not claims_rescan_execution(state["cached_answer"] or ""))
+            and (state.get("rescan_receipt_ids") or not action_requested(state))
+            and not claims_tool_progress(state["cached_answer"] or "")
             and set(state.get("cached_rescans", [])).issubset(state.get("rescan_receipt_ids", []))
         ):
             await emit(state, state["cached_answer"] or "")
@@ -407,7 +426,9 @@ def build_explain_graph(
         )
 
         async def public_text(delta: str) -> None:
-            await emit(state, delta)
+            # Action planning is not a live progress source; only tool events and receipts are.
+            if not action_requested(state) or state.get("rescan_receipt_ids"):
+                await emit(state, delta)
 
         stream = getattr(gateway, "stream_text", None)
         try:
@@ -419,7 +440,7 @@ def build_explain_graph(
                 response = await stream(request, public_text)
             else:
                 response = await gateway.invoke(request)
-                await emit(state, response.content)
+                await public_text(response.content)
         except ModelGatewayError as exc:
             if request.tool_choice != "required" or not unsupported_tool_choice(exc):
                 raise
@@ -461,7 +482,10 @@ def build_explain_graph(
                     )
                 )
 
-        if not receipts and claims_rescan_execution(prefix + response.content):
+        if not receipts and (
+            claims_rescan_execution(prefix + response.content)
+            or (action_requested(state) and not response.tool_calls)
+        ):
             await reset_answer()
             prefix = ""
             if not state["turn"].allow_rescan:
@@ -490,7 +514,8 @@ def build_explain_graph(
                         "content": (
                             "系统核验：本轮没有rescan_connections成功回执，上述已创建/已入队说法已撤回。"
                             "用户明确要求重提取时必须调用rescan_connections；缺少行ID/目标图信息可先检索或看图。"
-                            "起点已确认只补终点用fields=end；target_bindings只绑定用户明确指定的目标页，"
+                            "必须完整填写requirements；纠正整页起点集合/漏提/多提或要求原理号时用整页fields=all、connection_set=rebuild，不带旧行ID。"
+                            "只保留旧行和起点、仅补终点时才用fields=end；target_bindings只绑定用户明确指定的目标页，"
                             "用户说明终点在本页时，target_bindings绑定该行source_drawing_page，"
                             "不能照抄历史跨页引用。不得把用户预期端子当成识别结果。"
                             "范围不清楚就追问，调用失败就说明任务未创建，不得再次宣称已入队。"
@@ -541,6 +566,13 @@ def build_explain_graph(
             await emit(state, safe)
             response = replace(response, content=safe)
             prefix = ""
+        if not response.tool_calls and not receipts and claims_tool_progress(response.content):
+            await reset_answer()
+            raise ExplainError(
+                "EXPLAIN_TOOL_NOT_EXECUTED",
+                "模型只返回了读取说明，没有继续完成工具处理。当前没有后台读取进度，请重试。",
+                502,
+            )
         repaired = state.get("edit_repair_used", False)
         if (
             state.get("rescan_created")
@@ -791,7 +823,11 @@ def build_explain_graph(
                                 retrieval=result,
                             )
                         )
-                    payload = result.model_facts()
+                    payload = (
+                        rescan_tool_context(state["turn"], result, [])
+                        if action_requested(state)
+                        else result.model_facts()
+                    )
             public_result = (
                 result.model_dump(mode="json")
                 if (call.name == ConnectionSearchTool.name and "error" not in payload)
@@ -799,7 +835,7 @@ def build_explain_graph(
             )
             await activity(
                 state,
-                "tool_failed" if "error" in payload else "tool_completed",
+                "tool_failed" if payload.get("error") else "tool_completed",
                 item.model_copy(
                     update={
                         "result": public_result,

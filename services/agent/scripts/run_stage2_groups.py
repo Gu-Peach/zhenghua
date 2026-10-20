@@ -22,6 +22,18 @@ from zipfile import ZipFile
 AGENT_ROOT = Path(__file__).resolve().parents[1]
 ROOT = AGENT_ROOT.parents[1]
 sys.path.insert(0, str(AGENT_ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+# isort: split
+from local_extraction_runtime import (  # noqa: E402
+    activate_test_extraction,
+    assert_test_extraction_loaded,
+    loaded_extraction_root,
+    test_extraction_root,
+)
+
+if __name__ == "__main__":
+    print(f"Local test Agent: {activate_test_extraction()}", flush=True)
 
 # isort: split
 from src.agent.extraction_agent.application.document_extraction.settings import Settings  # noqa: E402
@@ -116,7 +128,7 @@ def memory_settings(settings: AgentSettings) -> AgentSettings:
         profile_packages_enabled=False,
         supabase_url=None,
         supabase_service_role_key=None,
-        profile_root=AGENT_ROOT / "src/agent/extraction_agent/profiles",
+        profile_root=test_extraction_root() / "profiles",
         inline_worker=False,
         import_template_path=None,
         extraction_output_mode="library",
@@ -411,6 +423,8 @@ def failure_report(exc: Exception) -> dict[str, Any]:
 
 
 async def execute(args: argparse.Namespace, *, stages: Any | None = None) -> dict[str, Any]:
+    if args.allow_real_model and stages is None and not args.export_only:
+        assert_test_extraction_loaded()
     output = args.output_dir.resolve()
     if (output / "result.xlsx").resolve() == args.template.resolve():
         raise ValueError("The output workbook must not overwrite the reference template.")
@@ -429,6 +443,8 @@ async def execute(args: argparse.Namespace, *, stages: Any | None = None) -> dic
         "database_upload": False,
         "storage_upload": False,
         "extract_color": False,
+        "extraction_runtime_root": str(loaded_extraction_root()),
+        "profile_root": str(test_extraction_root() / "profiles"),
         "headers": HEADERS,
         "extraction_contract": EXTRACTION_CONTRACT_VERSION,
         "template": str(args.template.resolve()),
@@ -553,10 +569,10 @@ def parse_args() -> argparse.Namespace:
         "--index", type=Path, default=ROOT / "docs/test/pages/agent/drawing_index.json"
     )
     parser.add_argument("--template", type=Path, default=ROOT / "docs/test/1641.xlsx")
-    parser.add_argument("--output-dir", type=Path, default=ROOT / "docs/test/run_stage2")
+    parser.add_argument("--output-dir", type=Path, default=ROOT / "agent_test/runs/stage2")
     parser.add_argument("--groups", nargs="+", default=["002.C", "002.M"])
     parser.add_argument("--profile", default="zh", help="Local Profile key; e.g. zh, abb, zh_gantry_reel")
-    parser.add_argument("--run-id", default="local-stage2-002c-002m")
+    parser.add_argument("--run-id", default="agent-test-stage2-002c-002m")
     parser.add_argument("--max-source-pages", type=int, default=0)
     parser.add_argument("--allow-real-model", action="store_true")
     parser.add_argument("--model", help="Override the model ID for this run; does not edit .env")

@@ -1,5 +1,25 @@
 # 开发路线
 
+2026-10-20 GCR101 跨项目关联界面原型完成：两个前端Mock项目、目录分组、端子图谱和往返导航，46项浏览器回归及类型/lint/build通过，桌面与窄屏截图核对。仅演示，真实跨项目权限/关系存储尚未实现，整体阶段保持。见[交付](./apps/web/changelog/2026-10-20-project-relations-mock.md)。
+
+2026-10-20 Explain兼容结构化决策失败完成只读诊断和安全日志补充：本轮0任务，旧日志不能确定具体校验字段；76项离线及Ruff/mypy通过，无真实模型/业务写入。重载8100后未来错误可细分，未宣称实际格式失败已修复，整体阶段保持，见[记录](./service/agent/changelog/2026-10-20-explain-schema-diagnostics.md)。
+
+2026-10-20按用户最新要求，“一键审核”从工具栏移至线表最后操作列表头，9项浏览器及类型/lint/build、桌面/窄屏截图通过；仅Web/文档，刷新生效，审核事务范围保持，见[追加验收](./apps/web/changelog/2026-10-20-bulk-review.md)。
+
+2026-10-20隐藏线表完成标记/一键审核交付：当前目录及搜索全部分页原子确认、版本/权限/审计和目录刷新，API2.16.0/类型同步。23项API、4项隔离SQL、28项浏览器及静态/截图验收通过，本地迁移安装且业务摘要不变；8000待重载，未代审核实际记录，见[交付](./apps/web/changelog/2026-10-20-bulk-review.md)。
+
+2026-10-20 Explain读取假进度修复完成：现场43.709秒已结束/0工具/0任务，补明确命令的本轮回执门禁、受控补调和规划事实精简。148项分批离线、Ruff/3源码mypy通过，无实际模型/任务或线表写入；重载8100重新发送，整体阶段保持，见[记录](./service/agent/changelog/2026-10-20-explain-action-completion.md)。
+
+2026-10-20显式目标页误带源工作区修复完成：入队前目录校验/精确冲突提示、同轮纠错指引及成功回执失败事件修复；88项离线与静态验收通过。实际任务只读重放，不改变旧任务或正式线表，真实提取质量仍待重载8100/Worker后新任务验证，见[记录](./service/agent/changelog/2026-10-20-target-workspace-preflight.md)。
+
+2026-10-20人工复核/表内新增/聊天缩放已完成代码、离线与隔离SQL验收，本地复核迁移已安装；API2.15.0待8000重载后进行真实账号交互验收。见[ADR-0043](./adr/0043-connection-review-and-inline-create.md)及[交付](./apps/web/changelog/2026-10-20-inline-review.md)。
+
+2026-10-20 ADR-0042完成代码/离线验收：Explain结构化需求与范围能力门禁，同页/跨页分流及既有整页Graph复用，缺项检查与任务提示、API2.14.0同步。213项Agent、46项Server、21项浏览器分批和静态/截图通过，16项SQL集成默认跳过；未跑真实模型/修改实际数据或生产Profile，整体阶段不变。加载服务后需新任务验收真实质量，见[交付](./service/agent/changelog/2026-10-20-rescan-requirements-routing.md)。
+
+2026-10-20本地提取测试副本接入完成：两个CLI默认选择agent_test的完整提取实现/规则，ZH2.3.1关闭列裁剪，整页目标/示例及002C03/原理号规则生效；目录Git忽略。30项离线、实际预检/封装和207正式文件摘要核对通过，分组脚本既有mypy问题另记；未跑真实模型或改数据库包/服务，整体阶段不变，见[交付](./service/agent/changelog/2026-10-20-local-extraction-test-runtime.md)。
+
+2026-10-20 Explain同页重扫完成只读质量诊断：请求集合与实际四条end任务不符，原理号未进入能力/字段掩码，同页复用跨页回指规则，变更计数包含空终点清除。已归档修复顺序，尚未改产品代码或通过质量验收；无模型重跑/业务写入，整体阶段不变，见[诊断](./service/agent/changelog/2026-10-20-explain-same-page-quality-diagnosis.md)。
+
 2026-10-20 Explain HTTP400根因确认并完成兼容代码：当前服务返回tool_choice_not_supported，仅此错误降级为Schema校验决策并走原工具/回执门禁。169个场景分批及Ruff/4源码mypy通过，无真实模型/任务/业务写入或服务启停；重载8100后实际复试，整体阶段不变，见[记录](./service/agent/changelog/2026-10-20-explain-tool-choice-compatibility.md)。
 
 2026-10-20 Explain聊天附件与工具补调完成代码/离线验收：输入简化、图片随轮发送/清空，required工具选择、精简事实与本轮私有图片视觉输入。155项后端、Web分批与静态检查通过，真实供应方required支持/提取质量待重载8100后复试；未调用模型/改线表/启停用户服务，整体阶段不变，见[交付](./service/agent/changelog/2026-10-20-explain-required-tools.md)。

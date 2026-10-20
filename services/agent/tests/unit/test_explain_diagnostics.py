@@ -167,3 +167,93 @@ def test_request_summary_identifies_after_tool_failure_without_copying_result():
     summary = request_summary(request)
     assert summary["tool_result_messages"] == 1 and summary["prior_tool_names"] == ["search_connections"]
     assert "PRIVATE" not in json.dumps(summary)
+
+
+@pytest.mark.parametrize(
+    "response,kind",
+    [
+        ("PRIVATE non-json response", "invalid_json"),
+        (json.dumps({"decision": {"action": "rescan_connections", "request": {"fields": "end"}}}), "missing"),
+        (json.dumps({"decision": {"action": "PRIVATE_UNKNOWN_ACTION"}}), "union_tag_invalid"),
+        (
+            json.dumps(
+                {
+                    "decision": {
+                        "action": "clarify",
+                        "question": "Which page?",
+                        "PRIVATE_EXTRA_KEY": "PRIVATE VALUE",
+                    }
+                }
+            ),
+            "extra_forbidden",
+        ),
+    ],
+)
+def test_schema_errors_report_safe_fields_without_model_content(tmp_path, caplog, response, kind):
+    from src.agent.explain_agent.diagnostics import ExplainDiagnosticGateway
+    from src.agent.explain_agent.tool_compatibility import ToolDecision
+    from src.agent.extraction_agent.infrastructure.document.model_traces import LocalModelTraceStore
+
+    store = LocalModelTraceStore(tmp_path)
+    wrapped = ExplainDiagnosticGateway(FakeModelGateway([response]), store, "fake")
+    with pytest.raises(ModelGatewayError) as caught:
+        asyncio.run(
+            wrapped.invoke(
+                ModelRequest(
+                    agent_name="explain_agent", run_id="schema-test", messages=[], output_model=ToolDecision
+                )
+            )
+        )
+    assert caught.value.code == ErrorCode.MODEL_SCHEMA_INVALID
+    record = asyncio.run(store.list("schema-test"))[0]
+    safe = record["schema_error"]
+    assert safe["cause"] == "schema_validation"
+    assert safe["validation_error_count"] >= 1
+    assert kind in [item["type"] for item in safe["validation_errors"]]
+    if kind == "missing":
+        assert any("scope" in item["location"] for item in safe["validation_errors"])
+    if kind == "extra_forbidden":
+        assert any("<field>" in item["location"] for item in safe["validation_errors"])
+    assert "PRIVATE" not in json.dumps(record) + caplog.text
+
+
+def test_schema_error_paths_and_types_are_bounded_and_allowlisted(tmp_path, caplog):
+    from src.agent.explain_agent.diagnostics import ExplainDiagnosticGateway
+    from src.agent.explain_agent.tool_compatibility import ToolDecision
+    from src.agent.extraction_agent.infrastructure.document.model_traces import LocalModelTraceStore
+
+    error = ModelGatewayError(
+        ErrorCode.MODEL_SCHEMA_INVALID,
+        "PRIVATE",
+        details={
+            "validation_errors": [
+                {
+                    "location": ["decision", "request", "scope", "connection_ids", 2, "sk-PRIVATE"],
+                    "type": "PRIVATE-TYPE",
+                    "input": "PRIVATE",
+                },
+            ]
+            * 20
+        },
+    )
+    store = LocalModelTraceStore(tmp_path)
+    gateway = ExplainDiagnosticGateway(FakeModelGateway([error]), store, "fake")
+    with pytest.raises(ModelGatewayError):
+        asyncio.run(
+            gateway.invoke(
+                ModelRequest(
+                    agent_name="explain_agent",
+                    run_id="bounded-schema",
+                    messages=[],
+                    output_model=ToolDecision,
+                )
+            )
+        )
+    record = asyncio.run(store.list("bounded-schema"))[0]
+    safe = record["schema_error"]
+    assert safe["validation_error_count"] == 20 and len(safe["validation_errors"]) == 12
+    assert safe["validation_errors"][0] == {
+        "location": ["decision", "request", "scope", "connection_ids", 2, "<field>"],
+        "type": "other",
+    }
+    assert "PRIVATE" not in json.dumps(record) + caplog.text
