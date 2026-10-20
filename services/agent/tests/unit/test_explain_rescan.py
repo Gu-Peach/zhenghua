@@ -22,14 +22,15 @@ from src.profiles import ProfileRegistry
 from src.profiles.package import checksum
 
 from .test_explain_agent import OWNER, PROJECT, ROW
-from .test_explain_edits import EditBackend, agent, tool
+from .test_explain_attachments import AttachmentBackend
+from .test_explain_edits import agent, tool
 
 ROOT = Path(__file__).resolve().parents[4]
 
 
 @pytest.mark.parametrize("reply", ["已提交重扫任务，正式线表未改动。", "已生成修改预览，请直接确认。"])
 def test_rescan_tool_binds_attachment_ids_and_only_enqueues(reply):
-    class Backend(EditBackend):
+    class Backend(AttachmentBackend):
         def request(self, request):
             if request.url.path.endswith("/rpc/enqueue_connection_rescan"):
                 value = json.loads(request.content)["value"]
@@ -127,7 +128,7 @@ class MemoryRescan:
 
 
 @pytest.mark.parametrize("profile_key", ["zh", "abb"])
-@pytest.mark.parametrize("mode", ["all", "end", "end_same", "replace"])
+@pytest.mark.parametrize("mode", ["all", "end", "end_same", "end_missing", "replace"])
 def test_real_page_graph_scans_completes_and_only_saves_candidates(tmp_path, profile_key, mode):
     async def run():
         pix = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, 200, 150))
@@ -226,6 +227,7 @@ def test_real_page_graph_scans_completes_and_only_saves_candidates(tmp_path, pro
         if mode == "end_same":
             old["is_cross_page"] = False
             old["target_pdf_page_number"] = None
+            end["end"]["terminal_coordinates"]["pdf_page_number"] = 1
             scan["units"][0]["connections"][0].update(
                 is_cross_page="same_page",
                 references=[],
@@ -234,16 +236,20 @@ def test_real_page_graph_scans_completes_and_only_saves_candidates(tmp_path, pro
                     "terminal_coordinates": {"x": 0.6, "y": 0.5, "pdf_page_number": 1},
                 },
             )
+        if mode == "end_missing":
+            old["target_pdf_page_number"] = None
+            repo.asset["role"] = "source"
         gateway = FakeModelGateway(
-            [json.dumps(scan), json.dumps(end)]
-            if mode in {"all", "replace"}
-            else [json.dumps(scan)]
-            if mode == "end_same"
-            else [json.dumps(end)]
+            [json.dumps(scan), json.dumps(end)] if mode in {"all", "replace"}
+            else [] if mode == "end_missing" else [json.dumps(end)]
         )
         session = CandidateSession(repo, job)
         await execute_rescan(session, settings, gateway=gateway, binding=binding)
         completed = next(event["candidate"] for event in repo.events if "candidate" in event)
+        if mode == "end_missing":
+            assert not completed["changes"] and not gateway.calls
+            assert completed["unmatched_ids"] == [str(ROW)] and completed["warnings"]
+            return
         assert len(completed["changes"]) == 1
         if mode == "replace":
             assert completed["changes"][0]["action"] == "insert"
@@ -254,6 +260,7 @@ def test_real_page_graph_scans_completes_and_only_saves_candidates(tmp_path, pro
         assert old["end_terminal"] == "OLD" and len(gateway.calls) == (2 if mode in {"all", "replace"} else 1)
         if mode not in {"all", "replace"}:
             assert "start_terminal" not in completed["changes"][0]["after"]
+            assert gateway.calls[0].metadata["rescan_task"] is not None
         text = json.dumps(gateway.calls[-1].messages, ensure_ascii=False)
         assert (
             "原始完整图，PDF物理页1" in text and "原始完整图，PDF物理页2" in text and "用户target细节" in text

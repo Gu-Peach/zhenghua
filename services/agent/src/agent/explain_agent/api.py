@@ -8,6 +8,7 @@ import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import suppress
 from typing import Any
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -25,14 +26,24 @@ ActorDependency = Callable[..., ExplainActor | Awaitable[ExplainActor]]
 def _public_error(error: Exception, turn: ExplainTurn | None = None) -> tuple[int, dict[str, str]]:
     """Expose bounded error categories and log identifiers, never upstream bodies or credentials."""
     upstream_status = error.details.get("status_code") if isinstance(error, AgentServiceError) else None
+    try:
+        diagnostic_id = (
+            str(UUID(str(error.details.get("diagnostic_id"))))
+            if isinstance(error, AgentServiceError)
+            else None
+        )
+    except (ValueError, TypeError):
+        diagnostic_id = None
     logging.getLogger(__name__).error(
-        "Explain request failed turn=%s project=%s type=%s code=%s upstream_status=%s stream_error=%s",
+        "Explain request failed turn=%s project=%s type=%s code=%s "
+        "upstream_status=%s stream_error=%s diagnostic_id=%s",
         turn.turn_id if turn else None,
         turn.project_id if turn else None,
         type(error).__name__,
         error.code if isinstance(error, (AgentServiceError, ExplainError)) else "EXPLAIN_FAILED",
         upstream_status if type(upstream_status) is int else None,
         isinstance(error, ModelGatewayError) and error.details.get("failure_kind") == "provider_stream_error",
+        diagnostic_id,
     )
     if isinstance(error, ExplainError):
         return error.status, {"code": error.code, "message": error.message}
@@ -51,6 +62,17 @@ def _public_error(error: Exception, turn: ExplainTurn | None = None) -> tuple[in
             message = f"{reason}（HTTP {upstream_status}），请检查配置或稍后重试。"
         else:
             message = "模型请求超时、连接中断或服务暂不可用，请稍后重试。"
+        cause_messages = {
+            "memory_capacity": "模型服务报告内存或显存资源不足，请检查模型服务容量。",
+            "context_limit": "模型服务报告输入上下文超限，请减少历史或图纸后重试。",
+            "model_checkpoint": "模型服务报告模型检查点无法加载，请联系模型服务方检查。",
+            "tool_compatibility": "模型服务报告工具调用不受支持，请检查模型工具调用配置。",
+            "tool_choice_compatibility": "当前模型服务不支持强制工具选择，请检查Explain兼容分支是否已加载。",
+            "rate_limit": "模型服务报告限流，请稍后重试。",
+        }
+        message = cause_messages.get(str(error.details.get("diagnostic_cause") or ""), message)
+        if diagnostic_id:
+            message += f" 诊断编号：{diagnostic_id}"
         return 502, {"code": "EXPLAIN_UPSTREAM_FAILED", "message": message}
     if isinstance(error, AgentServiceError):
         return 502, {

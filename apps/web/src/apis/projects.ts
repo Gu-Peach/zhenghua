@@ -96,6 +96,23 @@ export const projectApi = {
     return { ...page, items: page.items.map(connection) };
   },
   async drawing(id: string, signal?: AbortSignal): Promise<Drawing> { return drawingFromDb(await request<Schema["DrawingRead"]>(`/api/v1/drawings/${id}`, { signal })); },
+  async comparisonRows(id: string, drawingId: string, cancelled: () => boolean): Promise<WiringRow[]> {
+    const items: WiringRow[] = []; const versions = new Set<string>();
+    let batchId: string | null | undefined;
+    for (let offset = 0; offset < 50000; offset += 100) {
+      if (cancelled()) throw new Error("对比已取消");
+      const result = await projectApi.connections(id, { drawingId, offset, batchId });
+      if (offset === 0) batchId = result.batch_id;
+      if (result.batch_id !== batchId) throw new Error("提取批次已变化，请刷新对比。");
+      for (const row of result.items) {
+        if (row.drawingId !== drawingId || versions.has(row.id)) throw new Error("返回的图纸范围或分页已变化，请刷新对比。");
+        versions.add(row.id); items.push(row);
+      }
+      if (!result.has_more) return items;
+      if (result.items.length !== 100) throw new Error("本页结果读取不完整，请刷新对比。");
+    }
+    throw new Error("单页超过50000条结果，请缩小范围。");
+  },
   async source(id: string): Promise<string> { return (await request<{ url: string }>(`/api/v1/projects/${id}/source`)).url; },
   async addConnection(id: string, body: Schema["SimpleConnectionCreate"], key: string): Promise<void> { await request(`/api/v1/projects/${id}/connections`, { method: "POST", headers: { "Idempotency-Key": key }, body: JSON.stringify(body) }); },
   async deleteConnection(id: string, row: WiringRow, key: string): Promise<void> {

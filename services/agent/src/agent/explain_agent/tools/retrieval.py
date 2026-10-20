@@ -90,5 +90,5 @@ class ConnectionSearchTool:
     async def execute(self, query: ConnectionQuery) -> SearchResult:
         result = await self.repository.search(self.turn, self.actor, query)
         result.rows = [prepare_evidence(context) for context in result.rows]
-        result.drawings = merge_drawings(result.rows)
+        result.drawings = merge_drawings(result.rows) or result.drawings
         return result

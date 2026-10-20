@@ -1,5 +1,29 @@
 # Agent 服务设计索引
 
+- [Explain工具选择兼容](./changelog/2026-10-20-explain-tool-choice-compatibility.md)：HTTP400/tool_choice_not_supported已定位，Schema决策降级与真实工具/回执门禁，重载8100后复试。
+
+- [Explain补调与聊天图片](./changelog/2026-10-20-explain-required-tools.md)：required/精简事实，本轮私有图片实际进入模型；155项离线通过，真实供应方待复试。
+
+- [Explain重扫执行回执](./changelog/2026-10-20-explain-rescan-receipts.md)：修复只检索却宣称queued，核对本轮任务/一次补调/失败关闭，重载8100后重新发送。
+
+- [Explain流式故障诊断](./changelog/2026-10-19-explain-diagnostics.md)：3次用户批准的无项目数据探针成功，实际失败未复现；增加调用体积/轮次/安全错误分类和诊断编号，需重载8100。
+
+- [指定目标页终点重扫](./changelog/2026-10-19-rescan-explicit-targets.md)：target_bindings、冻结起点直接补全、缺口报告及真实图像保护，需新任务/重载服务。
+
+- [重扫使用项目选定新版](./changelog/2026-10-19-rescan-project-profile.md)：指定项目已启用ZH2.3.0，新job独立冻结，旧批次不覆盖；需重载Worker。
+
+- [重提取目标页保留](./changelog/2026-10-19-rescan-target-page.md)：目标图已定位而端子未识别时仍保存关联页；rescan-v4需新任务，既有结果不自动改写。
+
+- [当前目标与历史任务隔离](./changelog/2026-10-19-main-assistant-current-goal.md)：规则短追问不额外修改线表，专业诊断建议不扩成授权，历史读取当前发布状态。
+
+- [工具失败停止空转](./changelog/2026-10-19-main-assistant-tool-failure.md)：规则诊断等工具失败即安全结束，已返回任务/候选保留。
+
+- [编号范围与任务接续修复](./changelog/2026-10-19-main-assistant-progress.md)：阻断重复检索、按真实记录接续数据候选与规则诊断，全部回执到齐才完成。
+
+- [主助手重扫执行回执修复](./changelog/2026-10-19-main-assistant-receipt-guard.md)：无工具终答语义核验、一次补调、真实UUID/状态直出；需重载8100/8000。
+
+- [主助手编排交付](./changelog/2026-10-19-main-assistant.md)：8100主助手、业务工具回调、Explain只读和冻结规则诊断；加载新进程后可用，未运行真实模型。
+
 - [不完整样例允许发布](./changelog/2026-10-19-permissive-publication.md)：三阶段确认后缺有效起点降为warning，端点留空，完整性提示保留。
 
 - [规则对话输入缺项恢复](./changelog/2026-10-19-profile-dialogue-input-recovery.md)：DIALOGUE_INPUT_INVALID、内部说明恢复、缺来源追问及复用已上传图片；需重载8100。

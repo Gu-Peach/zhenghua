@@ -172,12 +172,15 @@ test("目标页404保留原页及起点，图纸失败状态可见", async ({ pa
 test("智能体中心展示三个真实能力状态，提取Skill沿用规则ID和版本", async ({ page }) => {
   await fixture(page); await workbench(page); await agentCenter(page);
   await expect(page).toHaveURL("/agents"); await expect(page.locator(".agent-card")).toHaveCount(3);
-  await expect(page.getByText("1.0.0", { exact: true })).toHaveCount(3);
+  await expect(page.locator(".agent-card footer small")).toHaveText(["版本 1.0.0", "版本 1.0.0", "版本 1.0.0"]);
   await expect(page.locator(".agent-card").filter({ hasText: "Profile Agent" })).toContainText("待接入");
   await page.screenshot({ path: test.info().outputPath("agent-center-desktop.png") });
   await page.getByRole("link", { name: /图纸提取智能体/ }).click();
+  await expect(page.getByText("zh_extraction", { exact: true })).toBeHidden();
+  await page.getByText("规则标识与详情", { exact: true }).click();
   await expect(page.getByText("zh_extraction", { exact: true })).toBeVisible();
   await expect(page.getByText(/版本 2.1.1/)).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath("skills-desktop.png") });
   await page.getByRole("textbox", { name: "搜索提取规则" }).fill("zh_extraction");
   await page.getByRole("button", { name: "查看规则", exact: true }).click();
   await expect(page.getByRole("dialog")).toContainText("zh_extraction");

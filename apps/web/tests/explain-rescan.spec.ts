@@ -1,3 +1,4 @@
+import { expandProjectTree } from "./tree-navigation";
 import { test, expect, type Page } from "@playwright/test";
 
 const project = "00000000-0000-0000-0000-000000000010", row = "00000000-0000-0000-0000-000000000011", runId = "00000000-0000-0000-0000-000000000012", assetId = "00000000-0000-0000-0000-000000000013", newRow = "00000000-0000-0000-0000-000000000015";
@@ -46,13 +47,58 @@ async function fixture(page: Page, options: { conflict?: boolean; restored?: boo
   return { uploads, turns, decisions, historyReads: () => historyReads, ready: () => { status = "ready"; } };
 }
 
-async function open(page: Page) {
+async function open(page: Page, explain = true) {
   await page.goto(`/projects/${project}`);
   const cell = page.getByRole("cell").filter({ has: page.getByRole("button", { name: "解释端子 XA:8", exact: true }) });
   await cell.hover(); await cell.getByRole("button", { name: "解释端子 XA:8", exact: true }).click();
   const panel = page.getByRole("dialog", { name: "来源解释", exact: true });
-  await expect(panel.getByLabel("解释回复")).toContainText("当前数据库"); return panel;
+  if (explain) {
+    await panel.getByLabel("追问来源解释").fill("请解释当前连接的来源");
+    await panel.getByRole("button", { name: "发送追问", exact: true }).click();
+    await expect(panel.getByLabel("解释回复")).toContainText("当前数据库");
+  }
+  return panel;
 }
+
+test("新窗口可直接重扫，不先发送解释请求", async ({ page }) => {
+  const state = await fixture(page);
+  const panel = await open(page, false);
+  await expect(panel.getByRole("status")).toContainText("发送后开始处理");
+  expect(state.turns).toHaveLength(0);
+  await panel.getByLabel("追问来源解释").fill("重新扫描这条连接的终点");
+  await panel.getByLabel("追问来源解释").press("Enter");
+  await panel.getByRole("button", { name: "立即显示已收到内容", exact: true }).click();
+  await expect(panel.getByRole("region", { name: "重扫任务与结果", exact: true })).toBeVisible();
+  expect(state.turns).toHaveLength(1);
+  expect(state.turns[0]).toMatchObject({ message: "重新扫描这条连接的终点", connection_id: row, allow_rescan: true });
+  expect(state.decisions).toHaveLength(0);
+});
+
+test("聊天图片随本轮发送后清空，下一轮不携带旧图", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const state = await fixture(page); const panel = await open(page, false);
+  await expect(panel.getByText("图纸与附件设置", { exact: true })).toHaveCount(0);
+  await expect(panel.getByText("添加细节图", { exact: true })).toHaveCount(0);
+  await panel.getByLabel("上传重扫截图", { exact: true }).setInputFiles({ name: "detail.png", mimeType: "image/png", buffer: png });
+  await expect(panel.locator(".explain-composer img")).toHaveCount(1);
+  expect(state.uploads).toHaveLength(0);
+  await panel.getByLabel("追问来源解释").fill("解释这张图片");
+  await panel.getByRole("button", { name: "发送追问", exact: true }).click();
+  await expect(panel.locator(".explain-turn .explain-user img")).toHaveCount(1);
+  await expect(panel.locator(".explain-composer img")).toHaveCount(0);
+  await expect(panel.getByLabel("追问来源解释")).toBeEmpty();
+  expect(state.uploads).toHaveLength(1);
+  expect(state.turns[0].attachment_ids).toEqual([assetId]);
+  await expect(panel.getByLabel("解释回复")).toContainText("当前数据库");
+  await page.screenshot({ path: test.info().outputPath("explain-sent-image-desktop.png") });
+  await panel.getByLabel("追问来源解释").fill("再解释当前连接");
+  await panel.getByLabel("追问来源解释").press("Enter");
+  await expect.poll(() => state.turns.length).toBe(2);
+  expect(state.turns[1].attachment_ids).toBeUndefined();
+  await page.screenshot({ path: test.info().outputPath("explain-images-desktop.png") });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: test.info().outputPath("explain-images-mobile.png") });
+});
 
 async function requestFullScan(page: Page, state: Awaited<ReturnType<typeof fixture>>) {
   const panel = await open(page);
@@ -120,17 +166,17 @@ test("读取持久候选完成前不能确认范围删除", async ({ page }) => 
   release(); await expect(button).toBeEnabled();
 });
 
-test("关联页细节随重扫发送，先回复后显示进度，确认前保持旧行", async ({ page }) => {
+test("聊天图片随重扫发送，先回复后显示进度，确认前保持旧行", async ({ page }) => {
   const state = await fixture(page); const panel = await open(page);
-  await panel.getByLabel("截图用途", { exact: true }).selectOption("target");
-  await expect(panel.getByLabel("截图所属图纸", { exact: true })).toHaveValue("2");
   await panel.getByLabel("上传重扫截图", { exact: true }).setInputFiles({ name: "detail.png", mimeType: "image/png", buffer: png });
-  await expect(panel.getByAltText("PDF 2 · 关联页细节")).toBeVisible();
+  await expect(panel.locator(".explain-composer").getByAltText("detail.png")).toBeVisible();
+  expect(state.uploads).toHaveLength(0);
   await panel.getByLabel("追问来源解释").fill("请重扫这个终点，核对截图里的细节"); await panel.getByRole("button", { name: "发送追问", exact: true }).click();
   await expect(panel.getByRole("region", { name: "重扫任务与结果" })).toHaveCount(0);
   await panel.getByRole("button", { name: "立即显示已收到内容" }).last().click();
   await expect(panel.getByText("正在生成候选，正式线表尚未改动。", { exact: false })).toBeVisible();
-  expect(state.turns.at(-1)?.attachment_ids).toEqual([assetId]); expect(state.uploads[0].pdf_page_number).toBe(2);
+  expect(state.turns.at(-1)?.attachment_ids).toEqual([assetId]); expect(state.uploads[0].pdf_page_number).toBe(1);
+  await expect(panel.locator(".explain-composer img")).toHaveCount(0);
   await expect(page.locator(".result-table").getByRole("cell", { name: "OLD", exact: true })).toBeVisible();
   state.ready();
   await expect(panel.getByRole("button", { name: "确认重扫结果 1 行", exact: true })).toBeVisible();
@@ -151,7 +197,7 @@ test("关联页细节随重扫发送，先回复后显示进度，确认前保�
 test("重扫候选冲突不写库，窄屏长文本可查看完整对照", async ({ page }) => {
   const state = await fixture(page, { restored: true, conflict: true }); await page.setViewportSize({ width: 390, height: 844 }); const panel = await open(page);
   await expect(panel.getByRole("region", { name: "重扫任务与结果", exact: true })).toHaveCount(0);
-  expect(state.historyReads()).toBe(0); expect(state.turns[0].allow_rescan).toBe(false);
+  expect(state.historyReads()).toBe(0); expect(state.turns[0].allow_rescan).toBe(true);
   await panel.getByRole("button", { name: "查看项目重扫记录", exact: true }).click();
   await expect.poll(state.historyReads).toBe(1);
   await panel.getByRole("button", { name: "确认重扫结果 1 行", exact: true }).click();
@@ -173,12 +219,47 @@ test("取消重扫不会修改旧行", async ({ page }) => {
 test("粘贴图片校验失败时不携带附件，错误可见", async ({ page }) => {
   const state = await fixture(page, { uploadFails: true }); const panel = await open(page);
   await panel.getByLabel("追问来源解释").evaluate(node => { const data = new DataTransfer(); data.items.add(new File(["bad"], "detail.png", { type: "image/png" })); node.dispatchEvent(new ClipboardEvent("paste", { bubbles: true, clipboardData: data })); });
+  expect(state.uploads).toHaveLength(0);
+  await panel.getByLabel("追问来源解释").fill("解释这张图片");
+  await panel.getByRole("button", { name: "发送追问", exact: true }).click();
   await expect(panel.getByRole("alert")).toContainText("图片格式无效"); expect(state.uploads).toHaveLength(1);
-  await expect(panel.getByRole("img", { name: "PDF 1 · 原页细节", exact: true })).toHaveCount(0);
+  await expect(panel.locator(".explain-composer img")).toHaveCount(1);
+  await expect(panel.getByLabel("追问来源解释")).toHaveValue("解释这张图片");
+  expect(state.turns).toHaveLength(1);
+});
+
+test("图片轮次失败重试复用同一附件，新草稿可移除并支持仅图片发送", async ({ page }) => {
+  const state = await fixture(page); const panel = await open(page, false);
+  let attempts = 0;
+  await page.route("**/explain/turns/stream", async route => {
+    const body = route.request().postDataJSON(); state.turns.push(body); attempts++;
+    const event = attempts === 1 ? "error" : "completed";
+    const data = attempts === 1 ? { message: "模拟任务未创建" } : { type: event, conversation_id: body.conversation_id, turn_id: body.turn_id, result: { answer: "图片已收到", drawings: [] } };
+    await route.fulfill({ contentType: "text/event-stream", body: `event: ${event}\ndata: ${JSON.stringify(data)}\n\n` });
+  });
+  await panel.getByLabel("上传重扫截图").setInputFiles({ name: "first.png", mimeType: "image/png", buffer: png });
+  await panel.getByRole("button", { name: "发送追问", exact: true }).click();
+  await expect(panel.getByRole("alert")).toContainText("模拟任务未创建");
+  await expect(panel.locator(".explain-composer img")).toHaveCount(0);
+  await panel.getByRole("button", { name: "重试", exact: true }).click();
+  await expect.poll(() => state.turns.length).toBe(2);
+  expect(state.turns[1].turn_id).toBe(state.turns[0].turn_id);
+  expect(state.turns[1].attachment_ids).toEqual([assetId]);
+  expect(state.uploads).toHaveLength(1);
+  await expect(panel.getByLabel("解释回复")).toContainText("图片已收到");
+  await panel.getByRole("button", { name: "放大上传图片 first.png", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "查看图纸 first.png", exact: true })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(panel).toBeVisible();
+  await panel.getByLabel("上传重扫截图").setInputFiles({ name: "remove.png", mimeType: "image/png", buffer: png });
+  await panel.getByRole("button", { name: "移除图片 remove.png", exact: true }).click();
+  await expect(panel.getByRole("button", { name: "发送追问", exact: true })).toBeDisabled();
+  await expect(panel.locator(".explain-turn .explain-user img")).toHaveCount(1);
 });
 
 test("空线表工作区可从工具栏发起完整重扫，不依赖已有行", async ({ page }) => {
   const state = await fixture(page, { empty: true }); await page.goto(`/projects/${project}`);
+  await expandProjectTree(page);
   await page.getByRole("button", { name: /^003\.C 003\.C/ }).click();
   await expect(page.getByRole("button", { name: "重新扫描所选范围", exact: true })).toBeEnabled();
   await page.getByRole("button", { name: "重新扫描所选范围", exact: true }).click();

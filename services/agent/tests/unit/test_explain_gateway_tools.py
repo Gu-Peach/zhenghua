@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+from dataclasses import replace
 
 import httpx
 import pytest
@@ -65,6 +66,56 @@ def test_native_tool_request_and_null_content_response_roundtrip():
             await gateway.invoke(ModelRequest(agent_name="old", run_id="old", messages=[]))
             assert "tools" not in calls[-1]
             assert calls[0]["tools"][0]["function"]["parameters"]["additionalProperties"] is False
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("streaming", [False, True])
+def test_required_tool_choice_is_sent_only_when_explicitly_requested(streaming):
+    async def run():
+        bodies = []
+
+        def handle(req):
+            bodies.append(json.loads(req.content))
+            if streaming:
+                frame = {
+                    "choices": [
+                        {
+                            "delta": {"tool_calls": [{"index": 0, **tool_message()}]},
+                            "finish_reason": "tool_calls",
+                        }
+                    ]
+                }
+                return httpx.Response(
+                    200,
+                    text="data: " + json.dumps(frame) + "\n\ndata: [DONE]\n\n",
+                    headers={"content-type": "text/event-stream"},
+                )
+            return httpx.Response(
+                200,
+                json={
+                    "choices": [
+                        {
+                            "message": {"content": None, "tool_calls": [tool_message()]},
+                            "finish_reason": "tool_calls",
+                        }
+                    ]
+                },
+            )
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handle)) as client:
+            gateway = OpenAICompatibleModelGateway(
+                base_url="https://model.invalid", default_model="fake", client=client
+            )
+
+            async def emit(_text):
+                pass
+
+            for choice in (None, "required"):
+                value = replace(request(), tool_choice=choice)
+                result = await gateway.stream_text(value, emit) if streaming else await gateway.invoke(value)
+                assert result.tool_calls[0].name == "search_connections"
+            assert "tool_choice" not in bodies[0] and bodies[1]["tool_choice"] == "required"
 
     asyncio.run(run())
 

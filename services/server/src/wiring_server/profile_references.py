@@ -12,6 +12,9 @@ from .repository import Repository, ServiceError
 ROOT = Path(__file__).resolve().parents[4]
 PROFILE_ROOT = ROOT / "services/agent/src/agent/extraction_agent/profiles"
 
+# Explicitly consolidated identities, for editing only. Extraction never follows these aliases.
+PROFILE_EDIT_SUCCESSORS = {"zh_crop": "zh"}
+
 
 class ProfileReferences:
     """Serve stored packages; retain local assets only for explicit publishing and legacy reads."""

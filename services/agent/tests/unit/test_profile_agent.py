@@ -334,7 +334,9 @@ def test_export_and_persistent_reopen_keep_fixed_schema_and_no_publication(setup
     actor, _, agent = setup
     draft = create(setup, True)
     receipt = asyncio.run(agent.export(draft.draft_id, draft.revision, actor))
-    assert not receipt.published and receipt.key == "zh" and receipt.version == "2.1.2"
+    source = agent.store.registry.resolve("zh")
+    major, minor, patch, _ = source.manifest.semantic_version
+    assert not receipt.published and receipt.key == "zh" and receipt.version == f"{major}.{minor}.{patch + 1}"
     import zipfile
 
     folder = tmp_path / "verify" / "package"

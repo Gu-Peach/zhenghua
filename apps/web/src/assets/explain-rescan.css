@@ -1,3 +1,16 @@
+.explain-idle { color: var(--muted, #65778a); font-size: 13px; line-height: 1.7; }
+.explain-pending-images:empty { display: none; }
+.explain-pending-images ul { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0 0 8px; padding: 0; max-height: 120px; overflow: auto; }
+.explain-pending-images li { display: flex; align-items: center; gap: 6px; min-width: 0; max-width: 100%; border: 1px solid #dbe3eb; border-radius: 6px; padding: 3px; }
+.explain-pending-images img { width: 46px; height: 38px; object-fit: contain; }
+.explain-pending-images li span { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.explain-pending-images p { font-size: 12px; color: #9b3c2a; margin: 0 0 8px; }
+body .explain-composer .explain-pending-images { display: block; margin-top: 0; }
+body .explain-composer .explain-pending-images li button { width: 22px; height: 22px; padding: 0; background: white; color: #446173; }
+body .explain-composer-actions > button:last-child { margin-left: auto; }
+.explain-message-images { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; margin: 6px 0; }
+.explain-message-images button { padding: 0; border: 1px solid #dbe3eb; border-radius: 6px; overflow: hidden; background: white; }
+.explain-message-images img { display: block; width: 110px; height: 86px; object-fit: contain; }
 .rescan-attachments { font-size: 11px; max-height: 180px; overflow: auto; margin-bottom: 8px; }
 .rescan-attachments > div { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
 .rescan-attachments label { min-width: 0; flex: 1; }

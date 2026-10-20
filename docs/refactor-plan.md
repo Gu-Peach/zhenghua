@@ -6,6 +6,14 @@
 
 ## 1. 重构结论
 
+2026-10-19主助手增加永久历史删除契约与私有附件持久GC，事务级联仅作用于会话元数据，独立业务结果和任务保留；设计与权限/一致性边界见[删除设计](./service/server/assistant-conversation-deletion.md)。
+
+2026-10-19用户授权的目标页传递/终点重扫修复已完成：按[ADR-0041](./adr/0041-rescan-target-bindings.md)增加逐连接绑定、冻结起点直接补全、缺口报告及真实图像优先级。契约/离线/界面验收通过，用户重载服务后新建任务。
+
+2026-10-19用户明确授权指定项目重扫使用当前选定的ZH2.3.0；[ADR-0040](./adr/0040-rescan-project-profile.md)的项目级显式策略/任务规则来源、Worker独立加载与引用保护已验收并部署本地。旧批次/任务保持，用户重载Worker后新建重扫，不覆盖历史规则包。
+
+2026-10-19主助手首版已按[ADR-0039](./adr/0039-main-assistant-orchestration.md)接通：独立main_assistant编排当前三表业务工具与Extraction/Explain/Profile，保留旧Supervisor兼容；全局会话、导航、冻结规则诊断、候选与具体差异确认已实现。本地新增迁移已部署，原业务数据未改；真实模型验证及运行进程重载需由用户发起。
+
 2026-10-19规则目录显示名与不可变包身份分开：extraction_profiles.display_name由所有者条件更新，包内原名、key/version/checksum及项目冻结绑定不动；见[设计](./service/server/profile-display-name.md)。
 
 2026-10-19规则配置采用图像驱动对话，移除阶段切换栏；拖拽图片/PDF、逐阶段解释/确认、已有证据复用和受控回退修改，仍通过原Wizard及手动发布。设计见[ADR-0038](./adr/0038-guided-profile-authoring.md)。

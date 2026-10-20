@@ -268,6 +268,7 @@ def validate_draft(root: Path, metadata: dict[str, Any]) -> ValidationReport:
     if not positive_scan:
         confirmed_workflow = bool(
             wizard and set(wizard.get("confirmed", {})) == {"classification", "scan", "completion"}
+            or metadata.get("editor") and (metadata.get("source") or {}).get("profile_id")
         )
         issues.append(
             ValidationIssue(

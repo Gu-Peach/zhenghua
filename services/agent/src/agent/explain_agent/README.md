@@ -1,5 +1,11 @@
 # Explain Agent
 
+2026-10-20 required被供应方以HTTP400/tool_choice_not_supported拒绝时，改为本地Schema校验的结构化决策，不发送工具选择或response_format；有效决策仍经原工具/repository入队，普通正文与未知操作不执行，8次工具预算/真实回执保持。重载8100后实际复试，见[记录](../../../../../docs/service/agent/changelog/2026-10-20-explain-tool-choice-compatibility.md)。
+
+2026-10-20 缺回执补调通过tool_choice=required请求工具，使用当前行/图纸索引/分页精简事实；未返回工具时明确失败。本轮附件按所有者/项目/会话/路径/checksum校验后进入视觉输入，不冒充已查看原图页、下一轮不自动复用。重载8100并刷新Web后复试，见[记录](../../../../../docs/service/agent/changelog/2026-10-20-explain-required-tools.md)。
+
+2026-10-20 重扫执行声明必须核对本轮真实任务回执；没有回执时撤回成功话术并最多补调一次，失败返回RESCAN_NOT_CREATED。重复turn_id复用真实任务，历史任务不能替本轮执行作证；任务答复显示数据库UUID/status/stage。只读显式任务查询保持，候选仍须确认。需重载8100后重新发送，见[排障记录](../../../../../docs/service/agent/changelog/2026-10-20-explain-rescan-receipts.md)。
+
 2026-10-19全部重扫确认后按范围删旧写新，局部仅修订选中行/字段；模式由程序根据scope/fields设置，模型不决定删除。新版候选含完整旧行清单和新结果，确认仍由Server原子执行，空结果/失败/旧候选有明确保护。需新迁移（本地已装）、8000 API2.10.0、8100/Worker与Web新代码，新建任务而非提交旧合并候选。见[ADR-0036](../../../../../docs/adr/0036-rescan-scope-replacement.md)。
 
 自动来源解释和既有任务差异解释由Web显式传allow_rescan=false，工具列表/执行边界均限制重扫；普通重扫事实只读取当前会话，历史单任务可通过rescan_id显式访问。默认true保留既有SDK兼容；用户主动输入/重扫按钮正常使用。需同步重载8000 API2.9.0和8100、刷新Web，无迁移。见[记录](../../../../../docs/service/agent/changelog/2026-10-18-explain-request-modes.md)。

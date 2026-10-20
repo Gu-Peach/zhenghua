@@ -87,6 +87,36 @@ def test_import_manual_edit_review_and_export_do_not_overwrite_source(editor_ctx
         editor.state(changed.draft_id, ProfileActor(user_id=uuid4()))
 
 
+def test_historical_diagnosis_copy_is_read_only_even_through_manual_endpoints(editor_ctx):
+    agent, actor, editor, _, body = editor_ctx
+    body = body.model_copy(update={"draft_id": uuid4(), "read_only": True})
+    state = editor.import_profile(body, actor)
+    assert state.draft.version == body.profile_version
+    tools = ProfileTools(agent.store, body.draft_id, actor, ProfileTurn(message="诊断", expected_revision=state.draft.revision))
+    assert not {"apply_edits", "propose_edits", "fill_template"} & {t["function"]["name"] for t in tools.definitions()}
+    with pytest.raises(ProfileError, match="不允许修改"):
+        editor.accept(body.draft_id, actor, state.draft.revision)
+    with pytest.raises(ProfileError, match="不允许修改"):
+        agent.store.edit(body.draft_id, actor, state.draft.revision, "manual", [], "explicit_instruction")
+    with pytest.raises(ProfileError):
+        asyncio.run(agent.export(body.draft_id, state.draft.revision, actor))
+    with pytest.raises(ProfileError, match="只读权限"):
+        editor.import_profile(body.model_copy(update={"read_only": False}), actor)
+
+
+def test_imported_empty_scan_keeps_existing_publish_warning_policy(editor_ctx):
+    agent, actor, editor, state, _ = editor_ctx
+    _, root, _ = agent.store.snapshot(state.draft.draft_id, actor, state.draft.revision)
+    from src.agent.profile_agent.validation import case_files
+    case = next(item for item in case_files(root) if item["stage"] == "scan")
+    file = agent.store.read(state.draft.draft_id, actor, case["expected_path"])
+    changed = agent.store.edit(state.draft.draft_id, actor, state.draft.revision, "empty-scan",
+        [FileEdit(path=case["expected_path"], before_checksum=file["checksum"], content='{"units": []}')], "explicit_instruction")
+    reviewed = editor.accept(changed.draft_id, actor, changed.revision)
+    assert reviewed.validation.ready
+    assert any(issue.code == "POSITIVE_CASE_MISSING" and issue.severity == "warning" for issue in reviewed.validation.issues)
+
+
 def test_image_result_diagnosis_proposes_and_applies_only_after_confirmation(editor_ctx):
     agent, actor, editor, state, _ = editor_ctx
     file = next(f for f in state.package.files if f.path == "resources/scan.md")

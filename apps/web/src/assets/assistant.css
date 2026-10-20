@@ -1,0 +1,40 @@
+.floating-agent-panel.main-assistant { flex-direction: column; width: min(560px, calc(100vw - 24px)); height: min(760px, calc(100dvh - 112px)); color: var(--text); }
+.assistant-heading { display: flex; gap: 8px; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); flex: none; }
+.assistant-heading strong { flex: 1; font-size: 14px; }
+.assistant-heading span, .assistant-composer small { color: var(--muted); font-size: 11px; }
+.assistant-conversations { display: flex; padding: 6px 12px; gap: 8px; }
+.assistant-conversations select { min-width: 0; flex: 1; max-width: 100%; }
+.assistant-history { position: relative; min-width: 0; flex: 1; }
+.assistant-history .assistant-history-trigger { display: flex; align-items: center; justify-content: space-between; width: 100%; min-width: 0; height: 36px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-subtle); font-size: 13px; gap: 8px; text-align: left; }
+.assistant-history-trigger span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.assistant-history-panel { position: absolute; z-index: 5; top: calc(100% + 6px); left: 0; width: 100%; max-height: min(300px, 42dvh); overflow: auto; overscroll-behavior: contain; border: 1px solid var(--border-strong); border-radius: 10px; padding: 4px; background: white; box-shadow: 0 8px 24px #2135471a; }
+.assistant-history-panel ul { list-style: none; margin: 0; padding: 0; }
+.assistant-history-panel li { display: flex; align-items: center; gap: 4px; }
+.assistant-history-panel .assistant-history-open { min-width: 0; flex: 1; justify-content: space-between; border: 0; padding: 9px 8px; background: transparent; border-radius: 6px; text-align: left; font-size: 13px; }
+.assistant-history-open span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.assistant-history-panel .assistant-history-open:hover, .assistant-history-open[aria-current=true] { background: var(--teal-soft); color: var(--teal); }
+.assistant-history-panel p { margin: 6px 8px; color: var(--muted); font-size: 12px; }
+.assistant-feed { overflow: auto; flex: 1; padding: 12px; overscroll-behavior: contain; min-height: 0; }
+.assistant-feed p { line-height: 1.6; overflow-wrap: anywhere; }
+.assistant-empty { color: var(--muted); padding: 30px 12px; }
+.assistant-entry { margin-bottom: 24px; font-size: 13px; }
+.assistant-user { background: #edf7f7; padding: 10px; border-radius: 6px; }
+.assistant-user p { white-space: pre-wrap; margin: 4px 0; }
+.assistant-tool-log { font-size: 11px; color: var(--muted); margin: 8px 0; }
+.assistant-tool-log p { margin: 4px 0; }
+.assistant-action-card { margin-top: 10px; overflow-wrap: anywhere; }
+.assistant-action-card pre { max-height: 300px; overflow: auto; white-space: pre-wrap; background: #f5f7fa; padding: 8px; font-size: 11px; }
+.assistant-action-card .explain-edit-proposal { margin: 0; max-width: 100%; }
+.assistant-action-card table { font-size: 11px; }
+.assistant-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+.assistant-composer { border-top: 1px solid var(--border); flex: none; padding: 10px; }
+.assistant-composer textarea { width: 100%; min-height: 70px; max-height: 150px; resize: vertical; border: 0; outline-offset: 2px; font-size: 13px; }
+.assistant-composer footer { display: flex; align-items: center; gap: 8px; }
+.assistant-composer small { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.assistant-file { display: flex; align-items: center; gap: 5px; margin: 4px 0; font-size: 11px; }
+.assistant-file span { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; flex: 1; }
+.assistant-file input { width: 100px; min-width: 0; }
+.assistant-error { margin: 0; padding: 8px; color: #8d301e; background: #fff3e9; font-size: 12px; }
+.assistant-answer table { border-collapse: collapse; display: block; overflow: auto; }
+.assistant-answer td, .assistant-answer th { border: 1px solid var(--border); padding: 4px; }
+.assistant-answer pre { overflow: auto; }

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from src.agent.extraction_agent.infrastructure.document.model_traces import LocalModelTraceStore
 from src.config import AgentSettings
 from src.harness.model_gateway import ModelGateway, OpenAICompatibleModelGateway
 from src.harness.retry import RetryPolicy
 from src.infrastructure.supabase_client import SupabaseClient
 
+from .diagnostics import ExplainDiagnosticGateway
 from .repository import ExplanationRepository, SupabaseExplanationRepository
 from .service import ExplainAgent
 
@@ -43,6 +45,11 @@ def create_explain_agent(
                 initial_backoff_seconds=config.model_retry_initial_backoff_seconds,
                 max_backoff_seconds=config.model_retry_max_backoff_seconds,
             ),
+        )
+        gateway = ExplainDiagnosticGateway(
+            gateway,
+            LocalModelTraceStore(config.workspace_root / ".runtime" / "explain-diagnostics"),
+            config.default_model or "",
         )
     return ExplainAgent(
         repository, gateway, max_sessions=max_sessions, max_tokens=config.model_max_tokens or 2000

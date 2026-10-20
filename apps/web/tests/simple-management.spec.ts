@@ -1,3 +1,4 @@
+import { expandProjectTree, expandWorkspace } from "./tree-navigation";
 import { test, expect, type Page } from "@playwright/test";
 
 // Explicit HTTP fixtures; the real local DB/Storage path is validated separately.
@@ -20,6 +21,7 @@ test("项目级导出全量XLSX，切回项目清除范围，品牌使用新名�
   await page.goto(`/projects/${projectId}`);
   await expect(page.getByRole("link", { name: "振华重工放线表提取系统首页", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "导出项目XLSX", exact: true })).toBeEnabled();
+  await expandProjectTree(page);
   await page.getByRole("button", { name: /^003\.C 003\.C/ }).click();
   await expect(page.getByRole("button", { name: "导出项目XLSX", exact: true })).toHaveCount(0);
   await page.getByRole("link", { name: "三表回归夹具项目", exact: true }).click();
@@ -193,6 +195,8 @@ test("非当前项目双击改名不跳转，键盘与单击导航仍可用", as
 
 test("工作区和图纸编号自然升序，树与图纸库使用简名且不改变PDF物理页", async ({ page }) => {
   await fixture(page, { treeOrder: true }); await page.goto(`/projects/${projectId}`);
+  await expandProjectTree(page);
+  await expandWorkspace(page, "006.M");
   await expect(page.locator(".workspace-row strong")).toHaveText(["006.C", "006.M", "082.R"]);
   const motor = page.locator(".workspace-node").filter({ has: page.locator(".workspace-row strong", { hasText: "006.M" }) });
   await expect(motor.locator(".drawing-row strong")).toHaveText(["006M01", "006M2", "006M10"]);
@@ -222,12 +226,14 @@ test("窄屏项目名原地编辑、长文本和失败提示可见", async ({ pa
 test("增量提取刷新后仍按编号升序显示目录和图纸", async ({ page }) => {
   const state = await fixture(page, { realtime: true, treeOrder: true });
   await page.goto(`/projects/${projectId}`);
+  await expandProjectTree(page);
   await expect(page.locator(".workspace-row")).toHaveCount(0);
   state.advance(1);
   await expect(page.locator(".workspace-row strong")).toHaveText(["006.C", "006.M", "082.R"]);
   state.advance(3);
   await expect(page.getByText("处理完成", { exact: true })).toBeVisible();
   await expect(page.locator(".workspace-row strong")).toHaveText(["006.C", "006.M", "082.R"]);
+  for (const code of ["006.C", "006.M", "082.R"]) await expandWorkspace(page, code);
   await expect(page.locator(".drawing-row strong")).toHaveText(["006C01", "006M01", "006M2", "006M10", "082R50"]);
 });
 
@@ -264,9 +270,9 @@ for (const narrow of [false, true]) {
   });
 }
 
-test("上传保存后启动提取，AI聊天仍未开放", async ({ page }) => {
+test("上传保存后启动提取，主助手未就绪时保持不可发送", async ({ page }) => {
   const { calls } = await fixture(page, { empty: true }); await page.goto("/projects");
-  await page.locator('input[type="file"]').setInputFiles({ name: "fixture.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-fixture") });
+  await page.locator('.workbench-app input[type="file"]').setInputFiles({ name: "fixture.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-fixture") });
   await expect(page.getByRole("dialog")).toContainText("文件保存成功后将自动拆页并提取线表");
   await expect(page.getByRole("button", { name: "保存到项目", exact: true })).toBeDisabled();
   await page.getByRole("combobox", { name: "图纸规则" }).selectOption("zh");
@@ -274,8 +280,8 @@ test("上传保存后启动提取，AI聊天仍未开放", async ({ page }) => {
   await expect(page).toHaveURL(`/projects/${projectId}`);
   await expect(page.getByText("PDF 已保存，尚无图纸索引和提取结果。")).toBeVisible();
   await page.getByRole("button", { name: "打开 AI 聊天面板" }).click();
-  await expect(page.getByText("AI 对话暂未接入", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "发送给主 Agent" })).toBeDisabled();
+  await expect(page.getByRole("textbox", { name: "向主助手提出需求" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "发送助手消息" })).toBeDisabled();
   expect(calls.some(path => path.includes("/supervisor/") || path.includes("/runs/"))).toBe(false);
 });
 
@@ -316,6 +322,7 @@ test("规则引用与Stage2内部补全预览", async ({ page }) => {
 test("拆页等待、初扫与补全结果实时更新且处理期间只读", async ({ page }) => {
   const state = await fixture(page, { realtime: true });
   await page.goto(`/projects/${projectId}`);
+  await expandProjectTree(page);
   await expect(page.locator(".extraction-progress")).toContainText("正在进行第一阶段处理");
   await expect(page.getByText("当前范围没有线表记录", { exact: true })).toHaveCount(0);
   await page.screenshot({ path: test.info().outputPath("rendering.png"), fullPage: true });

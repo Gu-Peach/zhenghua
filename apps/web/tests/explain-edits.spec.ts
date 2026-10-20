@@ -1,3 +1,4 @@
+import { expandProjectTree, expandWorkspace } from "./tree-navigation";
 import { test, expect, type Page } from "@playwright/test";
 
 const project = "00000000-0000-0000-0000-000000000010";
@@ -51,6 +52,8 @@ async function open(page: Page, navigate = true) {
   const cell = page.getByRole("cell").filter({ has: page.getByRole("button", { name: "解释端子 XA:8", exact: true }) });
   await cell.hover(); await cell.getByRole("button", { name: "解释端子 XA:8", exact: true }).click();
   const panel = page.getByRole("dialog", { name: "来源解释", exact: true });
+  await panel.getByLabel("追问来源解释").fill("请解释当前连接的来源");
+  await panel.getByRole("button", { name: "发送追问", exact: true }).click();
   await expect(panel.getByLabel("解释回复")).toContainText("当前保存的终点");
   return panel;
 }
@@ -67,7 +70,11 @@ async function propose(page: Page) {
 test("先显示回答再展示逐行对照，确认后刷新表格并用新行版本追问", async ({ page }) => {
   const state = await fixture(page); const panel = await propose(page);
   expect(state.decisions).toHaveLength(0);
+  await expect(panel.getByRole("button", { name: "确认修改 1 行", exact: true })).toBeInViewport();
+  await expect(panel.locator(".connection-change").first()).not.toHaveAttribute("open", "");
+  await panel.locator(".connection-change > summary").first().click();
   await expect(panel.getByRole("cell", { name: "XD10:1", exact: true })).toBeVisible();
+  await panel.getByRole("button", { name: "确认修改 1 行", exact: true }).scrollIntoViewIfNeeded();
   await expect(panel.getByRole("button", { name: "确认修改 1 行", exact: true })).toBeInViewport();
   await page.screenshot({ path: test.info().outputPath("explain-edit-preview-desktop.png") });
   await panel.getByRole("button", { name: "确认修改 1 行", exact: true }).click(); await expect(panel.getByText("已保存 1 行修改", { exact: false })).toBeVisible();
@@ -80,6 +87,7 @@ test("先显示回答再展示逐行对照，确认后刷新表格并用新行�
 test("整组交换后留在原页和工作区，搜索筛选及行ID保持", async ({ page }) => {
   await fixture(page, { swap: true, restored: true });
   await page.goto(`/projects/${project}`);
+  await expandProjectTree(page); await expandWorkspace(page, "003.C");
   await page.getByRole("button", { name: "003C01 PDF 第 1 页 completed", exact: true }).click();
   await page.getByLabel("搜索线表").fill("P1");
   const panel = await open(page, false);
@@ -130,7 +138,9 @@ test("刷新恢复待确认方案，全部变更可翻页，窄屏不溢出", as
   await fixture(page, { restored: true, many: true }); await page.setViewportSize({ width: 390, height: 844 });
   const panel = await open(page); const preview = panel.getByRole("region", { name: "线表修改预览" });
   await expect(preview).toBeVisible(); await expect(preview.getByText("匹配 27 行，实际修改 26 行。", { exact: false })).toBeVisible();
-  await preview.getByRole("button", { name: "下一组", exact: true }).click(); await expect(preview.getByRole("cell", { name: "P26", exact: true })).toBeVisible();
+  await preview.getByRole("button", { name: "下一组", exact: true }).click(); await expect(preview.locator("summary").getByText("P26", { exact: true })).toBeVisible();
+  await preview.locator(".connection-change > summary").click();
+  await expect(preview.getByRole("cell", { name: "XD10:1", exact: true })).toBeVisible();
   await page.screenshot({ path: test.info().outputPath("explain-edit-preview-mobile.png") });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
 });

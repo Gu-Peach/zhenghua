@@ -57,6 +57,7 @@ class ExplainTurn(StrictModel):
     attachment_ids: list[UUID] = Field(default_factory=list, max_length=6)
     rescan_id: UUID | None = None
     allow_rescan: bool = True
+    allow_edits: bool = True
 
     @model_validator(mode="after")
     def check_selection(self) -> ExplainTurn:
@@ -289,11 +290,30 @@ class RescanScope(StrictModel):
         return self
 
 
+class RescanTargetBinding(StrictModel):
+    connection_ids: list[UUID] = Field(min_length=1, max_length=1000)
+    drawing_page: ExactText
+    workspace_code: ExactText | None = None
+    pdf_page_number: int | None = Field(default=None, ge=1)
+
+
 class RescanRequest(StrictModel):
     scope: RescanScope
     fields: Literal["all", "start", "end"] = "all"
     instructions: str = Field(default="", max_length=4000)
     result_mode: Literal["patch", "replace_scope"] = "patch"
+    target_bindings: list[RescanTargetBinding] = Field(default_factory=list, max_length=200)
+
+    @model_validator(mode="after")
+    def validate_targets(self) -> RescanRequest:
+        if self.target_bindings and self.fields != "end":
+            raise ValueError("目标页绑定仅用于冻结起点的终点重扫")
+        identifiers = [item for binding in self.target_bindings for item in binding.connection_ids]
+        if len(set(identifiers)) != len(identifiers):
+            raise ValueError("同一连接不能绑定多个目标页")
+        if self.scope.connection_ids and set(identifiers) - set(self.scope.connection_ids):
+            raise ValueError("目标页绑定超出选中连接范围")
+        return self
 
     def resolved_mode(self) -> Literal["patch", "replace_scope"]:
         return (

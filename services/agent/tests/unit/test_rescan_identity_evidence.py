@@ -217,15 +217,17 @@ def test_completion_keeps_primary_target_after_auxiliary_images_and_binds_one_so
         assert "本条终点所在的目标页" in texts and "本条已冻结起点所在的来源页" in texts
         assert "禁止当作目标页读取终点" in texts
         assert result.metadata["rescan_task"]["frozen_start_terminal"] == "X3:1"
-        assert result.metadata["rescan_input_contract"] == 2
+        assert result.metadata["rescan_input_contract"] == 3
+        assert all(image["kind"] == "input" for image in result.metadata["vision_images"])
 
     asyncio.run(run())
 
 
-def test_legacy_input_cache_cannot_mix_with_reordered_completion_evidence():
+@pytest.mark.parametrize("contract", ["rescan-v1", "rescan-v3"])
+def test_legacy_input_cache_cannot_mix_with_reordered_completion_evidence(contract):
     async def run():
         gateway = FakeModelGateway([])
-        session = CandidateSession(None, {"checkpoint": {"configuration": {"contract": "rescan-v1"}}})
+        session = CandidateSession(None, {"checkpoint": {"configuration": {"contract": contract}}})
         with pytest.raises(ValueError, match="create a new task"):
             await execute_rescan(session, AgentSettings(), gateway=gateway)
         assert not gateway.calls

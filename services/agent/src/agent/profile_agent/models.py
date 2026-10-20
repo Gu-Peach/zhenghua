@@ -241,6 +241,7 @@ class ProfileImport(StrictModel):
     source_checksum: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     display_name: str = Field(min_length=1, max_length=120)
     content_base64: str | None = Field(default=None, max_length=42 * 1024 * 1024)
+    read_only: bool = False
 
 
 class EditFilesInput(StrictModel):

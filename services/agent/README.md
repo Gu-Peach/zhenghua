@@ -1,5 +1,25 @@
 # Agent Service
 
+2026-10-20 当前模型服务已明确拒绝required工具选择，Explain现仅对此400启用Pydantic JSON决策兼容，仍走原工具/权限/任务回执。重载8100后从失败消息重试，无新迁移、凭据或8000/Worker变化；169个场景分批离线通过，未跑真实模型，见[排障](../../docs/service/agent/changelog/2026-10-20-explain-tool-choice-compatibility.md)。
+
+2026-10-20 Explain补调使用required工具选择和精简事实，本轮私有图片校验后实际进入视觉输入；其他Agent默认工具策略保持。重载8100并刷新Web重开窗口后发送，无迁移/8000或Worker变化。155项离线通过，当前供应方required支持待实测，见[记录](../../docs/service/agent/changelog/2026-10-20-explain-required-tools.md)。
+
+2026-10-20 Explain修复只检索却宣称重扫queued：本轮真实任务回执校验、一次补调、失败关闭与缓存/历史隔离。无需新命令或迁移，重载8100后关闭再打开窗口并重新发送需求；原文字queued没有任务可恢复。127项离线回归通过，未运行真实重扫，见[记录](../../docs/service/agent/changelog/2026-10-20-explain-rescan-receipts.md)。
+
+2026-10-19 Explain增加脱敏调用诊断，记录请求规模/工具轮次和安全上游分类，错误附诊断编号；文件位于忽略目录`.runtime/explain-diagnostics`，不保存图纸或对话正文。重载8100后正常失败请求才产生现场诊断，无额外模型调用/重试，见[记录](../../docs/service/agent/changelog/2026-10-19-explain-diagnostics.md)。
+
+2026-10-19终点重扫支持逐连接target_bindings，用户指定的页号原样传递，冻结起点直接补终点；未定位目标不退回初扫，真实细节图受预算保护。输入契约3/缓存rescan-v6，需重载8000/8100及实际Worker后新建请求，旧实际任务不改写；见[交付](../../docs/service/agent/changelog/2026-10-19-rescan-explicit-targets.md)。
+
+2026-10-19指定STS项目已启用“新重扫使用项目当前选定规则”（当前ZH2.3.0）：任务独立固定Storage包，不再优先旧批次包；其他项目默认历史规则保持。需部署迁移20261019030000并重载实际Worker后新建一轮，旧任务不能通过重试变成新版；rescan-v5隔离旧缓存。见[交付](../../docs/service/agent/changelog/2026-10-19-rescan-project-profile.md)。
+
+2026-10-19修复已定位跨页但终点为空时关联页丢失：唯一目录目标页保留、端子仍待复核；重扫缓存契约rescan-v4，需重载实际Worker后新建任务并手动确认，不自动改写旧结果。见[交付](../../docs/service/agent/changelog/2026-10-19-rescan-target-page.md)。
+
+2026-10-19主助手支持原理号范围/多编号、重复读取制止和数据修改候选＋规则诊断接续；已完成调用不能代替后续目标。需8000/8100同步重载再发请求，真实业务数据未修改，见[记录](../../docs/service/agent/changelog/2026-10-19-main-assistant-progress.md)。
+
+2026-10-19修复主助手未调用工具却口述重扫成功：无工具终答增加短结构化执行核验、一次补调，启动确认只取真实回执。需重载8100及8000后重新发送需求；不自动补执行历史回复。见[修复](../../docs/service/agent/changelog/2026-10-19-main-assistant-receipt-guard.md)。
+
+2026-10-19主助手首版已接入现有8100：业务检索跳转、Explain只读、重扫候选、Profile冻结包诊断和修改方案确认发布。重载8000 API2.11.0及8100后刷新Web；本地新增迁移已部署。沿用模型配置及AGENT_SERVER_BASE_URL回调地址，不新增端口。见[交付](../../docs/service/agent/changelog/2026-10-19-main-assistant.md)。
+
 2026-10-19规则配置修复DIALOGUE_INPUT_INVALID：模型漏内部读取说明不再直接中断，沿用实际样图与用户上下文生成候选；真正缺来源会追问，首次失败恢复后可复用已存图片。重载8100后原页重试，或恢复会话输入继续；无前端/API迁移，未运行真实模型或修改实际草稿。见[排障](../../docs/service/agent/changelog/2026-10-19-profile-dialogue-input-recovery.md)。
 
 2026-10-19规则配置主聊天移除阶段切换栏，支持图片/PDF先暂存、发送或Enter后建草稿和读图、逐阶段公开链路与用户确认后自动继续；手动多图分类逐图生成，PDF真实抽样图可复用，缺接线/目标图时追问。用户仍需确认候选并最后手动发布。需重载8100和8000后刷新Web，无新迁移/环境变量，未运行真实模型或操作实际草稿；见[交付](../../docs/service/agent/changelog/2026-10-19-guided-profile-authoring.md)与[ADR-0038](../../docs/adr/0038-guided-profile-authoring.md)。

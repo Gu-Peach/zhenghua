@@ -133,13 +133,20 @@ def published_rows(
             for t in state.get("cross_page_tasks", [])
             if t.get("unit_id") == record.unit_id
             and t.get("connection_id") == record.connection_id
-            and (state.get("cross_page_results", {}).get(t["task_id"], {}).get("end") or {}).get("terminal")
+            and t.get("target_pdf_page") in pages
+            and t.get("target_pdf_page") != number
         ]
-        target_numbers = {int(t["target_pdf_page"]) for t in matched if t.get("target_pdf_page")}
+        confirmed = [
+            t
+            for t in matched
+            if (state.get("cross_page_results", {}).get(t["task_id"], {}).get("end") or {}).get("terminal")
+        ]
+        # A unique indexed task resolves the page even if its physical terminal is unreadable.
+        target_numbers = {int(t["target_pdf_page"]) for t in (confirmed or matched)}
         target = (
             record.end_terminal_coordinates.pdf_page_number
             if record.end_terminal_coordinates
-            else (next(iter(target_numbers)) if len(target_numbers) == 1 and record.end_terminal else None)
+            else (next(iter(target_numbers)) if len(target_numbers) == 1 else None)
         )
         if target == number:
             target = None

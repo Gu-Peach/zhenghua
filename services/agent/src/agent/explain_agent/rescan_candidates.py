@@ -25,6 +25,9 @@ def page_endpoints(row: dict[str, Any]) -> list[tuple[str, str | None]]:
 def match_score(old: dict[str, Any], new: dict[str, Any]) -> int:
     if old["source_pdf_page_number"] != new["source_pdf_page_number"]:
         return 0
+    if old.get("id") and old.get("id") == new.get("id"):
+        # Endpoint-only completion copies the trusted baseline ID; VLM cannot assign it.
+        return 10000
     score = (
         4 if old.get("principle_number") and old.get("principle_number") == new.get("principle_number") else 0
     )

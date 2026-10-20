@@ -145,6 +145,8 @@ class ProfileAgent:
 
     def _export(self, draft: UUID, revision: int, actor: ProfileActor) -> ExportReceipt:
         view, root, meta = self.store.snapshot(draft, actor, revision)
+        if (meta.get("source") or {}).get("read_only") == "true":
+            raise ProfileError("PROFILE_READ_ONLY", "只读诊断草稿不能发布", 403)
         report = validate_draft(root, meta)
         if not report.ready:
             raise ProfileError(

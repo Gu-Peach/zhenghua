@@ -224,6 +224,8 @@ class DraftStore:
                         for key in ("profile_id", "key", "version", "checksum")
                     ):
                         raise ProfileError("CREATE_CONFLICT", "相同草稿ID的来源已变化", 409)
+                    if prior_source.get("read_only", "false") != source.get("read_only", "false"):
+                        raise ProfileError("CREATE_CONFLICT", "不能改变已有草稿的只读权限", 409)
                 return self._view(row)
             relative = f"{actor.user_id}/{request.draft_id}/revisions/{uuid4()}"
             root = self._path(relative)
@@ -244,9 +246,10 @@ class DraftStore:
                 manifest = json.loads((root / "profile.json").read_text(encoding="utf-8"))
                 if manifest["key"] != request.key or manifest["version"] != request.source_version:
                     raise ProfileError("SOURCE_CHANGED", "规则包身份与来源不符", 409)
-                parts = [int(p) for p in manifest["version"].split(".")]
-                manifest["version"] = f"{parts[0]}.{parts[1]}.{parts[2] + 1}"
-                manifest["status"] = "experimental"
+                if (source or {}).get("read_only") != "true":
+                    parts = [int(p) for p in manifest["version"].split(".")]
+                    manifest["version"] = f"{parts[0]}.{parts[1]}.{parts[2] + 1}"
+                    manifest["status"] = "experimental"
                 json_write(root / "profile.json", manifest)
                 meta["generated"] = False
             elif request.source_profile:
@@ -574,6 +577,12 @@ class DraftStore:
             )
         return changes
 
+    def require_editable(self, draft: UUID, actor: ProfileActor) -> None:
+        """Historical diagnosis copies may collect evidence but cannot change rules."""
+        _, meta = self.root_for(draft, actor)
+        if (meta.get("source") or {}).get("read_only") == "true":
+            raise ProfileError("PROFILE_READ_ONLY", "历史诊断副本不允许修改规则", 403)
+
     def edit(
         self,
         draft: UUID,
@@ -583,6 +592,7 @@ class DraftStore:
         edits: list[FileEdit],
         authorization: str,
     ) -> DraftView:
+        self.require_editable(draft, actor)
         if authorization not in {"explicit_instruction", "confirmed_proposal"}:
             raise ProfileError("CONFIRMATION_REQUIRED", "建议尚未获用户确认", 409)
         return self.mutate(
@@ -610,6 +620,7 @@ class DraftStore:
         observations: Sequence[dict[str, Any]] = (),
         user_message: str = "",
     ) -> Proposal:
+        self.require_editable(draft, actor)
         with self._db() as db:
             db.execute("begin immediate")
             row = self._owned(db, draft, actor)
@@ -663,6 +674,7 @@ class DraftStore:
     def confirm(
         self, draft: UUID, actor: ProfileActor, identifier: UUID, revision: int, accepted: bool
     ) -> DraftView:
+        self.require_editable(draft, actor)
         with self._db() as db:
             db.execute("begin immediate")
             row = self._owned(db, draft, actor)

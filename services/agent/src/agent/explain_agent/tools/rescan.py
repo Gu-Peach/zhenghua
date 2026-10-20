@@ -20,10 +20,13 @@ class RescanConnectionsTool:
             "function": {
                 "name": cls.name,
                 "description": "用户要求重新识别、重扫端子/页/工作区时创建提取Agent任务。"
-                "始终读取数据库原页/关联图及原Profile，用户截图作为辅助。"
+                "读取数据库原页/关联图及任务冻结规则，用户截图作为辅助。"
+                "默认沿用历史规则；项目明确启用规则升级时，新任务冻结项目当前选定版本，以返回的profile为准。"
                 "fields=end只替换终点，start只替换起点；all且页/工作区范围时确认后删除旧范围并写入全部新结果。"
                 "按行ID/原理号重扫只修订选中行，不新增范围外结果。只保存候选，确认前不改线表。"
-                "工作区直接传workspace_code，不只传当前页几行。",
+                "工作区直接传workspace_code，不只传当前页几行。"
+                "用户已确认起点、指定终点页时必须用fields=end并填写target_bindings，按connection_ids绑定原样业务页号；"
+                "不能只写instructions，不能把002M03扩写为33/34/35页，不明确对应关系先追问。",
                 "parameters": schema,
             },
         }

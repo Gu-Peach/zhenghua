@@ -35,7 +35,7 @@ def create_app(
             app.state.management = ManagementService(app.state.db)
             yield
 
-    app = FastAPI(title="Wiring Workbench Server", version="2.10.0", lifespan=lifespan)
+    app = FastAPI(title="Wiring Workbench Server", version="2.13.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(
@@ -181,6 +181,9 @@ def create_app(
     async def health() -> dict[str, str]:
         return {"status": "ok"}
 
+    from wiring_server.assistant_routes import install_assistant_routes
+
+    install_assistant_routes(app, identity)
     install_management_routes(app, identity)
     install_explain_routes(app, identity)
     install_profile_routes(app, identity)

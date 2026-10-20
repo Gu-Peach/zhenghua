@@ -109,6 +109,8 @@ class ProfileTools:
         self.validation: ValidationReport | None = None
         self.viewed: set[str] = set()
         self.model_calls: list[dict[str, Any]] = []
+        _, meta = store.root_for(draft, actor)
+        self.read_only = (meta.get("source") or {}).get("read_only") == "true"
 
     def definitions(self) -> list[dict[str, Any]]:
         return [
@@ -121,6 +123,7 @@ class ProfileTools:
                 },
             }
             for name, (schema, description) in DEFINITIONS.items()
+            if not self.read_only or name not in {"propose_edits", "fill_template", "apply_edits"}
             if name not in {"fill_template", "apply_edits"} or self.turn.intent == "edit" and not self.written
         ]
 
@@ -135,6 +138,10 @@ class ProfileTools:
         )
 
     async def execute(self, call: ModelToolCall) -> tuple[dict[str, Any], list[dict[str, str]]]:
+        if self.read_only and call.name in {"propose_edits", "fill_template", "apply_edits"}:
+            raise ProfileError(
+                "PROFILE_READ_ONLY", "历史规则诊断仅可读取，修改需建立当前可编辑版本的草稿", 403
+            )
         if call.name not in DEFINITIONS:
             raise ProfileError("TOOL_NOT_ALLOWED", "工具不在Profile Agent允许范围内", 422)
         parameters = DEFINITIONS[call.name][0].model_validate_json(call.arguments)

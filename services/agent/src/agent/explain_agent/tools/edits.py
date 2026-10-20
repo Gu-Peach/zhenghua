@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import NAMESPACE_URL, uuid5
 
-from ..models import ConnectionEditProposal, ConnectionEditRequest, ExplainActor, ExplainTurn
+from ..models import ConnectionEditProposal, ConnectionEditRequest, ExplainActor, ExplainError, ExplainTurn
 from ..repository import ExplanationRepository
 
 
@@ -33,6 +33,8 @@ class ProposeConnectionEditTool:
         request: ConnectionEditRequest,
         index: int,
     ) -> ConnectionEditProposal:
+        if not turn.allow_edits:
+            raise ExplainError("EDIT_NOT_REQUESTED", "本轮只读解释，未授权生成修改方案。", 422)
         identifier = uuid5(
             NAMESPACE_URL, f"explain-edit:{actor.user_id}:{turn.project_id}:{turn.turn_id}:{index}"
         )

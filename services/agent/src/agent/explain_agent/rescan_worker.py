@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from contextlib import suppress
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID, uuid4
 
 import httpx
@@ -17,6 +17,7 @@ from src.domain.models.runs import ProfileRef
 
 from .models import RescanRequest
 from .rescan_execution import CandidateSession, execute_rescan
+from .rescan_targets import RescanTargetError
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +26,8 @@ class RescanSnapshot(BaseModel):
     pages: list[dict[str, Any]]
     scan_pages: list[dict[str, Any]]
     profile_ref: str
+    profile_source: Literal["historical", "project_reference"] = "historical"
+    profile_id: UUID | None = None
     name: str = ""
 
 
@@ -66,7 +69,10 @@ async def process_rescan(repository: Any, job: dict[str, Any], settings: AgentSe
         logger.error("Rescan %s failed (%s)", job["id"], type(exc).__name__)
         with suppress(Exception):
             await session.advance(
-                stage="failed", error="重扫未完成，原线表保留。请检查原图、历史规则包和模型配置后重新发起。"
+                stage="failed",
+                error=str(exc)
+                if isinstance(exc, RescanTargetError)
+                else "重扫未完成，原线表保留。请检查原图、任务选定的规则包和模型配置后重新发起。",
             )
     finally:
         task.cancel()

@@ -34,6 +34,7 @@ test("规则显示名可保存和刷新，内部标识与版本保持", async ({
   await page.getByRole("textbox", { name: "规则名称", exact: true }).press("Enter");
   await expect(page.locator(".rule-row-copy strong")).toHaveText("大车卷盘规则");
   expect(data.writes).toEqual([{ display_name: "大车卷盘规则", expected_display_name: "test" }]);
+  await page.getByText("规则标识与详情", { exact: true }).click();
   await expect(page.getByText(`${key}_extraction`, { exact: true })).toBeVisible();
   await expect(page.getByText(/版本 1.0.0/)).toBeVisible();
   await page.reload(); await expect(page.locator(".rule-row-copy strong")).toHaveText("大车卷盘规则");

@@ -7,7 +7,7 @@ from collections import deque
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from time import perf_counter
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 
 import httpx
 from pydantic import BaseModel, ValidationError
@@ -35,6 +35,7 @@ class ModelRequest:
     enable_thinking: bool | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
     tools: list[dict[str, Any]] = field(default_factory=list)
+    tool_choice: Literal["auto", "required"] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -140,6 +141,8 @@ class OpenAICompatibleModelGateway:
             payload["max_tokens"] = request.max_tokens
         if request.tools:
             payload["tools"] = request.tools
+            if request.tool_choice is not None:
+                payload["tool_choice"] = request.tool_choice
         # ``output_model`` controls local Pydantic validation only.  Do not
         # infer provider-side structured-output mode from it: several
         # OpenAI-compatible servers reject ``response_format`` unless they
@@ -303,6 +306,8 @@ class OpenAICompatibleModelGateway:
             payload["max_tokens"] = request.max_tokens
         if request.tools:
             payload["tools"] = request.tools
+            if request.tool_choice is not None:
+                payload["tool_choice"] = request.tool_choice
         headers = {"Content-Type": "application/json"}
         if self._api_key:
             headers["Authorization"] = f"Bearer {self._api_key}"

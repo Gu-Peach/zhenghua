@@ -160,6 +160,24 @@ def test_repository_combines_exact_filters_and_collects_all_related_images():
     asyncio.run(run())
 
 
+def test_zero_record_workspace_can_still_read_indexed_originals_without_edit_tools():
+    async def run():
+        backend, repo, gateway, agent = setup_search([
+            call("view_drawings", {"pdf_page_numbers": [3]}),
+            "此工作区没有已提取记录；已核对PDF物理页3，无法还原当时模型内部过程。",
+        ])
+        backend.rows = []
+        selected = ExplainTurn(project_id=PROJECT, query=ConnectionQuery(workspace_code="003.C"),
+            allow_rescan=False, allow_edits=False)
+        result = await agent.ask(selected, ExplainActor(user_id=OWNER))
+        assert result.visual_pages == [3]
+        assert result.context.drawings[0].pdf_page_number == 3
+        definitions = {tool["function"]["name"] for tool in gateway.calls[0].tools}
+        assert "rescan_connections" not in definitions and "propose_connection_edit" not in definitions
+        assert all(request.method == "GET" for request in backend.calls)
+    asyncio.run(run())
+
+
 def test_model_calls_native_search_tool_and_paginates_before_explaining_page():
     async def run():
         responses = [

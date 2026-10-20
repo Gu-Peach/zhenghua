@@ -72,6 +72,144 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/assistant/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Capabilities */
+        get: operations["capabilities_api_v1_assistant_capabilities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assistant/conversations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Conversations */
+        get: operations["conversations_api_v1_assistant_conversations_get"];
+        put?: never;
+        /** Create */
+        post: operations["create_api_v1_assistant_conversations_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assistant/conversations/{conversation}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Conversation Get */
+        get: operations["conversation_get_api_v1_assistant_conversations__conversation__get"];
+        put?: never;
+        post?: never;
+        /** Conversation Delete */
+        delete: operations["conversation_delete_api_v1_assistant_conversations__conversation__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assistant/conversations/{conversation}/attachments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload */
+        post: operations["upload_api_v1_assistant_conversations__conversation__attachments_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assistant/conversations/{conversation}/turns/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Stream */
+        post: operations["stream_api_v1_assistant_conversations__conversation__turns_stream_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assistant/actions/{action}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Action Get */
+        get: operations["action_get_api_v1_assistant_actions__action__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assistant/actions/{action}/decision": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Action Decide */
+        post: operations["action_decide_api_v1_assistant_actions__action__decision_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/internal/assistant/turns/{turn}/tools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Execute Tool */
+        post: operations["execute_tool_api_internal_assistant_turns__turn__tools_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/capabilities": {
         parameters: {
             query?: never;
@@ -866,6 +1004,219 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AssistantActionDecision */
+        AssistantActionDecision: {
+            /** Checksum */
+            checksum: string;
+            /** Accepted */
+            accepted: boolean;
+        };
+        /** AssistantActionRead */
+        AssistantActionRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /**
+             * Turn Id
+             * Format: uuid
+             */
+            turn_id: string;
+            /** Tool Name */
+            tool_name: string;
+            /** Status */
+            status: string;
+            /** Result */
+            result?: {
+                [key: string]: unknown;
+            };
+            /** Checksum */
+            checksum?: string | null;
+        };
+        /** AssistantAttachmentInput */
+        AssistantAttachmentInput: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id?: string;
+            /** Filename */
+            filename: string;
+            /** Content Base64 */
+            content_base64: string;
+            /** Project Id */
+            project_id?: string | null;
+            /** Pdf Page Number */
+            pdf_page_number?: number | null;
+            /**
+             * Role
+             * @default detail
+             * @enum {string}
+             */
+            role: "source" | "target" | "detail" | "pdf";
+        };
+        /** AssistantAttachmentRead */
+        AssistantAttachmentRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /** Filename */
+            filename: string;
+            /** Mime Type */
+            mime_type: string;
+            /** Project Id */
+            project_id?: string | null;
+            /** Pdf Page Number */
+            pdf_page_number?: number | null;
+            /** Role */
+            role: string;
+            /** Checksum */
+            checksum: string;
+        };
+        /** AssistantConversationCreate */
+        AssistantConversationCreate: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id?: string;
+            /**
+             * Title
+             * @default 新对话
+             */
+            title: string;
+        };
+        /** AssistantConversationRead */
+        AssistantConversationRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Title */
+            title: string;
+            context?: components["schemas"]["AssistantScope"];
+            /** Created At */
+            created_at: string;
+            /** Updated At */
+            updated_at: string;
+            /** Turns */
+            turns?: components["schemas"]["AssistantTurnRead"][];
+            /**
+             * Has More
+             * @default false
+             */
+            has_more: boolean;
+            /** Next Offset */
+            next_offset?: number | null;
+        };
+        /** AssistantEvent */
+        AssistantEvent: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id?: string;
+            /**
+             * Turn Id
+             * Format: uuid
+             */
+            turn_id: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "answer_delta" | "tool_started" | "tool_completed" | "navigate" | "selection_required" | "task_started" | "proposal_ready" | "completed" | "error";
+            /** Message */
+            message?: string | null;
+            /** Data */
+            data?: {
+                [key: string]: unknown;
+            };
+        };
+        /** AssistantScope */
+        AssistantScope: {
+            /** Project Id */
+            project_id?: string | null;
+            /** Project Name */
+            project_name?: string | null;
+            /** Workspace Code */
+            workspace_code?: string | null;
+            /** Workspace Id */
+            workspace_id?: string | null;
+            /** Drawing Id */
+            drawing_id?: string | null;
+            /** Drawing Page */
+            drawing_page?: string | null;
+            /** Pdf Page Number */
+            pdf_page_number?: number | null;
+            /** Connection Ids */
+            connection_ids?: string[];
+            /** Batch Id */
+            batch_id?: string | null;
+        };
+        /** AssistantToolCall */
+        AssistantToolCall: {
+            /** Name */
+            name: string;
+            /** Arguments */
+            arguments?: {
+                [key: string]: unknown;
+            };
+        };
+        /** AssistantTurnInput */
+        AssistantTurnInput: {
+            /**
+             * Turn Id
+             * Format: uuid
+             */
+            turn_id?: string;
+            /** Message */
+            message: string;
+            scope?: components["schemas"]["AssistantScope"];
+            /** Attachment Ids */
+            attachment_ids?: string[];
+        };
+        /** AssistantTurnRead */
+        AssistantTurnRead: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Conversation Id
+             * Format: uuid
+             */
+            conversation_id: string;
+            /** Status */
+            status: string;
+            request: components["schemas"]["AssistantTurnInput"];
+            /** Events */
+            events?: components["schemas"]["AssistantEvent"][];
+            /**
+             * Answer
+             * @default
+             */
+            answer: string;
+            /** Error */
+            error?: string | null;
+            /** Created At */
+            created_at: string;
+        };
         /** Attachment */
         Attachment: {
             /**
@@ -1574,6 +1925,11 @@ export interface components {
              * @default true
              */
             allow_rescan: boolean;
+            /**
+             * Allow Edits
+             * @default true
+             */
+            allow_edits: boolean;
         };
         /** ExtractionProgress */
         ExtractionProgress: {
@@ -2170,6 +2526,8 @@ export interface components {
              * @enum {string}
              */
             result_mode: "patch" | "replace_scope";
+            /** Target Bindings */
+            target_bindings?: components["schemas"]["RescanTargetBinding"][];
         };
         /** RescanRun */
         RescanRun: {
@@ -2232,6 +2590,17 @@ export interface components {
             principle_numbers?: string[];
             /** Pdf Page Numbers */
             pdf_page_numbers?: number[];
+        };
+        /** RescanTargetBinding */
+        RescanTargetBinding: {
+            /** Connection Ids */
+            connection_ids: string[];
+            /** Drawing Page */
+            drawing_page: string;
+            /** Workspace Code */
+            workspace_code?: string | null;
+            /** Pdf Page Number */
+            pdf_page_number?: number | null;
         };
         /** RescanUpload */
         RescanUpload: {
@@ -2918,6 +3287,356 @@ export interface operations {
                     "application/json": {
                         [key: string]: string;
                     };
+                };
+            };
+        };
+    };
+    capabilities_api_v1_assistant_capabilities_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    conversations_api_v1_assistant_conversations_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantConversationRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_api_v1_assistant_conversations_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantConversationCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantConversationRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    conversation_get_api_v1_assistant_conversations__conversation__get: {
+        parameters: {
+            query?: {
+                offset?: number;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                conversation: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantConversationRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    conversation_delete_api_v1_assistant_conversations__conversation__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                conversation: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_api_v1_assistant_conversations__conversation__attachments_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                conversation: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantAttachmentInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantAttachmentRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stream_api_v1_assistant_conversations__conversation__turns_stream_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                conversation: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantTurnInput"];
+            };
+        };
+        responses: {
+            /** @description 持久化主助手SSE事件 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": unknown;
+                    "application/json": components["schemas"]["AssistantEvent"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    action_get_api_v1_assistant_actions__action__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                action: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantActionRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    action_decide_api_v1_assistant_actions__action__decision_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                action: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantActionDecision"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantActionRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    execute_tool_api_internal_assistant_turns__turn__tools_post: {
+        parameters: {
+            query?: never;
+            header: {
+                "X-Assistant-Turn-Token": string;
+                authorization?: string | null;
+            };
+            path: {
+                turn: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistantToolCall"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

@@ -1,5 +1,17 @@
 # Server 业务服务
 
+API2.13.0增加主助手历史永久删除及附件GC：`DELETE /api/v1/assistant/conversations/{id}`返回204，保留正式结果与独立任务。新增20261019050000迁移本地已部署，8000已加载，刷新Web即可；其他实例的部署/回滚边界及测试命令见[交付](../../docs/service/server/changelog/2026-10-19-assistant-conversation-deletion.md)。
+
+2026-10-19 API2.12.0新增终点重扫target_bindings，Agent→Server→OpenAPI/TS及主助手参数已同步，无新迁移。重载8000及Agent/Worker后新建任务，见[契约记录](../../docs/service/server/changelog/2026-10-19-rescan-target-contract.md)。
+
+2026-10-19新增迁移20261019030000：授权项目可显式让新重扫固定项目当前规则，已有任务不改绑，资源GC检查重扫引用。本地已部署并为指定STS项目启用ZH2.3.0；使用需重载Worker，不需为SQL变化重启8000。部署命令见[交付](../../docs/service/server/changelog/2026-10-19-rescan-project-profile.md)。
+
+2026-10-19新增主助手有界编号范围与显式多编号检索、指定记录候选范围校验、复合任务全部回执核对；zh_crop仅在编辑时跟随已确认正式zh继任，诊断/旧项目保持原冻结版本。无新迁移，需8000/8100同步重载，见[记录](../../docs/service/server/changelog/2026-10-19-main-assistant-progress.md)。
+
+2026-10-19主助手答复在执行回执核验后发送：校验当前用户/会话/轮次及真实run，再输出数据库编号与状态。需8000/8100一起重载，无新迁移/契约生成变更，见[修复](../../docs/service/server/changelog/2026-10-19-main-assistant-receipt-guard.md)。
+
+2026-10-19新增主助手会话、强类型业务工具和确认服务，8000 API2.11.0；迁移20261019020000本地已安装并刷新Schema缓存，原业务数据不变。重载8000/8100后可由全局浮窗使用，见[接口、迁移与验证](../../docs/service/server/changelog/2026-10-19-main-assistant.md)。
+
 2026-10-19规则选择改为仅数据库上传包：/rule-library与历史/local兼容选项只展示有效Storage引用，登记接口只定位已有包，上传/新建不再绑定local://。ZH2.3.0、ABB1.3.1、XMZ0.2.1已发布到当前本地库；旧引用/项目保持。用户重载8000并刷新Web，无需迁移或新增Worker，见[交付](../../docs/service/server/changelog/2026-10-19-database-profile-catalog.md)。
 
 API2.10.0支持确认后的范围替换：全量删旧写新、局部仅更新选中内容，读持久候选/能力检测后才能提交。新增`20261019010000_rescan_scope_replacement.sql`已在本地应用，业务三表摘要不变，未执行替换。重载8000/8100/实际Worker并刷新Web，新建重扫；其他环境按顺序应用迁移。见[交付](../../docs/service/server/changelog/2026-10-19-rescan-scope-replacement.md)。

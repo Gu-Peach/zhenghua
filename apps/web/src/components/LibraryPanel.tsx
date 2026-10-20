@@ -5,9 +5,14 @@ import { RuleResources } from "./RuleResources";
 import { projectApi } from "@/apis/projects";
 import { skillName } from "@/apis/agents";
 
-export function RuleLibraryPanel({ items, onChanged, asSkills = false }: { items: RuleLibraryItem[]; onChanged: () => Promise<void>; asSkills?: boolean }) {
+function readableTime(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("zh-CN", { timeZone: "Asia/Shanghai", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).format(date);
+}
+
+export function RuleLibraryPanel({ items, onChanged, asSkills = false, initialRuleId }: { items: RuleLibraryItem[]; onChanged: () => Promise<void>; asSkills?: boolean; initialRuleId?: string }) {
   const [query, setQuery] = useState("");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(initialRuleId ?? null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -54,9 +59,9 @@ export function RuleLibraryPanel({ items, onChanged, asSkills = false }: { items
                 <button type="button" className="rule-details-button" disabled={savingName} aria-label="取消修改规则名称" onClick={() => { setRenaming(null); setError(""); }}><X size={14} />取消</button>
               </form> : <><strong>{rule.name}</strong>{rule.canRename && <button type="button" className="rule-name-trigger" disabled={deleting !== null || !!renaming || expandedId !== null} aria-label={`修改规则名称 ${rule.name}`} title="修改规则名称" onClick={() => { setRenaming({ rule, name: rule.name }); setError(""); setNotice(""); }}><Pencil size={13} /></button>}</>}
               <span className="rule-status rule-status-published">已上传</span></div>
-              <p>{asSkills && <><span className="rule-skill-code">{skillName(rule.key)}</span> · </>}{rule.summary}</p><small>版本 {rule.version} · 更新于 {rule.updatedAt}</small></div>
+              <small>版本 {rule.version} · 更新于 <time dateTime={rule.updatedAt} title={rule.updatedAt}>{readableTime(rule.updatedAt)}</time></small><details className="skill-identifiers"><summary>规则标识与详情</summary><p>{asSkills && <><span className="rule-skill-code">{skillName(rule.key)}</span> · </>}{rule.summary}</p></details></div>
             <button type="button" className="rule-details-button" disabled={!!renaming || deleting !== null} onClick={() => setExpandedId((current) => current === rule.id ? null : rule.id)} aria-expanded={expandedId === rule.id}>{expandedId === rule.id ? "收起" : "查看规则"}</button>
-            {rule.canDelete ? <button type="button" className="rule-details-button" disabled={deleting !== null || !!renaming} onClick={() => void remove(rule)} aria-label={`删除规则包 ${rule.key}`} title="删除规则包"><Trash2 size={15} />{deleting === rule.id ? "删除中…" : "删除"}</button> : null}
+            {rule.canDelete ? <button type="button" className="icon-button quiet-danger" disabled={deleting !== null || !!renaming} onClick={() => void remove(rule)} aria-label={`删除规则包 ${rule.key}`} title={deleting === rule.id ? "删除中…" : "删除规则包"}><Trash2 size={16} /></button> : null}
             {expandedId === rule.id ? <RuleResources key={rule.id} asSkill={asSkills} rule={rule} onClose={() => setExpandedId(null)} onChanged={async message => { setNotice(message ?? "规则已更新"); setExpandedId(null); await onChanged(); }} /> : null}
           </article>
         ))}

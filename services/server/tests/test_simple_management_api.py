@@ -91,6 +91,7 @@ class Backend:
             "agent_runs": [],
             "connection_rescan_assets": [],
             "connection_rescan_runs": [],
+            "assistant_attachments": [],
         }
 
     def respond(self, request: httpx.Request) -> httpx.Response:

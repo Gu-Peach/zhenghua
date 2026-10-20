@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Wiring Workbench Server",
-    "version": "2.10.0"
+    "version": "2.13.0"
   },
   "paths": {
     "/api/v1/auth/login": {
@@ -115,6 +115,606 @@
                   },
                   "type": "object",
                   "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assistant/capabilities": {
+      "get": {
+        "summary": "Capabilities",
+        "operationId": "capabilities_api_v1_assistant_capabilities_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Capabilities Api V1 Assistant Capabilities Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assistant/conversations": {
+      "post": {
+        "summary": "Create",
+        "operationId": "create_api_v1_assistant_conversations_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantConversationCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantConversationRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Conversations",
+        "operationId": "conversations_api_v1_assistant_conversations_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AssistantConversationRead"
+                  },
+                  "title": "Response Conversations Api V1 Assistant Conversations Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assistant/conversations/{conversation}": {
+      "delete": {
+        "summary": "Conversation Delete",
+        "operationId": "conversation_delete_api_v1_assistant_conversations__conversation__delete",
+        "parameters": [
+          {
+            "name": "conversation",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Conversation Get",
+        "operationId": "conversation_get_api_v1_assistant_conversations__conversation__get",
+        "parameters": [
+          {
+            "name": "conversation",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100000,
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantConversationRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assistant/conversations/{conversation}/attachments": {
+      "post": {
+        "summary": "Upload",
+        "operationId": "upload_api_v1_assistant_conversations__conversation__attachments_post",
+        "parameters": [
+          {
+            "name": "conversation",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantAttachmentInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantAttachmentRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assistant/conversations/{conversation}/turns/stream": {
+      "post": {
+        "summary": "Stream",
+        "operationId": "stream_api_v1_assistant_conversations__conversation__turns_stream_post",
+        "parameters": [
+          {
+            "name": "conversation",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Conversation"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantTurnInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "持久化主助手SSE事件",
+            "content": {
+              "text/event-stream": {},
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantEvent"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assistant/actions/{action}": {
+      "get": {
+        "summary": "Action Get",
+        "operationId": "action_get_api_v1_assistant_actions__action__get",
+        "parameters": [
+          {
+            "name": "action",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Action"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantActionRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/assistant/actions/{action}/decision": {
+      "post": {
+        "summary": "Action Decide",
+        "operationId": "action_decide_api_v1_assistant_actions__action__decision_post",
+        "parameters": [
+          {
+            "name": "action",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Action"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantActionDecision"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantActionRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/internal/assistant/turns/{turn}/tools": {
+      "post": {
+        "summary": "Execute Tool",
+        "operationId": "execute_tool_api_internal_assistant_turns__turn__tools_post",
+        "parameters": [
+          {
+            "name": "turn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Turn"
+            }
+          },
+          {
+            "name": "X-Assistant-Turn-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "title": "X-Assistant-Turn-Token"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssistantToolCall"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Execute Tool Api Internal Assistant Turns  Turn  Tools Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -3641,6 +4241,555 @@
   },
   "components": {
     "schemas": {
+      "AssistantActionDecision": {
+        "properties": {
+          "checksum": {
+            "type": "string",
+            "title": "Checksum"
+          },
+          "accepted": {
+            "type": "boolean",
+            "title": "Accepted"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "checksum",
+          "accepted"
+        ],
+        "title": "AssistantActionDecision"
+      },
+      "AssistantActionRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "turn_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Turn Id"
+          },
+          "tool_name": {
+            "type": "string",
+            "title": "Tool Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "result": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Result"
+          },
+          "checksum": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checksum"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "conversation_id",
+          "turn_id",
+          "tool_name",
+          "status"
+        ],
+        "title": "AssistantActionRead"
+      },
+      "AssistantAttachmentInput": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "filename": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Filename"
+          },
+          "content_base64": {
+            "type": "string",
+            "maxLength": 72000000,
+            "minLength": 1,
+            "title": "Content Base64"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "pdf_page_number": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pdf Page Number"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "source",
+              "target",
+              "detail",
+              "pdf"
+            ],
+            "title": "Role",
+            "default": "detail"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "filename",
+          "content_base64"
+        ],
+        "title": "AssistantAttachmentInput"
+      },
+      "AssistantAttachmentRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "mime_type": {
+            "type": "string",
+            "title": "Mime Type"
+          },
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "pdf_page_number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pdf Page Number"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role"
+          },
+          "checksum": {
+            "type": "string",
+            "title": "Checksum"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "conversation_id",
+          "filename",
+          "mime_type",
+          "role",
+          "checksum"
+        ],
+        "title": "AssistantAttachmentRead"
+      },
+      "AssistantConversationCreate": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title",
+            "default": "新对话"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AssistantConversationCreate"
+      },
+      "AssistantConversationRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "context": {
+            "$ref": "#/components/schemas/AssistantScope"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "title": "Updated At"
+          },
+          "turns": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantTurnRead"
+            },
+            "type": "array",
+            "title": "Turns"
+          },
+          "has_more": {
+            "type": "boolean",
+            "title": "Has More",
+            "default": false
+          },
+          "next_offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Offset"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AssistantConversationRead"
+      },
+      "AssistantEvent": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "turn_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Turn Id"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "answer_delta",
+              "tool_started",
+              "tool_completed",
+              "navigate",
+              "selection_required",
+              "task_started",
+              "proposal_ready",
+              "completed",
+              "error"
+            ],
+            "title": "Type"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "data": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Data"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "turn_id",
+          "type"
+        ],
+        "title": "AssistantEvent"
+      },
+      "AssistantScope": {
+        "properties": {
+          "project_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Id"
+          },
+          "project_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Name"
+          },
+          "workspace_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Code"
+          },
+          "workspace_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Id"
+          },
+          "drawing_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drawing Id"
+          },
+          "drawing_page": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drawing Page"
+          },
+          "pdf_page_number": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pdf Page Number"
+          },
+          "connection_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "title": "Connection Ids"
+          },
+          "batch_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Batch Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "AssistantScope"
+      },
+      "AssistantToolCall": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "arguments": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Arguments"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "AssistantToolCall"
+      },
+      "AssistantTurnInput": {
+        "properties": {
+          "turn_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Turn Id"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 8000,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Message"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/AssistantScope"
+          },
+          "attachment_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 6,
+            "title": "Attachment Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "AssistantTurnInput"
+      },
+      "AssistantTurnRead": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Conversation Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "request": {
+            "$ref": "#/components/schemas/AssistantTurnInput"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantEvent"
+            },
+            "type": "array",
+            "title": "Events"
+          },
+          "answer": {
+            "type": "string",
+            "title": "Answer",
+            "default": ""
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "conversation_id",
+          "status",
+          "request",
+          "created_at"
+        ],
+        "title": "AssistantTurnRead"
+      },
       "Attachment": {
         "properties": {
           "id": {
@@ -5893,6 +7042,11 @@
             "type": "boolean",
             "title": "Allow Rescan",
             "default": true
+          },
+          "allow_edits": {
+            "type": "boolean",
+            "title": "Allow Edits",
+            "default": true
           }
         },
         "additionalProperties": false,
@@ -7490,6 +8644,14 @@
             ],
             "title": "Result Mode",
             "default": "patch"
+          },
+          "target_bindings": {
+            "items": {
+              "$ref": "#/components/schemas/RescanTargetBinding"
+            },
+            "type": "array",
+            "maxItems": 200,
+            "title": "Target Bindings"
           }
         },
         "additionalProperties": false,
@@ -7677,6 +8839,60 @@
         "additionalProperties": false,
         "type": "object",
         "title": "RescanScope"
+      },
+      "RescanTargetBinding": {
+        "properties": {
+          "connection_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 1000,
+            "minItems": 1,
+            "title": "Connection Ids"
+          },
+          "drawing_page": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "\\S",
+            "title": "Drawing Page"
+          },
+          "workspace_code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200,
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workspace Code"
+          },
+          "pdf_page_number": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pdf Page Number"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "connection_ids",
+          "drawing_page"
+        ],
+        "title": "RescanTargetBinding"
       },
       "RescanUpload": {
         "properties": {

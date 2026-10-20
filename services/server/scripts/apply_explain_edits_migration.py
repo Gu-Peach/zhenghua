@@ -18,6 +18,9 @@ MIGRATIONS = {
     "20261018040000": "swap_endpoints_keep_origin",
     "20261018050000": "explain_rescan",
     "20261019010000": "rescan_scope_replacement",
+    "20261019020000": "main_assistant",
+    "20261019030000": "rescan_project_profile",
+    "20261019050000": "assistant_conversation_deletion",
 }
 
 
@@ -63,6 +66,15 @@ def fingerprints() -> str:
       'rows',(select md5(coalesce(string_agg(md5(to_jsonb(t)::text),'' order by id),'')) from public.extraction_connection_rows t));""").strip()
 
 
+def assistant_fingerprints() -> str:
+    """Compare existing assistant metadata without printing user content."""
+    return sql("""select jsonb_build_array(
+      (select md5(coalesce(string_agg(md5(to_jsonb(t)::text),'' order by id),'')) from assistant_conversations t),
+      (select md5(coalesce(string_agg(md5(to_jsonb(t)::text),'' order by id),'')) from assistant_turns t),
+      (select md5(coalesce(string_agg(md5(to_jsonb(t)::text),'' order by id),'')) from assistant_actions t),
+      (select md5(coalesce(string_agg(md5(to_jsonb(t)::text),'' order by id),'')) from assistant_attachments t));""").strip()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--migration", choices=tuple(MIGRATIONS), default=VERSION)
@@ -104,6 +116,7 @@ def main() -> None:
         )
         return
     before = fingerprints()
+    history_before = assistant_fingerprints() if version == "20261019050000" else None
     directory = (
         ROOT
         / ".runtime/migrations"
@@ -175,6 +188,21 @@ def main() -> None:
             ).strip()
             == "t"
         )
+    if version == "20261019020000":
+        verified = sql("""select count(*)=4 and bool_and(relrowsecurity) from pg_class
+          where oid in (to_regclass('public.assistant_conversations'),to_regclass('public.assistant_turns'),
+          to_regclass('public.assistant_actions'),to_regclass('public.assistant_attachments'));
+          select to_regprocedure('public.assistant_begin_turn(uuid,uuid,uuid,jsonb,text,text)') is not null
+          and to_regprocedure('public.assistant_finish_turn(uuid,uuid,text,text,jsonb,text,text,jsonb)') is not null;""").strip() == "t\nt"
+    if version == "20261019030000":
+        verified = sql("""select position('project_reference' in pg_get_functiondef('public.enqueue_connection_rescan(jsonb)'::regprocedure))>0
+          and position('connection_rescan_runs' in pg_get_functiondef('public.profile_version_in_use(uuid)'::regprocedure))>0;""").strip() == "t"
+    if version == "20261019050000":
+        verified = sql("""select to_regprocedure('public.assistant_delete_conversation(uuid,uuid)') is not null
+          and (select relrowsecurity from pg_class where oid='public.assistant_asset_gc'::regclass)
+          and not has_function_privilege('authenticated','public.assistant_delete_conversation(uuid,uuid)','execute')
+          and has_function_privilege('service_role','public.assistant_delete_conversation(uuid,uuid)','execute');""").strip() == "t"
+    sql("notify pgrst, 'reload schema';")
     result = {
         "migration": version,
         "applied": verified,
@@ -182,6 +210,8 @@ def main() -> None:
         "business_rows_unchanged": before == fingerprints(),
         "checksum": hashlib.sha256(source.encode()).hexdigest(),
     }
+    if history_before is not None:
+        result["assistant_history_unchanged"] = history_before == assistant_fingerprints()
     (directory / "receipt.json").write_text(
         json.dumps(result, indent=2), encoding="utf-8"
     )

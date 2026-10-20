@@ -12,6 +12,8 @@ from src.agent.explain_agent import ExplainActor, ExplainAgent, create_explain_a
 from src.agent.explain_agent.api import create_explain_router
 from src.agent.explain_agent.models import ExplainError
 from src.agent.extraction_agent.application.incremental_worker import run_worker
+from src.agent.main_assistant.api import create_assistant_router
+from src.agent.main_assistant.service import MainAssistant
 from src.agent.profile_agent import ProfileActor, ProfileAgent, create_profile_agent
 from src.agent.profile_agent.api import create_profile_router
 from src.api.dependencies import require_internal_service
@@ -22,6 +24,7 @@ def create_app(
     settings: AgentSettings | None = None,
     explain_agent: ExplainAgent | None = None,
     profile_agent: ProfileAgent | None = None,
+    main_assistant: MainAssistant | None = None,
 ) -> FastAPI:
     config = settings or AgentSettings.from_env()
 
@@ -38,6 +41,7 @@ def create_app(
 
     application = FastAPI(title="Independent Agent Service", lifespan=lifespan)
     application.state.settings = config
+    application.include_router(create_assistant_router(config, main_assistant))
     cached = explain_agent
 
     def explanation() -> ExplainAgent:

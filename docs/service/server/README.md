@@ -1,5 +1,23 @@
 # Server 文档
 
+- [主助手历史永久删除](./changelog/2026-10-19-assistant-conversation-deletion.md)、[设计](./assistant-conversation-deletion.md)：所有者删除、活动保护、级联元数据、持久附件清理及本地迁移/验收。
+
+- [终点重扫目标绑定契约](./changelog/2026-10-19-rescan-target-contract.md)：API2.12.0/DTO/主助手传递，Worker按项目目录验证，无新迁移。
+
+- [重扫规则独立固定](./changelog/2026-10-19-rescan-project-profile.md)：项目显式策略、入队版本快照和资源引用保护；新增迁移本地已部署。
+
+- [指定项目规则引用替换](./changelog/2026-10-19-project-profile-rebind.md)：按用户要求改为ZH2.3.0，历史批次/局部重扫冻结版本保持；不自动重跑。
+
+- [主助手历史当前执行状态](./changelog/2026-10-19-main-assistant-current-goal.md)：真实action状态/发布版本与范围标记，避免已发布候选被当成历史待办。
+
+- [规则诊断失败闭环](./changelog/2026-10-19-main-assistant-tool-failure.md)：内部异常持久化failed并安全返回，业务工具失败不再重复至上限；需重载旧8000/8100。
+
+- [范围检索与复合回执](./changelog/2026-10-19-main-assistant-progress.md)：精确编号集合/有界范围、指定行候选约束、版本2多任务回执及旧规则编辑继任。
+
+- [主助手执行回执核验](./changelog/2026-10-19-main-assistant-receipt-guard.md)：答复发送前核对持久action和重扫任务，拒绝虚假编号/旧未核验重放，无新迁移。
+
+- [主助手业务工具与确认交付](./changelog/2026-10-19-main-assistant.md)：API2.11.0、持久会话、受信工具、原候选确认与规则发布；新增迁移本地已应用，业务数据未变。
+
 - [规则显示名称](./changelog/2026-10-19-profile-display-name.md)：所有者可按旧名称条件修改目录显示名，固定标识/ZIP/项目绑定，新增PATCH契约。
 
 - [不完整样例发布契约](../agent/changelog/2026-10-19-permissive-publication.md)：ValidationIssue.severity和review_1.1.0同步，6项含实际打包/Mock发布的回归通过。

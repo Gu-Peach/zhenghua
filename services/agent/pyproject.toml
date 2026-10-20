@@ -35,6 +35,7 @@ namespaces = false
 "src.agent.extraction_agent" = ["profiles/**/*.json", "profiles/**/*.md", "prompts/*.md", "prompts/**/*.json", "prompts/**/*.md", "prompts/**/*.png"]
 "src.agent.explain_agent" = ["prompts/*.md"]
 "src.agent.profile_agent" = ["prompts/*.md"]
+"src.agent.main_assistant" = ["prompt.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

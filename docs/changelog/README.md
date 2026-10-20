@@ -1,5 +1,43 @@
 # Changelog
 
+2026-10-20 Explain兼容当前服务不支持required工具选择：仅精确HTTP400/tool_choice_not_supported降级为Pydantic结构化决策，原范围/权限/幂等/候选确认及真实回执校验保持，修正安全错误分类/诊断计数。169个场景分批与静态检查通过，无DTO/数据库变化或真实模型/任务写入；重载8100后复试，见[Agent记录](../service/agent/changelog/2026-10-20-explain-tool-choice-compatibility.md)。
+
+2026-10-20 Explain输入简化为聊天/上传图标，图片随问题发送后归入本轮消息、清空输入区，下一轮不复用；原轮失败可重试。现场确认补调仍无工具，改为required/精简事实，并将私有图片实际接入Explain视觉输入。155项后端与Web分批/静态验收通过，无DTO/数据库变化或真实模型/业务写入；重载8100并刷新Web后复试，见[Web记录](../apps/web/changelog/2026-10-20-explain-chat-images.md)与[Agent记录](../service/agent/changelog/2026-10-20-explain-required-tools.md)。
+
+2026-10-20 修复Explain只检索却声称重扫已入队：成功话术须有本轮工具回执，缺回执最多补调一次，失败明确关闭；缓存重试/历史任务隔离，真实任务UUID/状态/阶段直出。127项相关离线与静态检查通过，无公开DTO/数据库/前端变化；未实际重提取或改线表，需重载8100后重新发送。见[Agent记录](../service/agent/changelog/2026-10-20-explain-rescan-receipts.md)。
+
+2026-10-20 Explain普通打开改为空闲输入，只有用户发送才解释/修改/发起重扫；关闭重开新会话，不带上一窗口聊天。工具栏明确重扫仍直接提交、结果确认保持。37项相关浏览器、9次定向复验及8项工作台测试通过；无API/数据库变化或真实模型调用，刷新Web生效，见[Web交付](../apps/web/changelog/2026-10-20-explain-explicit-send.md)。
+
+2026-10-19 Explain流式故障排查：3次明确批准的无项目数据探针均成功，总742 tokens；当前页面本地重建约5.5万文本字符+图片，尚不能证明旧失败为容量不足。新增脱敏调用摘要、工具轮次/安全错误分类与诊断编号，113项相关离线及静态检查通过，无公开DTO/数据库变化或业务写入；需重载8100后现场复现。实际图纸未外发，见[记录](../service/agent/changelog/2026-10-19-explain-diagnostics.md)。
+
+2026-10-19主助手历史列表每行增加×，无需恢复即可永久删除会话及消息/工具记录；删除其他历史保留当前输入附件，删当前回到新对话。所有者校验、活动轮次/上传保护与附件持久清理队列保持业务结果/独立任务边界，API2.13.0和生成契约同步。本地迁移已部署且接口已加载，无实际用户会话删除。见[Web交付](../apps/web/changelog/2026-10-19-assistant-history-delete.md)和[Server交付](../service/server/changelog/2026-10-19-assistant-conversation-deletion.md)。
+
+2026-10-19前端按用户方案统一为浅色紧凑工具界面：聊天身份/工具状态/修改确认分层、逐连接字段对照、来源正文后图纸、桌面主助手停靠重分配工作区、智能体卡片与Skills元数据整理。原确认/版本契约保持；139个场景分批覆盖和相关复验、静态检查/截图完成，无新增API/数据库/Profile变化。全量一次项目删除空态偶发失败及复验记录见[Web交付](../apps/web/changelog/2026-10-19-interface-polish.md)。
+
+2026-10-19修复已指定目标页却只初扫/0候选：按连接结构化绑定原样目标页，终点重扫冻结起点直接补全，失败逐行提示，真实细节图不作Few-shot删减。API2.12.0/契约同步，185项默认及19项浏览器分批、静态检查通过，51项显式集成跳过。实际产物只读Fake验证5条到002C11、4条到002M03，不代表真实识别准确率；未改实际任务/线表或启停服务，见[交付](../service/agent/changelog/2026-10-19-rescan-explicit-targets.md)。
+
+2026-10-19按用户明确要求，指定STS项目新重扫改用当前选定ZH2.3.0：项目级显式策略、任务独立固定规则来源/摘要，旧批次/任务不覆盖；新迁移与项目策略已部署。173项默认测试和16项隔离SQL分批通过、50项显式集成默认跳过，实际入队回滚验证/规则包只读加载通过，无真实模型或线表修改。需用户重载Worker并新建重扫，见[交付](../service/agent/changelog/2026-10-19-rescan-project-profile.md)。
+
+2026-10-19按用户明确要求，将指定STS项目默认规则引用从zh_crop2.2.1替换为数据库ZH2.3.0。Storage包校验、唯一项目事务更新及线表/重扫任务/冻结产物前后摘要通过；无模型/任务/服务操作。旧批次局部重扫仍遵循历史冻结版本，不等于实际已按新版重提取。见[操作记录](../service/server/changelog/2026-10-19-project-profile-rebind.md)。
+
+2026-10-19重提取目标页与端点确认分离：唯一目录目标在端子未识别时保留，多个候选不猜。实际任务只读核实FO已到098M25/PDF541；58项分批测试、静态检查和实际产物离线映射通过，无真实模型/业务写入。需重载Worker并新建候选，见[交付](../service/agent/changelog/2026-10-19-rescan-target-page.md)。
+
+2026-10-19修复规则“开始修改”混入历史线表任务：专业诊断全文不扩成本轮目标，核验计划外候选工具不执行；历史读取action当前状态和实际范围/发布版本。既有1.0.1发布已只读核实，不重复发布；123项默认测试与静态/OpenAPI检查通过，46项显式集成跳过，重载8000/8100生效。见[交付](../service/agent/changelog/2026-10-19-main-assistant-current-goal.md)。
+
+2026-10-19规则诊断失败不再被“工具处理上限”覆盖：未预期工具异常持久化failed、安全错误回传，主助手停止本轮并保留已有任务/候选。120项默认测试通过、46项显式集成跳过；实际服务仍为早于修复的20:20旧进程，需重载后实测，未代调用模型或修改规则。见[交付](../service/server/changelog/2026-10-19-main-assistant-tool-failure.md)。
+
+2026-10-19项目树默认收起并修复切目录回根部：目录UI状态跨工作台重建保留，导航自动展开目标祖先/恢复滚动并定位选中项，数据和接口保持。见[Web交付](../apps/web/changelog/2026-10-19-project-tree-navigation.md)。
+
+2026-10-19：修复原理号范围误作单值、同参数检索反复空转及专业Agent单次返回提前结束。新增明确范围多记录接续、全部候选回执校验；旧zh_crop诊断仍读冻结包，编辑建议按已合并继任关系走正式zh，不改旧项目绑定。114项离线分批和8项浏览器通过，无实际数据/规则写入，无新迁移。见[Agent](../service/agent/changelog/2026-10-19-main-assistant-progress.md)与[Server](../service/server/changelog/2026-10-19-main-assistant-progress.md)。
+
+2026-10-19按用户反馈将答案对比简化为上方提取结果、下方标准答案，去掉统计与说明控制区，仅保留结果和最小操作；内存存储与业务数据保持，见[Web交付](../apps/web/changelog/2026-10-19-stacked-answer-comparison.md)。
+
+2026-10-19工作台增加临时答案对比，标准答案本地导入且仅存浏览器内存，按业务页独立核对全页提取结果；无业务写入/新Schema或API，见[前端交付](../apps/web/changelog/2026-10-19-temporary-answer-comparison.md)。
+
+2026-10-19：修复主助手无工具调用却宣称重扫入队。新增执行核验与一次补调、真实任务回执直出、Server发送前验证和旧成功流重放保护；失败不显示/保存虚假编号。14项Agent、82项Server分批和8项浏览器及静态检查通过；无新迁移/真实模型或实际重扫，8000/8100需重载。见[Agent](../service/agent/changelog/2026-10-19-main-assistant-receipt-guard.md)和[Server](../service/server/changelog/2026-10-19-main-assistant-receipt-guard.md)。
+
+2026-10-19：按已确认[ADR-0039](../adr/0039-main-assistant-orchestration.md)实现主助手首版：当前业务检索导航、专业Agent适配、历史规则只读诊断、实际差异确认、跨项目持久会话与附件显式发送。新增迁移本地已应用且项目/规则/线表指纹不变；离线及界面验收通过。当前服务仍需重载；未调用真实模型、重扫或发布实际规则。见[Server](../service/server/changelog/2026-10-19-main-assistant.md)、[Agent](../service/agent/changelog/2026-10-19-main-assistant.md)、[Web](../apps/web/changelog/2026-10-19-main-assistant.md)。
+
 2026-10-19：已发布规则支持创建者修改目录显示名，主标题/上传选项/预览显示数据库名称，内部标识、版本、ZIP及项目绑定保持。新增鉴权PATCH/旧名条件更新，OpenAPI/TS同步；5项Server、16项浏览器及静态检查通过，无实际改名/模型/业务库/服务操作，重载8000刷新Web即可。见[Server](../service/server/changelog/2026-10-19-profile-display-name.md)、[Web](../apps/web/changelog/2026-10-19-profile-display-name.md)。
 
 2026-10-19：三阶段确认后缺有效起点不再阻断规则发布，空端点保留且提示后续校验；ValidationIssue.severity、review_1.1.0、Server/OpenAPI/TS同步。13项后端和3项浏览器及静态检查通过，实际test修订9只读验证ready=true，未代发规则/调用真实模型或操作业务库/服务；重载8000/8100刷新Web即可。见[Agent](../service/agent/changelog/2026-10-19-permissive-publication.md)、[Web](../apps/web/changelog/2026-10-19-permissive-publication.md)。

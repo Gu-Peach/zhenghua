@@ -506,6 +506,15 @@ class ManagementService:
         assets["project-assets"] = [
             self.asset_path(project, item["storage_path"]) for item in details
         ]
+        assistant_assets = await self.db.all_rows("assistant_attachments", {
+            "project_id": f"eq.{project}", "owner_id": f"eq.{user}", "order": "id.asc",
+        })
+        for item in assistant_assets:
+            prefix = f"assistant/{user}/{item['conversation_id']}/{item['id']}/"
+            path = item["storage_path"]
+            if not path.startswith(prefix) or ".." in path.split("/") or "\\" in path:
+                raise ServiceError(409, "ATTACHMENT_SCOPE_MISMATCH", "助手附件路径不属于当前用户会话")
+            assets["project-assets"].append(path)
         if row.get("source_pdf_path"):
             assets.setdefault(row["source_pdf_bucket"], []).append(
                 self.asset_path(project, row["source_pdf_path"])

@@ -1,3 +1,4 @@
+import { expandProjectTree, expandWorkspace } from "./tree-navigation";
 import { test, expect, type Page } from "@playwright/test";
 import { createServer, type Server } from "node:http";
 
@@ -61,6 +62,7 @@ async function fixture(page: Page, options: { pauseTools?: boolean; pauseAnswer?
   await page.route("**/api/v1/**", async route => {
     const path = new URL(route.request().url()).pathname;
     if (path.includes("/auth/")) return route.fulfill({ json: { user: { id: "owner", name: "测试工程师", email: "fixture@example.invalid", role: "工程师" }, accessToken: "fixture", expiresIn: 3600 } });
+    if (path.endsWith("/connection-edits")) return route.fulfill({ json: [] });
     if (path.includes("/explain/")) return route.continue({ url: `http://127.0.0.1:${address.port}/explain` });
     const project = { id: projectId, name: "来源解释测试项目", status: "ready", standard_profile: "zh", updated_at: "2026-10-16", source_saved: false, batch_id: "run-one", workspaces: [{ id: "work", code: "003.C", name: "003.C", drawings: [drawing(1), drawing(2)] }] };
     if (path === "/api/v1/projects") return route.fulfill({ json: [project] });
@@ -73,17 +75,49 @@ async function fixture(page: Page, options: { pauseTools?: boolean; pauseAnswer?
   return { requests, releaseTools, releaseAnswer, closed: () => closed, permit: () => { denied = false; } };
 }
 
-async function openRow(page: Page) {
+async function openRow(page: Page, explain = true) {
   await page.goto(`/projects/${projectId}`);
   const cell = page.getByRole("cell", { name: "XA:8", exact: false }).filter({ has: page.getByRole("button", { name: "解释端子 XA:8", exact: true }) });
   await cell.hover(); await cell.getByRole("button", { name: "解释端子 XA:8", exact: true }).click();
-  return page.getByRole("dialog", { name: "来源解释", exact: true });
+  const panel = page.getByRole("dialog", { name: "来源解释", exact: true });
+  if (explain) {
+    await panel.getByLabel("追问来源解释").fill("请解释这条连接的来源");
+    await panel.getByRole("button", { name: "发送追问", exact: true }).click();
+  }
+  return panel;
 }
+
+test("普通打开不提交，用户发送后解释，关闭重开是全新会话", async ({ page }) => {
+  const state = await fixture(page);
+  let panel = await openRow(page, false);
+  await expect(panel.getByRole("status")).toContainText("发送后开始处理");
+  await panel.getByLabel("追问来源解释").fill("尚未发送的草稿");
+  await page.screenshot({ path: test.info().outputPath("explain-idle-desktop.png") });
+  expect(state.requests).toHaveLength(0);
+  await panel.getByLabel("追问来源解释").fill("请解释这条连接的来源");
+  await panel.getByLabel("追问来源解释").press("Enter");
+  await expect(panel.getByLabel("解释回复")).toContainText("通过引用匹配跨页");
+  expect(state.requests).toHaveLength(1);
+  await panel.getByRole("button", { name: "关闭来源解释", exact: true }).click();
+  await page.getByRole("button", { name: "解释端子 XA:8", exact: true }).click();
+  panel = page.getByRole("dialog", { name: "来源解释", exact: true });
+  await expect(panel.getByRole("status")).toContainText("发送后开始处理");
+  await expect(panel.locator(".explain-turn")).toHaveCount(0);
+  await expect(panel.getByLabel("追问来源解释")).toBeEmpty();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({ path: test.info().outputPath("explain-idle-mobile.png") });
+  expect(state.requests).toHaveLength(1);
+  await panel.getByLabel("追问来源解释").fill("请解释新的问题");
+  await panel.getByRole("button", { name: "发送追问", exact: true }).click();
+  await expect.poll(() => state.requests.length).toBe(2);
+  expect(state.requests[0].conversation_id).not.toBe(state.requests[1].conversation_id);
+  expect(state.requests[0].turn_id).not.toBe(state.requests[1].turn_id);
+});
 
 test("来源解释标题栏可拖动、键盘移动与恢复，拖动不调用Agent", async ({ page }) => {
   const state = await fixture(page); const panel = await openRow(page);
   await expect(panel.getByLabel("解释回复")).toContainText("通过引用匹配跨页");
-  expect(state.requests[0].allow_rescan).toBe(false);
+  expect(state.requests[0].allow_rescan).toBe(true);
   const before = await panel.boundingBox();
   const header = panel.getByLabel("来源解释窗口标题栏", { exact: true }); const box = await header.boundingBox();
   await page.mouse.move(box!.x + 100, box!.y + 20); await page.mouse.down(); await page.mouse.move(box!.x - 80, box!.y + 5, { steps: 4 }); await page.mouse.up();
@@ -104,6 +138,7 @@ test("来源解释标题栏可拖动、键盘移动与恢复，拖动不调用Ag
 
 test("图纸滚轮以指针缩放、中键拖动且目录收起后保留选择", async ({ page }) => {
   await fixture(page); await page.goto(`/projects/${projectId}`);
+  await expandProjectTree(page); await expandWorkspace(page, "003.C");
   await page.getByRole("button", { name: /^003C01 PDF/ }).click();
   await page.getByRole("button", { name: "图纸预览", exact: true }).click();
   const preview = page.getByRole("region", { name: "原页预览", exact: true });
@@ -130,12 +165,12 @@ test("图纸滚轮以指针缩放、中键拖动且目录收起后保留选择",
   await expect(preview.locator(".preview-zoom-value")).not.toHaveText("100%");
 });
 
-test("聊天图片属于各轮消息，正文向下展开，居中放大支持缩放和Esc返回", async ({ page }) => {
+test("聊天先解释再展示各轮图纸，居中放大支持缩放和Esc返回", async ({ page }) => {
   const state = await fixture(page); const panel = await openRow(page);
   await expect(panel.getByLabel("解释回复")).toContainText("通过引用匹配跨页");
   const first = panel.locator(".explain-turn").first();
   await expect(first.getByRole("region", { name: "关联图纸", exact: true })).toBeVisible();
-  expect(await first.evaluate(node => !!(node.querySelector(".explain-evidence")!.compareDocumentPosition(node.querySelector(".explain-answer")!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
+  expect(await first.evaluate(node => !!(node.querySelector(".explain-answer")!.compareDocumentPosition(node.querySelector(".explain-evidence")!) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
   const button = first.getByRole("button", { name: /放大查看 原页/ });
   await button.click();
   const lightbox = page.getByRole("dialog", { name: /^查看图纸 原页/ });
@@ -198,6 +233,10 @@ test("页码悬停查询整页，并在同一独立会话中追问", async ({ pa
   const button = page.getByRole("button", { name: "解释本页 003C01", exact: true });
   await page.getByRole("cell", { name: "003C01", exact: false }).first().hover(); await button.click();
   const panel = page.getByRole("dialog", { name: "来源解释", exact: true });
+  await expect(panel.getByRole("status")).toContainText("发送后开始处理");
+  expect(state.requests).toHaveLength(0);
+  await panel.getByLabel("追问来源解释").fill("请解释本页连接来源");
+  await panel.getByRole("button", { name: "发送追问", exact: true }).click();
   await expect(panel.getByLabel("解释回复")).toContainText("通过引用匹配跨页");
   expect(state.requests[0].query).toEqual({ drawing_page: "003C01", pdf_page_number: 1, offset: 0, limit: 50 });
   expect(state.requests[0].connection_id).toBeUndefined();
@@ -223,6 +262,8 @@ test("关闭浮窗取消流并恢复入口焦点，重新打开使用新会话",
   await expect(panel).toHaveCount(0); await expect(page.getByRole("button", { name: "解释端子 XA:8", exact: true })).toBeFocused();
   await expect.poll(state.closed).toBeGreaterThan(0);
   state.releaseTools(); await page.getByRole("button", { name: "解释端子 XA:8", exact: true }).click();
+  await panel.getByLabel("追问来源解释").fill("请解释这条连接的来源");
+  await panel.getByRole("button", { name: "发送追问", exact: true }).click();
   await expect(panel.getByLabel("解释回复")).toContainText("通过引用匹配跨页");
   expect(state.requests[0].conversation_id).not.toBe(state.requests[1].conversation_id);
 });

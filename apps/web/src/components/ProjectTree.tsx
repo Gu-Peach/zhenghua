@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronRight, FileImage, Folder, FolderOpen, Search, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useProjectTreeStore } from "@/stores/project-tree-store";
 import { useNavigate } from "react-router-dom";
 import { EditableName } from "./EditableName";
 import type { AgentStageProgress } from "@/apis/agent";
@@ -24,37 +25,56 @@ interface ProjectTreeProps {
 export function ProjectTree({ project, projects, loading = false, selectedWorkspaceId, selectedDrawingId, stageProgress, uploadedFilename, simulationEnabled, onSelectWorkspace, onSelectDrawing, onSelectProject, onRename, onDelete }: ProjectTreeProps) {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
-  const [collapsed, setCollapsed] = useState<string[]>([]);
-  const [expandedProjects, setExpandedProjects] = useState<string[]>(project ? [project.id] : []);
+  const branches = useProjectTreeStore(state => state.branches);
+  const navigation = useRef<HTMLElement>(null);
+  const restored = useRef(false);
+  const projectId = project?.id ?? "project-list";
+  const selection = `${projectId}:${selectedWorkspaceId ?? ""}:${selectedDrawingId ?? ""}`;
+  const projectBranch = (id: string) => `project:${id}`;
+  const workspaceBranch = (id: string) => `workspace:${projectId}:${id}`;
+  function opened(branch: string, ancestor = false) {
+    const saved = branches[branch];
+    return saved?.selection === selection ? saved.opened : ancestor || saved?.opened || false;
+  }
+  function disclose(branch: string, value: boolean) { useProjectTreeStore.getState().disclose(branch, value, selection); }
+  useLayoutEffect(() => {
+    if (loading || !navigation.current) return;
+    const nav = navigation.current;
+    nav.scrollTop = useProjectTreeStore.getState().positions[projectId] ?? 0;
+    const target = nav.querySelector<HTMLElement>('[data-tree-selected="true"]');
+    if (target) {
+      const viewport = nav.getBoundingClientRect(); const row = target.getBoundingClientRect();
+      if (row.top < viewport.top) nav.scrollTop -= viewport.top - row.top;
+      else if (row.bottom > viewport.bottom) nav.scrollTop += row.bottom - viewport.bottom;
+    }
+    restored.current = true;
+  }, [loading, projectId, selectedWorkspaceId, selectedDrawingId]);
   const visibleProjects = useMemo(() => projects.filter((item) => `${item.name} ${item.company}`.toLowerCase().includes(query.toLowerCase())), [projects, query]);
   const stage1 = stageProgress.find((stage) => stage.stage === "Stage 1");
   const stage1Complete = stage1?.status === "done";
   const stage2 = stageProgress.find((stage) => stage.stage === "Stage 2");
   const hasWorkspaceIndex = (project?.workspaces.length ?? 0) > 0 || stage1Complete || stageProgress.some((stage) => stage.stage === "数据库查询");
 
-  function toggleWorkspace(workspaceId: string) {
-    setCollapsed((current) => current.includes(workspaceId) ? current.filter((id) => id !== workspaceId) : [...current, workspaceId]);
-  }
-
-  function toggleProject(projectId: string) {
-    if (projectId !== project?.id) { navigate(`/projects/${projectId}`); return; }
-    setExpandedProjects(ids => ids.includes(projectId) ? ids.filter(id => id !== projectId) : [...ids, projectId]);
+  function toggleProject(id: string) {
+    const ancestor = id === project?.id && !!(selectedWorkspaceId || selectedDrawingId);
+    disclose(projectBranch(id), !opened(projectBranch(id), ancestor));
+    if (id !== project?.id) navigate(`/projects/${id}`);
   }
 
   return (
     <aside id="project-directory" className="project-sidebar" aria-label="项目目录">
       <div className="sidebar-heading"><div><span className="section-kicker">PROJECT LIBRARY</span><h2>项目目录</h2></div><span className="count-badge">{projects.length}</span></div>
       <label className="tree-search"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="搜索项目或公司" aria-label="搜索项目或公司" /></label>
-      <nav className="project-tree" aria-label="项目、工作区和图纸">
+      <nav ref={navigation} className="project-tree" aria-label="项目、工作区和图纸" onScroll={event => { if (!loading && restored.current) useProjectTreeStore.getState().savePosition(projectId, event.currentTarget.scrollTop); }}>
         {visibleProjects.map((item) => {
           const active = item.id === project?.id;
-          const expanded = expandedProjects.includes(item.id);
+          const expanded = opened(projectBranch(item.id), active && !!(selectedWorkspaceId || selectedDrawingId));
           const childrenId = `project-children-${item.id}`;
           return (
             <div className="project-node" key={item.id}>
-                  <div className={`project-row ${active ? "active" : ""}`}>
+                  <div className={`project-row ${active ? "active" : ""}`} data-tree-selected={active && !selectedWorkspaceId && !selectedDrawingId}>
                     <button type="button" className="project-folder-toggle" aria-expanded={expanded} aria-controls={childrenId} aria-label={`${expanded ? "收起" : "展开"}项目 ${item.name}`} onClick={() => toggleProject(item.id)}>{expanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}</button>
-                    <EditableName value={item.name} label="项目名称" current={active} to={`/projects/${item.id}`} className="project-folder-link" leading={expanded ? <FolderOpen size={18} /> : <Folder size={18} />} trailing={<StatusDot status={item.status} />} onActivate={() => { if (active) { onSelectProject?.(); if (!expanded) setExpandedProjects(ids => [...ids, item.id]); } }} onSave={onRename ? name => onRename(item, name) : undefined} />
+                    <EditableName value={item.name} label="项目名称" current={active} to={`/projects/${item.id}`} className="project-folder-link" leading={expanded ? <FolderOpen size={18} /> : <Folder size={18} />} trailing={<StatusDot status={item.status} />} onActivate={() => { if (active) { onSelectProject?.(); if (!expanded) disclose(projectBranch(item.id), true); } }} onSave={onRename ? name => onRename(item, name) : undefined} />
                     {onDelete ? <button type="button" className="project-action" aria-label={`删除项目 ${item.name}`} title="删除项目" onClick={() => onDelete(item)}><Trash2 size={13} /></button> : null}
                   </div>
                   {project && active && expanded ? <div id={childrenId} className="workspace-tree">
@@ -62,19 +82,19 @@ export function ProjectTree({ project, projects, loading = false, selectedWorksp
                   {uploadedFilename && !hasWorkspaceIndex ? <p className="tree-empty">{project.status === "processing" || simulationEnabled ? "正在拆分并识别图纸…" : "尚无图纸索引"}</p> : null}
                   {hasWorkspaceIndex && project.workspaces.length === 0 ? <p className="tree-empty">Stage 1 正在识别工作区</p> : null}
                   {hasWorkspaceIndex ? project.workspaces.map((workspace) => {
-                    const isExpanded = !collapsed.includes(workspace.id);
+                    const isExpanded = opened(workspaceBranch(workspace.id), selectedWorkspaceId === workspace.id);
                     const isActive = selectedWorkspaceId === workspace.id && !selectedDrawingId;
                     const workspaceStatus: EntityStatus = stage2?.status === "processing" ? "processing" : stage2?.status === "failed" ? "failed" : workspace.status;
                     return (
                       <div key={workspace.id} className="workspace-node">
                         <div className={`workspace-row ${isActive ? "active" : ""}`}>
-                          <button type="button" className="tree-toggle" onClick={() => toggleWorkspace(workspace.id)} aria-label={`${isExpanded ? "收起" : "展开"}${workspace.code}`}>{isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}</button>
-                          <button type="button" className="tree-select" onClick={() => onSelectWorkspace(workspace.id)}><span><strong>{workspace.code}</strong><small>{workspace.name}</small></span><StatusDot status={workspaceStatus} /></button>
+                          <button type="button" className="tree-toggle" aria-expanded={isExpanded} onClick={() => disclose(workspaceBranch(workspace.id), !isExpanded)} aria-label={`${isExpanded ? "收起" : "展开"}${workspace.code}`}>{isExpanded ? <ChevronDown size={15} /> : <ChevronRight size={15} />}</button>
+                          <button type="button" className="tree-select" data-tree-selected={isActive} aria-current={isActive ? "page" : undefined} onClick={() => { disclose(workspaceBranch(workspace.id), true); onSelectWorkspace(workspace.id); }}><span><strong>{workspace.code}</strong><small>{workspace.name}</small></span><StatusDot status={workspaceStatus} /></button>
                         </div>
                         {isExpanded ? (
                           <div className="drawing-tree">
                             {workspace.drawings.map((drawing) => (
-                              <button type="button" key={drawing.id} className={`drawing-row ${selectedDrawingId === drawing.id ? "active" : ""}`} onClick={() => onSelectDrawing(workspace.id, drawing.id)}>
+                              <button type="button" key={drawing.id} className={`drawing-row ${selectedDrawingId === drawing.id ? "active" : ""}`} data-tree-selected={selectedDrawingId === drawing.id} aria-current={selectedDrawingId === drawing.id ? "page" : undefined} onClick={() => onSelectDrawing(workspace.id, drawing.id)}>
                                 <FileImage size={15} /><span><strong>{drawing.drawingPage}</strong><small>{drawing.name}</small></span><StatusDot status={stage2?.status === "processing" ? "processing" : stage2?.status === "failed" ? "failed" : drawing.status} />
                               </button>
                             ))}

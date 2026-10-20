@@ -66,6 +66,7 @@ class ProfileEditor:
             "version": body.profile_version,
             "checksum": body.source_checksum,
             "schema_checksum": checksum(json.dumps(fixed_schemas(), sort_keys=True).encode()),
+            "read_only": "true" if body.read_only else "false",
         }
         if files is not None and json.loads(files.get("schema.json", b"{}")) != fixed_schemas():
             # The immutable source is verified first. Only the new draft receives the code-owned protocol.
@@ -142,6 +143,7 @@ class ProfileEditor:
 
     def accept(self, draft: UUID, actor: ProfileActor, revision: int) -> ProfileEditState:
         """The user reviews the exact current rules/Expected; no model may perform this action."""
+        self.store.require_editable(draft, actor)
         self.state(draft, actor)
 
         def apply(root: Path, meta: dict[str, Any]) -> dict[str, Any]:

@@ -42,6 +42,7 @@ export async function* streamExplanation(selection: ExplainSelection, projectId:
     ...(attachmentIds.length ? { attachment_ids: attachmentIds } : {}),
     rescan_id: rescanId,
     allow_rescan: allowRescan,
+    allow_edits: true,
   };
   let completed = false;
   for await (const frame of sse("/api/v1/explain/turns/stream", { method: "POST", body: JSON.stringify(body), signal })) {

@@ -1,5 +1,19 @@
 # Web 前端
 
+2026-10-20 Explain只保留聊天与上传图标，图片先暂存、发送后归入本轮消息并清空草稿，下一轮不带旧图，原轮重试复用附件。刷新Web重开窗口；图片视觉输入/工具补调另需重载8100，无迁移/8000变化，见[交付](../../docs/apps/web/changelog/2026-10-20-explain-chat-images.md)。
+
+主助手历史列表每行提供×，直接永久删除对应会话。删其他历史保留当前草稿和附件；删当前回到新对话，失败可重试。依赖API2.13.0与20261019050000迁移，本地已加载，刷新Web即可。见[历史删除交付](../../docs/apps/web/changelog/2026-10-19-assistant-history-delete.md)。
+
+2026-10-19界面统一为浅色紧凑工具风格：用户右侧气泡、助手头像/名称、灰色折叠工具记录和独立确认卡；修改按连接展开，主助手可在桌面停靠/浮窗切换，Skills内部标识折叠、时间转为北京时间。已有Vite服务刷新即可，无新增后端或迁移要求。见[交付](../../docs/apps/web/changelog/2026-10-19-interface-polish.md)。
+
+项目树初次默认收起，切换目录保留展开/滚动，当前选中项自动可见；深层链接只展开所需祖先。刷新Web即可，见[目录交互记录](../../docs/apps/web/changelog/2026-10-19-project-tree-navigation.md)。
+
+答案对比按用户反馈简化为上方提取结果、下方标准答案，图纸页跟随左侧目录；表内独立滚动/分页，横向同步。说明/统计/筛选和匹配状态已移除，导入/更换在标准答案标题右侧图标。见[当前展示](../../docs/apps/web/changelog/2026-10-19-stacked-answer-comparison.md)。
+
+临时答案核对：对应项目→“答案对比”→“导入答案 XLSX”。1002001641 PERU TPP 1 STS选择本地1641.xlsx，按业务页查看完整提取结果与字段差异。答案只存浏览器内存、按项目隔离，刷新或退出后重导，不上传/写库。新环境先corepack pnpm install，现有环境刷新Web即可，无后端重启/迁移；见[交付](../../docs/apps/web/changelog/2026-10-19-temporary-answer-comparison.md)。
+
+2026-10-19右下角全局主助手已接通持久会话、业务导航、专业Agent及真实差异卡。需加载8000 API2.11.0和新版8100后刷新Web；附件先暂存，发送/Enter才提交。123项模拟浏览器回归通过，未调用真实模型。见[交付](../../docs/apps/web/changelog/2026-10-19-main-assistant.md)。
+
 2026-10-19上传PDF规则选项和Extraction Skills统一读取数据库中已上传资源包，不再从本地目录登记或补齐；查看规则读取对应Storage ZIP。当前ZH2.3.0/ABB1.3.1/XMZ0.2.1已上传，重载8000并刷新页面生效，见[交付](../../docs/apps/web/changelog/2026-10-19-database-profile-options.md)。
 
 全量重扫预览显示将删除/写入的全部范围，确认后一次性替换；局部只修订选中行/字段。空结果明确提示删空，旧候选不能确认，新行ID替换后追问自动切到所属页新结果。需本地新迁移（已装）、8000 API2.10.0与8100/实际Worker新代码，再刷新页面并新建重扫。见[交付](../../docs/apps/web/changelog/2026-10-19-rescan-scope-replacement.md)。

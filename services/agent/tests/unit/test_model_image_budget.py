@@ -8,6 +8,7 @@ import hashlib
 from pathlib import Path
 
 import pymupdf
+
 from src.agent.extraction_agent.infrastructure.document.model_images import prepare_vision_messages
 
 
@@ -64,6 +65,25 @@ def test_small_images_are_neither_upscaled_nor_reencoded() -> None:
     prepared, metadata = prepare_vision_messages(messages, input_max_side=2048, max_total_pixels=6_000_000)
     assert prepared == messages
     assert metadata["vision_total_pixels"] == 512
+
+
+def test_explicit_real_images_before_text_instruction_never_become_discardable_examples():
+    messages = [
+        {"role": "user", "content": [image_part(image_bytes(600, 600))]},
+        {"role": "assistant", "content": "example"},
+        {"role": "user", "content": [image_part(image_bytes(800, 600))]},
+        {"role": "user", "content": [image_part(image_bytes(800, 600))]},
+        {"role": "user", "content": "冻结任务说明，无图"},
+    ]
+    prepared, metadata = prepare_vision_messages(
+        messages,
+        input_max_side=2048,
+        max_total_pixels=960000,
+        input_message_indices={2, 3},
+    )
+    assert metadata["vision_image_count"] == 2
+    assert all(item["kind"] == "input" for item in metadata["vision_images"])
+    assert prepared[-1]["content"] == "冻结任务说明，无图"
 
 
 def test_long_thin_images_fit_total_budget_without_mutating_source() -> None:

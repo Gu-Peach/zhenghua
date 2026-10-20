@@ -7,6 +7,7 @@ import base64
 import hashlib
 import io
 import json
+import re
 import tempfile
 import zipfile
 from contextvars import ContextVar
@@ -31,6 +32,7 @@ from src.agent.extraction_agent.infrastructure.document.model_images import prep
 from src.agent.extraction_agent.infrastructure.document.request_fingerprint import request_fingerprint
 from src.agent.extraction_agent.profiles.extraction_policy import default_extraction_policies
 from src.config import AgentSettings
+from src.domain.errors import AgentServiceError
 from src.domain.models.profiles import ProfileBinding
 from src.harness.model_gateway import ModelGateway, ModelRequest, ModelResponse
 from src.profiles.package import PackageManifest, checksum, safe_path, verify_package
@@ -38,6 +40,7 @@ from src.profiles.registry import ProfileRegistry
 
 from .models import RescanCandidate
 from .rescan_candidates import build_candidate
+from .rescan_targets import bound_targets, reference_target
 
 active_pages: ContextVar[tuple[int, ...]] = ContextVar("rescan_active_pages", default=())
 active_task: ContextVar[dict[str, Any] | None] = ContextVar("rescan_active_task", default=None)
@@ -116,12 +119,32 @@ class CandidateSession:
 
 async def frozen_binding(session: CandidateSession, settings: AgentSettings, root: Path) -> ProfileBinding:
     job = session.job
+    source = job["project_snapshot"].get("profile_source", "historical")
+    if source not in {"historical", "project_reference"}:
+        raise ValueError("Unknown rescan Profile source")
     artifact = (
         await session.repo.artifact(job["batch_id"], "profile-package")
-        if has_run_uuid(job["batch_id"])
+        if source == "historical" and has_run_uuid(job["batch_id"])
         else None
     )
-    if artifact:
+    if source == "project_reference":
+        ref = job["project_snapshot"]["profile_ref"]
+        identity = job["profile"]
+        expected = (
+            r"storage://project-assets/profiles/[0-9a-f-]{36}/"
+            + re.escape(identity["key"])
+            + "/"
+            + re.escape(identity["version"])
+            + "/"
+            + re.escape(identity["checksum"].removeprefix("sha256:"))
+            + r"\.zip"
+        )
+        if not re.fullmatch(expected, ref):
+            raise ValueError("Selected rescan Profile must be an immutable published package")
+        content = await session.repo.get("project-assets", ref.removeprefix("storage://project-assets/"))
+        if checksum(content) != identity["checksum"]:
+            raise ValueError("Selected rescan Profile checksum mismatch")
+    elif artifact:
         info = artifact["snapshot"]
         artifact_path = str(info["path"])
         if not artifact_path.startswith(f"projects/{job['project_id']}/runs/{job['batch_id']}/"):
@@ -338,6 +361,9 @@ class DetailGateway:
             len(messages),
         )
         messages.insert(primary_index, {"role": "user", "content": content})
+        input_indices = {primary_index}
+        if primary_index + 1 < len(messages):
+            input_indices.add(primary_index + 1)
         if task:
             messages.append(
                 {
@@ -346,6 +372,7 @@ class DetailGateway:
                     + json.dumps(task, ensure_ascii=False)
                     + "。只在目标PDF页读取这条线路的终点，不重扫其他来源端子；来源端与截图不能用作新终点。"
                     "主任务目标图存在image_view时按其局部坐标约定输出，补充完整图与截图均不改变该约定。"
+                    "用户通过target_binding指定的目标页优先于旧记录中的推测页，不扩写成其他页。"
                     "无法唯一定位则返回空值和不确定性，不重复使用邻线结果。",
                 }
             )
@@ -357,6 +384,7 @@ class DetailGateway:
             ),
             max_total_pixels=self.settings.model_max_total_image_pixels,
             few_shot_min_side=self.settings.model_fewshot_min_image_side,
+            input_message_indices=input_indices,
         )
         response = await self.gateway.invoke(
             replace(
@@ -368,7 +396,7 @@ class DetailGateway:
                     "rescan": True,
                     "detail_ids": [d["id"] for d in self.catalog.details],
                     "rescan_task": task,
-                    "rescan_input_contract": 2,
+                    "rescan_input_contract": 3,
                     "request_fingerprint": request_fingerprint(
                         model=request.model or self.settings.default_model or "",
                         messages=messages,
@@ -387,7 +415,8 @@ class DetailGateway:
             "item_id": request.metadata.get("item_id"),
             "stage": request.agent_name,
             "pages": list(pages),
-            "input_contract": 2,
+            "input_contract": 3,
+            "input_images": [item for item in metadata["vision_images"] if item["kind"] == "input"],
             "phase": "completion" if task else "scan",
             "task": task,
             "detail_ids": [d["id"] for d in self.catalog.details],
@@ -447,7 +476,7 @@ class RescanClient(ExtractionStageGraphClient):
             int(number)
             for row in scope_rows
             for number in (row["source_pdf_page_number"], row.get("target_pdf_page_number"))
-            if number
+            if number and not task.get("target_binding")
         ]
         numbers = tuple(
             dict.fromkeys(
@@ -472,6 +501,7 @@ class RescanClient(ExtractionStageGraphClient):
                 "frozen_start_terminal": record.get("start_terminal"),
                 "line_number": task.get("line_number"),
                 "references": task.get("references", []),
+                "target_binding": task.get("target_binding"),
             }
         )
         try:
@@ -498,7 +528,7 @@ async def execute_rescan(
     ):
         raise ValueError("Legacy full rescan must be regenerated for range replacement before model calls")
     configuration = {
-        "contract": "rescan-v3",
+        "contract": "rescan-v6",
         "result_mode": session.job.get("request", {}).get("result_mode", "patch"),
         "model": settings.default_model,
         "endpoint_checksum": hashlib.sha256(
@@ -564,22 +594,12 @@ async def execute_rescan(
             },
         }
         targeted: list[dict[str, Any]] = []
+        unresolved: list[str] = []
         baseline = session.job["baseline"]
         if session.job["request"]["fields"] == "end":
-            uploaded_targets = {int(d["pdf_page_number"]) for d in catalog.details if d["role"] == "target"}
-            targeted = [
-                row
-                for row in baseline
-                if row.get("is_cross_page")
-                and (
-                    row.get("target_pdf_page_number")
-                    or row.get("end_terminal_coordinates")
-                    or len(uploaded_targets) == 1
-                )
-            ]
-            await rescan_ends(session, catalog, client, targeted)
-            targeted_ids = {row["id"] for row in targeted}
-            baseline = [row for row in baseline if row["id"] not in targeted_ids]
+            targeted = baseline
+            unresolved = await rescan_ends(session, catalog, client, targeted)
+            baseline = []  # Frozen starts must never fall back to a new page scan.
         scan_numbers = {int(row["source_pdf_page_number"]) for row in baseline}
         for item in session.job["project_snapshot"]["scan_pages"]:
             if session.job["request"]["fields"] == "end" and int(item["pdf_page_number"]) not in scan_numbers:
@@ -610,7 +630,15 @@ async def execute_rescan(
             candidate = RescanCandidate(
                 changes=[*candidate.changes, *completed.changes],
                 warnings=list(dict.fromkeys([*candidate.warnings, *completed.warnings])),
-                unmatched_ids=[*candidate.unmatched_ids, *completed.unmatched_ids],
+                unmatched_ids=list(
+                    dict.fromkeys(
+                        [
+                            *candidate.unmatched_ids,
+                            *completed.unmatched_ids,
+                            *(UUID(identifier) for identifier in unresolved),
+                        ]
+                    )
+                ),
             )
         for change in candidate.changes:
             saved: dict[str, Any] = next(
@@ -650,8 +678,10 @@ async def execute_rescan(
 
 async def rescan_ends(
     session: CandidateSession, catalog: PageCatalog, client: RescanClient, rows: list[dict[str, Any]]
-) -> None:
+) -> list[str]:
     """Freeze all source fields, completing only the explicitly requested endpoint."""
+    explicit = bound_targets(session.job, catalog.metadata)
+    unresolved = []
     for row in rows:
         origin = int(row["source_pdf_page_number"])
         pair = {int(number) for number in (origin, row.get("target_pdf_page_number")) if number is not None}
@@ -666,26 +696,43 @@ async def rescan_ends(
             or (matches[0] if len(matches) == 1 else origin)
         )
         uploaded_targets = {int(d["pdf_page_number"]) for d in catalog.details if d["role"] == "target"}
-        target = (
-            (next(iter(uploaded_targets)) if len(uploaded_targets) == 1 else None)
-            or (row.get("end_terminal_coordinates") or {}).get("pdf_page_number")
+        target = explicit.get(str(row["id"])) or (
+            (row.get("end_terminal_coordinates") or {}).get("pdf_page_number")
             or row.get("target_pdf_page_number")
+            or reference_target(row, catalog.metadata)
             or (origin if not row.get("is_cross_page") else None)
+            or (next(iter(uploaded_targets)) if len(uploaded_targets) == 1 else None)
         )
         if target is None or target not in catalog.paths:
             session.warnings.append(
                 f"原理号{row.get('principle_number') or '未确认'}缺少唯一关联页，保持原值。"
             )
+            unresolved.append(str(row["id"]))
             continue
         record = (row.get("evidence") or {}).get("record") or {}
+        references = record.get("references", [])
+        if str(row["id"]) in explicit:
+            references = [
+                {
+                    "raw": ref.get("raw"),
+                    "target_pdf_page": target,
+                    "target_function": catalog.metadata[target]["function"],
+                    "target_drawing_page": catalog.metadata[target]["internal_page"],
+                    "reason": "user_target_binding",
+                    "external": False,
+                }
+                for ref in (references or [{}])
+            ]
         task = {
             "task_id": f"rescan:{row['id']}",
             "source_pdf_page": source,
             "target_pdf_page": target,
             "line_number": row.get("principle_number"),
-            "references": record.get("references", []),
+            "references": references,
+            "target_binding": "explicit" if str(row["id"]) in explicit else "resolved",
             "source_record": {
                 **record,
+                "references": references,
                 "start_device": row.get("start_code"),
                 "start_location": None,
                 "start_terminal": row.get("start_terminal"),
@@ -701,14 +748,32 @@ async def rescan_ends(
                 "drawing_page_number": catalog.metadata[target]["internal_page"],
             },
         }
-        result = await client.resolve_cross_page(
-            ImagePayload(name=f"{target}.png", mime_type="image/png", content=b"", page_number=target),
-            source_image=ImagePayload(
-                name=f"{source}.png", mime_type="image/png", content=b"", page_number=source
-            ),
-            task_context=json.dumps(task, ensure_ascii=False),
-        )
+        try:
+            result = await client.resolve_cross_page(
+                ImagePayload(name=f"{target}.png", mime_type="image/png", content=b"", page_number=target),
+                source_image=ImagePayload(
+                    name=f"{source}.png", mime_type="image/png", content=b"", page_number=source
+                ),
+                task_context=json.dumps(task, ensure_ascii=False),
+            )
+        except (AgentServiceError, ValueError) as exc:
+            unresolved.append(str(row["id"]))
+            session.warnings.append(
+                f"原理号{row.get('principle_number') or '未确认'}终点补全失败"
+                f"（{type(exc).__name__}），保持原值。"
+            )
+            continue
         endpoint = result.end
+        if (
+            endpoint
+            and endpoint.terminal_coordinates
+            and endpoint.terminal_coordinates.pdf_page_number != target
+        ):
+            unresolved.append(str(row["id"]))
+            session.warnings.append(
+                f"原理号{row.get('principle_number') or '未确认'}返回的终点坐标不属于指定目标页，保持原值。"
+            )
+            continue
         updated = dict(row)
         updated.update(
             end_code=endpoint.device if endpoint else None,
@@ -717,11 +782,16 @@ async def rescan_ends(
             end_terminal_coordinates=endpoint.terminal_coordinates.model_dump(mode="json")
             if endpoint and endpoint.terminal_coordinates
             else None,
-            needs_review=bool(result.needs_review),
+            needs_review=bool(result.needs_review) or not bool(endpoint and endpoint.terminal),
+            target_pdf_page_number=target if target != origin else None,
+            target_drawing_page=catalog.metadata[target].get("workspace_page") if target != origin else None,
+            is_cross_page=target != origin,
             evidence={
                 "source_note": result.source_note,
                 "profile": session.job["profile"],
                 "operation": "end_completion",
+                "target_binding": task["target_binding"],
+                "references": references,
             },
         )
         if endpoint and endpoint.terminal_coordinates:
@@ -747,4 +817,10 @@ async def rescan_ends(
                     }
                 ]
         session.endpoint_rows.append(updated)
+        if not endpoint or not endpoint.terminal:
+            unresolved.append(str(row["id"]))
+            session.warnings.append(
+                f"原理号{row.get('principle_number') or '未确认'}已读取目标页，但实际终点端子未确认，请复核。"
+            )
         await session.advance(stage="completion", progress={"connection_id": row["id"]})
+    return unresolved

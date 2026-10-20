@@ -1,5 +1,21 @@
 # apps/web 前端归档
 
+- [Explain聊天图片](./changelog/2026-10-20-explain-chat-images.md)：移除图纸附件设置、发送时上传/本轮消息展示，下一轮不带旧图、失败可重试。
+
+- [Explain显式发送](./changelog/2026-10-20-explain-explicit-send.md)：打开不自动解释，用户发送后按意图处理，关闭重开独立会话，保留工具栏直接重扫。
+
+- [主助手历史逐条删除](./changelog/2026-10-19-assistant-history-delete.md)：每行×直接永久删除、当前/其他草稿处理、失败重试和窄屏键盘操作。
+
+- [浅色专业工具界面](./changelog/2026-10-19-interface-polish.md)：统一控件、四种聊天内容、折叠修改预览、主助手停靠及智能体/Skills布局；[执行计划](./interface-polish-plan.md)。
+
+- [目录收起与导航跟随](./changelog/2026-10-19-project-tree-navigation.md)：默认收起、保留展开/滚动、深层导航和前进后退只展开祖先并定位选中项。
+
+- [答案对比上下双表](./changelog/2026-10-19-stacked-answer-comparison.md)：提取在上、标准答案在下，移除统计/说明与匹配列，目录选页和横向同步。
+
+- [临时答案对比](./changelog/2026-10-19-temporary-answer-comparison.md)、[设计](./temporary-answer-comparison.md)：本地XLSX、按页完整结果对比、差异/漏提/多提及项目隔离内存，刷新清空。
+
+- [主助手界面交付](./changelog/2026-10-19-main-assistant.md)：跨项目会话、结构化导航、显式附件发送与真实确认卡；123项模拟浏览器测试通过。
+
 - [规则名称编辑](./changelog/2026-10-19-profile-display-name.md)：主标题用显示名、名称旁铅笔、Enter保存/Esc取消、失败保留及权限/窄屏验证。
 
 - [不完整样例允许发布](./changelog/2026-10-19-permissive-publication.md)：已确认流程可发布空端点样例，保留提示；真正阻断如实显示。

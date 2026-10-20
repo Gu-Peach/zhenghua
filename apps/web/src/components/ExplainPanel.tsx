@@ -1,5 +1,5 @@
-import { ChevronRight, FileImage, History, Loader2, MessageCircle, Send, Square, Wrench, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { ChevronRight, FileImage, History, ImagePlus, Loader2, MessageCircle, Send, Square, Wrench, X } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { toolLabel, toolResultView, type EvidenceDrawing, type ExplainSelection } from "@/apis/explain";
 import { useExplainConversation, type ExplainTool } from "@/hooks/useExplainConversation";
 import { TypewriterAnswer } from "./TypewriterAnswer";
@@ -9,13 +9,14 @@ import type { RescanPageChoice, RescanRun } from "@/apis/rescan";
 import { RescanAttachments, type RescanAttachmentHandle } from "./RescanAttachments";
 import { RescanTask } from "./RescanTask";
 import { DrawingLightbox, type LightboxImage } from "./DrawingLightbox";
+import { ChatIdentity } from "./ChatIdentity";
 import { useDraggablePanel } from "@/hooks/useDraggablePanel";
 import "@/assets/explain-rescan.css";
 
 function ToolRecord({ tool }: { tool: ExplainTool }) {
   const result = toolResultView(tool.activity);
   return <details className={`explain-tool ${tool.status}`}>
-    <summary>{tool.status === "running" ? <Loader2 size={14} className="spin" /> : <Wrench size={14} />}<span>{toolLabel(tool.activity)}</span><ChevronRight size={13} /></summary>
+    <summary>{tool.status === "running" ? <Loader2 size={14} className="spin" /> : <Wrench size={14} />}<span>{toolLabel(tool.activity)}</span><small>{tool.status === "running" ? "正在检索" : tool.status === "failed" ? "执行失败" : "已完成"}</small><ChevronRight size={13} /></summary>
     <div className="explain-tool-result"><p>{tool.status === "running" ? "正在获取资料…" : tool.status === "failed" && !tool.activity.error ? "工具未完成，详见下方提示。" : result.summary}</p>
       {result.connections.length ? <ul>{result.connections.map(row => <li key={row.id}><span>{row.number}</span><span>{row.start} → {row.end}</span></li>)}</ul> : null}
       {result.pages.length ? <p>{result.pages.join(" · ")}</p> : null}
@@ -35,10 +36,11 @@ function EvidenceImage({ drawing, onOpen }: { drawing: EvidenceDrawing; onOpen: 
 }
 
 export function ExplainPanel({ projectId, selection, onClose, onModified, onRescanned, availablePages = [], readOnly = false }: { projectId: string; selection: ExplainSelection; onClose: () => void; onModified?: (proposal: EditProposal) => void; onRescanned?: (run: RescanRun) => void; availablePages?: RescanPageChoice[]; readOnly?: boolean }) {
-  const { messages, busy: talking, send, stop, proposals, proposalError, applyDecision, conversationId, rescans, setAttachmentIds, applyRescan, loadRescans, loadingRescans, rescanHistoryError, selectionNotice, currentTitle } = useExplainConversation(projectId, selection);
+  const { messages, busy: talking, send, stop, proposals, proposalError, applyDecision, conversationId, rescans, applyRescan, loadRescans, loadingRescans, rescanHistoryError, selectionNotice, currentTitle } = useExplainConversation(projectId, selection);
   const [lightbox, setLightbox] = useState<LightboxImage | null>(null);
   const [editing, setEditing] = useState(false); const [ready, setReady] = useState<Record<string, boolean>>({});
   const [uploading, setUploading] = useState(false); const uploader = useRef<RescanAttachmentHandle>(null);
+  const [attachmentCount, setAttachmentCount] = useState(0); const submitting = useRef(false);
   const busy = talking || editing || uploading;
   const [draft, setDraft] = useState(selection.draftMessage ?? "");
   const panel = useRef<HTMLElement>(null); const feed = useRef<HTMLDivElement>(null);
@@ -46,20 +48,33 @@ export function ExplainPanel({ projectId, selection, onClose, onModified, onResc
   const follow = useRef(true);
   const scrollToLatest = useCallback(() => { if (follow.current && feed.current) feed.current.scrollTop = feed.current.scrollHeight; }, []);
   useEffect(() => { panel.current?.focus({ preventScroll: true }); }, []);
-  useEffect(() => { scrollToLatest(); }, [messages, proposals, rescans, ready, scrollToLatest]);
-  function submit(event: FormEvent) { event.preventDefault(); if (!busy && draft.trim()) { void send(draft.trim()); setDraft(""); follow.current = true; } }
+  useLayoutEffect(() => { scrollToLatest(); }, [messages, proposals, rescans, ready, scrollToLatest]);
+  async function submitQuestion() {
+    if (busy || submitting.current || (!draft.trim() && !attachmentCount)) return;
+    submitting.current = true;
+    const question = draft.trim() || "请查看我上传的图片。";
+    try {
+      const attachments = await uploader.current?.submit();
+      if (!attachments) return;
+      void send(question, undefined, undefined, true, attachments);
+      setDraft(""); follow.current = true;
+    } finally { submitting.current = false; }
+  }
+  function submit(event: FormEvent) { event.preventDefault(); void submitQuestion(); }
   return <section ref={panel} className={`explain-panel ${movement.dragging ? "is-dragging" : ""}`} style={movement.style} role="dialog" aria-modal="false" aria-label="来源解释" tabIndex={-1} onKeyDown={event => { if (event.key === "Escape" && !event.defaultPrevented) { event.preventDefault(); onClose(); } }}>
     <header className="explain-header" {...movement.headerProps}><MessageCircle size={19} /><div><strong>来源解释</strong><p title={currentTitle}>{currentTitle}</p></div><button type="button" className="icon-button" aria-label="查看项目重扫记录" title="按需查看项目已有重扫任务，不会启动重扫" disabled={loadingRescans || busy} onClick={() => void loadRescans()}>{loadingRescans ? <Loader2 size={18} className="spin" /> : <History size={18} />}</button><button type="button" className="icon-button" aria-label="关闭来源解释" title="关闭并停止当前解释" onClick={onClose}><X size={19} /></button></header>
     <div ref={feed} className="explain-feed" onScroll={() => { if (feed.current) follow.current = feed.current.scrollHeight - feed.current.scrollTop - feed.current.clientHeight < 70; }}>
       {selectionNotice ? <p className="explain-gap" role="status">{selectionNotice}</p> : null}
-      {selection.skipInitial && !messages.length ? <p className="explain-gap">已选择{selection.title}。可先添加细节图并补充要求，再发送重扫请求；结果确认前线表保持原值。</p> : null}
+      {readOnly ? <p className="explain-gap" role="status">提取处理中，暂不能保存线表修改</p> : null}
+      {!messages.length ? <p className="explain-idle" role="status">已选择{selection.title}。输入解释、修改或重扫要求，发送后开始处理。关闭后重新打开会开始新对话。</p> : null}
       {messages.map(message => <article key={message.id} className="explain-turn">
-        <p className="explain-question">{message.question}</p>
+        <div className="explain-user"><ChatIdentity user /><p className="explain-question">{message.question}</p>{message.attachments.length ? <div className="explain-message-images">{message.attachments.map((item, index) => <button key={`${item.id}:${index}`} type="button" aria-label={`放大上传图片 ${item.name}`} onClick={() => setLightbox({ url: item.url, title: item.name })}><img src={item.url} alt={item.name} /></button>)}</div> : null}</div>
+        <ChatIdentity />
         <div className="explain-tools">{message.tools.map(tool => <ToolRecord key={tool.activity.id} tool={tool} />)}</div>
-        {message.drawings.length ? <section className="explain-evidence" aria-label="关联图纸"><h3>关联图纸 <span>{message.drawings.length}</span></h3><div>{message.drawings.map(drawing => <EvidenceImage key={drawing.key} drawing={drawing} onOpen={setLightbox} />)}</div></section> : null}
         {message.status === "running" ? <div className="explain-working" role="status"><Loader2 size={14} className="spin" />{message.answer ? "正在生成解释…" : "正在分析来源与关联图纸…"}</div> : null}
         {message.historyReset ? <p className="explain-gap">资料已更新，本轮基于最新记录重新解释。</p> : null}
         {message.answer ? <TypewriterAnswer text={message.answer} running={message.status === "running"} halted={message.status === "cancelled"} onProgress={scrollToLatest} onReady={value => setReady(previous => previous[message.id] === value ? previous : { ...previous, [message.id]: value })} /> : null}
+        {message.drawings.length ? <section className="explain-evidence" aria-label="关联图纸"><h3>关联图纸 <span>{message.drawings.length}</span></h3><div>{message.drawings.map(drawing => <EvidenceImage key={drawing.key} drawing={drawing} onOpen={setLightbox} />)}</div></section> : null}
         {message.status === "failed" || message.status === "cancelled" ? <div className="explain-error" role={message.status === "failed" ? "alert" : "status"}><span>{message.error ?? "已停止生成，以上内容可能不完整。"}</span><button type="button" disabled={busy} onClick={() => void send(message.question, message.id)}>重试</button></div> : null}
       </article>)}
       {!talking && messages.every(message => !message.answer || ready[message.id]) ? proposals.map(proposal => <ExplainEditProposal key={proposal.proposal_id} proposal={proposal} disabled={busy || readOnly} onBusy={setEditing} onDecision={receipt => { applyDecision(receipt); if (receipt.status === "applied") onModified?.(proposal); }} />) : null}
@@ -67,10 +82,10 @@ export function ExplainPanel({ projectId, selection, onClose, onModified, onResc
       {proposalError ? <p className="explain-gap">待确认方案列表暂不可用：{proposalError}。来源解释仍可使用。</p> : null}
       {rescanHistoryError ? <p className="explain-gap" role="status">{rescanHistoryError}</p> : null}
     </div>
-    <form className="explain-composer" onSubmit={submit}>
-      <RescanAttachments key={conversationId} ref={uploader} project={projectId} conversation={conversationId} pages={availablePages} sourcePdf={selection.sourcePdf} targetPdf={selection.targetPdf} disabled={busy || readOnly} onChange={setAttachmentIds} onBusy={setUploading} />
-      <label className="visually-hidden" htmlFor="explain-question">追问来源解释</label><textarea id="explain-question" value={draft} maxLength={8000} placeholder="解释来源、提出修改，或要求重新扫描；可粘贴细节图…" rows={2} onPaste={event => { const files = Array.from(event.clipboardData.files); if (files.length) { event.preventDefault(); uploader.current?.addFiles(files); } }} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); if (!busy && draft.trim()) { void send(draft.trim()); setDraft(""); follow.current = true; } } }} />
-      <div><span>{readOnly ? "提取处理中，暂不能保存线表修改" : uploading ? "正在上传细节图…" : "可解释与提出修改 · 确认后保存线表"}</span>{talking ? <button type="button" aria-label="停止生成" title="停止生成" onClick={stop}><Square size={15} /></button> : <button type="submit" aria-label="发送追问" title="发送追问" disabled={editing || uploading || !draft.trim()}><Send size={16} /></button>}</div>
+    <form className="explain-composer" onSubmit={submit} onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); uploader.current?.addFiles(Array.from(event.dataTransfer.files)); }}>
+      <RescanAttachments key={conversationId} ref={uploader} project={projectId} conversation={conversationId} sourcePdf={selection.sourcePdf ?? selection.query?.pdf_page_number ?? (availablePages.length === 1 ? availablePages[0].pdf : undefined)} disabled={busy || readOnly} onCount={setAttachmentCount} onBusy={setUploading} />
+      <label className="visually-hidden" htmlFor="explain-question">追问来源解释</label><textarea id="explain-question" value={draft} maxLength={8000} placeholder="输入问题，可粘贴或拖入图片…" rows={2} onPaste={event => { const files = Array.from(event.clipboardData.files); if (files.length) { event.preventDefault(); uploader.current?.addFiles(files); } }} onChange={event => setDraft(event.target.value)} onKeyDown={event => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void submitQuestion(); } }} />
+      <div className="explain-composer-actions"><button type="button" className="icon-button" aria-label="上传图片" title="上传图片，也可粘贴或拖拽" disabled={busy || readOnly} onClick={() => uploader.current?.open()}><ImagePlus size={17} /></button>{uploading ? <span role="status">正在上传图片…</span> : null}{talking ? <button type="button" aria-label="停止生成" title="停止生成" onClick={stop}><Square size={15} /></button> : <button type="submit" className="primary-button" aria-label="发送追问" title="发送追问" disabled={editing || uploading || (!draft.trim() && !attachmentCount)}><Send size={16} />发送</button>}</div>
     </form>
     {lightbox ? <DrawingLightbox image={lightbox} onClose={() => setLightbox(null)} /> : null}
   </section>;

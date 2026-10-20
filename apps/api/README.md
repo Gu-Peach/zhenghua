@@ -1,5 +1,7 @@
 # 业务 API
 
+API2.13.0新增主助手历史删除 `DELETE /api/v1/assistant/conversations/{conversation}`，成功返回204。需新增20261019050000迁移，本地已安装且当前8000已加载2.13.0，刷新Web即可；无8100/Worker变更。见[交付](../../docs/apps/api/changelog/2026-10-19-assistant-history-delete.md)。
+
 API2.10.0同步范围替换DTO与确认门禁：只接收checksum/accepted，实际删除/写入来自持久化候选，数据库能力缺失则拒绝。新迁移本地已安装且业务表未变；重载8000、8100/Worker、刷新Web并新建任务。见[事务交付](../../docs/service/server/changelog/2026-10-19-rescan-scope-replacement.md)。
 
 API2.9.0新增项目根范围XLSX下载，OpenAPI已定义二进制媒体类型和客户端契约；ExplainTurn同步allow_rescan，普通自动解释由前端传false。按下方原命令重新加载8000及8100，无新迁移、端口或生产依赖，刷新前端即可使用。见[Server交付](../../docs/service/server/changelog/2026-10-18-project-export.md)。

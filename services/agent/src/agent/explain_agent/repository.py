@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import hashlib
 import math
 from typing import Any, Literal, Protocol
 from urllib.parse import unquote
@@ -34,6 +35,7 @@ from .models import (
 
 
 class ExplanationRepository(Protocol):
+    async def read_attachments(self, turn: ExplainTurn, actor: ExplainActor) -> list[ModelImage]: ...
     async def start_rescan(
         self, turn: ExplainTurn, actor: ExplainActor, identifier: str, request: RescanRequest
     ) -> RescanRun: ...
@@ -66,6 +68,44 @@ def _object(value: Any) -> dict[str, Any]:
 
 
 class SupabaseExplanationRepository:
+    async def read_attachments(self, turn: ExplainTurn, actor: ExplainActor) -> list[ModelImage]:
+        """Read only this user's bound private images; never infer a screenshot's full-page coordinates."""
+        await self._authorized_project(turn, actor)
+        images = []
+        for identifier in dict.fromkeys(turn.attachment_ids):
+            expected = {
+                "id": str(identifier),
+                "project_id": str(turn.project_id),
+                "created_by": str(actor.user_id),
+                "conversation_id": str(turn.conversation_id),
+            }
+            rows = await self.client.select(
+                "connection_rescan_assets",
+                params={**{key: f"eq.{value}" for key, value in expected.items()}, "limit": "1"},
+            )
+            path = f"projects/{turn.project_id}/explain/{turn.conversation_id}/assets/{identifier}.png"
+            if (
+                not rows
+                or any(str(rows[0].get(key)) != value for key, value in expected.items())
+                or not rows[0].get("uploaded")
+                or rows[0].get("storage_path") != path
+            ):
+                raise ExplainError(
+                    "ATTACHMENT_NOT_FOUND", "本轮图片不存在或不属于当前会话，请重新上传。", 404
+                )
+            asset = rows[0]
+            try:
+                content = await self.client.download(bucket=self.bucket, object_path=path)
+                if "sha256:" + hashlib.sha256(content).hexdigest() != asset.get("checksum"):
+                    raise ValueError("Image checksum mismatch")
+                image = await asyncio.to_thread(_model_image, content)
+            except Exception as exc:
+                raise ExplainError(
+                    "ATTACHMENT_UNAVAILABLE", "本轮图片读取失败，请重新上传后发送。", 503
+                ) from exc
+            images.append(ModelImage(pdf_page_number=asset["pdf_page_number"], data_url=image))
+        return images
+
     async def rescans(self, turn: ExplainTurn, actor: ExplainActor) -> list[RescanRun]:
         await self._authorized_project(turn, actor)
         filters = {
@@ -315,8 +355,24 @@ class SupabaseExplanationRepository:
         if turn.query is not None and turn.batch_id and active and turn.batch_id != active:
             raise ExplainError("BATCH_CONFLICT", "提取批次已变化，请刷新后重新打开解释。", 409)
         result = SearchResult(project_name=_text(project.get("name"), 200) or "", batch_id=batch, query=query)
+        # Indexed drawings exist even when extraction produced no rows. Keep this bounded,
+        # and only for explicit workspace/source-page queries (never infer from a terminal).
+        from .models import DrawingEvidence
+
+        indexed = [page for page in _object(project.get("drawing_index")).get("pages", [])
+                   if isinstance(page, dict)
+                   and (query.workspace_code is None or page.get("workspace_code") == query.workspace_code)
+                   and (query.pdf_page_number is None or page.get("pdf_page_number") == query.pdf_page_number)
+                   and (query.drawing_page is None or page.get("drawing_page") == query.drawing_page)]
+        indexed_drawings = [
+            DrawingEvidence(
+                role="source", pdf_page_number=page["pdf_page_number"],
+                drawing_page=page.get("drawing_page"), workspace_code=page.get("workspace_code"),
+            ) for page in indexed[:4]
+        ] if any((query.workspace_code, query.pdf_page_number, query.drawing_page)) else []
         if not batch:
             result.gaps.append("项目尚无当前提取批次，未查询其他批次的线表。")
+            result.drawings = indexed_drawings
             return result
         names = {
             "connection_id": "id",
@@ -352,7 +408,7 @@ class SupabaseExplanationRepository:
             result.gaps.append("当前仅返回一部分记录，请使用相同条件和next_offset继续检索。")
         from .tools.retrieval import merge_drawings
 
-        result.drawings = merge_drawings(result.rows)
+        result.drawings = merge_drawings(result.rows) or indexed_drawings
         return result
 
     async def _context(

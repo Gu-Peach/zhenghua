@@ -1,3 +1,4 @@
+import { ChatIdentity } from "./ChatIdentity";
 import { useEffect, useRef, useState } from "react";
 import { ImagePlus, Send, Square, X } from "lucide-react";
 import Markdown from "react-markdown";
@@ -93,23 +94,23 @@ export function ProfileRuleChat({ state, stage, busy, onBusy, onState, onError, 
   return <aside className="profile-rule-chat" aria-label="规则辅助编辑">
     <h3>Profile Agent · 辅助编辑</h3><p className="profile-rule-hint">结合当前规则和少样本分析；修改建议需你同意后才会应用。</p>
     <div ref={log} className="profile-rule-log" role="log" aria-label="规则编辑对话" onScroll={event => { const node = event.currentTarget; following.current = node.scrollHeight - node.clientHeight - node.scrollTop < 64; }}>
-      {history.map((m, i) => <article key={i} className={`edit-message ${m.role}`}><strong>{m.role === "user" ? "你" : "规则助手"}</strong><Markdown skipHtml remarkPlugins={[remarkGfm]} disallowedElements={["img", "input"]}>{displayMessage(m.content)}</Markdown>{messageImages(m.content).map(id => <DiagnosticImage key={id} draft={state.draft.draft_id} image={id} />)}</article>)}
-      {active && <><article className="edit-message user"><strong>你</strong><p>{active.user}</p>{active.images.map(id => <DiagnosticImage key={id} draft={state.draft.draft_id} image={id} />)}</article>
+      {history.map((m, i) => <article key={i} className={`edit-message ${m.role}`}><ChatIdentity user={m.role === "user"} name="规则助手" /><Markdown skipHtml remarkPlugins={[remarkGfm]} disallowedElements={["img", "input"]}>{displayMessage(m.content)}</Markdown>{messageImages(m.content).map(id => <DiagnosticImage key={id} draft={state.draft.draft_id} image={id} />)}</article>)}
+      {active && <><article className="edit-message user"><ChatIdentity user /><p>{active.user}</p>{active.images.map(id => <DiagnosticImage key={id} draft={state.draft.draft_id} image={id} />)}</article>
         {tools.map((tool, i) => <details className="profile-tool" key={i}><summary>{tool.result === undefined ? "正在" : "已"}{toolNames[tool.name] ?? tool.name}</summary>{tool.result === undefined ? <pre>处理中…</pre> : <ToolResult value={tool.result} />}</details>)}
-        <article className="edit-message assistant"><strong>规则助手</strong><TypewriterAnswer text={active.answer} running={streaming} halted={retry} onProgress={scroll} /></article></>}
-    </div>
+        <article className="edit-message assistant"><ChatIdentity name="规则助手" /><TypewriterAnswer text={active.answer} running={streaming} halted={retry} onProgress={scroll} /></article></>}
     <div className="profile-proposals">{(state.proposals ?? []).map(proposal => <article className="profile-proposal" key={proposal.id}>
       <strong>{proposal.summary}</strong>{proposal.findings?.map((f, i) => <p key={i}>{f.explanation}</p>)}
       {(proposal.diffs ?? []).map(diff => <details key={diff.path}><summary>查看修改前后 · {diff.path}</summary><span>修改前</span><pre>{diff.before}</pre><span>修改后</span><pre>{diff.after ?? "删除文件"}</pre></details>)}
-      {proposal.status === "pending" ? <div><button type="button" disabled={busy || retry || proposal.base_revision !== state.draft.revision} onClick={() => void onConfirm(proposal, true, true)}>同意修改并发布</button><button type="button" disabled={busy || retry} onClick={() => void onConfirm(proposal, false, false)}>拒绝建议</button>{proposal.base_revision !== state.draft.revision && <p>草稿已更新，请重新分析生成建议。</p>}</div> : <small>{proposal.status === "accepted" ? "已应用到草稿" : "已拒绝"}</small>}
+      {proposal.status === "pending" ? <div><button type="button" className="primary-button" disabled={busy || retry || proposal.base_revision !== state.draft.revision} onClick={() => void onConfirm(proposal, true, true)}>同意修改并发布</button><button type="button" disabled={busy || retry} onClick={() => void onConfirm(proposal, false, false)}>拒绝建议</button>{proposal.base_revision !== state.draft.revision && <p>草稿已更新，请重新分析生成建议。</p>}</div> : <small>{proposal.status === "accepted" ? "已应用到草稿" : "已拒绝"}</small>}
     </article>)}</div>
+    </div>
     {retry && <button type="button" disabled={busy} onClick={() => { if (pending.current) void run(pending.current, state); }}>重试本轮分析</button>}
     <form onSubmit={event => { event.preventDefault(); void send(); }}>
       <label>修改要求或问题<textarea aria-label="规则修改要求" rows={3} maxLength={12000} value={text} disabled={busy || retry} onChange={e => setText(e.target.value)} onPaste={e => { if (e.clipboardData.files.length) { e.preventDefault(); addFiles(e.clipboardData.files); } }} /></label>
       <details open={resultOpen} onToggle={event => setResultOpen(event.currentTarget.open)}><summary>补充当前提取结果（可选）</summary><textarea aria-label="当前提取结果" rows={4} maxLength={12000} placeholder="粘贴JSON或线表内容，并说明哪些字段有问题" value={result} disabled={busy || retry} onChange={e => setResult(e.target.value)} /></details>
       {files.map((file, i) => <span className="profile-edit-attachment" key={`${file.name}:${i}`}>{file.name}<button type="button" aria-label={`移除图纸 ${i + 1}`} disabled={busy || retry} onClick={() => setFiles(files.filter((_, index) => i !== index))}><X size={12} /></button></span>)}
       <input ref={input} type="file" accept="image/png,image/jpeg,image/webp" multiple className="visually-hidden" aria-label="上传规则诊断图纸" onChange={e => { addFiles(e.target.files); e.target.value = ""; }} disabled={busy || retry} />
-      <div className="profile-chat-actions"><button type="button" disabled={busy || retry} onClick={() => input.current?.click()}><ImagePlus size={14} />上传图纸</button>{streaming ? <button type="button" onClick={() => controller.current?.abort()}><Square size={14} />停止</button> : <button type="submit" disabled={busy || retry || !text.trim()}><Send size={14} />发送</button>}</div>
+      <div className="profile-chat-actions"><button type="button" disabled={busy || retry} onClick={() => input.current?.click()}><ImagePlus size={14} />上传图纸</button>{streaming ? <button type="button" onClick={() => controller.current?.abort()}><Square size={14} />停止</button> : <button type="submit" className="primary-button" disabled={busy || retry || !text.trim()}><Send size={14} />发送</button>}</div>
     </form>
   </aside>;
 }

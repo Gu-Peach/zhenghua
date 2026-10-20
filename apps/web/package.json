@@ -16,6 +16,7 @@
     "react-dom": "latest",
     "react-markdown": "^10.1.0",
     "react-router-dom": "latest",
+    "read-excel-file": "9.3.12",
     "remark-gfm": "^4.0.1",
     "zustand": "latest"
   },

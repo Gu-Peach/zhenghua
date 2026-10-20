@@ -60,6 +60,7 @@ def prepare_vision_messages(
     input_max_side: int,
     max_total_pixels: int,
     few_shot_min_side: int = 768,
+    input_message_indices: set[int] | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
     """Reserve actual-input pixels first, then shrink or remove complete example pairs."""
     import pymupdf
@@ -73,7 +74,12 @@ def prepare_vision_messages(
         if not isinstance(content, list):
             continue
         # Only example user messages can be removed; never discard system instructions.
-        kind = "few_shot" if message_index < len(prepared) - 1 and message.get("role") == "user" else "input"
+        actual_input = (
+            message_index in input_message_indices
+            if input_message_indices is not None
+            else message_index == len(prepared) - 1
+        )
+        kind = "few_shot" if not actual_input and message.get("role") == "user" else "input"
         for item in content:
             if not isinstance(item, dict) or item.get("type") != "image_url":
                 continue
@@ -124,8 +130,10 @@ def prepare_vision_messages(
             width, height = resized.width, resized.height
         details.append(
             {
-                "kind": entry.kind, "message_index": entry.message_index,
-                "size_before": [pixmap.width, pixmap.height], "size_sent": [width, height],
+                "kind": entry.kind,
+                "message_index": entry.message_index,
+                "size_before": [pixmap.width, pixmap.height],
+                "size_sent": [width, height],
             }
         )
     pixels_sent = sum(item["size_sent"][0] * item["size_sent"][1] for item in details)
