@@ -1,5 +1,23 @@
 # Changelog
 
+2026-10-22仅agent_test ZH2.7.0补齐错误跨页被否决后的来源整页复查，局部改独立文字抄录，目标候选增加路径门禁和独立复核；冻结原始有效来源事实，拒绝电压标签伪端子。编辑完成、未实测，正式/API/数据库不改，见[Agent记录](../service/agent/changelog/2026-10-22-agent-test-source-recovery.md)。
+
+2026-10-22仅agent_test ZH2.6.0补充端子特征，初扫同时定位跨页箭头区域，原图40%宽高窗口批量校验后再查目标整页；来源事实冻结、异常地址不悄悄回退工作区。未实测，正式/API/数据库保持，见[Agent记录](../service/agent/changelog/2026-10-22-agent-test-marker-verification.md)。
+
+2026-10-22仅agent_test ZH2.5.0按用户最新要求恢复整页初扫/目标整页定向复扫，移除来源定位精读，增加放线段边界、引用分型与最近端子门禁，冻结起点及已确认同页end。正式/API/数据库规则不改，未运行验证或模型，见[Agent记录](../service/agent/changelog/2026-10-22-agent-test-segment-two-pass.md)。
+
+2026-10-22仅agent_test ZH2.4.0接入来源引用高清精读与目标整页补全，程序核对来源证据和唯一目标身份，冻结起点/原理号；正式产品/API/数据库规则保持。按用户要求未运行验证或模型，见[Agent设计与实施](../service/agent/changelog/2026-10-22-agent-test-source-reference-refinement.md)。
+
+2026-10-22仅agent_test ZH2.3.5目标裁剪改为整页宽40%、全高并在边缘平移保宽；正式链路和其他规则默认裁剪保持。未运行验证或模型，见[Agent记录](../service/agent/changelog/2026-10-22-agent-test-zh-crop-width.md)。
+
+2026-10-22仅agent_test ZH2.3.4将4条补全正例按3张目标图分组，003C31共享图只发送一次，任务/Expected分别保留；实际单任务Schema和正式链路保持。未运行验证或模型，见[Agent记录](../service/agent/changelog/2026-10-22-agent-test-zh-grouped-images.md)。
+
+2026-10-22仅agent_test ZH2.3.3调整为003C01来源正例全量展示：1整页初扫/4补全正例，删除负例及其他来源案例，每次补全完整发送；默认其他Profile与正式链路保持。未运行验证或模型，详见[Agent记录](../service/agent/changelog/2026-10-22-agent-test-zh-all-examples.md)。
+
+2026-10-22仅agent_test本地ZH规则恢复PageScanData、完整原理号、引用对象和Ir/In/Ie证据口径，标记2.3.2；正式产品行为、Schema/API与数据库包保持。按用户要求未运行验证或模型，待用户实测，见[Agent记录](../service/agent/changelog/2026-10-22-agent-test-zh-rule-alignment.md)。
+
+2026-10-22美化PDF上传与规则选择界面：独立紧凑弹窗、文件信息卡片、规则单选卡片/版本/选中高亮、保存反馈和窄屏布局。规则读取及上传提取接口保持，类型/lint/build和相关模拟浏览器验收通过，无Agent/API/数据库变更，见[Web交付](../apps/web/changelog/2026-10-22-pdf-upload-dialog.md)。
+
 2026-10-20新增GCR101跨项目关联前端Mock：目录Mock分组含两个模拟项目，图谱及10条端子对、按线号筛选和项目/图纸往返。正式线表、API、数据库、Storage和Agent保持，46项浏览器回归及静态构建/截图通过。见[Web交付](../apps/web/changelog/2026-10-20-project-relations-mock.md)。
 
 2026-10-20 Explain兼容分支格式失败诊断：required拒绝已被接住，后续MODEL_SCHEMA_INVALID发生在本地格式校验，本轮未入队；旧日志无字段信息，新增schema_validation及脱敏校验路径/类型/计数。76项离线与静态验收通过，不改变执行门禁/重试，不调用实际模型或改线表，见[记录](../service/agent/changelog/2026-10-20-explain-schema-diagnostics.md)。

@@ -1,0 +1,271 @@
+{
+  "pdf_page_number": 2,
+  "drawing_function": "006.M",
+  "drawing_page_number": 1,
+  "drawing_object_location": "+01F11.3",
+  "blank": false,
+  "units": [
+    {
+      "unit_id": "006m01-aim1-confirmed-signals",
+      "wire_number": null,
+      "current": null,
+      "connections": [
+        {
+          "local_connection_id": "m01_xd3_3_to_c01_x3_3",
+          "line_number": "003G0121",
+          "core_number": null,
+          "endpoint_role": "source",
+          "direction_basis": "用户已确认本组线表起点统一为006M01页+01F11.3的XD3:3，终点在006C01；保留已确认的线表方向，不因反馈信号箭头指向本页而交换端点。",
+          "start": {
+            "location": "+01F11.3",
+            "device": "+01F11.3",
+            "name": null,
+            "terminal_board": "XD3",
+            "terminal": "XD3:3",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.17773,
+              "y": 0.09375,
+              "pdf_page_number": 2
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "=.C-AIM1_X3_3 / =.C+01F26/1.3",
+              "target_function": "006.C",
+              "target_drawing_page": 1,
+              "target_column": 3,
+              "target_pdf_page": 3,
+              "target_object": "+01F26"
+            }
+          ],
+          "signal_name": "=.C-AIM1_X3_3",
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "source_drawing_pages": [
+            "006.M/1"
+          ],
+          "source_note": "从本段放线斜杠沿线读取最近端子XD3:3，原理号003G0121；目标引用=.C+01F26/1.3及信号=.C-AIM1_X3_3用于区分同号支路，终点待目标图读取。",
+          "remark": "24VDC+"
+        },
+        {
+          "local_connection_id": "m01_xd3_112_to_c01_x3_6",
+          "line_number": "006M0151",
+          "core_number": null,
+          "endpoint_role": "source",
+          "direction_basis": "用户已确认本组线表起点统一为006M01页+01F11.3的XD3:112，终点在006C01；保留已确认的线表方向，不因反馈信号箭头指向本页而交换端点。",
+          "start": {
+            "location": "+01F11.3",
+            "device": "+01F11.3",
+            "name": null,
+            "terminal_board": "XD3",
+            "terminal": "XD3:112",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.17773,
+              "y": 0.5282,
+              "pdf_page_number": 2
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "=.C-AIM1_X3_6 / =.C+01F26/1.4",
+              "target_function": "006.C",
+              "target_drawing_page": 1,
+              "target_column": 4,
+              "target_pdf_page": 3,
+              "target_object": "+01F26"
+            }
+          ],
+          "signal_name": "=.C-AIM1_X3_6",
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "source_drawing_pages": [
+            "006.M/1"
+          ],
+          "source_note": "从本段放线斜杠沿线读取最近端子XD3:112，原理号006M0151；目标引用=.C+01F26/1.4及信号=.C-AIM1_X3_6用于区分同号支路，终点待目标图读取。",
+          "remark": "AIM1 SW Feedback"
+        },
+        {
+          "local_connection_id": "m01_xd3_30_to_c01_x3_4",
+          "line_number": "003G0121",
+          "core_number": null,
+          "endpoint_role": "source",
+          "direction_basis": "用户已确认本组线表起点统一为006M01页+01F11.3的XD3:30，终点在006C01；保留已确认的线表方向，不因反馈信号箭头指向本页而交换端点。",
+          "start": {
+            "location": "+01F11.3",
+            "device": "+01F11.3",
+            "name": null,
+            "terminal_board": "XD3",
+            "terminal": "XD3:30",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.25161,
+              "y": 0.09375,
+              "pdf_page_number": 2
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "=.C-AIM1_X3_4 / =.C+01F26/1.4",
+              "target_function": "006.C",
+              "target_drawing_page": 1,
+              "target_column": 4,
+              "target_pdf_page": 3,
+              "target_object": "+01F26"
+            }
+          ],
+          "signal_name": "=.C-AIM1_X3_4",
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "source_drawing_pages": [
+            "006.M/1"
+          ],
+          "source_note": "从本段放线斜杠沿线读取最近端子XD3:30，原理号003G0121；目标引用=.C+01F26/1.4及信号=.C-AIM1_X3_4用于区分同号支路，终点待目标图读取。",
+          "remark": "24VDC+"
+        },
+        {
+          "local_connection_id": "m01_xd3_113_to_c01_x3_1",
+          "line_number": "006M0152",
+          "core_number": null,
+          "endpoint_role": "source",
+          "direction_basis": "用户已确认本组线表起点统一为006M01页+01F11.3的XD3:113，终点在006C01；保留已确认的线表方向，不因反馈信号箭头指向本页而交换端点。",
+          "start": {
+            "location": "+01F11.3",
+            "device": "+01F11.3",
+            "name": null,
+            "terminal_board": "XD3",
+            "terminal": "XD3:113",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.25161,
+              "y": 0.5282,
+              "pdf_page_number": 2
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "=.C-AIM1_X3_1 / =.C+01F26/1.3",
+              "target_function": "006.C",
+              "target_drawing_page": 1,
+              "target_column": 3,
+              "target_pdf_page": 3,
+              "target_object": "+01F26"
+            }
+          ],
+          "signal_name": "=.C-AIM1_X3_1",
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "source_drawing_pages": [
+            "006.M/1"
+          ],
+          "source_note": "从本段放线斜杠沿线读取最近端子XD3:113，原理号006M0152；目标引用=.C+01F26/1.3及信号=.C-AIM1_X3_1用于区分同号支路，终点待目标图读取。",
+          "remark": "Main Contact NC"
+        },
+        {
+          "local_connection_id": "m01_xd3_30_to_c01_x3_5",
+          "line_number": "003G0121",
+          "core_number": null,
+          "endpoint_role": "source",
+          "direction_basis": "用户已确认本组线表起点统一为006M01页+01F11.3的XD3:30，终点在006C01；保留已确认的线表方向，不因反馈信号箭头指向本页而交换端点。",
+          "start": {
+            "location": "+01F11.3",
+            "device": "+01F11.3",
+            "name": null,
+            "terminal_board": "XD3",
+            "terminal": "XD3:30",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.25161,
+              "y": 0.09375,
+              "pdf_page_number": 2
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "=.C-AIM1_X3_5 / =.C+01F26/1.4",
+              "target_function": "006.C",
+              "target_drawing_page": 1,
+              "target_column": 4,
+              "target_pdf_page": 3,
+              "target_object": "+01F26"
+            }
+          ],
+          "signal_name": "=.C-AIM1_X3_5",
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "source_drawing_pages": [
+            "006.M/1"
+          ],
+          "source_note": "从本段放线斜杠沿线读取最近端子XD3:30，原理号003G0121；目标引用=.C+01F26/1.4及信号=.C-AIM1_X3_5用于区分同号支路，终点待目标图读取。",
+          "remark": "24VDC+"
+        },
+        {
+          "local_connection_id": "m01_xd3_114_to_c01_x3_2",
+          "line_number": "006M0153",
+          "core_number": null,
+          "endpoint_role": "source",
+          "direction_basis": "用户已确认本组线表起点统一为006M01页+01F11.3的XD3:114，终点在006C01；保留已确认的线表方向，不因反馈信号箭头指向本页而交换端点。",
+          "start": {
+            "location": "+01F11.3",
+            "device": "+01F11.3",
+            "name": null,
+            "terminal_board": "XD3",
+            "terminal": "XD3:114",
+            "terminal_strip": null,
+            "terminal_coordinates": {
+              "x": 0.32602,
+              "y": 0.5282,
+              "pdf_page_number": 2
+            }
+          },
+          "end": null,
+          "references": [
+            {
+              "raw": "=.C-AIM1_X3_2 / =.C+01F26/1.3",
+              "target_function": "006.C",
+              "target_drawing_page": 1,
+              "target_column": 3,
+              "target_pdf_page": 3,
+              "target_object": "+01F26"
+            }
+          ],
+          "signal_name": "=.C-AIM1_X3_2",
+          "is_cross_page": "cross_page",
+          "status": "needs_reference",
+          "current": null,
+          "current_basis": null,
+          "current_source_text": null,
+          "source_drawing_pages": [
+            "006.M/1"
+          ],
+          "source_note": "从本段放线斜杠沿线读取最近端子XD3:114，原理号006M0153；目标引用=.C+01F26/1.3及信号=.C-AIM1_X3_2用于区分同号支路，终点待目标图读取。",
+          "remark": "Main Contact NO"
+        }
+      ],
+      "source_drawing_pages": [
+        "006.M/1"
+      ]
+    }
+  ]
+}

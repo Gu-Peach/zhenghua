@@ -75,7 +75,7 @@ Profile模型失败现在会在8100终端输出分类日志，前端显示错误
 如果已单独启动提取Worker，可只启动HTTP宿主，不重复启动Worker：
 
 ```powershell
-$env:AGENT_INLINE_WORKER = "false"
+$env:AGENT_INLINE_WORKER = "true"
 .\.venv\Scripts\python.exe -m uvicorn src.extraction_main:app --app-dir services/agent --host 127.0.0.1 --port 8100
 ```
 
@@ -127,7 +127,6 @@ $env:AGENT_INLINE_WORKER = "true"
 本地测试入口：已有拆页/索引用`scripts/run_stage2_groups.py`，导出标准12列加两端坐标共14列，色标留空；新PDF用`scripts/run_page_workflow_extraction.py`自动拆页/分类/提取并输出含诊断列的table.xlsx。两者支持`--profile zh|abb|zh_gantry_reel`和`--model`，强制内存/本地资源，不写数据库/Storage；真实模型须`--allow-real-model`。命令和产物见[测试说明](../../docs/service/agent/local-stage2-group-test.md)。
 
 2026-10-13 分支更新：提取改为 Stage 1 分类 + Stage 2 独立逐页 LangGraph，扫描/双图补全/保存形成闭环，删除独立 Stage 3 Agent 和全局补全阶段。实现见 [ADR-0014](../../docs/adr/0014-stage2-page-extraction-workflow.md) 与 [交付记录](../../docs/service/agent/changelog/2026-10-13-stage2-page-workflow.md)。本轮仅离线冒烟，不写真实数据库、不发布远端包、不重启服务；旧持久 run 只读，新 run 使用冻结 `page_extraction_v2` 工作流，真实库运行前需要未部署的新 migration。以下早期实施状态作为历史上下文。
-
 
 规则库支持人工基于可用模板创建新 key，封存到私有 Bucket 后立即注册；所有登录用户共享读取，创建者确认删除后停用。要求 `AGENT_PROFILE_PACKAGES_ENABLED=true` 和既有 Supabase 配置。Profile API/新任务入口/首页检测刷新远端 active 集合并为同 key 选择最新版本；已冻结任务仍使用原 checksum。首次使用新增 adapter 需重载服务以加载新代码。见 [ADR-0012](../../docs/adr/0012-shared-ready-rule-library.md)。
 

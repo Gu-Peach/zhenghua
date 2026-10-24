@@ -5,6 +5,7 @@
 - [产品需求](./frontend.md)：用户、导入、项目树、结果展示和反馈要求。
 - [总体重构方案](./refactor-plan.md)：目标架构、数据模型、模块边界和迁移策略。
 - [Agent 流程图生成 Prompt](./agent_flow_diagram_prompt.md)：用于生成流程示意图。
+- [项目汇报材料](./presentations/README.md)：项目介绍文案、演示文件及验证记录。
 
 ## 开发管理
 

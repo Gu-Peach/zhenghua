@@ -1,0 +1,32 @@
+{
+  "context_version": 2,
+  "task_id": "c09_lcm_n_to_005c01_x2_10",
+  "source_page": {
+    "pdf_page_number": 123,
+    "drawing_function": "004.C",
+    "drawing_page_number": 9,
+    "object_location": "+01F35"
+  },
+  "target_page": {
+    "pdf_page_number": 139,
+    "drawing_function": "005.C",
+    "drawing_page_number": 1,
+    "object_location": "+01F25"
+  },
+  "source_component": {
+    "device": "+01F35",
+    "location": "+01F35"
+  },
+  "line_number": "002C0600",
+  "signal_name": "-LCM_FC50_N",
+  "references": [
+    {
+      "raw": "=005.C+01F25/1.5 / -LCM_FC50_N",
+      "target_function": "005.C",
+      "target_drawing_page": 1,
+      "target_pdf_page": 139,
+      "target_column": 5,
+      "target_object": "+01F25"
+    }
+  ]
+}

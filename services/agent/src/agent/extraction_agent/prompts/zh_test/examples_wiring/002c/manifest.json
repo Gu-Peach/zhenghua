@@ -1,0 +1,137 @@
+{
+  "version": 15,
+  "description": "zh_test用户校对草稿：仅使用提供PDF第2页006M01及第3页006C01，按用户截图六条信号线建立初扫/目标图补全案例。",
+  "review_status": "user_supplied_terminal_pairs_pending_review_no_tests_run",
+  "images": {
+    "006m01_source": "images/006m01_source.png",
+    "006c01_target": "images/006c01_target.png"
+  },
+  "stage2_cases": [
+    {
+      "id": "006m01_aim1_confirmed_signals",
+      "title": "用户已确认线表起点006M01：六条XD3到006C01的AIM1 X3信号，反馈方向也保持用户给定起终点",
+      "expected": "stage2/006m01.expected.json",
+      "images": [
+        {
+          "path": "images/006m01_source.png",
+          "role": "source_page",
+          "note": "用户PDF第2页，006.M/1，Object Loc +01F11.3。只示范截图确认的六条信号线，原理号/完整起点端子按表。反馈线箭头不作为交换已确认线表端点的依据；柜名、线缆/芯号、SPARE及PE另存reference_pairs.json，不从图中补造。"
+        }
+      ],
+      "checksums": {
+        "stage2/006m01.expected.json": "sha256:a5317cf4ae2b0845409d3a50a25738c5910234a8b61fd6336e863775c35023ed",
+        "images/006m01_source.png": "sha256:8e4cb008b2706206e7427be27fa6a84ff1dcf38e3ccfbeb5df29a0eac8140f5b"
+      }
+    }
+  ],
+  "stage3_cases": [
+    {
+      "id": "m01_xd3_3_to_c01_x3_3",
+      "title": "006M01 XD3:3 → 006C01 X3:3：003G0121，以AIM1_X3_3区分回指和同号支路",
+      "input": "completion/m01_xd3_3_to_c01_x3_3.task.json",
+      "expected": "completion/m01_xd3_3_to_c01_x3_3.expected.json",
+      "images": [
+        {
+          "path": "images/006c01_target.png",
+          "role": "target_page",
+          "note": "来自用户PDF第3页，原业务页006.C/1；接点中心坐标为人工读图近似值，待用户校对。"
+        }
+      ],
+      "checksums": {
+        "completion/m01_xd3_3_to_c01_x3_3.task.json": "sha256:4400fe5fc1294e12aa32b217622058d75809bb308dc60e9f32e0d982ee68c55f",
+        "completion/m01_xd3_3_to_c01_x3_3.expected.json": "sha256:bd73bd7fbc01999b4a6a3f54bbafb6ce325e025de2a4ea5d1bf95f09169e4b55",
+        "images/006c01_target.png": "sha256:11bf67d244794c9b177dde8608676a122a9e6792e20d515660ee63b8f8a401c3"
+      }
+    },
+    {
+      "id": "m01_xd3_112_to_c01_x3_6",
+      "title": "006M01 XD3:112 → 006C01 X3:6：006M0151，以AIM1_X3_6区分回指和同号支路",
+      "input": "completion/m01_xd3_112_to_c01_x3_6.task.json",
+      "expected": "completion/m01_xd3_112_to_c01_x3_6.expected.json",
+      "images": [
+        {
+          "path": "images/006c01_target.png",
+          "role": "target_page",
+          "note": "来自用户PDF第3页，原业务页006.C/1；接点中心坐标为人工读图近似值，待用户校对。"
+        }
+      ],
+      "checksums": {
+        "completion/m01_xd3_112_to_c01_x3_6.task.json": "sha256:14eebff0374219fab1d097fdc177b0634a0bff80d00706aa48839d0647a339ac",
+        "completion/m01_xd3_112_to_c01_x3_6.expected.json": "sha256:28125c7375a42c44f3be7c6107f68d365268996d11c5f2ad8a192da4540b07fb",
+        "images/006c01_target.png": "sha256:11bf67d244794c9b177dde8608676a122a9e6792e20d515660ee63b8f8a401c3"
+      }
+    },
+    {
+      "id": "m01_xd3_30_to_c01_x3_4",
+      "title": "006M01 XD3:30 → 006C01 X3:4：003G0121，以AIM1_X3_4区分回指和同号支路",
+      "input": "completion/m01_xd3_30_to_c01_x3_4.task.json",
+      "expected": "completion/m01_xd3_30_to_c01_x3_4.expected.json",
+      "images": [
+        {
+          "path": "images/006c01_target.png",
+          "role": "target_page",
+          "note": "来自用户PDF第3页，原业务页006.C/1；接点中心坐标为人工读图近似值，待用户校对。"
+        }
+      ],
+      "checksums": {
+        "completion/m01_xd3_30_to_c01_x3_4.task.json": "sha256:e160d8b370c1e5595bec69cb025321188ebf30f96c4930740afc5c65518f6068",
+        "completion/m01_xd3_30_to_c01_x3_4.expected.json": "sha256:64d0242486b67e3eced5dfca9d1d3c9e2308e096d0a69067f2c31781f86d8c81",
+        "images/006c01_target.png": "sha256:11bf67d244794c9b177dde8608676a122a9e6792e20d515660ee63b8f8a401c3"
+      }
+    },
+    {
+      "id": "m01_xd3_113_to_c01_x3_1",
+      "title": "006M01 XD3:113 → 006C01 X3:1：006M0152，以AIM1_X3_1区分回指和同号支路",
+      "input": "completion/m01_xd3_113_to_c01_x3_1.task.json",
+      "expected": "completion/m01_xd3_113_to_c01_x3_1.expected.json",
+      "images": [
+        {
+          "path": "images/006c01_target.png",
+          "role": "target_page",
+          "note": "来自用户PDF第3页，原业务页006.C/1；接点中心坐标为人工读图近似值，待用户校对。"
+        }
+      ],
+      "checksums": {
+        "completion/m01_xd3_113_to_c01_x3_1.task.json": "sha256:79a290a6d05ffca456591de9afa0bb8f072a811bb4c24a68f06f27557291c255",
+        "completion/m01_xd3_113_to_c01_x3_1.expected.json": "sha256:58e2ee8e9e04d2ffb9cba2a6c1e2a47722329f2a78f1e56c13571cef174e346f",
+        "images/006c01_target.png": "sha256:11bf67d244794c9b177dde8608676a122a9e6792e20d515660ee63b8f8a401c3"
+      }
+    },
+    {
+      "id": "m01_xd3_30_to_c01_x3_5",
+      "title": "006M01 XD3:30 → 006C01 X3:5：003G0121，以AIM1_X3_5区分回指和同号支路",
+      "input": "completion/m01_xd3_30_to_c01_x3_5.task.json",
+      "expected": "completion/m01_xd3_30_to_c01_x3_5.expected.json",
+      "images": [
+        {
+          "path": "images/006c01_target.png",
+          "role": "target_page",
+          "note": "来自用户PDF第3页，原业务页006.C/1；接点中心坐标为人工读图近似值，待用户校对。"
+        }
+      ],
+      "checksums": {
+        "completion/m01_xd3_30_to_c01_x3_5.task.json": "sha256:2a06ed4d2662bda7d6e144d489b361d11c132e9e2cd8b7ee771053654e4dbedf",
+        "completion/m01_xd3_30_to_c01_x3_5.expected.json": "sha256:3a992d1e6b475835e1bf9e0d213aa0d1b52031fc6362753e1c0746f95e3d5520",
+        "images/006c01_target.png": "sha256:11bf67d244794c9b177dde8608676a122a9e6792e20d515660ee63b8f8a401c3"
+      }
+    },
+    {
+      "id": "m01_xd3_114_to_c01_x3_2",
+      "title": "006M01 XD3:114 → 006C01 X3:2：006M0153，以AIM1_X3_2区分回指和同号支路",
+      "input": "completion/m01_xd3_114_to_c01_x3_2.task.json",
+      "expected": "completion/m01_xd3_114_to_c01_x3_2.expected.json",
+      "images": [
+        {
+          "path": "images/006c01_target.png",
+          "role": "target_page",
+          "note": "来自用户PDF第3页，原业务页006.C/1；接点中心坐标为人工读图近似值，待用户校对。"
+        }
+      ],
+      "checksums": {
+        "completion/m01_xd3_114_to_c01_x3_2.task.json": "sha256:66a5b95051ea2dbb4ccf5ad38a177fb9fdab0538fec7fdb5e16abd44db159e26",
+        "completion/m01_xd3_114_to_c01_x3_2.expected.json": "sha256:cf22e82d12b1b8c35073ec69f1480dea4a9c81dca2fddfbb7e77b92c2909fa14",
+        "images/006c01_target.png": "sha256:11bf67d244794c9b177dde8608676a122a9e6792e20d515660ee63b8f8a401c3"
+      }
+    }
+  ]
+}

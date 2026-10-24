@@ -41,6 +41,42 @@ print('TEST_RUNTIME_ONLY')
     assert "TEST_RUNTIME_ONLY" in result.stdout
 
 
+@pytest.mark.parametrize("script", ["run_stage2_groups.py", "run_page_workflow_extraction.py"])
+def test_explicit_formal_source_uses_formal_code_and_resources_without_test_copy(script: str) -> None:
+    result = _run(f"""
+import runpy,sys
+from pathlib import Path
+sys.path.insert(0,{str(SCRIPTS)!r})
+import local_extraction_runtime as runtime
+def unavailable(*a,**k):
+    raise AssertionError('Formal mode must not require agent_test')
+runtime.test_extraction_root=unavailable
+sys.argv=[{script!r},'--agent-source','formal','--help']
+try:
+    runpy.run_path(str(Path('services/agent/scripts')/{script!r}),run_name='__main__')
+except SystemExit as exc:
+    assert exc.code==0
+root=(Path.cwd()/'services/agent/src/agent/extraction_agent').resolve()
+modules={{name:Path(module.__file__).resolve() for name,module in sys.modules.items()
+         if name.startswith('src.agent.extraction_agent') and getattr(module,'__file__',None)}}
+assert modules and all(path.is_relative_to(root) for path in modules.values()),modules
+import run_stage2_groups as runner
+from src.config import AgentSettings
+settings=runner.memory_settings(AgentSettings(supabase_url='https://db.invalid',
+    supabase_service_role_key='fake',profile_packages_enabled=True),agent_source='formal')
+assert settings.profile_root==root/'profiles'
+assert settings.supabase_url is None and settings.supabase_service_role_key is None
+assert settings.persistence_backend=='memory' and not settings.profile_packages_enabled
+binding=runner.load_local_profile(settings,'zh')
+assert binding.profile.version=='2.3.0'
+assert all(p.is_relative_to(root) for p in binding.resolved_resources.values())
+runtime.assert_extraction_loaded('formal')
+print('FORMAL_CODE_AND_RESOURCES_MEMORY_ONLY')
+""")
+    assert result.returncode == 0, result.stderr
+    assert "FORMAL_CODE_AND_RESOURCES_MEMORY_ONLY" in result.stdout
+
+
 def test_runtime_missing_or_already_formal_loaded_fails_without_fallback(tmp_path: Path) -> None:
     result = _run(f"""
 import sys

@@ -1,0 +1,28 @@
+{
+  "version": 2,
+  "description": "zh_test用户PDF第2/3页的图框身份案例；用户自行校对，未运行测试。",
+  "cases": [
+    {
+      "id": "pdf02_006m01",
+      "title": "用户PDF第2页：读取006.M/1图框身份",
+      "expected": "pdf02_006m01/expected.json",
+      "images": [
+        {
+          "path": "pdf02_006m01/page.png",
+          "role": "drawing_page"
+        }
+      ]
+    },
+    {
+      "id": "pdf03_006c01",
+      "title": "用户PDF第3页：读取006.C/1图框身份",
+      "expected": "pdf03_006c01/expected.json",
+      "images": [
+        {
+          "path": "pdf03_006c01/page.png",
+          "role": "drawing_page"
+        }
+      ]
+    }
+  ]
+}

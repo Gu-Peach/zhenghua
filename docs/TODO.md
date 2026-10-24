@@ -4,6 +4,37 @@
 
 ## 进行中
 
+- [x] agent_test ZH2.7.0：P1设计/P2独立抄录、失败来源整页复查、目标独立路径复核和伪端子门禁/P3原003C01案例、manifest20与文档编辑完成。新增7项离线回归代码未运行，未执行类型/lint/真实模型；冻结起点/原理号、未自动多跳，质量待实测，见[记录](./service/agent/changelog/2026-10-22-agent-test-source-recovery.md)。
+
+- [x] agent_test ZH2.6.0端子特征与来源跨页区域放大校验：P1图像观察/设计、P2初扫坐标与40%宽高窗口批量核读、P3提示词/正例/版本和说明编辑完成；保留冻结起点/原理号及目标整页补全。制作2张原003C01裁剪正例，未运行回归/类型/lint/模型，新增框待用户复核，见[记录](./service/agent/changelog/2026-10-22-agent-test-marker-verification.md)。
+
+- [x] 按用户本轮要求实跑 agent_test ZH2.5.0 的002.C组：7页/57条/38条有终点/41条待复核，333.446秒、32次模型调用、521966 tokens；独立目录zh_250_002c_001保留日志和XLSX，无数据库/Storage上传。002C03分类有改善，002C06地址未解析、002C11同页误判仍在，不代表质量验收通过，见[实测记录](./service/agent/changelog/2026-10-22-agent-test-segment-two-pass.md)。
+
+- [x] agent_test ZH2.5.0两阶段放线段契约：P1设计/P2代码/P3规则案例与说明编辑完成；移除来源locate/read，整页初扫分型/冻结，目标整页复扫按原理号及回指找最近端子并停止。仅本地，未运行验证、测试、类型/lint、打包或模型，质量待用户实测，见[记录](./service/agent/changelog/2026-10-22-agent-test-segment-two-pass.md)。
+
+- [x] agent_test ZH2.4.0来源引用精读与目标整页补全：P1设计/P2代码/P3规则及说明编辑完成；来源区域定位/原图精读、区域内PDF文字核对及唯一目标身份门禁，冻结起点/原理号，目标裁剪关闭。按用户要求未运行验证、测试、类型/lint、打包或模型，质量待用户实测，见[记录](./service/agent/changelog/2026-10-22-agent-test-source-reference-refinement.md)。
+
+- [x] agent_test ZH2.3.5目标裁剪宽40%编辑完成：全高、边缘平移保宽，保留坐标映射/像素预算及整页分组示例，其他规则默认裁剪保持。按用户要求未运行验证、测试或模型，实际效果待用户实测，见[记录](./service/agent/changelog/2026-10-22-agent-test-zh-crop-width.md)。
+
+- [x] agent_test ZH2.3.4示例按目标页合并编辑完成：003C31只发送一份整页图，相线/N线各保留任务与单任务答案，形成3图4连接示范；实际任务裁剪/Schema保持。未运行验证、测试或模型，实际效果待用户实测，见[记录](./service/agent/changelog/2026-10-22-agent-test-zh-grouped-images.md)。
+
+- [x] agent_test ZH2.3.3示例精简与全量发送编辑完成：保留003C01整页初扫/4来源页跨页正例，移除负例和004C02/004C09来源的两例及独占资产；补全按清单全发，预算不静默删例，默认其他规则保持。未运行验证、测试或模型，实际效果待用户实测，见[记录](./service/agent/changelog/2026-10-22-agent-test-zh-all-examples.md)。
+
+- [x] agent_test ZH规则适配完成编辑：移除ABB专属编号/Schema要求，恢复ZH原理号、引用对象与Ir/In/Ie电流口径，同步本地2.3.2及调用指令/使用说明。receiver过滤、列裁剪和Few-shot保持；按用户要求未运行验证、测试或真实模型，实际质量待用户实测，见[记录](./service/agent/changelog/2026-10-22-agent-test-zh-rule-alignment.md)。
+
+- [x] 实测当前 Qwen3.8 27B 接口结构化输出：普通请求200，json_object/json_schema均400、response_format_not_supported，服务明确要求启动时启用--structured-output；当前端点未开启，不能据此判定模型权重不支持。3次合成请求约3.53秒，成功调用55 tokens，错误调用未报用量、单价未知；配置/业务数据未改，见[验收](./service/agent/changelog/2026-10-22-qwen-structured-output-probe.md)。
+
+- [x] PDF 上传弹窗美化：独立紧凑布局、文件信息卡片、规则单选卡片、选中反馈与保存区；保留规则来源和上传接口。类型/lint/build、7项既有浏览器回归及模拟数据状态/键盘/重试幂等检查通过，21张上传截图/布局断言与登录/工作台桌面窄屏截图完成核对。仅Web/文档，不改Agent或真实业务数据，刷新Web生效，见[交付](./apps/web/changelog/2026-10-22-pdf-upload-dialog.md)。
+
+- [x] 汇报第 7 页改为 LLM 与知识库协作图：内置 ImageGen 生成独立图片并嵌入 PPT v4，明确模型读图、知识规范与程序映射校验分工；15 页图像对比仅第 7 页变化，文件/版式校验与最终导入渲染通过。图片与完整提示词已保存 outputs，见材料归档。
+
+- [x] 汇报 PPT 第 3 页补充真实案例：082.R/50 的 XD3:251 到 MA51:2，以及 006.M/1 到 006.C/1 的 XD3:3 / AIM1 X3:3 对照。15 页结构保留，逐页图像对比仅第 3 页变化；文件/版式检查与最终重新导入渲染通过。交付案例补充版 v3，见 docs/presentations/README.md。
+
+- [x] 项目汇报文案与 PPT 优化：以用户新文案及桌面修改版演示为准，交付优化文案和同步调整的演示文件。
+  - [x] P1：读取文案及 8 张附图、核对修改版 15 页与两项问题主线。
+  - [x] P2：完成 15 节优化讲稿与 15 页演示，补齐 ZH/ABB 对照、端子排映射、页面索引、真实配置/工作台界面及修订导出。
+  - [x] P3：3 页文案经 Word 原生渲染核对，15 页 PPT 逐页检查并重新导入渲染；包结构/字体/几何无发现，2 张原生表格与 15 页对应备注保留。产物在忽略的 outputs，详见 docs/presentations/README.md；不改业务实现或执行模型，整体阶段保持。
+
 - [x] GCR101 跨项目关联 Mock：仅前端内存，项目目录 Mock 分组及两个模拟项目、关联项目图谱、逐端子映射与往返跳转。
   - [x] P1：确认展示边界和前端设计，见 docs/apps/web/project-relations-mock.md。
   - [x] P2：实现本地数据、目录分组和关联视图。

@@ -1,0 +1,28 @@
+{
+  "task_id": "c01_nbar_to_003c31_nbar",
+  "end": {
+    "device": "+10F01",
+    "location": "+10F01",
+    "name": null,
+    "terminal_board": null,
+    "terminal_code": null,
+    "terminal": "N-BAR",
+    "terminal_strip": null,
+    "terminal_coordinates": {
+      "x": 0.233,
+      "y": 0.185,
+      "pdf_page_number": 74
+    }
+  },
+  "source_component": {
+    "device": "+01F11.1",
+    "location": "+01F11.1",
+    "basis": "目标003C31对应N线回指+01F11.1/1.3，按回指优先补来源元件元数据，来源端子/坐标由state保持。"
+  },
+  "status": "resolved",
+  "needs_review": false,
+  "current": null,
+  "current_basis": null,
+  "current_source_text": null,
+  "source_note": "目标003C31顶部回指+01F11.1/1.3及FC12_N匹配，002C0600对应线直接到N-BAR；左侧XD10:1/2/3属于三相线，N线不继承其排号。"
+}

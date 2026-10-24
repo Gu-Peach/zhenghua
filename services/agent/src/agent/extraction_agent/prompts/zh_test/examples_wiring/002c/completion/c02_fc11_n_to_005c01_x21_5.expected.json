@@ -1,0 +1,26 @@
+{
+  "task_id": "c02_fc11_n_to_005c01_x21_5",
+  "end": {
+    "device": "+01F25",
+    "location": "+01F25",
+    "terminal_board": "X21",
+    "terminal_code": null,
+    "terminal_strip": null,
+    "terminal": "X21:5",
+    "terminal_coordinates": {
+      "x": 0.44622918707149856,
+      "y": 0.4095982142857143,
+      "pdf_page_number": 139
+    }
+  },
+  "source_component": {
+    "device": "+01F35",
+    "location": "+01F35",
+    "basis": "目标图对应来源回指=004.C+01F35/2.1，+01F35为来源对象。"
+  },
+  "current": null,
+  "current_basis": null,
+  "current_source_text": null,
+  "uncertainties": [],
+  "source_note": "目标005C01对应回指=004.C+01F35/2.1 / =004.C+01F35-FC11_N，同线原理号002C0600。结合来源004.C/2和信号-FC11_N，沿线到X21:5；其功能为N_230，右侧LCM_FC50_N到X2:10属于004.C/9，不能混用。"
+}

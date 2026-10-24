@@ -26,14 +26,19 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 # isort: split
 from local_extraction_runtime import (  # noqa: E402
-    activate_test_extraction,
-    assert_test_extraction_loaded,
+    AgentSource,
+    activate_extraction,
+    add_agent_source_argument,
+    agent_source_from_cli,
+    assert_extraction_loaded,
+    formal_extraction_root,
     loaded_extraction_root,
     test_extraction_root,
 )
 
 if __name__ == "__main__":
-    print(f"Local test Agent: {activate_test_extraction()}", flush=True)
+    source = agent_source_from_cli()
+    print(f"Local {source} Agent: {activate_extraction(source)}", flush=True)
 
 # isort: split
 from src.agent.extraction_agent.application.document_extraction.settings import Settings  # noqa: E402
@@ -119,7 +124,7 @@ def load_pages(
     return pages, index, selected
 
 
-def memory_settings(settings: AgentSettings) -> AgentSettings:
+def memory_settings(settings: AgentSettings, *, agent_source: AgentSource = "test") -> AgentSettings:
     """Drop database credentials and remote package selection before constructing adapters."""
     return replace(
         settings,
@@ -128,7 +133,8 @@ def memory_settings(settings: AgentSettings) -> AgentSettings:
         profile_packages_enabled=False,
         supabase_url=None,
         supabase_service_role_key=None,
-        profile_root=test_extraction_root() / "profiles",
+        profile_root=(formal_extraction_root() if agent_source == "formal" else test_extraction_root())
+        / "profiles",
         inline_worker=False,
         import_template_path=None,
         extraction_output_mode="library",
@@ -423,8 +429,9 @@ def failure_report(exc: Exception) -> dict[str, Any]:
 
 
 async def execute(args: argparse.Namespace, *, stages: Any | None = None) -> dict[str, Any]:
+    source = getattr(args, "agent_source", "test")
     if args.allow_real_model and stages is None and not args.export_only:
-        assert_test_extraction_loaded()
+        assert_extraction_loaded(source)
     output = args.output_dir.resolve()
     if (output / "result.xlsx").resolve() == args.template.resolve():
         raise ValueError("The output workbook must not overwrite the reference template.")
@@ -444,7 +451,9 @@ async def execute(args: argparse.Namespace, *, stages: Any | None = None) -> dic
         "storage_upload": False,
         "extract_color": False,
         "extraction_runtime_root": str(loaded_extraction_root()),
-        "profile_root": str(test_extraction_root() / "profiles"),
+        "agent_source": source,
+        "profile_root": str((formal_extraction_root() if source == "formal" else test_extraction_root())
+                            / "profiles"),
         "headers": HEADERS,
         "extraction_contract": EXTRACTION_CONTRACT_VERSION,
         "template": str(args.template.resolve()),
@@ -460,7 +469,7 @@ async def execute(args: argparse.Namespace, *, stages: Any | None = None) -> dic
         records = json.loads((output / "records.json").read_text(encoding="utf-8"))
         summary = json.loads((output / "run-result.json").read_text(encoding="utf-8"))
     else:
-        settings = memory_settings(AgentSettings.from_env())
+        settings = memory_settings(AgentSettings.from_env(), agent_source=source)
         if getattr(args, "model", None):
             settings = replace(settings, default_model=args.model)
         profile = load_local_profile(settings, getattr(args, "profile", "zh"))
@@ -563,16 +572,19 @@ async def execute(args: argparse.Namespace, *, stages: Any | None = None) -> dic
 
 def parse_args() -> argparse.Namespace:
     dependency = Path.home() / ".cache/codex-runtimes/codex-primary-runtime/dependencies/node"
-    parser = argparse.ArgumentParser(description="Local Stage 2 test; no database or Storage uploads.")
+    parser = argparse.ArgumentParser(
+        description="Local Stage 2 test; no database or Storage uploads.", allow_abbrev=False,
+    )
+    add_agent_source_argument(parser)
     parser.add_argument("--pages-dir", type=Path, default=ROOT / "docs/test/pages")
     parser.add_argument(
         "--index", type=Path, default=ROOT / "docs/test/pages/agent/drawing_index.json"
     )
     parser.add_argument("--template", type=Path, default=ROOT / "docs/test/1641.xlsx")
-    parser.add_argument("--output-dir", type=Path, default=ROOT / "agent_test/runs/stage2")
+    parser.add_argument("--output-dir", type=Path, default=None)
     parser.add_argument("--groups", nargs="+", default=["002.C", "002.M"])
     parser.add_argument("--profile", default="zh", help="Local Profile key; e.g. zh, abb, zh_gantry_reel")
-    parser.add_argument("--run-id", default="agent-test-stage2-002c-002m")
+    parser.add_argument("--run-id", default=None)
     parser.add_argument("--max-source-pages", type=int, default=0)
     parser.add_argument("--allow-real-model", action="store_true")
     parser.add_argument("--model", help="Override the model ID for this run; does not edit .env")
@@ -589,6 +601,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--node", type=Path, default=dependency / "bin/node.exe")
     parser.add_argument("--node-modules", type=Path, default=dependency / "node_modules")
     args = parser.parse_args()
+    if args.output_dir is None:
+        args.output_dir = ROOT / ("docs/test/run_stage2_formal" if args.agent_source == "formal"
+                                  else "agent_test/runs/stage2")
+    if args.run_id is None:
+        args.run_id = ("formal-stage2-002c-002m" if args.agent_source == "formal"
+                       else "agent-test-stage2-002c-002m")
     if args.max_source_pages < 0:
         parser.error("--max-source-pages must be >= 0")
     if args.completion_max_side < 0:

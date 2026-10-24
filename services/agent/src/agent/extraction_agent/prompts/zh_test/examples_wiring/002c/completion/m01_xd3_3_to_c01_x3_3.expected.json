@@ -1,0 +1,22 @@
+{
+  "task_id": "m01_xd3_3_to_c01_x3_3",
+  "end": {
+    "location": "+01F26",
+    "device": "+01F26",
+    "name": null,
+    "terminal_board": "X3",
+    "terminal": "X3:3",
+    "terminal_strip": null,
+    "terminal_coordinates": {
+      "x": 0.39936,
+      "y": 0.63415,
+      "pdf_page_number": 3
+    }
+  },
+  "source_component": null,
+  "current": null,
+  "current_basis": null,
+  "current_source_text": null,
+  "source_note": "目标图006.C/1的AIM1接口上读取X3:3，对应导线原理号003G0121，下方AIM1_X3_3信号及=.M+01F11.3/1的回指与来源匹配；来源起点保持不变，不穿过X3追到模块内部。",
+  "uncertainties": []
+}

@@ -1,0 +1,121 @@
+{
+  "purpose": "用户截图的校对参考，不注入模型；六条实际信号线用于样例，未给图面依据的备用芯/PE不生成图像提取记录或坐标。",
+  "source_pdf": "zh_test_profile.pdf",
+  "source_pdf_page": 2,
+  "target_pdf_page": 3,
+  "wire_number": "0272",
+  "attribute": "D",
+  "model": "CJVDA",
+  "spec": "12X1.5",
+  "length": 14,
+  "terminal_strip": "X3",
+  "confirmed_connections": [
+    {
+      "core_number": 1,
+      "line_number": "003G0121",
+      "start_device": "+01F11.3",
+      "start_name": "低压配电柜3",
+      "start_terminal": "XD3:3",
+      "end_device": "+01F26",
+      "end_name": "整流进线柜1",
+      "end_terminal": "X3:3",
+      "remark": "24VDC+"
+    },
+    {
+      "core_number": 2,
+      "line_number": "006M0151",
+      "start_device": "+01F11.3",
+      "start_name": "低压配电柜3",
+      "start_terminal": "XD3:112",
+      "end_device": "+01F26",
+      "end_name": "整流进线柜1",
+      "end_terminal": "X3:6",
+      "remark": "AIM1 SW Feedback"
+    },
+    {
+      "core_number": 3,
+      "line_number": "003G0121",
+      "start_device": "+01F11.3",
+      "start_name": "低压配电柜3",
+      "start_terminal": "XD3:30",
+      "end_device": "+01F26",
+      "end_name": "整流进线柜1",
+      "end_terminal": "X3:4",
+      "remark": "24VDC+"
+    },
+    {
+      "core_number": 4,
+      "line_number": "006M0152",
+      "start_device": "+01F11.3",
+      "start_name": "低压配电柜3",
+      "start_terminal": "XD3:113",
+      "end_device": "+01F26",
+      "end_name": "整流进线柜1",
+      "end_terminal": "X3:1",
+      "remark": "Main Contact NC"
+    },
+    {
+      "core_number": 5,
+      "line_number": "003G0121",
+      "start_device": "+01F11.3",
+      "start_name": "低压配电柜3",
+      "start_terminal": "XD3:30",
+      "end_device": "+01F26",
+      "end_name": "整流进线柜1",
+      "end_terminal": "X3:5",
+      "remark": "24VDC+"
+    },
+    {
+      "core_number": 6,
+      "line_number": "006M0153",
+      "start_device": "+01F11.3",
+      "start_name": "低压配电柜3",
+      "start_terminal": "XD3:114",
+      "end_device": "+01F26",
+      "end_name": "整流进线柜1",
+      "end_terminal": "X3:2",
+      "remark": "Main Contact NO"
+    }
+  ],
+  "spares": [
+    {
+      "core_number": 7,
+      "line_number": "SPARE",
+      "start_terminal": "*",
+      "end_terminal": "*"
+    },
+    {
+      "core_number": 8,
+      "line_number": "SPARE",
+      "start_terminal": "*",
+      "end_terminal": "*"
+    },
+    {
+      "core_number": 9,
+      "line_number": "SPARE",
+      "start_terminal": "*",
+      "end_terminal": "*"
+    },
+    {
+      "core_number": 10,
+      "line_number": "SPARE",
+      "start_terminal": "*",
+      "end_terminal": "*"
+    },
+    {
+      "core_number": 11,
+      "line_number": "SPARE",
+      "start_terminal": "*",
+      "end_terminal": "*"
+    }
+  ],
+  "pe_reference": {
+    "core_number": 12,
+    "line_number": "PE",
+    "start_terminal": "PE",
+    "end_terminal": "PE",
+    "color": "黄绿",
+    "terminal_coordinates": null
+  },
+  "notes": "柜名、线缆/芯号等来自用户截图，不能作为其他图纸中可见字段的自动推断依据。运行样例wire_number/core_number及不可见柜名保持null。未运行测试。"
+}

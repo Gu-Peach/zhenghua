@@ -1,0 +1,35 @@
+{
+  "context_version": 2,
+  "task_id": "c01_nbar_to_003c31_nbar",
+  "source_page": {
+    "pdf_page_number": 60,
+    "drawing_function": "003.C",
+    "drawing_page_number": 1,
+    "object_location": "+01F11.1"
+  },
+  "target_page": {
+    "pdf_page_number": 74,
+    "drawing_function": "003.C",
+    "drawing_page_number": 31,
+    "object_location": "+10F01"
+  },
+  "source_component": {
+    "device": "+01F10",
+    "location": "+01F10"
+  },
+  "line_number": "002C0600",
+  "signal_name": "+10F01-FC12_N",
+  "references": [
+    {
+      "raw": "+10F01/31.1 / +10F01-FC12_N",
+      "target_function": "003.C",
+      "target_drawing_page": 31,
+      "target_column": 1,
+      "target_object": "+10F01",
+      "target_pdf_page": 74
+    }
+  ],
+  "current": null,
+  "current_basis": null,
+  "current_source_text": null
+}

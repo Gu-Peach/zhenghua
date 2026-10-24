@@ -1,0 +1,26 @@
+{
+  "task_id": "c09_lcm_n_to_005c01_x2_10",
+  "end": {
+    "device": "+01F25",
+    "location": "+01F25",
+    "terminal_board": "X2",
+    "terminal_code": null,
+    "terminal_strip": null,
+    "terminal": "X2:10",
+    "terminal_coordinates": {
+      "x": 0.5204701273261508,
+      "y": 0.4095982142857143,
+      "pdf_page_number": 139
+    }
+  },
+  "source_component": {
+    "device": "+01F35",
+    "location": "+01F35",
+    "basis": "目标图对应来源回指=004.C+01F35/9.1，+01F35为来源对象。"
+  },
+  "current": null,
+  "current_basis": null,
+  "current_source_text": null,
+  "uncertainties": [],
+  "source_note": "目标005C01对应回指=004.C+01F35/9.1 / =004.C+01F35-LCM_FC50_N，同线原理号002C0600。结合来源004.C/9和信号-LCM_FC50_N，沿线到X2:10；其功能为HTR_N，左侧FC11_N到X21:5属于004.C/2，不能混用。"
+}

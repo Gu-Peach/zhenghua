@@ -1,5 +1,7 @@
 # apps/web 前端归档
 
+- [PDF 上传弹窗卡片布局](./changelog/2026-10-22-pdf-upload-dialog.md)：紧凑尺寸、文件/规则卡片、选中反馈、窄屏与异常状态；接口及规则来源保持。
+
 - [GCR101关联项目Mock](./changelog/2026-10-20-project-relations-mock.md)、[设计](./project-relations-mock.md)：前端两个模拟项目、目录Mock文件夹、端子图谱与往返导航。
 
 - [隐藏完成标记/一键审核](./changelog/2026-10-20-bulk-review.md)：当前目录与搜索全部分页、失败重试、互斥和目录同步。

@@ -393,7 +393,7 @@ test("上传保存后启动提取，主助手未就绪时保持不可发送", as
   await page.locator('.workbench-app input[type="file"]').setInputFiles({ name: "fixture.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-fixture") });
   await expect(page.getByRole("dialog")).toContainText("文件保存成功后将自动拆页并提取线表");
   await expect(page.getByRole("button", { name: "保存到项目", exact: true })).toBeDisabled();
-  await page.getByRole("combobox", { name: "图纸规则" }).selectOption("zh");
+  await page.getByRole("radio", { name: "振华规则 版本 2.1.0" }).check();
   await page.getByRole("button", { name: "保存到项目", exact: true }).click();
   await expect(page).toHaveURL(`/projects/${projectId}`);
   await expect(page.getByText("PDF 已保存，尚无图纸索引和提取结果。")).toBeVisible();

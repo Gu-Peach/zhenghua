@@ -1,5 +1,23 @@
 # Agent 服务设计索引
 
+- [agent_test ZH来源恢复与目标路径复核](./changelog/2026-10-22-agent-test-source-recovery.md)：本地2.7.0独立字面抄录、失败来源整页复查和候选终点独立复核，新增离线用例未运行；见[设计](./zh-source-recovery-plan.md)。
+
+- [agent_test ZH端子特征与跨页区域核读](./changelog/2026-10-22-agent-test-marker-verification.md)：本地2.6.0初扫同时定位，来源原图40%宽高窗口批量核读，再目标整页补全；代码/资源编辑完成，未实测，见[设计](./zh-marker-verification-plan.md)。
+
+- [agent_test ZH整页两阶段与最近端子](./changelog/2026-10-22-agent-test-segment-two-pass.md)：本地2.5.0取消来源定位/精读，增加放线段边界/引用分型和最近端子门禁，冻结初扫事实；后续按用户要求实跑002.C，7页57条，引用识别与同页分类仍有问题，设计见[方案](./zh-segment-two-pass-plan.md)。
+
+- [agent_test ZH来源引用精读](./changelog/2026-10-22-agent-test-source-reference-refinement.md)：本地2.4.0来源高清引用定位/精读、唯一目标身份门禁和目标整页补全，冻结起点；仅编辑未运行验证，设计见[方案](./zh-source-reference-refinement-plan.md)。
+
+- [agent_test ZH裁剪宽40%](./changelog/2026-10-22-agent-test-zh-crop-width.md)：本地2.3.5目标视野宽为原始整页40%、高为全页，边缘平移保宽；未运行验证或模型。
+
+- [agent_test ZH共享目标图](./changelog/2026-10-22-agent-test-zh-grouped-images.md)：本地2.3.4将4条正例按3张图展示，003C31只附图一次，任务/答案分别保留；未运行验证或模型。
+
+- [agent_test ZH正例全量发送](./changelog/2026-10-22-agent-test-zh-all-examples.md)：本地2.3.3仅保留003C01来源4个正例，删除负例/其他来源案例，每次完整发送；未运行验证或模型。
+
+- [agent_test ZH规则适配](./changelog/2026-10-22-agent-test-zh-rule-alignment.md)：本地2.3.2移除ABB编号/Schema要求，恢复ZH原理号、引用与电流口径；按用户要求未运行验证，待用户实测。
+
+- [Qwen 27B结构化输出实测](./changelog/2026-10-22-qwen-structured-output-probe.md)：普通请求成功，JSON/JSON Schema请求均因服务未启用--structured-output而拒绝；无生产配置或业务数据变更。
+
 - [Explain结构化格式失败诊断](./changelog/2026-10-20-explain-schema-diagnostics.md)：兼容分支已运行但本地格式拒绝，安全字段路径/类型/计数、旧日志限度及76项离线验收。
 
 - [Explain动作完成与假进度](./changelog/2026-10-20-explain-action-completion.md)：真实0工具/0任务诊断，直接命令受控补调、进度正文/缓存保护及动作事实精简，148项分批验收。

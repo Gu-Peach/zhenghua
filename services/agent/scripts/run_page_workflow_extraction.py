@@ -13,10 +13,16 @@ for path in (AGENT_ROOT, REPOSITORY_ROOT, Path(__file__).resolve().parent):
         sys.path.insert(0, str(path))
 
 # isort: split
-from local_extraction_runtime import activate_test_extraction, assert_test_extraction_loaded  # noqa: E402
+from local_extraction_runtime import (  # noqa: E402
+    activate_extraction,
+    add_agent_source_argument,
+    agent_source_from_cli,
+    assert_extraction_loaded,
+)
 
 if __name__ == "__main__":
-    print(f"Local test Agent: {activate_test_extraction()}", flush=True)
+    source = agent_source_from_cli()
+    print(f"Local {source} Agent: {activate_extraction(source)}", flush=True)
 
 # isort: split
 from run_stage2_groups import load_local_profile, memory_settings  # noqa: E402
@@ -32,7 +38,9 @@ from src.domain.errors import AgentServiceError  # noqa: E402
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run a local PDF with a selected Profile; no database or Storage uploads.",
+        allow_abbrev=False,
     )
+    add_agent_source_argument(parser)
     parser.add_argument("pdf", type=Path, help="Input PDF path")
     parser.add_argument("--output-dir", type=Path, required=True, help="Test run output directory")
     parser.add_argument("--profile", default="zh", help="Local Profile key; e.g. zh, abb, zh_gantry_reel")
@@ -48,11 +56,11 @@ async def main() -> int:
     args = parse_args()
     if not args.allow_real_model:
         raise SystemExit("Real VLM calls require --allow-real-model; offline smoke tests use pytest.")
-    assert_test_extraction_loaded()
+    assert_extraction_loaded(args.agent_source)
     pdf_path = args.pdf.resolve()
     if not pdf_path.is_file():
         raise SystemExit(f"PDF not found: {pdf_path}")
-    settings = memory_settings(AgentSettings.from_env())
+    settings = memory_settings(AgentSettings.from_env(), agent_source=args.agent_source)
     if args.model:
         settings = replace(settings, default_model=args.model)
     max_pdf_pages = settings.extraction_max_pdf_pages if args.max_pdf_pages is None else args.max_pdf_pages
