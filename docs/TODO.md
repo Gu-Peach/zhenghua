@@ -4,6 +4,8 @@
 
 ## 进行中
 
+- [x] 根目录部署 README 与数据库初始化入口：补齐当前 Web/API/Agent/Worker、Supabase 安装/升级、三表及辅助表、私有 bucket 脚本和首次规则发布。链接/CLI 参数/表及 RPC 静态核对、PowerShell 离线夹具验证通过；Docker daemon 不可连接，未实际执行空库/旧库迁移或完整服务联调，未改业务数据/调用模型。见[交付](./service/server/changelog/2026-10-24-setup-readme.md)。
+
 - [x] agent_test ZH2.7.0：P1设计/P2独立抄录、失败来源整页复查、目标独立路径复核和伪端子门禁/P3原003C01案例、manifest20与文档编辑完成。新增7项离线回归代码未运行，未执行类型/lint/真实模型；冻结起点/原理号、未自动多跳，质量待实测，见[记录](./service/agent/changelog/2026-10-22-agent-test-source-recovery.md)。
 
 - [x] agent_test ZH2.6.0端子特征与来源跨页区域放大校验：P1图像观察/设计、P2初扫坐标与40%宽高窗口批量核读、P3提示词/正例/版本和说明编辑完成；保留冻结起点/原理号及目标整页补全。制作2张原003C01裁剪正例，未运行回归/类型/lint/模型，新增框待用户复核，见[记录](./service/agent/changelog/2026-10-22-agent-test-marker-verification.md)。

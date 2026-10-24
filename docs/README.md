@@ -1,5 +1,7 @@
 # 文档索引
 
+- [项目安装与启动](../README.md)：Web、业务 API、Agent API/Worker、Supabase 安装及建表/bucket 脚本。
+
 ## 产品与架构
 
 - [产品需求](./frontend.md)：用户、导入、项目树、结果展示和反馈要求。

@@ -1,5 +1,7 @@
 # 开发路线
 
+2026-10-24 完成根目录安装/启动 README 与数据库脚本入口：明确当前三表模型、8100 独立 Agent 宿主及 Worker、Supabase 全新初始化/已有库升级、私有 bucket 和规则首次发布。文档链接、CLI 参数及 PowerShell 离线行为验证通过；Docker daemon 不可连接，未实跑空库/旧数据迁移或完整启动，Phase 7 仍 planned，整体阶段保持。见[交付记录](./service/server/changelog/2026-10-24-setup-readme.md)。
+
 2026-10-22 agent_test ZH2.7.0编辑完成：局部独立抄录，失败来源整页复查，目标候选路径与独立连通性复核，电压/频率伪端子拒绝；7项离线用例已写未跑，未调用真实模型，正式与整体阶段保持，见[记录](./service/agent/changelog/2026-10-22-agent-test-source-recovery.md)。
 
 2026-10-22 agent_test ZH2.6.0端子特征与来源区域校验编辑完成：初扫同时定位、原图40%宽高窗口批量核读、冻结来源/原理号、目标整页最近端子补全；原003C01新增2窗口正例，未运行回归/模型，正式与整体阶段保持，见[记录](./service/agent/changelog/2026-10-22-agent-test-marker-verification.md)。

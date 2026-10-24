@@ -1,5 +1,7 @@
 # Server 文档
 
+- [安装与启动文档及数据库脚本](./changelog/2026-10-24-setup-readme.md)：根 README、当前服务入口、迁移/私有 bucket 和离线验证范围。
+
 - [一键审核事务](./changelog/2026-10-20-bulk-review.md)：目录/搜索跨分页、所有者/版本/幂等及逐行审计，本地迁移安装与验收。
 
 - [人工复核与目录状态](./changelog/2026-10-20-connection-review.md)：独立审计事务、版本/所有者/幂等保护、全批次聚合及本地迁移验收。

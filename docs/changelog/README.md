@@ -1,5 +1,7 @@
 # Changelog
 
+2026-10-24 新增[根目录安装与启动说明](../../README.md)，统一 Web/API/Agent/Worker 与 Supabase 安装、配置和首次规则发布入口；补充基于既有 migration 的建表脚本、私有 bucket 补建与只读检查，替换旧单表数据库说明。不改变业务契约或原迁移，实际数据库未操作；验证边界见[记录](../service/server/changelog/2026-10-24-setup-readme.md)。
+
 2026-10-22仅agent_test ZH2.7.0补齐错误跨页被否决后的来源整页复查，局部改独立文字抄录，目标候选增加路径门禁和独立复核；冻结原始有效来源事实，拒绝电压标签伪端子。编辑完成、未实测，正式/API/数据库不改，见[Agent记录](../service/agent/changelog/2026-10-22-agent-test-source-recovery.md)。
 
 2026-10-22仅agent_test ZH2.6.0补充端子特征，初扫同时定位跨页箭头区域，原图40%宽高窗口批量校验后再查目标整页；来源事实冻结、异常地址不悄悄回退工作区。未实测，正式/API/数据库保持，见[Agent记录](../service/agent/changelog/2026-10-22-agent-test-marker-verification.md)。
